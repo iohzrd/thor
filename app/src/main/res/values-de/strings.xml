@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Thor</string>
+    <string name="channel_name">Daten Benachrichtigung</string>
+    <string name="channel_description">Benachrichtigungen für Up- und Downloads</string>
+    <string name="share">Teilen</string>
+    <string name="offline_mode">Offline Modus</string>
+
+    <string name="search">Suche</string>
+    <string name="no_activity_found_to_handle_uri">Keine Applikation gefunden, welche die Datei verabeiten kann.</string>
+    <string name="download_failed">Download schlug fehl für \"%1$s\"</string>
+    <string name="download_complete">Download abgeschlossen für \"%1$s\"</string>
+    <string name="file_has_no_write_permission">Keine \"Write Permission\" für den Speicherort</string>
+
+    <string name="download_title">Download Datei</string>
+    <string name="bookmarks">Lesezeichen</string>
+    <string name="bookmark">Lesezeichen hinzufügen oder entfernen</string>
+    <string name="bookmark_added">Lesezeichen \"%1$s\" hinzugefügt</string>
+    <string name="bookmark_removed">Lesezeichen \"%1$s\" entfernt</string>
+    <string name="share_link">Share Link</string>
+    <string name="find_page">Auf Seite suchen</string>
+    <string name="history">Verlauf</string>
+
+
+    <string name="privacy_policy">Datenschutzerklärung</string>
+    <string name="documentation">Dokumentation</string>
+    <string name="issues">Issues</string>
+    <string name="clear_cache_and_cookies">Lösche Cache, Cookies, Verlauf…</string>
+    <string name="password">Password</string>
+    <string name="user_name">Username</string>
+    <string name="authentication">Authentication</string>
+    <string name="downloads">Downloads</string>
+
+
+    <string name="enter_url">URL-Eingabe</string>
+    <string name="tor_mode">Strikter Inkognito-Modus (TOR)</string>
+    <string name="action_cleanup">Browser bereinigen</string>
+    <string name="previous_page">Vorherige Seite</string>
+    <string name="next_page">Nächste Seite</string>
+    <string name="incognito">Incognito Modus</string>
+    <string name="reload_page">Reload Seite</string>
+
+</resources>

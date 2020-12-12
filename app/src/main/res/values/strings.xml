@@ -1,0 +1,38 @@
+<resources>
+    <string name="app_name">Thor</string>
+    <string name="channel_name">Storage Notifications</string>
+    <string name="channel_description">For upload and download notifications</string>
+    <string name="share">Share</string>
+    <string name="offline_mode">Offline Mode</string>
+    <string name="no_activity_found_to_handle_uri">No application found which support this kind of file.</string>
+    <string name="download_failed">Download failed for \"%1$s\"</string>
+    <string name="download_complete">Download complete for \"%1$s\"</string>
+    <string name="search">Search</string>
+    <string name="file_has_no_write_permission">No \"Write Permission\" on the location</string>
+    <string name="download_title">Download File</string>
+    <string name="bookmarks">Bookmarks</string>
+    <string name="bookmark">Alter Bookmark</string>
+    <string name="bookmark_added">Bookmark \"%1$s\" added</string>
+    <string name="bookmark_removed">Bookmark \"%1$s\" removed</string>
+    <string name="share_link">Share Link</string>
+    <string name="find_page">Find in page</string>
+    <string name="history">History</string>
+
+
+    <string name="privacy_policy">Privacy Policy</string>
+    <string name="documentation">Documentation</string>
+    <string name="issues">Issues</string>
+    <string name="clear_cache_and_cookies">Clear cache, cookies, history…</string>
+    <string name="password">Password</string>
+    <string name="user_name">Username</string>
+    <string name="authentication">Authentication</string>
+    <string name="downloads">Downloads</string>
+    <string name="enter_url">Enter URL</string>
+    <string name="tor_mode">Strict Incognito Mode (TOR)</string>
+    <string name="action_cleanup">Cleanup Browser</string>
+    <string name="previous_page">Previous page</string>
+    <string name="next_page">Next page</string>
+    <string name="incognito">Incognito Mode</string>
+    <string name="reload_page">Reload Page</string>
+
+</resources>

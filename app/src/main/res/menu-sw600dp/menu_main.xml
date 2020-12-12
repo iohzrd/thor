@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+
+    <group android:id="@+id/main">
+
+        <item
+            android:id="@+id/action_bookmark"
+            android:icon="@drawable/star_outline"
+            android:orderInCategory="20"
+            android:title="@string/bookmark"
+            android:tooltipText="@string/bookmark"
+            app:iconTint="@android:color/white"
+            app:showAsAction="always" />
+
+        <item
+            android:id="@+id/action_bookmarks"
+            android:icon="@drawable/bookmark_multiple_outline"
+            android:orderInCategory="21"
+            android:title="@string/bookmarks"
+            android:tooltipText="@string/bookmarks"
+            app:iconTint="@android:color/white"
+            app:showAsAction="always" />
+
+        <item
+            android:id="@+id/action_find_page"
+            android:icon="@drawable/search"
+            android:orderInCategory="25"
+            android:title="@string/find_page"
+            android:tooltipText="@string/find_page"
+            app:iconTint="@android:color/white"
+            app:showAsAction="always" />
+
+        <item
+            android:id="@+id/action_share"
+            android:icon="@drawable/share"
+            android:orderInCategory="26"
+            android:title="@string/share"
+            android:tooltipText="@string/share"
+            app:iconTint="@android:color/white"
+            app:showAsAction="always" />
+
+    </group>
+
+
+    <group android:id="@+id/settings">
+
+
+        <item
+            android:id="@+id/action_history"
+            android:orderInCategory="30"
+            android:title="@string/history"
+            app:showAsAction="never" />
+
+        <item
+            android:id="@+id/action_downloads"
+            android:orderInCategory="31"
+            android:title="@string/downloads"
+            app:showAsAction="never" />
+
+        <item
+            android:id="@+id/action_cleanup"
+            android:orderInCategory="32"
+            android:title="@string/action_cleanup"
+            app:showAsAction="never" />
+    </group>
+
+    <group android:id="@+id/additions">
+        <item
+            android:id="@+id/action_documentation"
+            android:orderInCategory="40"
+            android:title="@string/documentation"
+            app:showAsAction="never" />
+
+        <item
+            android:id="@+id/action_issues"
+            android:orderInCategory="45"
+            android:title="@string/issues"
+            app:showAsAction="never" />
+
+        <item
+            android:id="@+id/action_privacy_policy"
+            android:orderInCategory="50"
+            android:title="@string/privacy_policy"
+            app:showAsAction="never" />
+    </group>
+
+</menu>

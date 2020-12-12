@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+
+    <item
+        android:id="@+id/action_mode_find"
+        android:orderInCategory="1"
+        android:title="@string/search"
+        android:visible="true"
+        app:actionViewClass="android.widget.EditText"
+        app:showAsAction="always" />
+
+    <item
+        android:id="@+id/action_mode_previous"
+        android:icon="@drawable/chevron_up"
+        android:orderInCategory="2"
+        android:title="@string/search"
+        android:visible="true"
+        app:iconTint="@android:color/white"
+        app:showAsAction="always" />
+
+    <item
+        android:id="@+id/action_mode_next"
+        android:icon="@drawable/chevron_down"
+        android:orderInCategory="3"
+        android:title="@string/search"
+        android:visible="true"
+        app:iconTint="@android:color/white"
+        app:showAsAction="always" />
+
+
+</menu>

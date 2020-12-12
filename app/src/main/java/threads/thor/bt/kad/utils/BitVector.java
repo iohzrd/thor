@@ -1,0 +1,139 @@
+package threads.thor.bt.kad.utils;
+
+import java.nio.ByteBuffer;
+import java.util.Arrays;
+
+
+public final class BitVector {
+
+    private final byte[] vector;
+    private final int bits;
+
+
+    public BitVector(BitVector toCopy) {
+        bits = toCopy.bits;
+        vector = toCopy.vector.clone();
+    }
+
+    public BitVector(int numBits, byte[] rawData) {
+        if (numBits > rawData.length * 8)
+            throw new IllegalArgumentException("raw data array too small to represent the requested number of bits");
+        bits = numBits;
+        vector = rawData.clone();
+    }
+
+
+    public BitVector(int numberOfBits) {
+        bits = numberOfBits;
+        vector = new byte[numberOfBits / 8 + (numberOfBits % 8 != 0 ? 1 : 0)];
+    }
+
+    public static int unionAndCount(BitVector... vectors) {
+        if (vectors.length == 0)
+            return 0;
+
+        int c = 0;
+        int bits = vectors[0].size();
+        byte union = 0;
+        for (int i = 0; i < bits; i++) {
+            if (i % 8 == 0) {
+                int idx = i / 8;
+                union = (byte) 0x00;
+                for (BitVector v : vectors)
+                    union |= v.vector[idx];
+            }
+            if ((union & (0x01 << i % 8)) != 0)
+                c++;
+        }
+
+        return c;
+    }
+
+    public static int intersectAndCount(BitVector... vectors) {
+        int c = 0;
+        int bits = vectors[0].size();
+        byte intersection = 0;
+        for (int i = 0; i < bits; i++) {
+            if (i % 8 == 0) {
+                int idx = i / 8;
+                intersection = (byte) 0xFF;
+                for (BitVector v : vectors)
+                    intersection &= v.vector[idx];
+            }
+            if ((intersection & (0x01 << i % 8)) != 0)
+                c++;
+        }
+
+        return c;
+    }
+
+    public static void main(String[] args) {
+        BitVector bv = new BitVector(40, new byte[]{(byte) 0xF0, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF});
+        System.out.println(bv.rangeToInt(7, 2));
+    }
+
+    public void set(int n) {
+        vector[n / 8] |= 0x01 << n % 8;
+    }
+
+    public boolean get(int n) {
+        return (vector[n / 8] & 0x01 << n % 8) != 0;
+    }
+
+    /**
+     * reads an arbitrary (even non-aligned) range of bits (up to 32) and interprets them as int (bigendian)
+     */
+    private int rangeToInt(int bitOffset, int numOfBits) {
+        ByteBuffer vec = ByteBuffer.wrap(this.vector);
+        int offset = Math.min(this.vector.length - 9, bitOffset / 8);
+        int tailOffset = (bitOffset / 8) - offset;
+        long l = vec.getLong(offset);
+
+        l <<= bitOffset % 8 + tailOffset * 8;
+        l >>>= 64 - numOfBits;
+
+        return (int) l;
+    }
+
+    private int size() {
+        return bits;
+    }
+
+    public void clear() {
+        Arrays.fill(vector, (byte) 0);
+    }
+
+    public int bitcount() {
+        int c = 0;
+        for (int i = 0; i < bits; i++) {
+            if ((vector[i / 8] & (0x01 << i % 8)) != 0)
+                c++;
+        }
+
+        return c;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder b = new StringBuilder(2 * bits / 8);
+        for (int i = 0; i < vector.length; i++) {
+            if (i % 4 == 0 && i > 0) {
+                b.append(' ');
+            }
+            int nibble = (vector[i] & 0xF0) >> 4;
+            b.append((char) (nibble < 0x0A ? '0' + nibble : 'A' + nibble - 10));
+            nibble = vector[i] & 0x0F;
+            b.append((char) (nibble < 0x0A ? '0' + nibble : 'A' + nibble - 10));
+        }
+        return b.toString();
+    }
+
+    public byte[] getSerializedFormat() {
+        return vector.clone();
+    }
+
+    public ByteBuffer toBuffer() {
+        return ByteBuffer.wrap(vector).asReadOnlyBuffer();
+    }
+
+}
