@@ -100,12 +100,8 @@ of the changed settings are, to protect your privacy at least a bit.
 ```
 public static void setIncognitoMode(@NonNull WebView webView, boolean incognito) {
      if (!incognito) {
-        webView.getSettings().setUserAgentString("Mozilla/5.0 (Linux; Android " +
-                Build.VERSION.RELEASE + ")");
         webView.getSettings().setJavaScriptEnabled(true);
-
      } else {
-        webView.getSettings().setUserAgentString("Mozilla/5.0 (Linux; Android)");
         webView.getSettings().setJavaScriptEnabled(false);
      }
 }
