@@ -93,8 +93,7 @@ Background information **https://www.youtube.com/watch?v=fx6MyPeMLEM&t=1355s**
 
 ### Incognito Mode
 In **incognito** mode, the **Tor** service is active. Moreover **javascript** will be
-disabled and the user agent of the browser client will be slightly changed. The purpose
-of the changed settings are, to protect your privacy at least a bit. 
+disabled. The purpose of the changed settings is, to protect your privacy at least a bit. 
 (Key words are **Device and Browser Fingerprint**)
 
 ```
