@@ -2,15 +2,16 @@ package threads.thor.bt.kad;
 
 import androidx.annotation.NonNull;
 
-import java.lang.reflect.InvocationTargetException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.zip.CRC32;
 import java.util.zip.Checksum;
 
+import threads.LogUtils;
 import threads.thor.bt.utils.ExponentialWeightendMovingAverage;
 
 import static threads.thor.bt.bencode.Utils.prettyPrint;
@@ -24,18 +25,10 @@ import static threads.thor.bt.bencode.Utils.prettyPrint;
 public class KBucketEntry {
 
     /**
-     * ascending order for last seen, i.e. the last value will be the least recently seen one
-     */
-    public static final Comparator<KBucketEntry> LAST_SEEN_ORDER = Comparator.comparingLong(KBucketEntry::getLastSeen);
-    /**
-     * same order as the Key class, based on the Entrie's nodeID
-     */
-    public static final Comparator<KBucketEntry> KEY_ORDER = Comparator.comparing(KBucketEntry::getID);
-    /**
      * ascending order for timeCreated, i.e. the first value will be the oldest
      */
     static final Comparator<KBucketEntry> AGE_ORDER = Comparator.comparingLong(KBucketEntry::getCreationTime);
-    private static final Class<? extends Checksum> crc32c;
+    private final static String TAG = KBucketEntry.class.getSimpleName();
     // 5 timeouts, used for exponential backoff as per kademlia paper
     private static final int MAX_TIMEOUTS = 5;
     // haven't seen it for a long time + timeout == evict sooner than pure timeout based threshold. e.g. for old entries that we haven't touched for a long time
@@ -44,17 +37,6 @@ public class KBucketEntry {
     private static final int OLD_AND_STALE_TIMEOUTS = 2;
     private static final double RTT_EMA_WEIGHT = 0.3;
 
-    static {
-        Class<? extends Checksum> clazz = null;
-
-        try {
-            clazz = (Class<? extends Checksum>) Class.forName("java.util.zip.CRC32C");
-        } catch (ClassNotFoundException e) {
-            // not java 9, do nothing
-        }
-
-        crc32c = clazz;
-    }
 
     private final InetSocketAddress addr;
     private final Key nodeID;
@@ -177,13 +159,6 @@ public class KBucketEntry {
         return timeCreated;
     }
 
-    /**
-     * @return the failedQueries
-     */
-    public int getFailedQueries() {
-        return failedQueries;
-    }
-
     @NonNull
     @Override
     public String toString() {
@@ -230,27 +205,10 @@ public class KBucketEntry {
         return Math.abs(failedQueries);
     }
 
-    public long lastSendTime() {
-        return lastSendTime;
-    }
-
     private boolean withinBackoffWindow(long now) {
         int backoff = PING_BACKOFF_BASE_INTERVAL << Math.min(MAX_TIMEOUTS, Math.max(0, failedQueries() - 1));
 
         return failedQueries != 0 && now - lastSendTime < backoff;
-    }
-
-    public long backoffWindowEnd() {
-        if (failedQueries == 0 || lastSendTime <= 0)
-            return -1L;
-
-        int backoff = PING_BACKOFF_BASE_INTERVAL << Math.min(MAX_TIMEOUTS, Math.max(0, failedQueries() - 1));
-
-        return lastSendTime + backoff;
-    }
-
-    public boolean withinBackoffWindow() {
-        return withinBackoffWindow(System.currentTimeMillis());
     }
 
     public boolean needsPing() {
@@ -327,10 +285,10 @@ public class KBucketEntry {
     }
 
     public boolean hasSecureID() {
-        if (crc32c == null)
-            return false;
+
         try {
-            Checksum c = crc32c.getConstructor().newInstance();
+
+            Checksum c = CRC32.class.newInstance();
 
             byte[] ip = getAddress().getAddress().getAddress();
 
@@ -377,8 +335,8 @@ public class KBucketEntry {
 			node_id[19] = rand;
 			*/
 
-        } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException e) {
-            e.printStackTrace();
+        } catch (Throwable e) {
+            LogUtils.error(TAG, e);
             return false;
         }
     }

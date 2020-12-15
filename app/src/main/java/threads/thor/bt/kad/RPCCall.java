@@ -9,6 +9,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
+import threads.LogUtils;
 import threads.thor.BuildConfig;
 import threads.thor.bt.kad.messages.MessageBase;
 import threads.thor.bt.kad.messages.MessageBase.Method;
@@ -17,7 +18,7 @@ import threads.thor.bt.kad.messages.MessageBase.Method;
  * @author Damokles
  */
 public class RPCCall {
-
+    private static final String TAG = RPCCall.class.getSimpleName();
     private final List<RPCCallListener> listeners = new ArrayList<>(3);
     private final MessageBase reqMsg;
     private long sentTime = -1;
@@ -97,7 +98,7 @@ public class RPCCall {
                 stateTransition(EnumSet.of(RPCState.SENT, RPCState.STALLED), RPCState.RESPONDED);
                 break;
             case ERR_MSG:
-                DHT.logError("received non-response [" + rsp + "] in response to request: " + reqMsg.toString());
+                LogUtils.error(TAG, "received non-response [" + rsp + "] in response to request: " + reqMsg.toString());
                 stateTransition(EnumSet.of(RPCState.SENT, RPCState.STALLED), RPCState.ERROR);
                 break;
             default:

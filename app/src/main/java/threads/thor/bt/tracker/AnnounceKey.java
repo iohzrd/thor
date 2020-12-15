@@ -55,11 +55,6 @@ public class AnnounceKey {
         this.trackerUrls = Collections.unmodifiableList(trackerUrls);
     }
 
-    public AnnounceKey(String trackerUrl, List<List<String>> trackerUrls) {
-        this.trackerUrl = trackerUrl;
-        this.trackerUrls = Collections.unmodifiableList(trackerUrls);
-    }
-
     /**
      * @return true if this announce key supports multi-trackers
      * @since 1.0

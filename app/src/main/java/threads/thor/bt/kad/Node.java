@@ -26,12 +26,11 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import threads.thor.BuildConfig;
-import threads.thor.bt.DHTConfiguration;
 import threads.thor.bt.kad.messages.MessageBase;
 import threads.thor.bt.kad.messages.MessageBase.Type;
 import threads.thor.bt.kad.tasks.PingRefreshTask;
 import threads.thor.bt.kad.tasks.Task;
-import threads.thor.bt.kad.utils.AddressUtils;
+import threads.thor.bt.net.PeerId;
 import threads.thor.bt.utils.CowSet;
 import threads.thor.bt.utils.NetMask;
 import threads.thor.bt.utils.Pair;
@@ -251,8 +250,6 @@ public class Node {
         if (usedIDs.contains(toInsert.getID()))
             return;
 
-        if (!dht.getConfig().noRouterBootstrap() && AddressUtils.isBogon(toInsert.getAddress()))
-            return;
 
         if (!dht.getType().canUseSocketAddress(toInsert.getAddress()))
             throw new IllegalArgumentException("attempting to insert " + toInsert +
@@ -662,8 +659,8 @@ public class Node {
     }
 
 
-    void initKey(@NonNull DHTConfiguration config) {
-        baseKey = new Key(config.getLocalPeerId().getBytes());
+    void initKey(@NonNull PeerId peerId) {
+        baseKey = new Key(peerId.getBytes());
     }
 
     public int getNumEntriesInRoutingTable() {

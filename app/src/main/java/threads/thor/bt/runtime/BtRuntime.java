@@ -221,8 +221,7 @@ public class BtRuntime {
 
         HandshakeFactory handshakeFactory = new HandshakeFactory(mPeerRegistry);
 
-        DHTHandshakeHandler dHTHandshakeHandler = new DHTHandshakeHandler(mConfig);
-        boundHandshakeHandlers.add(dHTHandshakeHandler);
+
 
         ExtendedHandshakeFactory extendedHandshakeFactory = new ExtendedHandshakeFactory(
                 mTorrentRegistry,
@@ -281,6 +280,8 @@ public class BtRuntime {
 
         MldhtService mMldhtService = new MldhtService(mRuntimeLifecycleBinder, mConfig,
                 portMappers, mTorrentRegistry, mEventBus);
+        DHTHandshakeHandler dHTHandshakeHandler = new DHTHandshakeHandler(mMldhtService.getPort());
+        boundHandshakeHandlers.add(dHTHandshakeHandler);
 
         DHTPeerSourceFactory mDHTPeerSourceFactory =
                 new DHTPeerSourceFactory(mRuntimeLifecycleBinder, mMldhtService);

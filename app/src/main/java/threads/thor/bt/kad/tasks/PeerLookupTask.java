@@ -28,7 +28,6 @@ import threads.thor.bt.kad.messages.GetPeersRequest;
 import threads.thor.bt.kad.messages.GetPeersResponse;
 import threads.thor.bt.kad.messages.MessageBase;
 import threads.thor.bt.kad.messages.MessageBase.Method;
-import threads.thor.bt.kad.utils.AddressUtils;
 
 import static java.lang.Math.min;
 
@@ -89,10 +88,7 @@ public class PeerLookupTask extends IteratingTask {
 
         if (nodes != null) {
             nodes.entries().filter(e -> {
-                if (node.isLocalId(e.getID())) {
-                    return false;
-                }
-                return rpc.getDHT().getConfig().noRouterBootstrap() || !AddressUtils.isBogon(e.getAddress());
+                return !node.isLocalId(e.getID());
             }).forEach(returnedNodes::add);
         }
 
@@ -106,10 +102,9 @@ public class PeerLookupTask extends IteratingTask {
                 continue;
             PeerAddressDBItem it = (PeerAddressDBItem) item;
             // also add the items to the returned_items list
-            if (rpc.getDHT().getConfig().noRouterBootstrap() || !AddressUtils.isBogon(it)) {
-                resultHandler.accept(match, it);
-                returnedItems.add(it);
-            }
+
+            resultHandler.accept(match, it);
+            returnedItems.add(it);
 
 
         }

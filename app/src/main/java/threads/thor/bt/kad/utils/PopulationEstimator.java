@@ -3,7 +3,6 @@ package threads.thor.bt.kad.utils;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
@@ -176,7 +175,7 @@ public class PopulationEstimator {
 
         ArrayList<Key> found = new ArrayList<>(neighbors);
         //found.add(target);
-        Collections.sort(found, new Key.DistanceOrder(target));
+        found.sort(new Key.DistanceOrder(target));
 
         synchronized (PopulationEstimator.class) {
 

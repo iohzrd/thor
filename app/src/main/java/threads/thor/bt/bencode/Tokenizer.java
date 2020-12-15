@@ -37,9 +37,6 @@ public class Tokenizer {
         buf = null;
     }
 
-    TokenType current() {
-        return stack[stackIdx].type();
-    }
 
     private Token currentToken() {
         return stack[stackIdx];
@@ -120,10 +117,6 @@ public class Tokenizer {
         slice.limit(t.end - t.start);
         buf.position(oldPos);
         return slice;
-    }
-
-    public long lastDecodedNum() {
-        return lastDecodedNum;
     }
 
     int stackIdx() {

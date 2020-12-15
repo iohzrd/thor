@@ -5,7 +5,6 @@ import androidx.annotation.NonNull;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -137,7 +136,7 @@ public class KBucket {
                 }
 
                 if (unorderedInsert)
-                    Collections.sort(newEntries, KBucketEntry.AGE_ORDER);
+                    newEntries.sort(KBucketEntry.AGE_ORDER);
 
                 if (wasFull && added)
                     while (newEntries.size() > DHTConstants.MAX_ENTRIES_PER_BUCKET)

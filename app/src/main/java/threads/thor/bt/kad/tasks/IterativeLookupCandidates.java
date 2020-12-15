@@ -65,7 +65,7 @@ class IterativeLookupCandidates {
     private final Collection<Object> accepted;
     private final IDMismatchDetector detector;
     private final Map<KBucketEntry, LookupGraphNode> candidates;
-    private boolean allowRetransmits = true;
+    private final boolean allowRetransmits = true;
     private NonReachableCache nonReachableCache;
     private SpamThrottle throttle;
 
@@ -142,10 +142,6 @@ class IterativeLookupCandidates {
 
     void setSpamThrottle(SpamThrottle throttle) {
         this.throttle = throttle;
-    }
-
-    void allowRetransmits(boolean toggle) {
-        allowRetransmits = toggle;
     }
 
     void addCall(RPCCall c, KBucketEntry kbe) {
@@ -262,14 +258,6 @@ class IterativeLookupCandidates {
     LookupGraphNode nodeForEntry(KBucketEntry e) {
         return candidates.get(e);
 
-    }
-
-    int numCalls(KBucketEntry kbe) {
-        return (int) calls.entrySet().stream().filter(me -> me.getValue().equals(kbe)).count();
-    }
-
-    int numRsps(KBucketEntry kbe) {
-        return (int) calls.keySet().stream().filter(c -> c.state() == RPCState.RESPONDED && c.getResponse().getID().equals(kbe.getID()) && c.getResponse().getOrigin().equals(kbe.getAddress())).count();
     }
 
     static class LookupGraphNode {

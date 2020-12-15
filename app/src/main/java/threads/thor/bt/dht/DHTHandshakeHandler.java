@@ -22,7 +22,6 @@ import threads.thor.bt.net.HandshakeHandler;
 import threads.thor.bt.net.PeerConnection;
 import threads.thor.bt.protocol.Handshake;
 import threads.thor.bt.protocol.Port;
-import threads.thor.bt.runtime.Config;
 
 /**
  * @since 1.1
@@ -31,10 +30,10 @@ public class DHTHandshakeHandler implements HandshakeHandler {
 
     private static final int DHT_FLAG_BIT_INDEX = 63;
 
-    private final Config config;
+    private final int port;
 
-    public DHTHandshakeHandler(Config config) {
-        this.config = config;
+    public DHTHandshakeHandler(int port) {
+        this.port = port;
     }
 
     @Override
@@ -43,7 +42,7 @@ public class DHTHandshakeHandler implements HandshakeHandler {
         // upon receiving a handshake indicating DHT support
         if (peerHandshake.isReservedBitSet(DHT_FLAG_BIT_INDEX)) {
             try {
-                connection.postMessage(new Port(config.getListeningPort()));
+                connection.postMessage(new Port(port));
             } catch (IOException e) {
                 throw new RuntimeException("Failed to send port to peer: " + connection.getRemotePeer(), e);
             }

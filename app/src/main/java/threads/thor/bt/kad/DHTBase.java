@@ -2,7 +2,6 @@ package threads.thor.bt.kad;
 
 import java.net.SocketException;
 
-import threads.thor.bt.DHTConfiguration;
 import threads.thor.bt.kad.messages.AbstractLookupRequest;
 import threads.thor.bt.kad.messages.AnnounceRequest;
 import threads.thor.bt.kad.messages.ErrorMessage;
@@ -12,6 +11,7 @@ import threads.thor.bt.kad.messages.PingRequest;
 import threads.thor.bt.kad.tasks.AnnounceTask;
 import threads.thor.bt.kad.tasks.PeerLookupTask;
 import threads.thor.bt.kad.tasks.TaskManager;
+import threads.thor.bt.net.PeerId;
 
 /**
  * @author Damokles
@@ -20,7 +20,7 @@ interface DHTBase {
     /**
      * Start the DHT
      */
-    void start(DHTConfiguration config) throws SocketException;
+    void start(PeerId peerId, int port) throws SocketException;
 
     /**
      * Stop the DHT
@@ -30,7 +30,7 @@ interface DHTBase {
     /**
      * Update the DHT
      */
-    void update();
+    void update(int port);
 
     /**
      * Do an announce/scrape lookup on the DHT network
@@ -62,7 +62,7 @@ interface DHTBase {
      */
     void addDHTNode(String host, int hport);
 
-    void started();
+    void started(int port);
 
     void stopped();
 

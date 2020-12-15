@@ -52,9 +52,6 @@ public class Utils {
         return out;
     }
 
-    public static byte[] str2ary(String str) {
-        return str.getBytes(StandardCharsets.ISO_8859_1);
-    }
 
     public static String prettyPrint(Object o) {
         StringBuilder b = new StringBuilder(1024);
@@ -90,16 +87,6 @@ public class Utils {
             nibble = toHex[i] & 0x0F;
             builder.append((char) (nibble < 0x0A ? '0' + nibble : 'A' + nibble - 10));
         }
-    }
-
-
-    public static byte[] hex2ary(CharSequence hex) {
-        byte[] bytes = new byte[hex.length() / 2];
-
-        for (int i = 0; i < hex.length(); i += 2)
-            bytes[i / 2] = (byte) ((Character.digit(hex.charAt(i), 16) << 4) + Character.digit(hex.charAt(i + 1), 16));
-
-        return bytes;
     }
 
 

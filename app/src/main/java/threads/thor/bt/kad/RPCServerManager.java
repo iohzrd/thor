@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
@@ -23,14 +24,17 @@ import java.util.stream.Stream;
 
 import threads.thor.bt.kad.utils.AddressUtils;
 import threads.thor.bt.kad.utils.ThreadLocalUtils;
+import threads.thor.bt.service.NetworkUtil;
 
 public class RPCServerManager {
 
-    final DHT dht;
+    private final DHT dht;
     private final AtomicReference<CompletableFuture<RPCServer>> activeServerFuture = new AtomicReference<>(null);
     private final List<Consumer<RPCServer>> onServerRegistration = new CopyOnWriteArrayList<>();
     private final ConcurrentHashMap<InetAddress, RPCServer> interfacesInUse = new ConcurrentHashMap<>();
     private final SpamThrottle outgoingThrottle = new SpamThrottle();
+    private final ConcurrentMap<InetAddress, Boolean> couldUseCacheMap = new ConcurrentHashMap<>();
+    private final InetAddress localAddress = NetworkUtil.getInetAddressFromNetworkInterfaces();
     private boolean destroyed;
     private volatile List<InetAddress> validBindAddresses = Collections.emptyList();
     private volatile RPCServer[] activeServers = new RPCServer[0];
@@ -40,11 +44,11 @@ public class RPCServerManager {
         updateBindAddrs();
     }
 
-    void refresh(long now) {
+    void refresh(long now, int port) {
         if (destroyed)
             return;
 
-        startNewServers();
+        startNewServers(port);
 
         List<RPCServer> reachableServers = new ArrayList<>(interfacesInUse.values().size());
         for (RPCServer srv : interfacesInUse.values()) {
@@ -105,8 +109,24 @@ public class RPCServerManager {
 
     }
 
+    public Predicate<InetAddress> filterBindAddress() {
+        return address -> {
+            Boolean couldUse = couldUseCacheMap.get(address);
+            if (couldUse != null) {
+                return couldUse;
+            }
+
+            boolean bothAnyLocal = address.isAnyLocalAddress() && localAddress.isAnyLocalAddress();
+            couldUse = bothAnyLocal || localAddress.equals(address);
+
+            couldUseCacheMap.put(address, couldUse);
+            return couldUse;
+        };
+    }
+
+
     private Predicate<InetAddress> normalizedAddressPredicate() {
-        Predicate<InetAddress> pred = dht.config.filterBindAddress();
+        Predicate<InetAddress> pred = filterBindAddress();
         return (addr) -> {
             if (pred.test(AddressUtils.getAnyLocalAddress(addr.getClass()))) {
                 return true;
@@ -115,25 +135,12 @@ public class RPCServerManager {
         };
     }
 
-    private void startNewServers() {
-        boolean multihome = dht.config.allowMultiHoming();
+    private void startNewServers(int port) {
+
         Class<? extends InetAddress> addressType = dht.getType().PREFERRED_ADDRESS_TYPE;
 
         Predicate<InetAddress> addressFilter = normalizedAddressPredicate();
 
-
-        if (multihome) {
-            // we only consider global unicast addresses in multihoming mode
-            // this is mostly meant for server configurations
-            List<InetAddress> addrs = AddressUtils.getAvailableGloballyRoutableAddrs(addressType)
-                    .stream()
-                    .filter(addressFilter)
-                    .collect(Collectors.toCollection(ArrayList::new));
-            addrs.removeAll(interfacesInUse.keySet());
-            // create new servers for all IPs we aren't currently haven't bound
-            addrs.forEach(this::newServer);
-            return;
-        }
 
         // single home
         RPCServer current = interfacesInUse.values().stream().findAny().orElse(null);
@@ -146,7 +153,7 @@ public class RPCServerManager {
             InetAddress rebindAddress = current.getConsensusExternalAddress().getAddress();
             DHT.logInfo("rebinding any local to" + rebindAddress);
             current.stop();
-            newServer(rebindAddress);
+            newServer(rebindAddress, port);
             return;
         }
 
@@ -154,7 +161,7 @@ public class RPCServerManager {
         if (current != null && defaultBind != null && !current.getBindAddress().equals(defaultBind) && !current.isReachable() && current.age().getSeconds() > TimeUnit.MINUTES.toSeconds(2)) {
             DHT.logInfo("stopping currently unreachable " + current.getBindAddress() + "to bind to new default route" + defaultBind);
             current.stop();
-            newServer(defaultBind);
+            newServer(defaultBind, port);
             return;
         }
 
@@ -165,7 +172,7 @@ public class RPCServerManager {
         // this is our default strategy.
         if (defaultBind != null) {
             DHT.logInfo("selecting default route bind" + defaultBind);
-            newServer(defaultBind);
+            newServer(defaultBind, port);
             return;
         }
 
@@ -179,7 +186,7 @@ public class RPCServerManager {
                             .filter(addressFilter)
                             .orElse(null));
             if (addr != null) {
-                newServer(addr);
+                newServer(addr, port);
                 DHT.logInfo("Last resort address selection" + addr);
             }
             return;
@@ -192,12 +199,12 @@ public class RPCServerManager {
                 .findFirst()
                 .ifPresent(addr -> {
                     DHT.logInfo("last resort address selection " + addr);
-                    newServer(addr);
+                    newServer(addr, port);
                 });
     }
 
-    private void newServer(InetAddress addr) {
-        RPCServer srv = new RPCServer(this, addr, dht.config.getListeningPort(), dht.serverStats);
+    private void newServer(InetAddress addr, int port) {
+        RPCServer srv = new RPCServer(this, dht, addr, port);
         if (interfacesInUse.putIfAbsent(addr, srv) == null) {
             srv.setOutgoingThrottle(outgoingThrottle);
             onServerRegistration.forEach(c -> c.accept(srv));

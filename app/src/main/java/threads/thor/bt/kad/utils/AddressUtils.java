@@ -183,7 +183,7 @@ public class AddressUtils {
             e.printStackTrace();
         }
 
-        Collections.sort(addrs, (a, b) -> Arrays.compareUnsigned(a.getAddress(), b.getAddress()));
+        addrs.sort((a, b) -> Arrays.compareUnsigned(a.getAddress(), b.getAddress()));
 
 
         return addrs;

@@ -23,7 +23,7 @@ import threads.thor.bt.bencoding.model.rule.Rule;
 
 class BEStringModel extends BaseBEObjectModel {
 
-    BEStringModel(boolean binary, List<Rule> rules) {
+    BEStringModel(List<Rule> rules) {
         super(rules);
     }
 

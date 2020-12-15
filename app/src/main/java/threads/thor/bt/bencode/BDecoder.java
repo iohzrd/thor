@@ -32,10 +32,6 @@ public class BDecoder {
         throw new BDecodingException("expected dictionary as root object");
     }
 
-    public Object decodeAny(ByteBuffer buf) {
-        return decodeInternal(buf);
-    }
-
     private Object decodeInternal(ByteBuffer buf) {
         try {
             t.inputBuffer(buf);

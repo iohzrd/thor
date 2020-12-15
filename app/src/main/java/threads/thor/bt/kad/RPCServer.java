@@ -83,7 +83,6 @@ public class RPCServer {
     private final Queue<RPCCall> call_queue;
     private final Queue<EnqueuedSend> pipeline;
     private final int port;
-    private final RPCStats stats;
     // keeps track of RTT histogram for nodes not in our routing table
     private final ResponseTimeoutFilter timeoutFilter;
     private final Key derivedId;
@@ -93,9 +92,9 @@ public class RPCServer {
             = new ExponentialWeightendMovingAverage().setWeight(0.01).setValue(0.5);
     private final ExponentialWeightendMovingAverage verifiedEntryLossrate =
             new ExponentialWeightendMovingAverage().setWeight(0.01).setValue(0.5);
+    private final AtomicInteger numReceived = new AtomicInteger(0);
+    private final AtomicInteger numSent = new AtomicInteger(0);
     private State state = State.INITIAL;
-    private volatile int numReceived;
-    private volatile int numSent;
     private Instant startTime;
     private InetSocketAddress consensusExternalAddress;
     private SpamThrottle requestThrottle;
@@ -104,7 +103,7 @@ public class RPCServer {
 
         public void onTimeout(RPCCall c) {
             ByteWrapper w = new ByteWrapper(c.getRequest().getMTID());
-            stats.addTimeoutMessageToCount(c.getRequest());
+
             if (c.knownReachableAtCreationTime())
                 verifiedEntryLossrate.updateAverage(1.0);
             else
@@ -129,14 +128,14 @@ public class RPCServer {
     private long timeOfLastReceiveCountChange = 0;
 
 
-    public RPCServer(RPCServerManager manager, InetAddress addr, int port, RPCStats stats) {
+    public RPCServer(RPCServerManager manager, DHT dht, InetAddress addr, int port) {
         this.port = port;
-        this.dh_table = manager.dht;
+        this.dh_table = dht;
         timeoutFilter = new ResponseTimeoutFilter();
         pipeline = new ConcurrentLinkedQueue<>();
         calls = new ConcurrentHashMap<>(DHTConstants.MAX_ACTIVE_CALLS);
         call_queue = new ConcurrentLinkedQueue<>();
-        this.stats = stats;
+
         this.addr = addr;
         this.manager = manager;
         // reserve an ID
@@ -164,8 +163,7 @@ public class RPCServer {
             return null;
 
         InetAddress addr = ((DatagramChannel) chan).socket().getLocalAddress();
-        if (dh_table.getType().PREFERRED_ADDRESS_TYPE.isInstance(addr) &&
-                (dh_table.getConfig().noRouterBootstrap() || AddressUtils.isGlobalUnicast(addr)))
+        if (dh_table.getType().PREFERRED_ADDRESS_TYPE.isInstance(addr))
             return addr;
         return null;
     }
@@ -316,29 +314,23 @@ public class RPCServer {
      * @return the numReceived
      */
     int getNumReceived() {
-        return numReceived;
+        return numReceived.get();
     }
 
     /**
      * @return the numSent
      */
     int getNumSent() {
-        return numSent;
+        return numSent.get();
     }
 
-    /* (non-Javadoc)
-     * @see threads.thor.bt.kad.RPCServerBase#getStats()
-     */
-    public RPCStats getStats() {
-        return stats;
-    }
 
     void checkReachability(long now) {
         // don't do pings too often if we're not receiving anything (connection might be dead)
-        if (numReceived != numReceivesAtLastCheck) {
+        if (numReceived.get() != numReceivesAtLastCheck) {
             isReachable = true;
             timeOfLastReceiveCountChange = now;
-            numReceivesAtLastCheck = numReceived;
+            numReceivesAtLastCheck = numReceived.get();
         } else if (now - timeOfLastReceiveCountChange > DHTConstants.REACHABILITY_TIMEOUT) {
             isReachable = false;
             timeoutFilter.reset();
@@ -351,7 +343,7 @@ public class RPCServer {
 
     private void handlePacket(ByteBuffer p, SocketAddress soa) {
         InetSocketAddress source = (InetSocketAddress) soa;
-        int rawLength = p.remaining();
+        p.remaining();
 
         // ignore port 0, can't respond to them anyway and responses to requests from port 0 will be useless too
         if (source.getPort() == 0)
@@ -407,7 +399,6 @@ public class RPCServer {
             return;
 
 
-        stats.addReceivedMessageToCount(msg);
         msg.setOrigin(source);
         msg.setServer(this);
 
@@ -460,7 +451,10 @@ public class RPCServer {
             // indicates either port-mangling NAT, a multhomed host listening on any-local address or some kind of attack
             // -> ignore response
 
-            DHT.logError("mtid matched, socket address did not, ignoring message, request: " + c.getRequest().getDestination() + " -> response: " + msg.getOrigin() + " v:" + msg.getVersion().map(Utils::prettyPrint).orElse(""));
+            LogUtils.error(TAG,
+                    "mtid matched, socket address did not, ignoring message, request: "
+                            + c.getRequest().getDestination() + " -> response: " + msg.getOrigin()
+                            + " v:" + msg.getVersion().map(Utils::prettyPrint).orElse(""));
             if (msg.getType() != MessageBase.Type.ERR_MSG && dh_table.getType() == DHTtype.IPV6_DHT) {
                 // this is more likely due to incorrect binding implementation in ipv6. notify peers about that
                 // don't bother with ipv4, there are too many complications
@@ -522,13 +516,6 @@ public class RPCServer {
         return consensusExternalAddress;
     }
 
-    public Optional<InetAddress> getCombinedPublicAddress() {
-        InetAddress fromSocket = getPublicAddress();
-        if (fromSocket != null)
-            return Optional.of(fromSocket);
-        return Optional.ofNullable(getConsensusExternalAddress()).map(InetSocketAddress::getAddress);
-    }
-
     public void onDeclog(Runnable r) {
         awaitingDeclog.add(r);
     }
@@ -572,7 +559,9 @@ public class RPCServer {
 
         f.format("%s\tbind: %s consensus: %s%n", getDerivedID(), getBindAddress(), consensusExternalAddress);
         f.format("rx: %d tx: %d active: %d baseRTT: %d loss: %f  loss (verified): %f uptime: %s%n",
-                numReceived, numSent, getNumActiveRPCCalls(), timeoutFilter.getStallTimeout(), unverifiedLossrate.getAverage(), verifiedEntryLossrate.getAverage(), age());
+                numReceived.get(), numSent.get(),
+                getNumActiveRPCCalls(), timeoutFilter.getStallTimeout(),
+                unverifiedLossrate.getAverage(), verifiedEntryLossrate.getAverage(), age());
         f.format("RTT stats (%dsamples) %s", timeoutFilter.getSampleCount(), timeoutFilter.getCurrentStats());
 
         return f.toString();
@@ -675,8 +664,8 @@ public class RPCServer {
                 buf.flip();
 
                 dh_table.getScheduler().execute(() -> handlePacket(buf, soa));
-                numReceived++;
-                stats.addReceivedBytes(buf.limit() + dh_table.getType().HEADER_LENGTH);
+                numReceived.incrementAndGet();
+
             }
         }
 
@@ -721,10 +710,6 @@ public class RPCServer {
                             throttle.remove(es.toSend.getDestination().getAddress());
                         }
 
-
-                        stats.addSentMessageToCount(es.toSend);
-                        stats.addSentBytes(bytesSent + dh_table.getType().HEADER_LENGTH);
-
                     } catch (IOException e) {
                         // async close
                         if (!channel.isOpen())
@@ -746,7 +731,7 @@ public class RPCServer {
                         break;
                     }
 
-                    numSent++;
+                    numSent.incrementAndGet();
                 }
 
                 // release claim on the socket
@@ -822,30 +807,6 @@ public class RPCServer {
                 if (configuredRTT == -1) {
                     configuredRTT = timeoutFilter.getStallTimeout();
                 }
-
-// TODO: re-evaluate necessity
-//				/*
-//				use less aggressive stall timeouts when we observe a high percentage of RPC calls timeouts
-//				high loss rates may indicate congested links or saturated NAT
-//
-//				minimum thresholds based on measurements on a server-class nodes.
-//				average observed timeout rate
-//				- for non-verified contacts  ~50%
-//				- for verified contacts ~15%
-//
-//				 */
-//
-//				double adjustedLossrate = Math.max(0, unverifiedLossrate.getAverage() - 0.5) * 2.;
-//				double adjustedVerifiedLossrate = Math.max(0, verifiedEntryLossrate.getAverage() - 1./3.) * 3./2.;
-//
-//				double correctionFactor = Math.max(adjustedLossrate, adjustedVerifiedLossrate);
-//
-//
-//
-//				long diff = DHTConstants.RPC_CALL_TIMEOUT_MAX - configuredRTT;
-//
-//
-//				associatedCall.setExpectedRTT((long) (configuredRTT + diff * correctionFactor));
 
                 associatedCall.setExpectedRTT(configuredRTT);
             }

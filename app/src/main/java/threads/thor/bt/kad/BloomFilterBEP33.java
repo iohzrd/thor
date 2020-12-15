@@ -6,7 +6,6 @@ import java.net.InetAddress;
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Collection;
 
 import threads.thor.bt.kad.utils.BitVector;
 
@@ -30,20 +29,6 @@ public class BloomFilterBEP33 implements Comparable<BloomFilterBEP33>, Cloneable
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         }
-    }
-
-    public BloomFilterBEP33(byte[] serializedFilter) {
-        filter = new BitVector(m, serializedFilter);
-    }
-
-    static int unionSize(Collection<BloomFilterBEP33> filters) {
-        BitVector[] vectors = new BitVector[filters.size()];
-        int i = 0;
-        for (BloomFilterBEP33 f : filters)
-            vectors[i++] = f.filter;
-
-        double c = BitVector.unionAndCount(vectors);
-        return (int) (log1p(-c / m) / (k * logB()));
     }
 
     // the logarithm of the base used for various calculations
@@ -88,10 +73,6 @@ public class BloomFilterBEP33 implements Comparable<BloomFilterBEP33>, Cloneable
         double c = filter.bitcount();
         double size = log1p(-c / m) / (k * logB());
         return (int) size;
-    }
-
-    public byte[] serialize() {
-        return filter.getSerializedFormat();
     }
 
     public ByteBuffer toBuffer() {

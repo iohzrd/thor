@@ -8,17 +8,14 @@ import threads.thor.bt.net.PeerId;
 
 public class IdentityService {
 
-    private static final IdentityService INSTANCE = new IdentityService(new Version());
+
     private final byte[] peerId;
 
 
-    private IdentityService(@NonNull Version version) {
-        peerId = buildPeerId(buildVersionPrefix(version));
+    public IdentityService() {
+        peerId = buildPeerId(buildVersionPrefix(new Version()));
     }
 
-    public static IdentityService getINSTANCE() {
-        return INSTANCE;
-    }
 
     private byte[] buildVersionPrefix(Version version) {
 
@@ -56,38 +53,27 @@ public class IdentityService {
         return peerId;
     }
 
-    static class Version {
+    public static class Version {
 
         private final int major;
         private final int minor;
         private final boolean snapshot;
 
-        /**
-         * @since 1.0
-         */
         Version() {
             this.major = 0;
             this.minor = 5;
             this.snapshot = false;
         }
 
-        /**
-         * @since 1.0
-         */
+
         int getMajor() {
             return major;
         }
 
-        /**
-         * @since 1.0
-         */
         int getMinor() {
             return minor;
         }
 
-        /**
-         * @since 1.0
-         */
         boolean isSnapshot() {
             return snapshot;
         }

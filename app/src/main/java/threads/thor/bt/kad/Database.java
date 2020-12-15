@@ -13,7 +13,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Stream;
 
 import threads.thor.bt.kad.utils.ByteWrapper;
 import threads.thor.bt.kad.utils.ThreadLocalUtils;
@@ -311,10 +310,6 @@ public class Database {
             peers.expire();
         }
 
-        public ItemSet peers() {
-            return peers;
-        }
-
         int size() {
             return peers.size() + seeds.size();
         }
@@ -386,10 +381,6 @@ public class Database {
 
         int size() {
             return items.length;
-        }
-
-        public Stream<PeerAddressDBItem> stream() {
-            return Arrays.stream(items);
         }
 
         private void invalidateFilters() {

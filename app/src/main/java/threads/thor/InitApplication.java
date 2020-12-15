@@ -121,17 +121,17 @@ public class InitApplication extends Application {
         LogUtils.error(TAG, e);
     }
 
-    private boolean runTorShellCmd(File fileTor, File fileTorrc) throws Exception {
+    private boolean runTorShellCmd(File fileTor, File fileTorr) throws Exception {
         File appCacheHome = getDir(DIRECTORY_TOR_DATA, Application.MODE_PRIVATE);
 
-        if (!fileTorrc.exists()) {
-            logNotice("torrc not installed: " + fileTorrc.getCanonicalPath());
+        if (!fileTorr.exists()) {
+            logNotice("torr not installed: " + fileTorr.getCanonicalPath());
             return false;
         }
 
         String torCmdString = fileTor.getCanonicalPath()
                 + " DataDirectory " + appCacheHome.getCanonicalPath()
-                + " --defaults-torrc " + fileTorrc;
+                + " --defaults-torrc " + fileTorr;
 
 
         try {

@@ -14,24 +14,10 @@ public class BEncoder {
     private final static byte[] MIN_INT = str2buf(Integer.toString(Integer.MIN_VALUE)).array();
     private ByteBuffer buf;
 
-    public ByteBuffer encode(Map<String, Object> toEnc, int maxSize) {
-        buf = ByteBuffer.allocate(maxSize);
-        encodeMap(toEnc);
-        buf.flip();
-        return buf;
-    }
-
     public void encodeInto(Map<String, Object> toEnc, ByteBuffer target) {
         buf = target;
         encodeMap(toEnc);
         buf.flip();
-    }
-
-    public ByteBuffer encode(Object toEnc, int maxSize) {
-        buf = ByteBuffer.allocate(maxSize);
-        encodeInternal(toEnc);
-        buf.flip();
-        return buf;
     }
 
     private void encodeInternal(Object o) {

@@ -16,7 +16,7 @@ public class DHTStats {
 
     private DatabaseStats dbStats;
 
-    private RPCStats rpcStats;
+
 
     private Instant startedTimestamp;
 
@@ -118,19 +118,6 @@ public class DHTStats {
         this.dbStats = dbStats;
     }
 
-    /**
-     * @return the rpcStats
-     */
-    public RPCStats getRpcStats() {
-        return rpcStats;
-    }
-
-    /**
-     * @param rpcStats the rpcStats to set
-     */
-    void setRpcStats(RPCStats rpcStats) {
-        this.rpcStats = rpcStats;
-    }
 
     /**
      * @return the startedTimestamp
@@ -161,8 +148,6 @@ public class DHTStats {
                 "DB Items: " + dbStats.getItemCount() + '\n' +
                 "TX sum: " + numSentPackets + " RX sum: " + numReceivedPackets + '\n' +
                 "avg task time/avg 1st result time (ms): " + (int) avgFinishTime + '/' + (int) avgFirstResultTime + '\n' +
-                "Uptime: " + Duration.between(startedTimestamp, Instant.now()) + "s\n" +
-                "RPC stats\n" +
-                rpcStats.toString();
+                "Uptime: " + Duration.between(startedTimestamp, Instant.now()) + "s\n";
     }
 }

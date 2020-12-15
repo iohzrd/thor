@@ -41,7 +41,22 @@ public abstract class Task implements Comparable<Task> {
     static final String TAG = Task.class.getSimpleName();
     final AtomicReference<TaskStats> counts = new AtomicReference<>(new TaskStats());
     final AtomicReference<TaskState> state = new AtomicReference<>(TaskState.INITIAL);
-    protected CandidateSupplier candidates;
+    private final RPCCallListener postProcessingListener = new RPCCallListener() {
+        public void stateTransition(RPCCall c, RPCState previous, RPCState current) {
+
+            switch (current) {
+                case RESPONDED:
+                case TIMEOUT:
+                case STALLED:
+                case ERROR:
+                    serializedUpdate.run();
+                    break;
+                default:
+                    break;
+            }
+
+        }
+    };
     Node node;
     Set<RPCCall> inFlight;
     private final RPCCallListener preProcessingListener = new RPCCallListener() {
@@ -98,22 +113,6 @@ public abstract class Task implements Comparable<Task> {
     private List<TaskListener> listeners;
     private long finishTime;
     private final Runnable serializedUpdate = SerializedTaskExecutor.onceMore(this::runStuff);
-    private final RPCCallListener postProcessingListener = new RPCCallListener() {
-        public void stateTransition(RPCCall c, RPCState previous, RPCState current) {
-
-            switch (current) {
-                case RESPONDED:
-                case TIMEOUT:
-                case STALLED:
-                case ERROR:
-                    serializedUpdate.run();
-                    break;
-                default:
-                    break;
-            }
-
-        }
-    };
     private boolean lowPriority;
 
     /**

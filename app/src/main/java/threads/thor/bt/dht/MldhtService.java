@@ -19,20 +19,18 @@ package threads.thor.bt.dht;
 
 import androidx.annotation.NonNull;
 
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.InetAddress;
+import java.net.ServerSocket;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.function.Predicate;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Stream;
 
 import threads.LogUtils;
 import threads.thor.bt.BtException;
-import threads.thor.bt.DHTConfiguration;
 import threads.thor.bt.data.DataDescriptor;
 import threads.thor.bt.event.EventSource;
 import threads.thor.bt.kad.DHT;
@@ -49,9 +47,9 @@ import threads.thor.bt.net.PeerId;
 import threads.thor.bt.net.portmapping.PortMapper;
 import threads.thor.bt.runtime.Config;
 import threads.thor.bt.service.LifecycleBinding;
+import threads.thor.bt.service.NetworkUtil;
 import threads.thor.bt.service.RuntimeLifecycleBinder;
 import threads.thor.bt.torrent.TorrentRegistry;
-import threads.thor.bt.utils.NetMask;
 
 import static threads.thor.bt.net.portmapping.PortMapProtocol.UDP;
 
@@ -59,11 +57,10 @@ public class MldhtService implements DHTService {
     private static final String TAG = MldhtService.class.getSimpleName();
 
 
-    private final Config config;
-    private final DHTConfiguration dhtConfig;
     private final DHT dht;
-    private final InetAddress localAddress;
-    private final boolean useRouterBootstrap;
+    private final int port;
+    private final int acceptorPort;
+    private final PeerId peerId;
     private final Collection<InetPeerAddress> publicBootstrapNodes;
     private final Collection<InetPeerAddress> bootstrapNodes;
     private final Set<PortMapper> portMappers;
@@ -75,75 +72,49 @@ public class MldhtService implements DHTService {
                         @NonNull TorrentRegistry torrentRegistry,
                         @NonNull EventSource eventSource) {
         this.dht = new DHT(config.shouldUseIPv6() ? DHTtype.IPV6_DHT : DHTtype.IPV4_DHT);
-        this.config = config;
-        this.dhtConfig = toMldhtConfig(config);
-        this.localAddress = config.getAcceptorAddress();
-        this.useRouterBootstrap = config.shouldUseRouterBootstrap();
+        this.acceptorPort = config.getAcceptorPort();
         this.publicBootstrapNodes = config.getPublicBootstrapNodes();
         this.bootstrapNodes = config.getBootstrapNodes();
         this.portMappers = portMappers;
         this.torrentRegistry = torrentRegistry;
 
         eventSource.onTorrentStarted(e -> onTorrentStarted(e.getTorrentId()));
+        this.peerId = config.getLocalPeerId();
+        this.port = nextFreePort();
 
         lifecycleBinder.onStartup(LifecycleBinding.bind(this::start).description("Initialize DHT facilities").async().build());
         lifecycleBinder.onShutdown("Shutdown DHT facilities", this::shutdown);
     }
 
-    @NonNull
-    private DHTConfiguration toMldhtConfig(@NonNull Config dhtConfig) {
-        return new DHTConfiguration() {
-            private final ConcurrentMap<InetAddress, Boolean> couldUseCacheMap = new ConcurrentHashMap<>();
-
-            @NonNull
-            @Override
-            public PeerId getLocalPeerId() {
-                return dhtConfig.getLocalPeerId();
+    public static int nextFreePort() {
+        int port = ThreadLocalRandom.current().nextInt(10001, 65535);
+        while (true) {
+            if (isLocalPortFree(port)) {
+                return port;
+            } else {
+                port = ThreadLocalRandom.current().nextInt(10001, 65535);
             }
+        }
+    }
 
-            @Override
-            public int getListeningPort() {
-                return dhtConfig.getListeningPort();
-            }
+    private static boolean isLocalPortFree(int port) {
+        try {
+            new ServerSocket(port).close();
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
 
-            @Override
-            public boolean noRouterBootstrap() {
-                return true;
-            }
-
-            @Override
-            public boolean allowMultiHoming() {
-                return false;
-            }
-
-            @Override
-            public Predicate<InetAddress> filterBindAddress() {
-                return address -> {
-                    Boolean couldUse = couldUseCacheMap.get(address);
-                    if (couldUse != null) {
-                        return couldUse;
-                    }
-                    boolean bothAnyLocal = address.isAnyLocalAddress() && localAddress.isAnyLocalAddress();
-                    couldUse = bothAnyLocal || localAddress.equals(address);
-
-                    couldUseCacheMap.put(address, couldUse);
-                    return couldUse;
-                };
-            }
-        };
+    public int getPort() {
+        return port;
     }
 
     private void start() {
         if (!dht.isRunning()) {
             try {
-                dht.start(dhtConfig);
-                if (useRouterBootstrap) {
-                    publicBootstrapNodes.forEach(this::addNode);
-                } else {
-                    // assume that the environment is safe;
-                    // might make this configuration more intelligent in future
-                    dht.getNode().setTrustedNetMasks(Collections.singleton(NetMask.fromString("0.0.0.0/0")));
-                }
+                dht.start(peerId, port);
+                publicBootstrapNodes.forEach(this::addNode);
                 bootstrapNodes.forEach(this::addNode);
                 mapPorts();
 
@@ -154,21 +125,21 @@ public class MldhtService implements DHTService {
     }
 
     private void mapPorts() {
-        final int listeningPort = dhtConfig.getListeningPort();
 
         dht.getServerManager().getAllServers().forEach(s ->
                 portMappers.forEach(m -> {
                     final InetAddress bindAddress = s.getBindAddress();
-                    m.mapPort(listeningPort, bindAddress.toString(), UDP, "bt DHT");
+                    m.mapPort(port, bindAddress.toString(), UDP, "bt DHT");
                 }));
     }
 
     private void onTorrentStarted(TorrentId torrentId) {
+        InetAddress localAddress = NetworkUtil.getInetAddressFromNetworkInterfaces();
         torrentRegistry.getDescriptor(torrentId).ifPresent(td -> {
             DataDescriptor dd = td.getDataDescriptor();
             boolean seed = (dd != null) && (dd.getBitfield().getPiecesIncomplete() == 0);
             dht.getDatabase().store(new Key(torrentId.getBytes()),
-                    PeerAddressDBItem.createFromAddress(config.getAcceptorAddress(), config.getAcceptorPort(), seed));
+                    PeerAddressDBItem.createFromAddress(localAddress, acceptorPort, seed));
         });
     }
 
@@ -197,7 +168,7 @@ public class MldhtService implements DHTService {
                     torrentRegistry.getDescriptor(torrentId).ifPresent(td -> {
                         DataDescriptor dd = td.getDataDescriptor();
                         boolean seed = (dd != null) && (dd.getBitfield().getPiecesIncomplete() == 0);
-                        dht.announce(lookup, seed, config.getAcceptorPort());
+                        dht.announce(lookup, seed, acceptorPort);
                     });
                 }
             });

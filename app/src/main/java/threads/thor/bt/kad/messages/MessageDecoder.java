@@ -17,7 +17,6 @@ import threads.thor.bt.bencode.PathMatcher;
 import threads.thor.bt.bencode.Tokenizer;
 import threads.thor.bt.kad.BloomFilterBEP33;
 import threads.thor.bt.kad.DBItem;
-import threads.thor.bt.kad.DHT;
 import threads.thor.bt.kad.DHT.DHTtype;
 import threads.thor.bt.kad.Key;
 import threads.thor.bt.kad.NodeList;
@@ -292,7 +291,7 @@ public class MessageDecoder {
             InetSocketAddress addr = AddressUtils.unpackAddress(ip);
             msg.setPublicIP(addr);
             if (addr == null)
-                DHT.logError("could not decode IP: " + prettyPrint(map));
+                LogUtils.error(TAG, "could not decode IP: " + prettyPrint(map));
         }
 
         msg.setID(id);

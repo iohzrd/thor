@@ -56,10 +56,6 @@ public class AnnounceRequest extends AbstractLookupRequest {
         return inner;
     }
 
-    public Optional<ByteBuffer> getName() {
-        return Optional.ofNullable(name).map(ByteBuffer::asReadOnlyBuffer);
-    }
-
     public void setName(ByteBuffer name) {
         this.name = name;
     }

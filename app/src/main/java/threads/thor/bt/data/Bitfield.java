@@ -379,24 +379,6 @@ public class Bitfield {
     }
 
     /**
-     * Mark a piece as not skipped
-     *
-     * @since 1.7
-     */
-    public void unskip(int pieceIndex) {
-        validatePieceIndex(pieceIndex);
-
-        if (skipped != null) {
-            lock.lock();
-            try {
-                skipped.clear(pieceIndex);
-            } finally {
-                lock.unlock();
-            }
-        }
-    }
-
-    /**
      * Status of a particular piece.
      *
      * @since 1.0

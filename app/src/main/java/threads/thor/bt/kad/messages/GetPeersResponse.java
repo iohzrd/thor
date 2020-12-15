@@ -14,7 +14,6 @@ import threads.thor.bt.kad.DBItem;
 import threads.thor.bt.kad.DHT;
 import threads.thor.bt.kad.DHT.DHTtype;
 
-import static threads.thor.bt.bencode.Utils.buf2ary;
 
 /**
  * @author Damokles
@@ -61,17 +60,11 @@ public class GetPeersResponse extends AbstractLookupResponse {
     }
 
     public List<DBItem> getPeerItems() {
-        return items == null ? (List<DBItem>) Collections.EMPTY_LIST : Collections.unmodifiableList(items);
+        return items == null ? Collections.emptyList() : Collections.unmodifiableList(items);
     }
 
     public void setPeerItems(List<DBItem> items) {
         this.items = items;
-    }
-
-    public BloomFilterBEP33 getScrapeSeeds() {
-        if (scrapeSeeds != null)
-            return new BloomFilterBEP33(buf2ary(scrapeSeeds.duplicate()));
-        return null;
     }
 
     public void setScrapeSeeds(byte[] scrapeSeeds) {
@@ -82,16 +75,6 @@ public class GetPeersResponse extends AbstractLookupResponse {
         this.scrapeSeeds = scrapeSeeds != null ? scrapeSeeds.toBuffer() : null;
     }
 
-    public boolean hasScrapeResults() {
-        return this.scrapePeers != null || this.scrapeSeeds != null;
-    }
-
-
-    public BloomFilterBEP33 getScrapePeers() {
-        if (scrapePeers != null)
-            return new BloomFilterBEP33(buf2ary(scrapePeers.duplicate()));
-        return null;
-    }
 
     public void setScrapePeers(byte[] scrapePeers) {
         this.scrapePeers = Optional.ofNullable(scrapePeers).map(ByteBuffer::wrap).orElse(null);

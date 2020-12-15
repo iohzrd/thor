@@ -1,7 +1,6 @@
 package threads.thor.bt.kad.utils;
 
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 
 
 public final class BitVector {
@@ -49,29 +48,6 @@ public final class BitVector {
         return c;
     }
 
-    public static int intersectAndCount(BitVector... vectors) {
-        int c = 0;
-        int bits = vectors[0].size();
-        byte intersection = 0;
-        for (int i = 0; i < bits; i++) {
-            if (i % 8 == 0) {
-                int idx = i / 8;
-                intersection = (byte) 0xFF;
-                for (BitVector v : vectors)
-                    intersection &= v.vector[idx];
-            }
-            if ((intersection & (0x01 << i % 8)) != 0)
-                c++;
-        }
-
-        return c;
-    }
-
-    public static void main(String[] args) {
-        BitVector bv = new BitVector(40, new byte[]{(byte) 0xF0, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF});
-        System.out.println(bv.rangeToInt(7, 2));
-    }
-
     public void set(int n) {
         vector[n / 8] |= 0x01 << n % 8;
     }
@@ -80,27 +56,8 @@ public final class BitVector {
         return (vector[n / 8] & 0x01 << n % 8) != 0;
     }
 
-    /**
-     * reads an arbitrary (even non-aligned) range of bits (up to 32) and interprets them as int (bigendian)
-     */
-    private int rangeToInt(int bitOffset, int numOfBits) {
-        ByteBuffer vec = ByteBuffer.wrap(this.vector);
-        int offset = Math.min(this.vector.length - 9, bitOffset / 8);
-        int tailOffset = (bitOffset / 8) - offset;
-        long l = vec.getLong(offset);
-
-        l <<= bitOffset % 8 + tailOffset * 8;
-        l >>>= 64 - numOfBits;
-
-        return (int) l;
-    }
-
     private int size() {
         return bits;
-    }
-
-    public void clear() {
-        Arrays.fill(vector, (byte) 0);
     }
 
     public int bitcount() {

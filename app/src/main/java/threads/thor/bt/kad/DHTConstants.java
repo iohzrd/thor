@@ -3,28 +3,17 @@ package threads.thor.bt.kad;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 
-/**
- * @author Damokles
- */
 public class DHTConstants {
 
     public static final int MAX_ENTRIES_PER_BUCKET = 8;
     public static final int MAX_ACTIVE_TASKS = 7;
     public static final int MAX_ACTIVE_CALLS = 256;
-    public static final int MAX_PENDING_ENTRIES_PER_BUCKET = 5;
     public static final int MAX_CONCURRENT_REQUESTS = 10;
     public static final int MAX_CONCURRENT_REQUESTS_LOWPRIO = 3;
     public static final int RPC_CALL_TIMEOUT_MAX = 10 * 1000;
     public static final int RPC_CALL_TIMEOUT_BASELINE_MIN = 100; // ms
-    public static final int TASK_TIMEOUT = 2 * 60 * 1000;
-    // remain in survival mode after we've recieved new packets for this time
-    public static final int REACHABILITY_RECOVERY = 2 * 60 * 1000;
-    public static final long KBE_QUESTIONABLE_TIME = 15 * 60 * 1000;
-    public static final int KBE_BAD_IF_FAILED_QUERIES_LARGER_THAN = 2;
-    public static final int KBE_BAD_IMMEDIATLY_ON_FAILED_QUERIES = 8;
-    public static final int KBE_QUESTIONABLE_TIME_PING_MULTIPLIER = 4;
     public static final int BOOTSTRAP_IF_LESS_THAN_X_PEERS = 30;
-    public static final int DEFAULT_WANTED_NODE_RESPONSES_ON_NL = MAX_ENTRIES_PER_BUCKET * 4;
+
     static final int DHT_UPDATE_INTERVAL = 1000;
     static final int BUCKET_REFRESH_INTERVAL = 15 * 60 * 1000;
     static final int RECEIVE_BUFFER_SIZE = 5 * 1024;
@@ -49,19 +38,10 @@ public class DHTConstants {
             InetSocketAddress.createUnresolved("router.utorrent.com", 6881),
             InetSocketAddress.createUnresolved("router.silotis.us", 6881),
     };
-    private static String version = null;
 
-    static {
-        // 0.1.1
-        setVersion(11);
-    }
 
     public static String getVersion() {
-        return version;
-    }
-
-    private static void setVersion(int ver) {
-        version = "ml" + new String(new byte[]{(byte) (ver >> 8 & 0xFF), (byte) (ver & 0xff)}, StandardCharsets.ISO_8859_1);
+        return "ml" + new String(new byte[]{(byte) (11 >> 8 & 0xFF), (byte) (11 & 0xff)}, StandardCharsets.ISO_8859_1);
     }
 
 }

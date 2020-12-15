@@ -16,11 +16,6 @@
 
 package threads.thor.bt.bencoding;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.util.Objects;
-
 import threads.thor.bt.bencoding.model.BEInteger;
 import threads.thor.bt.bencoding.model.BEList;
 import threads.thor.bt.bencoding.model.BEMap;
@@ -42,34 +37,6 @@ public class BEParser implements AutoCloseable {
     private final BEType type;
     private final Scanner scanner;
     private Object parsedObject;
-
-    /**
-     * Create a parser for the provided URL's content.
-     *
-     * @param url URL's content must be a well-formed bencoded document.
-     * @since 1.0
-     */
-    public BEParser(URL url) {
-        Objects.requireNonNull(url, "Missing URL");
-        try {
-            this.scanner = new Scanner(url.openStream());
-        } catch (IOException e) {
-            throw new BtParseException("Failed to open stream for URL: " + url, new byte[0], e);
-        }
-        this.type = getTypeForPrefix((char) scanner.peek());
-    }
-
-    /**
-     * Create a parser for the provided binary input.
-     *
-     * @param in Input's content must be a well-formed bencoded document.
-     * @since 1.0
-     */
-    public BEParser(InputStream in) {
-        Objects.requireNonNull(in, "Input stream is null");
-        this.scanner = new Scanner(in);
-        this.type = getTypeForPrefix((char) scanner.peek());
-    }
 
     /**
      * Create a parser for the provided bencoded document.
