@@ -67,7 +67,7 @@ public class CreateSessionStage<C extends TorrentContext> extends TerminateOnErr
 
     @Override
     protected void doExecute(C context) {
-        TorrentId torrentId = context.getTorrentId().get();
+        TorrentId torrentId = context.getTorrentId();
         TorrentDescriptor descriptor = torrentRegistry.register(torrentId);
 
         MessageRouter router = new DefaultMessageRouter(messagingAgents);

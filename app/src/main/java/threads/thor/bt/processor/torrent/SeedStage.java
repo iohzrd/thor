@@ -35,7 +35,7 @@ public class SeedStage<C extends TorrentContext> extends TerminateOnErrorProcess
 
     @Override
     protected void doExecute(C context) {
-        TorrentDescriptor descriptor = getDescriptor(context.getTorrentId().get());
+        TorrentDescriptor descriptor = getDescriptor(context.getTorrentId());
 
         while (descriptor.isActive()) {
             try {

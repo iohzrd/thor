@@ -94,7 +94,7 @@ public class BtRuntime {
 
 
     private static final String TAG = BtRuntime.class.getSimpleName();
-    public final boolean mDownload;
+
     public final MessageDispatcher mMessageDispatcher;
     public final ConnectionSource mConnectionSource;
     public final PeerRegistry mPeerRegistry;
@@ -116,15 +116,13 @@ public class BtRuntime {
 
     public BtRuntime(@NonNull Context context,
                      @NonNull Config config,
-                     @NonNull EventBus eventBus,
-                     boolean download) {
+                     @NonNull EventBus eventBus) {
         Runtime.getRuntime().addShutdownHook(new Thread("bt.runtime.shutdown-manager") {
             @Override
             public void run() {
                 shutdown();
             }
         });
-        this.mDownload = download;
         this.mEventBus = eventBus;
         this.mRuntimeLifecycleBinder = new RuntimeLifecycleBinder();
         new PeerExchangePeerSourceFactory(

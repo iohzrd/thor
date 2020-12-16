@@ -15,19 +15,14 @@ import threads.thor.bt.service.NetworkUtil;
 public class Config {
 
     private final InetAddress acceptorAddress;
-    private int acceptorPort;
     private final Duration peerDiscoveryInterval;
     private final Duration peerHandshakeTimeout;
-
     private final Duration peerConnectionInactivityThreshold;
     private final Duration trackerQueryInterval;
     private final int maxPeerConnections;
     private final int maxPeerConnectionsPerTorrent;
     private final int transferBlockSize;
-
     private final int maxIOQueueSize;
-    private Duration shutdownHookTimeout;
-    private int numOfHashingThreads;
     private final int maxConcurrentlyActivePeerConnectionsPerTorrent;
     private final Duration maxPieceReceivingTime;
     private final Duration maxMessageProcessingInterval;
@@ -42,6 +37,9 @@ public class Config {
     private final int maxOutstandingRequests;
     private final int networkBufferSize;
     private final Collection<InetPeerAddress> publicBootstrapNodes;
+    private int acceptorPort;
+    private Duration shutdownHookTimeout;
+    private int numOfHashingThreads;
     private PeerId localPeerId;
 
 

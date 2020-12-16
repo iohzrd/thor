@@ -34,10 +34,8 @@ public class TorrentContextFinalizer<C extends TorrentContext> implements Contex
 
     @Override
     public void finalizeContext(C context) {
-        context.getTorrentId().ifPresent(torrentId -> {
-            torrentRegistry.getDescriptor(torrentId).ifPresent(TorrentDescriptor::stop);
-            eventSink.fireTorrentStopped(torrentId);
-        });
+        torrentRegistry.getDescriptor(context.getTorrentId()).ifPresent(TorrentDescriptor::stop);
+        eventSink.fireTorrentStopped(context.getTorrentId());
         context.getAnnouncer().ifPresent(TrackerAnnouncer::stop);
     }
 }

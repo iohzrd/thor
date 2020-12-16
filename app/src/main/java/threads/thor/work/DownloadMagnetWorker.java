@@ -162,7 +162,7 @@ public class DownloadMagnetWorker extends Worker {
                 ContentStorage storage = new ContentStorage(
                         getApplicationContext(), eventBus, rootDoc);
                 BtRuntime runtime = new BtRuntime(
-                        getApplicationContext(), config, eventBus, true);
+                        getApplicationContext(), config, eventBus);
 
                 BtClient client = Bt.client()
                         .runtime(runtime)

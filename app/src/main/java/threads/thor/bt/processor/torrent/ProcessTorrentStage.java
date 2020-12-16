@@ -47,7 +47,7 @@ public class ProcessTorrentStage<C extends TorrentContext> extends TerminateOnEr
 
     @Override
     protected void doExecute(C context) {
-        TorrentId torrentId = context.getTorrentId().get();
+        TorrentId torrentId = context.getTorrentId();
         TorrentDescriptor descriptor = getDescriptor(torrentId);
 
         Torrent torrent = context.getTorrent().get();
@@ -89,7 +89,8 @@ public class ProcessTorrentStage<C extends TorrentContext> extends TerminateOnEr
 
     private void complete(C context) {
         try {
-            context.getTorrentId().ifPresent(torrentId -> getDescriptor(torrentId).complete());
+            TorrentId id = context.getTorrentId();
+            getDescriptor(id).complete();
             onCompleted(context);
         } catch (Exception e) {
             LogUtils.error(LogUtils.TAG, e);

@@ -27,7 +27,6 @@ import threads.thor.bt.processor.ProcessingContext;
 import threads.thor.bt.torrent.PieceStatistics;
 import threads.thor.bt.torrent.TorrentSessionState;
 import threads.thor.bt.torrent.TrackerAnnouncer;
-import threads.thor.bt.torrent.fileselector.TorrentFileSelector;
 import threads.thor.bt.torrent.messaging.Assignments;
 import threads.thor.bt.torrent.messaging.MessageRouter;
 import threads.thor.bt.torrent.selector.PieceSelector;
@@ -40,7 +39,6 @@ import threads.thor.bt.torrent.selector.PieceSelector;
 public class TorrentContext implements ProcessingContext {
 
     private final PieceSelector pieceSelector;
-    private final Optional<TorrentFileSelector> fileSelector;
     private final Storage storage;
     private final Supplier<Torrent> torrentSupplier;
 
@@ -55,28 +53,18 @@ public class TorrentContext implements ProcessingContext {
     private volatile TrackerAnnouncer announcer;
 
     public TorrentContext(PieceSelector pieceSelector,
-                          TorrentFileSelector fileSelector,
                           Storage storage,
                           Supplier<Torrent> torrentSupplier) {
         this.pieceSelector = pieceSelector;
-        this.fileSelector = Optional.ofNullable(fileSelector);
         this.storage = storage;
         this.torrentSupplier = torrentSupplier;
     }
 
-    public TorrentContext(PieceSelector pieceSelector,
-                          Storage storage,
-                          Supplier<Torrent> torrentSupplier) {
-        this(pieceSelector, null, storage, torrentSupplier);
-    }
 
     public PieceSelector getPieceSelector() {
         return pieceSelector;
     }
 
-    public Optional<TorrentFileSelector> getFileSelector() {
-        return fileSelector;
-    }
 
     public Storage getStorage() {
         return storage;
@@ -87,8 +75,8 @@ public class TorrentContext implements ProcessingContext {
     }
 
     @Override
-    public Optional<TorrentId> getTorrentId() {
-        return Optional.ofNullable(torrentId);
+    public TorrentId getTorrentId() {
+        return torrentId;
     }
 
     public void setTorrentId(TorrentId torrentId) {

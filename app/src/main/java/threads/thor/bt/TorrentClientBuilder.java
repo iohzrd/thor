@@ -16,12 +16,10 @@
 
 package threads.thor.bt;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 import threads.thor.bt.data.Storage;
 import threads.thor.bt.magnet.MagnetUri;
@@ -32,22 +30,20 @@ import threads.thor.bt.processor.ProcessingStage;
 import threads.thor.bt.processor.listener.ListenerSource;
 import threads.thor.bt.processor.listener.ProcessingEvent;
 import threads.thor.bt.processor.magnet.MagnetContext;
-import threads.thor.bt.processor.torrent.TorrentContext;
 import threads.thor.bt.runtime.BtRuntime;
 import threads.thor.bt.torrent.fileselector.TorrentFileSelector;
 import threads.thor.bt.torrent.selector.PieceSelector;
 import threads.thor.bt.torrent.selector.RarestFirstSelector;
-import threads.thor.bt.torrent.selector.SequentialSelector;
+
 
 public class TorrentClientBuilder<B extends TorrentClientBuilder> extends BaseClientBuilder<B> {
 
     private Storage storage;
 
-    private Supplier<Torrent> torrentSupplier;
     private MagnetUri magnetUri;
 
     private TorrentFileSelector fileSelector;
-    private PieceSelector pieceSelector;
+    private final PieceSelector pieceSelector;
 
     private List<Consumer<Torrent>> torrentConsumers;
     private List<Runnable> fileSelectionListeners;
@@ -73,14 +69,6 @@ public class TorrentClientBuilder<B extends TorrentClientBuilder> extends BaseCl
         return (B) this;
     }
 
-
-    @SuppressWarnings("unchecked")
-    public B torrent(Supplier<Torrent> torrentSupplier) {
-        this.torrentSupplier = Objects.requireNonNull(torrentSupplier, "Missing threads.torrent supplier");
-        this.magnetUri = null;
-        return (B) this;
-    }
-
     /**
      * Set magnet URI in BEP-9 format
      *
@@ -90,132 +78,27 @@ public class TorrentClientBuilder<B extends TorrentClientBuilder> extends BaseCl
      */
     @SuppressWarnings("unchecked")
     public B magnet(String magnetUri) {
-        this.torrentSupplier = null;
         this.magnetUri = MagnetUriParser.lenientParser().parse(magnetUri);
         return (B) this;
     }
 
-    /**
-     * Set magnet URI
-     *
-     * @param magnetUri Magnet URI
-     * @see MagnetUriParser
-     * @since 1.4
-     */
-    @SuppressWarnings("unchecked")
+
     public B magnet(MagnetUri magnetUri) {
-        this.torrentSupplier = null;
         this.magnetUri = Objects.requireNonNull(magnetUri, "Missing magnet URI");
         return (B) this;
     }
 
-    /**
-     * Set piece selection strategy
-     *
-     * @since 1.4
-     */
-    @SuppressWarnings("unchecked")
-    private B selector(PieceSelector pieceSelector) {
-        this.pieceSelector = Objects.requireNonNull(pieceSelector, "Missing piece selector");
-        return (B) this;
-    }
 
-    /**
-     * Use sequential piece selection strategy
-     *
-     * @since 1.4
-     */
-    public B sequentialSelector() {
-        return selector(SequentialSelector.sequential());
-    }
-
-    /**
-     * Use rarest first piece selection strategy
-     *
-     * @since 1.4
-     */
-    public B rarestSelector() {
-        return selector(RarestFirstSelector.rarest());
-    }
-
-    /**
-     * Use rarest first piece selection strategy
-     *
-     * @since 1.4
-     */
-    public B randomizedRarestSelector() {
-        return selector(RarestFirstSelector.randomizedRarest());
-    }
-
-    /**
-     * Stop processing, when the data has been downloaded.
-     *
-     * @since 1.5
-     */
-    @SuppressWarnings("unchecked")
     public B stopWhenDownloaded() {
         this.stopWhenDownloaded = true;
         return (B) this;
     }
 
-    /**
-     * Provide a callback to invoke when threads.torrent's metadata has been fetched.
-     *
-     * @param torrentConsumer Callback to invoke when threads.torrent's metadata has been fetched
-     * @since 1.5
-     */
-    @SuppressWarnings("unchecked")
-    public B afterTorrentFetched(Consumer<Torrent> torrentConsumer) {
-        if (torrentConsumers == null) {
-            torrentConsumers = new ArrayList<>();
-        }
-        torrentConsumers.add(torrentConsumer);
-        return (B) this;
-    }
-
-    /**
-     * Provide a file selector for partial download of the threads.torrent.
-     *
-     * @param fileSelector A file selector for partial download of the threads.torrent.
-     * @since 1.7
-     */
-    @SuppressWarnings("unchecked")
-    public B fileSelector(TorrentFileSelector fileSelector) {
-        Objects.requireNonNull(fileSelector, "Missing file selector");
-        this.fileSelector = fileSelector;
-        return (B) this;
-    }
-
-    /**
-     * Provide a callback to invoke when the files have been chosen
-     *
-     * @param runnable Callback to invoke when the files have been chosen
-     * @since 1.7
-     */
-    @SuppressWarnings("unchecked")
-    public B afterFilesChosen(Runnable runnable) {
-        Objects.requireNonNull(runnable, "Missing callback");
-        if (fileSelectionListeners == null) {
-            fileSelectionListeners = new ArrayList<>();
-        }
-        fileSelectionListeners.add(runnable);
-        return (B) this;
-    }
 
     @Override
     protected ProcessingContext buildProcessingContext(BtRuntime runtime) {
         Objects.requireNonNull(storage, "Missing data storage");
-
-        ProcessingContext context;
-        if (torrentSupplier != null) {
-            context = new TorrentContext(pieceSelector, fileSelector, storage, torrentSupplier);
-        } else if (this.magnetUri != null) {
-            context = new MagnetContext(magnetUri, pieceSelector, fileSelector, storage);
-        } else {
-            throw new IllegalStateException("Missing threads.torrent supplier, threads.torrent URL or magnet URI");
-        }
-
-        return context;
+        return new MagnetContext(magnetUri, pieceSelector, storage);
     }
 
     @Override

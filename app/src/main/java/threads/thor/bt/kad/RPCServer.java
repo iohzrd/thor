@@ -57,9 +57,6 @@ import threads.thor.bt.utils.Selectable;
 import static threads.thor.bt.bencode.Utils.prettyPrint;
 import static threads.thor.bt.utils.Functional.typedGet;
 
-/**
- * @author The_8472, Damokles
- */
 public class RPCServer {
 
     private static final ThreadLocal<ByteBuffer> writeBuffer = ThreadLocal.withInitial(() -> ByteBuffer.allocateDirect(1500));
@@ -571,9 +568,6 @@ public class RPCServer {
         DatagramChannel channel;
         NIOConnectionManager connectionManager;
 
-        SocketHandler() {
-
-        }
 
         void start() {
             if (!writeState.compareAndSet(NOT_INITIALIZED, INITIALIZING)) {

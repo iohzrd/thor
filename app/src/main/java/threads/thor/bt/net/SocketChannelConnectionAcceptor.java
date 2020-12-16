@@ -20,9 +20,7 @@ package threads.thor.bt.net;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.NetworkInterface;
 import java.net.SocketAddress;
-import java.net.SocketException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
@@ -51,25 +49,6 @@ public class SocketChannelConnectionAcceptor implements PeerConnectionAcceptor {
         this.selector = selector;
         this.connectionFactory = connectionFactory;
         this.localAddress = localAddress;
-    }
-
-    /**
-     * @since 1.6
-     */
-    public InetSocketAddress getLocalAddress() {
-        return localAddress;
-    }
-
-    /**
-     * @since 1.6
-     */
-    public NetworkInterface getNetworkInterface() {
-        InetAddress address = localAddress.getAddress();
-        try {
-            return NetworkInterface.getByInetAddress(address);
-        } catch (SocketException e) {
-            throw new RuntimeException("Failed to get network interface for address: " + address, e);
-        }
     }
 
     @Override

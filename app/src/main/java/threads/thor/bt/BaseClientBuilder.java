@@ -23,7 +23,6 @@ import threads.thor.bt.processor.ProcessingContext;
 import threads.thor.bt.processor.Processor;
 import threads.thor.bt.processor.TorrentProcessorFactory;
 import threads.thor.bt.processor.listener.ListenerSource;
-import threads.thor.bt.processor.torrent.TorrentContext;
 import threads.thor.bt.runtime.BtClient;
 import threads.thor.bt.runtime.BtRuntime;
 
@@ -35,7 +34,7 @@ import threads.thor.bt.runtime.BtRuntime;
 public abstract class BaseClientBuilder<B extends BaseClientBuilder> {
 
     private BtRuntime runtime;
-    private boolean shouldInitEagerly;
+
 
     /**
      * @since 1.1
@@ -61,7 +60,7 @@ public abstract class BaseClientBuilder<B extends BaseClientBuilder> {
     public BtClient build() {
         Objects.requireNonNull(runtime, "Missing runtime");
         Supplier<BtClient> clientSupplier = () -> buildClient(runtime, buildProcessingContext(runtime));
-        return shouldInitEagerly ? clientSupplier.get() : new LazyClient(clientSupplier);
+        return new LazyClient(clientSupplier);
     }
 
     /**
@@ -70,13 +69,11 @@ public abstract class BaseClientBuilder<B extends BaseClientBuilder> {
     protected abstract ProcessingContext buildProcessingContext(BtRuntime runtime);
 
     private <C extends ProcessingContext> BtClient buildClient(BtRuntime runtime, C context) {
-        @SuppressWarnings("unchecked")
-        Class<C> contextType = (Class<C>) context.getClass();
 
         ListenerSource<C> listenerSource = new ListenerSource<>();
         collectStageListeners(listenerSource);
 
-        return new DefaultClient<>(runtime, processor(runtime, contextType), context, listenerSource);
+        return new DefaultClient<>(runtime, processor(runtime), context, listenerSource);
     }
 
     /**
@@ -84,14 +81,8 @@ public abstract class BaseClientBuilder<B extends BaseClientBuilder> {
      */
     protected abstract <C extends ProcessingContext> void collectStageListeners(ListenerSource<C> listenerSource);
 
-    private <C extends ProcessingContext> Processor<C> processor(BtRuntime runtime, Class<C> contextType) {
+    private <C extends ProcessingContext> Processor processor(BtRuntime runtime) {
 
-        Processor processor;
-        if (Objects.equals(contextType.getCanonicalName(), TorrentContext.class.getCanonicalName())) {
-            processor = TorrentProcessorFactory.createTorrentProcessor(runtime);
-        } else {
-            processor = TorrentProcessorFactory.createMagnetProcessor(runtime);
-        }
-        return processor;
+        return (Processor) TorrentProcessorFactory.createMagnetProcessor(runtime);
     }
 }
