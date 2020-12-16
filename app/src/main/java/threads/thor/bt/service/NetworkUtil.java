@@ -40,8 +40,13 @@ public class NetworkUtil {
             while (networkInterfaces.hasMoreElements()) {
                 NetworkInterface networkInterface = networkInterfaces.nextElement();
                 for (InterfaceAddress address : networkInterface.getInterfaceAddresses()) {
-                    if (address.getAddress() instanceof Inet6Address) {
-                        return true;
+                    InetAddress ia = address.getAddress();
+                    if (ia instanceof Inet6Address) {
+                        if (!ia.isLinkLocalAddress() &&
+                                !ia.isLoopbackAddress() &&
+                                !ia.isSiteLocalAddress()) {
+                            return true;
+                        }
                     }
                 }
             }
