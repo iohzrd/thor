@@ -34,7 +34,7 @@ public class GenericStorage {
 
     UpdateResult putOrUpdate(Key k, StorageItem newItem, long expected) {
 
-        if (newItem.mutable() && !newItem.validateSig())
+        if (newItem.mutable())
             return UpdateResult.SIG_FAIL;
 
         while (true) {
@@ -81,7 +81,7 @@ public class GenericStorage {
     static class StorageItem {
 
         final byte[] pubkey;
-        final byte[] salt;
+
         final byte[] value;
         final long expirationDate;
         long sequenceNumber = -1;
@@ -95,11 +95,9 @@ public class GenericStorage {
             if (req.getPubkey() != null) {
                 sequenceNumber = req.getSequenceNumber();
                 signature = req.getSignature();
-                salt = req.getSalt();
                 pubkey = req.getPubkey();
             } else {
                 pubkey = null;
-                salt = null;
             }
         }
 
@@ -108,9 +106,6 @@ public class GenericStorage {
             return pubkey != null;
         }
 
-        boolean validateSig() {
-            return false;
-        }
 
     }
 

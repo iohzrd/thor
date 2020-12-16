@@ -30,12 +30,6 @@ import static threads.thor.bt.kad.tasks.CountedStat.SENT;
 import static threads.thor.bt.kad.tasks.CountedStat.SENT_SINCE_RECEIVE;
 import static threads.thor.bt.kad.tasks.CountedStat.STALLED;
 
-/**
- * Performs a task on K nodes provided by a KClosestNodesSearch.
- * This is a base class for all tasks.
- *
- * @author Damokles
- */
 public abstract class Task implements Comparable<Task> {
     static final String TAG = Task.class.getSimpleName();
     protected final AtomicReference<TaskStats> counts = new AtomicReference<>(new TaskStats());
@@ -112,7 +106,7 @@ public abstract class Task implements Comparable<Task> {
 
         }
     };
-    private boolean lowPriority;
+    //private boolean lowPriority;
 
     /**
      * Create a task.
@@ -212,6 +206,7 @@ public abstract class Task implements Comparable<Task> {
      * @param req THe request to send
      * @return true if call was made, false if not
      */
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     boolean rpcCall(MessageBase req, Key expectedID, Consumer<RPCCall> modifyCallBeforeSubmit) {
         if (!canDoRequest()) {
             // if we reject a request we need something to wakeup the task later
@@ -240,15 +235,11 @@ public abstract class Task implements Comparable<Task> {
     }
 
 
-    public int requestConcurrency() {
-        return lowPriority ? DHTConstants.MAX_CONCURRENT_REQUESTS_LOWPRIO : DHTConstants.MAX_CONCURRENT_REQUESTS;
-    }
-
     RequestPermit checkFreeSlot() {
         TaskStats stats = counts.get();
         int activeOnly = stats.activeOnly();
         int activeAndStalled = stats.unanswered();
-        int concurrency = requestConcurrency();
+        int concurrency = DHTConstants.MAX_CONCURRENT_REQUESTS;
 
         // based on measurements the expected loss rate is ~50% on average (see RPCServer)
         // if we exceed that (+margin) don't let stalls trigger additional requests, wait for new responses/full timeouts
@@ -301,36 +292,10 @@ public abstract class Task implements Comparable<Task> {
     abstract public int getTodoCount();
 
     /**
-     * @return the info
-     */
-    public String getInfo() {
-        return info;
-    }
-
-    /**
      * @param info the info to set
      */
     public void setInfo(String info) {
         this.info = info;
-    }
-
-    public long getStartTime() {
-        return startTime;
-    }
-
-    public long getFinishedTime() {
-        return finishTime;
-    }
-
-    public long getFirstResultTime() {
-        return firstResultTime;
-    }
-
-    /**
-     * @return number of requests that this task is actively waiting for
-     */
-    int getNumOutstandingRequestsExcludingStalled() {
-        return counts.get().activeOnly();
     }
 
     /**

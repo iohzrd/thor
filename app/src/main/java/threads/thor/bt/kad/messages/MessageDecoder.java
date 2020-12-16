@@ -84,7 +84,7 @@ public class MessageDecoder {
 
             MessageBase mb;
             if (msgType.equals(Type.REQ_MSG.getRPCTypeName())) {
-                mb = parseRequest(rootMap, transactionIdMapper, type);
+                mb = parseRequest(rootMap, type);
             } else if (msgType.equals(Type.RSP_MSG.getRPCTypeName())) {
                 mb = parseResponse(rootMap, transactionIdMapper);
             } else if (msgType.equals(Type.ERR_MSG.getRPCTypeName())) {
@@ -309,7 +309,7 @@ public class MessageDecoder {
     }
 
 
-    private MessageBase parseRequest(Map<String, Object> map, Function<byte[], Optional<Method>> transactionIdMapper, DHTtype type) throws MessageException {
+    private MessageBase parseRequest(Map<String, Object> map, DHTtype type) throws MessageException {
         Object rawRequestMethod = map.get(Type.REQ_MSG.getRPCTypeName());
         Map<String, Object> args = typedGet(map, Type.REQ_MSG.innerKey(), Map.class).orElseThrow(() -> new MessageException("expected a bencoded dictionary under key " + Type.REQ_MSG.innerKey(), ErrorCode.ProtocolError));
 
@@ -436,10 +436,8 @@ public class MessageDecoder {
         }
 
 
-        if (msg != null) {
-            msg.setMTID(mtid);
-            msg.setID(id);
-        }
+        msg.setMTID(mtid);
+        msg.setID(id);
 
         return msg;
     }

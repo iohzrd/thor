@@ -5,7 +5,6 @@ import android.annotation.SuppressLint;
 import java.util.stream.Collectors;
 
 import threads.LogUtils;
-import threads.thor.bt.kad.DHTConstants;
 import threads.thor.bt.kad.Key;
 import threads.thor.bt.kad.Node;
 import threads.thor.bt.kad.RPCServer;
@@ -23,7 +22,7 @@ public abstract class IteratingTask extends TargetedTask {
         todo = new IterativeLookupCandidates(target, node.getDHT().getMismatchDetector());
         todo.setNonReachableCache(node.getDHT().getUnreachableCache());
         todo.setSpamThrottle(node.getDHT().getServerManager().getOutgoingRequestThrottle());
-        closest = new ClosestSet(target, DHTConstants.MAX_ENTRIES_PER_BUCKET);
+        closest = new ClosestSet(target);
     }
 
     @Override

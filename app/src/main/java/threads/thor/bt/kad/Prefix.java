@@ -9,7 +9,6 @@ import static threads.thor.bt.utils.Arrays.mismatch;
 
 public class Prefix extends Key {
 
-    public static final Prefix WHOLE_KEYSPACE = new Prefix();
     /**
      * identifies the first bit of a key that has to be equal to be considered as covered by this prefix
      * -1 = prefix matches whole keyspace
@@ -129,10 +128,6 @@ public class Prefix extends Key {
         return bitsEqual(this, k, depth);
     }
 
-    public boolean splittable() {
-        return getDepth() < Key.KEY_BITS - 1;
-    }
-
     public Prefix splitPrefixBranch(boolean highBranch) {
         Prefix branch = new Prefix(this);
         int branchDepth = ++branch.depth;
@@ -143,15 +138,6 @@ public class Prefix extends Key {
 
 
         return branch;
-    }
-
-    public Key first() {
-        return new Key(this);
-    }
-
-    public Key last() {
-        Key trailingBits = new Prefix(Key.MAX_KEY, depth).distance(Key.MAX_KEY);
-        return this.distance(trailingBits);
     }
 
     public Prefix getParentPrefix() {

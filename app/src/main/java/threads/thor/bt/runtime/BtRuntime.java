@@ -222,7 +222,6 @@ public class BtRuntime {
         HandshakeFactory handshakeFactory = new HandshakeFactory(mPeerRegistry);
 
 
-
         ExtendedHandshakeFactory extendedHandshakeFactory = new ExtendedHandshakeFactory(
                 mTorrentRegistry,
                 messageTypeMapping,

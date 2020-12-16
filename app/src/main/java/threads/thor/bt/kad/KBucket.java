@@ -18,15 +18,7 @@ import threads.thor.BuildConfig;
 import threads.thor.bt.kad.messages.MessageBase;
 import threads.thor.bt.kad.messages.MessageBase.Type;
 
-/**
- * A KBucket is just a list of KBucketEntry objects.
- * <p>
- * The list is sorted by time last seen :
- * The first element is the least recently seen, the last
- * the most recently seen.
- *
- * @author Damokles
- */
+
 public class KBucket {
 
 

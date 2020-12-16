@@ -17,14 +17,6 @@ public class MessageException extends Exception {
         super(message);
     }
 
-    public MessageException(String message, Throwable cause) {
-        super(message, cause);
-    }
-
-    public MessageException(String message, Throwable cause, ErrorCode c) {
-        super(message, cause);
-        this.errorCode = c;
-    }
 
     public MessageException(String message, ErrorCode code) {
         super(message);

@@ -10,7 +10,6 @@ import java.util.stream.Stream;
 
 import threads.thor.bt.kad.DHT.DHTtype;
 import threads.thor.bt.kad.Node.RoutingTable;
-import threads.thor.bt.kad.utils.PackUtil;
 
 /**
  * @author Damokles
@@ -30,20 +29,6 @@ public class KClosestNodesSearch {
         this.max_entries = max_entries;
         this.comp = new KBucketEntry.DistanceOrder(key);
         entries = new ArrayList<>(max_entries + DHTConstants.MAX_ENTRIES_PER_BUCKET);
-    }
-
-    /**
-     * @return the Target key of the search
-     */
-    public Key getSearchTarget() {
-        return targetKey;
-    }
-
-    /**
-     * @return the number of entries
-     */
-    public int getNumEntries() {
-        return entries.size();
     }
 
     public void fill() {
@@ -148,36 +133,6 @@ public class KClosestNodesSearch {
             InetSocketAddress sockAddr = new InetSocketAddress(srv.getPublicAddress(), srv.getPort());
             entries.add(new KBucketEntry(sockAddr, srv.getDerivedID()));
         }
-    }
-
-
-    public boolean isFull() {
-        return entries.size() >= max_entries;
-    }
-
-
-    /**
-     * Packs the results in a byte array.
-     *
-     * @return the encoded results.
-     */
-    public byte[] pack() {
-        if (entries.size() == 0)
-            return null;
-        int entryLength = owner.getType().NODES_ENTRY_LENGTH;
-
-        byte[] buffer = new byte[entries.size() * entryLength];
-        int max_items = buffer.length / 26;
-        int j = 0;
-
-        for (KBucketEntry e : entries) {
-            if (j >= max_items) {
-                break;
-            }
-            PackUtil.PackBucketEntry(e, buffer, j * entryLength, owner.getType());
-            j++;
-        }
-        return buffer;
     }
 
     public NodeList asNodeList() {

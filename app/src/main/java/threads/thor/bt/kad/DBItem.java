@@ -8,9 +8,7 @@ import threads.thor.bt.bencode.Utils;
 
 import static threads.thor.bt.utils.Arrays.compareUnsigned;
 
-/**
- * @author Damokles
- */
+
 public class DBItem implements Comparable<DBItem> {
 
     private final long time_stamp;

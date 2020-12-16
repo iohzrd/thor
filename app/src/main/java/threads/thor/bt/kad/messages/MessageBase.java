@@ -214,7 +214,7 @@ public abstract class MessageBase {
             String innerKey() {
                 return "e";
             }
-        }, INVALID;
+        };
 
         public static final String TYPE_KEY = "y";
 

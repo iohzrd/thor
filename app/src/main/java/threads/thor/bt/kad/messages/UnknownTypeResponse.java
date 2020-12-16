@@ -7,7 +7,7 @@ import threads.thor.bt.kad.DHT;
  */
 public class UnknownTypeResponse extends AbstractLookupResponse {
     public UnknownTypeResponse(byte[] mtid) {
-        super(mtid, Method.UNKNOWN, Type.RSP_MSG);
+        super(mtid, Method.UNKNOWN);
     }
 
     @Override

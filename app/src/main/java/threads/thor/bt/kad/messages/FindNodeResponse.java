@@ -9,7 +9,7 @@ public class FindNodeResponse extends AbstractLookupResponse {
 
 
     public FindNodeResponse(byte[] mtid) {
-        super(mtid, Method.FIND_NODE, Type.RSP_MSG);
+        super(mtid, Method.FIND_NODE);
     }
 
     /* (non-Javadoc)

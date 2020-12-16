@@ -58,14 +58,6 @@ public class PeerAddressDBItem extends DBItem {
         return getInetAddress().getHostAddress();
     }
 
-    public Class<? extends InetAddress> getAddressType() {
-        if (item.length == DHTtype.IPV4_DHT.ADDRESS_ENTRY_LENGTH)
-            return DHTtype.IPV4_DHT.PREFERRED_ADDRESS_TYPE;
-        if (item.length == DHTtype.IPV6_DHT.ADDRESS_ENTRY_LENGTH)
-            return DHTtype.IPV6_DHT.PREFERRED_ADDRESS_TYPE;
-        return null;
-    }
-
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof PeerAddressDBItem) {
@@ -105,10 +97,6 @@ public class PeerAddressDBItem extends DBItem {
         if (item.length == DHTtype.IPV6_DHT.ADDRESS_ENTRY_LENGTH)
             return (item[16] & 0xFF) << 8 | (item[17] & 0xFF);
         return 0;
-    }
-
-    public boolean isSeed() {
-        return seed;
     }
 
 }

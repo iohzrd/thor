@@ -98,10 +98,6 @@ public class PutRequest extends MessageBase {
         return token;
     }
 
-    public void setToken(byte[] token) {
-        this.token = token;
-    }
-
     public long getSequenceNumber() {
         return sequenceNumber;
     }
@@ -110,17 +106,8 @@ public class PutRequest extends MessageBase {
         return pubkey;
     }
 
-    public byte[] getSalt() {
-        return salt;
-    }
-
-
     public byte[] getSignature() {
         return signature;
-    }
-
-    private void setSignature(byte[] signature) {
-        this.signature = signature;
     }
 
     public Key deriveTargetKey() {
@@ -129,10 +116,6 @@ public class PutRequest extends MessageBase {
 
     public long getExpectedSequenceNumber() {
         return expectedSequenceNumber;
-    }
-
-    public void setExpectedSequenceNumber(long expectedSequenceNumber) {
-        this.expectedSequenceNumber = expectedSequenceNumber;
     }
 
     public ByteBuffer getValue() {

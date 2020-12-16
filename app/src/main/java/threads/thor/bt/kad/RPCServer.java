@@ -114,8 +114,6 @@ public class RPCServer {
             drainTrigger.run();
         }
 
-        public void onStall(RPCCall c) {
-        }
 
         public void onResponse(RPCCall c, MessageBase rsp) {
             if (c.knownReachableAtCreationTime())
@@ -174,10 +172,6 @@ public class RPCServer {
 
     void setOutgoingThrottle(SpamThrottle throttle) {
         this.requestThrottle = throttle;
-    }
-
-    public SpamThrottle getRequestThrottle() {
-        return this.requestThrottle;
     }
 
     /*
@@ -308,20 +302,6 @@ public class RPCServer {
      */
     public int getNumActiveRPCCalls() {
         return calls.size();
-    }
-
-    /**
-     * @return the numReceived
-     */
-    int getNumReceived() {
-        return numReceived.get();
-    }
-
-    /**
-     * @return the numSent
-     */
-    int getNumSent() {
-        return numSent.get();
     }
 
 
@@ -492,7 +472,7 @@ public class RPCServer {
     private void handleMessage(MessageBase msg) {
         if (msg.getType() == Type.RSP_MSG && msg.getPublicIP() != null)
             updatePublicIPConsensus(msg.getOrigin().getAddress(), msg.getPublicIP());
-        dh_table.incomingMessage(msg);
+        //dh_table.incomingMessage(msg);
         msg.apply(dh_table);
     }
 
@@ -639,6 +619,8 @@ public class RPCServer {
             throttle.decay();
 
             ByteBuffer readBuffer = RPCServer.readBuffer.get();
+
+            Objects.requireNonNull(readBuffer);
 
             DHTtype type = dh_table.getType();
 

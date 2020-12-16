@@ -6,8 +6,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class SpamThrottle {
+import threads.LogUtils;
 
+public class SpamThrottle {
+    private static final String TAG = SpamThrottle.class.getSimpleName();
     private static final int BURST = 10;
     private static final int PER_SECOND = 2;
     private final Map<InetAddress, Integer> hitcounter = new ConcurrentHashMap<>();
@@ -23,8 +25,14 @@ public class SpamThrottle {
         hitcounter.remove(addr);
     }
 
+    @SuppressWarnings("ConstantConditions")
     public boolean test(InetAddress addr) {
-        return hitcounter.getOrDefault(addr, 0) >= BURST;
+        try {
+            return hitcounter.getOrDefault(addr, 0) >= BURST;
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable);
+        }
+        return false;
     }
 
     int calculateDelayAndAdd(InetAddress addr) {

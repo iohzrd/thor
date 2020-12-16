@@ -39,22 +39,9 @@ public class Key implements Comparable<Key> {
     }
 
 
-    public Key(Key k) {
+    public Key(@NonNull Key k) {
+        //noinspection SuspiciousSystemArraycopy
         System.arraycopy(k.hash, 0, hash, 0, SHA1_HASH_LENGTH);
-    }
-
-
-    public Key(String hex) {
-        if (hex.length() != 40)
-            throw new IllegalArgumentException("Hex String must have 40 bytes");
-
-        for (int i = 0; i < hex.length(); i += 2)
-            hash[i / 2] = (byte) ((Character.digit(hex.charAt(i), 16) << 4) + Character.digit(hex.charAt(i + 1), 16));
-
-    }
-
-    public Key(ByteBuffer buf) {
-        buf.get(hash);
     }
 
     /**

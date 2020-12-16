@@ -3,7 +3,6 @@ package threads.thor.bt.kad.utils;
 import androidx.annotation.NonNull;
 
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.Formatter;
 
 import threads.thor.bt.kad.DHTConstants;
@@ -16,16 +15,10 @@ import static threads.thor.bt.utils.Functional.tap;
 public class ResponseTimeoutFilter {
 
 
-    private static final int NUM_SAMPLES = 256;
-    public static final int HIGH_QUANTILE_INDEX = (int) (NUM_SAMPLES * 0.9f);
-    public static final int LOW_QUANTILE_INDEX = (int) (NUM_SAMPLES * 0.1f);
-
     private static final int MIN_BIN = 0;
     private static final int MAX_BIN = DHTConstants.RPC_CALL_TIMEOUT_MAX;
     private static final int BIN_SIZE = 50;
     private static final int NUM_BINS = (int) Math.ceil((MAX_BIN - MIN_BIN) * 1.0f / BIN_SIZE);
-
-    private static final Comparator<RPCCall> timeoutComp = (o1, o2) -> (int) (o1.getRTT() - o2.getRTT());
 
 
     private final float[] bins = new float[NUM_BINS];
@@ -35,9 +28,6 @@ public class ResponseTimeoutFilter {
     private long timeoutBaseline;
     private final RPCCallListener listener = new RPCCallListener() {
         public void onTimeout(RPCCall c) {
-        }
-
-        public void onStall(RPCCall c) {
         }
 
         public void onResponse(RPCCall c, MessageBase rsp) {

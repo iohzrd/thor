@@ -9,7 +9,6 @@ public class DHTConstants {
     public static final int MAX_ACTIVE_TASKS = 7;
     public static final int MAX_ACTIVE_CALLS = 256;
     public static final int MAX_CONCURRENT_REQUESTS = 10;
-    public static final int MAX_CONCURRENT_REQUESTS_LOWPRIO = 3;
     public static final int RPC_CALL_TIMEOUT_MAX = 10 * 1000;
     public static final int RPC_CALL_TIMEOUT_BASELINE_MIN = 100; // ms
     public static final int BOOTSTRAP_IF_LESS_THAN_X_PEERS = 30;

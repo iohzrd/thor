@@ -16,7 +16,7 @@ public class GetResponse extends AbstractLookupResponse {
     private byte[] key;
 
     public GetResponse(byte[] mtid) {
-        super(mtid, Method.GET, Type.RSP_MSG);
+        super(mtid, Method.GET);
     }
 
     @Override

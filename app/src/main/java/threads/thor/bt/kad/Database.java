@@ -261,17 +261,7 @@ public class Database {
     }
 
     DatabaseStats getStats() {
-
-        return new DatabaseStats() {
-
-
-            @Override
-            public int getKeyCount() {
-                // TODO Auto-generated method stub
-                return items.size();
-            }
-
-        };
+        return items::size;
     }
 
     static class PeersSeeds {

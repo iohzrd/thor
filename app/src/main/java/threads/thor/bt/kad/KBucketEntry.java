@@ -87,15 +87,6 @@ public class KBucketEntry {
     }
 
 
-    public KBucketEntry(KBucketEntry other) {
-        addr = other.addr;
-        nodeID = other.nodeID;
-        lastSeen = other.lastSeen;
-        failedQueries = other.failedQueries;
-        timeCreated = other.timeCreated;
-    }
-
-
     /**
      * @return the address of the node
      */
@@ -107,7 +98,7 @@ public class KBucketEntry {
     public boolean equals(Object o) {
         if (o instanceof KBucketEntry)
             return this.equals((KBucketEntry) o);
-        return this == o;
+        return false;
     }
 
     public boolean equals(KBucketEntry other) {
@@ -249,7 +240,7 @@ public class KBucketEntry {
         lastSendTime = Math.max(lastSendTime, other.lastSendTime);
         timeCreated = Math.min(timeCreated, other.getCreationTime());
         if (other.verifiedReachable())
-            setVerified(true);
+            setVerified();
         if (!Double.isNaN(other.avgRTT.getAverage()))
             avgRTT.updateAverage(other.avgRTT.getAverage());
     }
@@ -341,9 +332,8 @@ public class KBucketEntry {
         }
     }
 
-    private void setVerified(boolean ver) {
-        verified = ver;
-
+    private void setVerified() {
+        verified = true;
     }
 
     public static final class DistanceOrder implements Comparator<KBucketEntry> {

@@ -9,6 +9,7 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -153,7 +154,7 @@ class IterativeLookupCandidates {
         }
 
 
-        candidates.get(kbe).addCall(c);
+        Objects.requireNonNull(candidates.get(kbe)).addCall(c);
     }
 
     KBucketEntry acceptResponse(RPCCall c) {
@@ -163,10 +164,11 @@ class IterativeLookupCandidates {
                 return null;
 
             KBucketEntry kbe = calls.get(c);
+            Objects.requireNonNull(kbe);
             if (!kbe.getVersion().isPresent())
                 c.getResponse().getVersion().ifPresent(kbe::setVersion);
             LookupGraphNode node = candidates.get(kbe);
-
+            Objects.requireNonNull(node);
             boolean insertOk = !accepted.contains(kbe.getAddress().getAddress()) && !accepted.contains(kbe.getID());
             if (insertOk) {
                 accepted.add(kbe.getAddress().getAddress());
@@ -223,7 +225,8 @@ class IterativeLookupCandidates {
     }
 
     Set<KBucketEntry> getSources(KBucketEntry e) {
-        return candidates.get(e).sources.stream().map(LookupGraphNode::toKbe).collect(Collectors.toSet());
+        return Objects.requireNonNull(candidates.get(e)).sources.
+                stream().map(LookupGraphNode::toKbe).collect(Collectors.toSet());
     }
 
     Comparator<LookupGraphNode> comp() {

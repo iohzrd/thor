@@ -109,12 +109,11 @@ public class RPCCall {
     /* (non-Javadoc)
      * @see threads.thor.bt.kad.RPCCallBase#addListener(threads.thor.bt.kad.RPCCallListener)
      */
-    public RPCCall addListener(RPCCallListener cl) {
+    public void addListener(RPCCallListener cl) {
         Objects.requireNonNull(cl);
         if (state != RPCState.UNSENT)
             throw new IllegalStateException("can only attach listeners while call is not started yet");
         listeners.add(cl);
-        return this;
     }
 
     /* (non-Javadoc)

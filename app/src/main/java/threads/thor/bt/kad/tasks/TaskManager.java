@@ -48,11 +48,7 @@ public class TaskManager {
     private Optional<ServerSet> setFor(RPCServer srv) {
         if (srv.getState() != RPCServer.State.RUNNING)
             return Optional.empty();
-        return Optional.ofNullable(taskSets.computeIfAbsent(srv, k -> {
-            ServerSet ss = new ServerSet();
-            ss.server = k;
-            return ss;
-        }));
+        return Optional.of(taskSets.computeIfAbsent(srv, k -> new ServerSet()));
     }
 
     public void dequeue(RPCServer k) {
@@ -141,7 +137,7 @@ public class TaskManager {
     class ServerSet {
         final Deque<Task> queued = new ArrayDeque<>();
         final List<Task> active = new ArrayList<>();
-        RPCServer server;
+        //RPCServer server;
 
         void dequeue() {
             while (true) {
@@ -181,7 +177,7 @@ public class TaskManager {
                 return false;
             // if all their tasks have sent at least their initial volley and we still have enough head room we can allow more tasks.
             synchronized (active) {
-                return active.stream().allMatch(t -> t.requestConcurrency() < t.getSentReqs());
+                return active.stream().allMatch(t -> DHTConstants.MAX_CONCURRENT_REQUESTS < t.getSentReqs());
             }
         }
 

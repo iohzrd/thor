@@ -23,10 +23,10 @@ class ClosestSet {
     private int insertAttemptsSinceHeadModification = 0;
 
 
-    ClosestSet(Key target, int targetSize) {
+    ClosestSet(Key target) {
         this.target = target;
         closest = new ConcurrentSkipListSet<>(new KBucketEntry.DistanceOrder(target));
-        this.targetSize = targetSize;
+        this.targetSize = threads.thor.bt.kad.DHTConstants.MAX_ENTRIES_PER_BUCKET;
     }
 
     boolean reachedTargetCapacity() {

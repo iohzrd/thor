@@ -113,14 +113,14 @@ public class MldhtService implements DHTService {
     private void start() {
 
         try {
-                dht.start(peerId, port);
-                publicBootstrapNodes.forEach(this::addNode);
-                bootstrapNodes.forEach(this::addNode);
-                mapPorts();
+            dht.start(peerId, port);
+            publicBootstrapNodes.forEach(this::addNode);
+            bootstrapNodes.forEach(this::addNode);
+            mapPorts();
 
-            } catch (Throwable e) {
-                throw new BtException("Failed to start DHT", e);
-            }
+        } catch (Throwable e) {
+            throw new BtException("Failed to start DHT", e);
+        }
 
     }
 

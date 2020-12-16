@@ -853,10 +853,6 @@ public class Node {
             return Collections.unmodifiableList(Arrays.asList(entries));
         }
 
-        public Stream<RoutingTableEntry> stream() {
-            return Arrays.stream(entries);
-        }
-
         RoutingTable modify(Collection<RoutingTableEntry> toRemove,
                             Collection<RoutingTableEntry> toAdd) {
             List<RoutingTableEntry> temp = new ArrayList<>(Arrays.asList(entries));

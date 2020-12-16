@@ -40,9 +40,6 @@ public class AnnounceNodeCache {
 
         }
 
-        public void onStall(RPCCall c) {
-            // TODO Auto-generated method stub
-        }
 
         public void onResponse(RPCCall c, MessageBase rsp) {
             if (!c.matchesExpectedID())

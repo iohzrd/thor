@@ -15,8 +15,8 @@ public class AbstractLookupResponse extends MessageBase {
     NodeList nodes6;
     private byte[] token;
 
-    AbstractLookupResponse(byte[] mtid, Method m, Type t) {
-        super(mtid, m, t);
+    AbstractLookupResponse(byte[] mtid, Method m) {
+        super(mtid, m, Type.RSP_MSG);
     }
 
     public void setNodes(NodeList nodes) {

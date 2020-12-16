@@ -28,7 +28,7 @@ public class GetPeersResponse extends AbstractLookupResponse {
 
 
     public GetPeersResponse(byte[] mtid) {
-        super(mtid, Method.GET_PEERS, Type.RSP_MSG);
+        super(mtid, Method.GET_PEERS);
     }
 
 

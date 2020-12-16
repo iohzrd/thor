@@ -68,7 +68,7 @@ import threads.thor.bt.utils.NIOConnectionManager;
 import static threads.thor.bt.bencode.Utils.prettyPrint;
 
 
-public class DHT implements DHTBase {
+public final class DHT {
 
     private static final String TAG = DHT.class.getSimpleName();
     private final ScheduledThreadPoolExecutor scheduler;
@@ -76,12 +76,9 @@ public class DHT implements DHTBase {
     private final DHTtype type;
     private final RPCCallListener rpcListener;
     private final AtomicReference<BootstrapState> bootstrapping = new AtomicReference<>(BootstrapState.NONE);
-    private final List<DHTStatusListener> statusListeners;
-    private final List<DHTIndexingListener> indexingListeners;
+
     private final PopulationEstimator estimator;
     private final List<ScheduledFuture<?>> scheduledActions = new ArrayList<>();
-    private final List<IncomingMessageListener> incomingMessageListeners = new ArrayList<>();
-
     private final IDMismatchDetector mismatchDetector;
     private final NonReachableCache unreachableCache;
     private final NIOConnectionManager connectionManager;
@@ -92,7 +89,7 @@ public class DHT implements DHTBase {
     private final TaskManager tman;
     private final AnnounceNodeCache cache;
     private long lastBootstrap;
-    private DHTStatus status;
+
     private Collection<InetSocketAddress> bootstrapAddresses = Collections.emptyList();
 
     public DHT(@NonNull DHTtype type) {
@@ -107,9 +104,7 @@ public class DHT implements DHTBase {
         tman = new TaskManager(this);
 
 
-        status = DHTStatus.Stopped;
-        statusListeners = new ArrayList<>(2);
-        indexingListeners = new ArrayList<>();
+        //indexingListeners = new ArrayList<>();
         estimator = new PopulationEstimator();
         rpcListener = new RPCCallListener() {
             public void stateTransition(RPCCall c, RPCState previous, RPCState current) {
@@ -164,10 +159,6 @@ public class DHT implements DHTBase {
         return scheduler;
     }
 
-
-    void incomingMessage(MessageBase msg) {
-        incomingMessageListeners.forEach(e -> e.received(this, msg));
-    }
 
     public void ping(PingRequest r) {
 
@@ -320,13 +311,14 @@ public class DHT implements DHTBase {
 
         List<DBItem> dbl = db.sample(r.getInfoHash(), valuesTargetLength, r.isNoSeeds());
 
+        /*
         for (DHTIndexingListener listener : indexingListeners) {
             List<PeerAddressDBItem> toAdd = listener.incomingPeersRequest(r.getInfoHash(), r.getOrigin().getAddress(), r.getID());
             if (dbl == null && !toAdd.isEmpty())
                 dbl = new ArrayList<>();
             if (dbl != null && !toAdd.isEmpty())
                 dbl.addAll(toAdd);
-        }
+        }*/
 
         // generate a token
         ByteWrapper token = null;
@@ -493,11 +485,8 @@ public class DHT implements DHTBase {
     }
 
 
-
     public void start(PeerId peerId, int port) {
 
-
-        setStatus(DHTStatus.Stopped, DHTStatus.Initializing);
 
         LogUtils.error(TAG, "Starting DHT on port " + port);
 
@@ -636,9 +625,6 @@ public class DHT implements DHTBase {
         logInfo("stopping servers");
         serverManager.destroy();
 
-
-        setStatus(DHTStatus.Initializing, DHTStatus.Stopped);
-        setStatus(DHTStatus.Running, DHTStatus.Stopped);
     }
 
     /*
@@ -685,8 +671,6 @@ public class DHT implements DHTBase {
         if (node.getNumEntriesInRoutingTable() < DHTConstants.BOOTSTRAP_IF_LESS_THAN_X_PEERS || now - lastBootstrap > DHTConstants.SELF_LOOKUP_INTERVAL) {
             //regualary search for our id to update routing table
             bootstrap();
-        } else {
-            setStatus(DHTStatus.Initializing, DHTStatus.Running);
         }
 
 
@@ -802,18 +786,6 @@ public class DHT implements DHTBase {
         origMsg.getServer().sendMessage(errMsg);
     }
 
-    private void setStatus(DHTStatus expected, DHTStatus newStatus) {
-        if (this.status.equals(expected)) {
-            DHTStatus old = this.status;
-            this.status = newStatus;
-            if (!statusListeners.isEmpty()) {
-                for (int i = 0; i < statusListeners.size(); i++) {
-                    statusListeners.get(i).statusChanged(newStatus, old);
-                }
-            }
-        }
-    }
-
 
     public void printDiagnostics(PrintWriter w) {
 
@@ -833,9 +805,6 @@ public class DHT implements DHTBase {
         w.println("# of active servers / all servers: " + serverManager.getActiveServerCount() + '/' + serverManager.getServerCount());
 
 
-        w.append("-----------------------\n");
-        w.append("Stats\n");
-        w.append("Reachable node estimate: ").append(String.valueOf(estimator.getEstimate())).append(" (").append(String.valueOf(estimator.getStability())).append(")\n");
         w.append("-----------------------\n");
         w.append("Routing table\n");
         try {
@@ -861,10 +830,10 @@ public class DHT implements DHTBase {
     }
 
     public enum DHTtype {
-        IPV4_DHT("IPv4", 20 + 4 + 2, 4 + 2, Inet4Address.class, 20 + 8, 1450, StandardProtocolFamily.INET),
-        IPV6_DHT("IPv6", 20 + 16 + 2, 16 + 2, Inet6Address.class, 40 + 8, 1200, StandardProtocolFamily.INET6);
+        IPV4_DHT("IPv4", 20 + 4 + 2, 4 + 2, Inet4Address.class, 1450, StandardProtocolFamily.INET),
+        IPV6_DHT("IPv6", 20 + 16 + 2, 16 + 2, Inet6Address.class, 1200, StandardProtocolFamily.INET6);
 
-        public final int HEADER_LENGTH;
+
         public final int NODES_ENTRY_LENGTH;
         public final int ADDRESS_ENTRY_LENGTH;
         public final Class<? extends InetAddress> PREFERRED_ADDRESS_TYPE;
@@ -872,13 +841,12 @@ public class DHT implements DHTBase {
         public final ProtocolFamily PROTO_FAMILY;
         final String shortName;
 
-        DHTtype(String shortName, int nodeslength, int addresslength, Class<? extends InetAddress> addresstype, int header, int maxSize, ProtocolFamily family) {
+        DHTtype(String shortName, int nodeslength, int addresslength, Class<? extends InetAddress> addresstype, int maxSize, ProtocolFamily family) {
 
             this.shortName = shortName;
             this.NODES_ENTRY_LENGTH = nodeslength;
             this.PREFERRED_ADDRESS_TYPE = addresstype;
             this.ADDRESS_ENTRY_LENGTH = addresslength;
-            this.HEADER_LENGTH = header;
             this.MAX_PACKET_SIZE = maxSize;
             this.PROTO_FAMILY = family;
         }
@@ -900,8 +868,4 @@ public class DHT implements DHTBase {
         FILL
     }
 
-
-    interface IncomingMessageListener {
-        void received(DHT dht, MessageBase msg);
-    }
 }

@@ -41,8 +41,7 @@ public class PeerLookupTask extends IteratingTask {
     private final Map<KBucketEntry, byte[]> announceCanidates;
     private final Set<PeerAddressDBItem> returnedItems;
     private final boolean useCache = true;
-    private final boolean noAnnounce = false;
-    private final boolean fastTerminate = false;
+
     private BiConsumer<KBucketEntry, PeerAddressDBItem> resultHandler = (x, y) -> {
     };
 
@@ -57,7 +56,7 @@ public class PeerLookupTask extends IteratingTask {
         // register key even before the task is started so the cache can already accumulate entries
         cache.register(targetKey, false);
 
-        addListener(t -> updatePopulationEstimator());
+        addListener(t -> todo.next());
 
     }
 
@@ -111,13 +110,13 @@ public class PeerLookupTask extends IteratingTask {
 
 
         // add the peer who responded to the closest nodes list, so we can do an announce
-        if (gpr.getToken() != null && !noAnnounce)
+        if (gpr.getToken() != null)
             announceCanidates.put(match, gpr.getToken());
 
 
         // if we scrape we don't care about tokens.
         // otherwise we're only done if we have found the closest nodes that also returned tokens
-        if (noAnnounce || gpr.getToken() != null) {
+        if (gpr.getToken() != null) {
             closest.insert(match);
         }
     }
@@ -133,7 +132,8 @@ public class PeerLookupTask extends IteratingTask {
     void update() {
         // check if the cache has any closer nodes after the initial query
         if (useCache) {
-            Collection<KBucketEntry> cacheResults = cache.get(targetKey, requestConcurrency());
+            Collection<KBucketEntry> cacheResults = cache.get(targetKey,
+                    DHTConstants.MAX_CONCURRENT_REQUESTS);
             todo.addCandidates(null, cacheResults);
         }
 
@@ -195,7 +195,7 @@ public class PeerLookupTask extends IteratingTask {
 
     @Override
     protected boolean isDone() {
-        int waitingFor = fastTerminate ? getNumOutstandingRequestsExcludingStalled() : getNumOutstandingRequests();
+        int waitingFor = getNumOutstandingRequests();
 
         if (waitingFor > 0)
             return false;
@@ -212,22 +212,9 @@ public class PeerLookupTask extends IteratingTask {
         return eval.terminationPrecondition();
     }
 
-    private void updatePopulationEstimator() {
-
-        synchronized (this) {
-            // feed the estimator if we're sure that we haven't skipped anything in the closest-set
-            if (!todo.next().isPresent() && noAnnounce && !fastTerminate && closest.reachedTargetCapacity()) {
-                Set<Key> toEstimate = closest.ids().collect(Collectors.toCollection(HashSet::new));
-                rpc.getDHT().getEstimator().update(toEstimate, targetKey);
-            }
-
-        }
-    }
 
 
     public Map<KBucketEntry, byte[]> getAnnounceCanidates() {
-        if (fastTerminate || noAnnounce)
-            throw new IllegalStateException("cannot use fast lookups for announces");
         return announceCanidates;
     }
 
@@ -252,7 +239,7 @@ public class PeerLookupTask extends IteratingTask {
 
         if (useCache) {
             // re-register once we actually started
-            cache.register(targetKey, fastTerminate);
+            cache.register(targetKey, false);
             todo.addCandidates(null, cache.get(targetKey, DHTConstants.MAX_CONCURRENT_REQUESTS * 2));
         }
 
