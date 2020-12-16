@@ -12,13 +12,10 @@ public class MagnetContext extends TorrentContext {
     private final MagnetUri magnetUri;
     private volatile BitfieldCollectingConsumer bitfieldConsumer;
 
-    public MagnetContext(MagnetUri magnetUri,
-                         PieceSelector pieceSelector,
-                         Storage storage) {
-        super(pieceSelector, storage, null);
+    public MagnetContext(MagnetUri magnetUri, PieceSelector pieceSelector, Storage storage) {
+        super(pieceSelector, storage);
         this.magnetUri = magnetUri;
     }
-
 
     public MagnetUri getMagnetUri() {
         return magnetUri;
@@ -29,10 +26,6 @@ public class MagnetContext extends TorrentContext {
         return magnetUri.getTorrentId();
     }
 
-    @Override
-    public void setTorrentId(TorrentId torrentId) {
-        throw new UnsupportedOperationException();
-    }
 
     public BitfieldCollectingConsumer getBitfieldConsumer() {
         return bitfieldConsumer;

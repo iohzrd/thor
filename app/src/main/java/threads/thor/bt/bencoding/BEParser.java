@@ -171,7 +171,7 @@ public class BEParser implements AutoCloseable {
                 // relying on the default constructor being present
                 parsedObject = result = scanner.readObject(builderClass.newInstance());
             } catch (Exception e) {
-                throw new BtParseException("Failed to read from encoded data", scanner.getScannedContents(), e);
+                throw new BtParseException("Failed to read from encoded data", e);
             }
         }
         return result;

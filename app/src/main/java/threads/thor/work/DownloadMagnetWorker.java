@@ -28,8 +28,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import threads.LogUtils;
 import threads.thor.MainActivity;
 import threads.thor.R;
-import threads.thor.bt.Bt;
 import threads.thor.bt.IdentityService;
+import threads.thor.bt.StandaloneClientBuilder;
 import threads.thor.bt.event.EventBus;
 import threads.thor.bt.magnet.MagnetUri;
 import threads.thor.bt.magnet.MagnetUriParser;
@@ -164,9 +164,8 @@ public class DownloadMagnetWorker extends Worker {
                 BtRuntime runtime = new BtRuntime(
                         getApplicationContext(), config, eventBus);
 
-                BtClient client = Bt.client()
+                BtClient client = new StandaloneClientBuilder()
                         .runtime(runtime)
-                        .config(config)
                         .storage(storage)
                         .magnet(magnet)
                         .stopWhenDownloaded()

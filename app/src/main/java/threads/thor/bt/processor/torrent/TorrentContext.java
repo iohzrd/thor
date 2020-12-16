@@ -17,12 +17,10 @@
 package threads.thor.bt.processor.torrent;
 
 import java.util.Optional;
-import java.util.function.Supplier;
 
 import threads.thor.bt.data.Bitfield;
 import threads.thor.bt.data.Storage;
 import threads.thor.bt.metainfo.Torrent;
-import threads.thor.bt.metainfo.TorrentId;
 import threads.thor.bt.processor.ProcessingContext;
 import threads.thor.bt.torrent.PieceStatistics;
 import threads.thor.bt.torrent.TorrentSessionState;
@@ -31,19 +29,11 @@ import threads.thor.bt.torrent.messaging.Assignments;
 import threads.thor.bt.torrent.messaging.MessageRouter;
 import threads.thor.bt.torrent.selector.PieceSelector;
 
-/**
- * Accumulates data, that is specific to standard threads.torrent download/upload.
- *
- * @since 1.3
- */
-public class TorrentContext implements ProcessingContext {
+public abstract class TorrentContext implements ProcessingContext {
 
     private final PieceSelector pieceSelector;
     private final Storage storage;
-    private final Supplier<Torrent> torrentSupplier;
 
-    /* all of these can be missing, depending on which stage is currently being executed */
-    private volatile TorrentId torrentId;
     private volatile Torrent torrent;
     private volatile TorrentSessionState state;
     private volatile MessageRouter router;
@@ -53,11 +43,9 @@ public class TorrentContext implements ProcessingContext {
     private volatile TrackerAnnouncer announcer;
 
     public TorrentContext(PieceSelector pieceSelector,
-                          Storage storage,
-                          Supplier<Torrent> torrentSupplier) {
+                          Storage storage) {
         this.pieceSelector = pieceSelector;
         this.storage = storage;
-        this.torrentSupplier = torrentSupplier;
     }
 
 
@@ -70,18 +58,6 @@ public class TorrentContext implements ProcessingContext {
         return storage;
     }
 
-    public Supplier<Torrent> getTorrentSupplier() {
-        return torrentSupplier;
-    }
-
-    @Override
-    public TorrentId getTorrentId() {
-        return torrentId;
-    }
-
-    public void setTorrentId(TorrentId torrentId) {
-        this.torrentId = torrentId;
-    }
 
     @Override
     public Optional<Torrent> getTorrent() {
