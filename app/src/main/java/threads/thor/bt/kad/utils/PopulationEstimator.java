@@ -82,9 +82,7 @@ public class PopulationEstimator {
 
             int sizeGoal = 8;
 
-            TreeSet<Key> closestSet = new TreeSet<>();
-
-            closestSet.addAll(Arrays.asList(keyspace).subList(0, sizeGoal));
+            TreeSet<Key> closestSet = new TreeSet<>(Arrays.asList(keyspace).subList(0, sizeGoal));
 
             //estimator.update(closestSet);
             estimator.update(closestSet, target);

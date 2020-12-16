@@ -1,10 +1,13 @@
 package threads.thor.bt.kad.tasks;
 
+import androidx.annotation.NonNull;
+
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import threads.thor.bt.kad.KBucket;
@@ -20,7 +23,7 @@ import threads.thor.bt.kad.messages.PingRequest;
  */
 public class PingRefreshTask extends Task {
 
-    private final Map<MessageBase, KBucketEntry> lookupMap;
+    private final Map<MessageBase, KBucketEntry> lookupMap = new HashMap<>();
     private final Deque<KBucketEntry> todo;
     private final Set<KBucketEntry> visited;
     private final boolean cleanOnTimeout;
@@ -29,12 +32,11 @@ public class PingRefreshTask extends Task {
     private KBucket bucket;
 
 
-    public PingRefreshTask(RPCServer rpc, Node node, KBucket bucket, boolean cleanOnTimeout) {
+    public PingRefreshTask(@NonNull RPCServer rpc, Node node, KBucket bucket, boolean cleanOnTimeout) {
         super(rpc, node);
         this.cleanOnTimeout = cleanOnTimeout;
         todo = new ArrayDeque<>();
         visited = new HashSet<>();
-        lookupMap = new HashMap<>();
 
         addBucket(bucket);
     }
@@ -43,7 +45,7 @@ public class PingRefreshTask extends Task {
         alsoCheckGood = val;
     }
 
-    public void probeUnverifiedReplacement(boolean val) {
+    public void probeUnverifiedReplacement() {
         probeReplacement = true;
     }
 
@@ -73,7 +75,7 @@ public class PingRefreshTask extends Task {
     void callFinished(RPCCall c, MessageBase rsp) {
         // most of the success handling is done by bucket maintenance
         synchronized (lookupMap) {
-            KBucketEntry e = lookupMap.remove(c.getRequest());
+            lookupMap.remove(c.getRequest());
         }
     }
 
@@ -112,7 +114,7 @@ public class PingRefreshTask extends Task {
 
         while (!todo.isEmpty() && canDoRequest()) {
             KBucketEntry e = todo.peekFirst();
-
+            Objects.requireNonNull(e);
             if (visited.contains(e) || (!alsoCheckGood && !e.needsPing())) {
                 todo.remove(e);
                 continue;

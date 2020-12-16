@@ -29,7 +29,7 @@ import threads.thor.bt.kad.utils.AddressUtils;
  */
 public class NodeLookup extends IteratingTask {
     private final boolean forBootstrap;
-    private int validReponsesSinceLastClosestSetModification;
+
 
     public NodeLookup(Key node_id, RPCServer rpc, Node node, boolean isBootstrap) {
         super(node_id, rpc, node);
@@ -55,8 +55,8 @@ public class NodeLookup extends IteratingTask {
 
             // send a findNode to the node
             FindNodeRequest fnr = new FindNodeRequest(targetKey);
-            fnr.setWant4(rpc.getDHT().getType() == DHTtype.IPV4_DHT || rpc.getDHT().getSiblings().stream().anyMatch(sib -> sib.isRunning() && sib.getType() == DHTtype.IPV4_DHT && sib.getNode().getNumEntriesInRoutingTable() < DHTConstants.BOOTSTRAP_IF_LESS_THAN_X_PEERS));
-            fnr.setWant6(rpc.getDHT().getType() == DHTtype.IPV6_DHT || rpc.getDHT().getSiblings().stream().anyMatch(sib -> sib.isRunning() && sib.getType() == DHTtype.IPV6_DHT && sib.getNode().getNumEntriesInRoutingTable() < DHTConstants.BOOTSTRAP_IF_LESS_THAN_X_PEERS));
+            fnr.setWant4(rpc.getDHT().getType() == DHTtype.IPV4_DHT);
+            fnr.setWant6(rpc.getDHT().getType() == DHTtype.IPV6_DHT);
             fnr.setDestination(e.getAddress());
 
             if (!rpcCall(fnr, e.getID(), (call) -> {
@@ -119,10 +119,10 @@ public class NodeLookup extends IteratingTask {
             if (nodes == null)
                 continue;
             if (type == rpc.getDHT().getType()) {
-                Set<KBucketEntry> entries = nodes.entries().filter(e -> !AddressUtils.isBogon(e.getAddress()) && !node.isLocalId(e.getID())).collect(Collectors.toSet());
+                Set<KBucketEntry> entries = nodes.entries().filter(e ->
+                        !AddressUtils.isBogon(e.getAddress()) &&
+                                !node.isLocalId(e.getID())).collect(Collectors.toSet());
                 todo.addCandidates(match, entries);
-            } else {
-                rpc.getDHT().getSiblings().stream().filter(sib -> sib.getType() == type).forEach(sib -> nodes.entries().forEach(e -> sib.addDHTNode(e.getAddress().getAddress().getHostAddress(), e.getAddress().getPort())));
             }
         }
 

@@ -15,7 +15,6 @@ import java.util.function.Consumer;
 import threads.LogUtils;
 import threads.thor.bt.kad.DHT;
 import threads.thor.bt.kad.DHTConstants;
-import threads.thor.bt.kad.KBucketEntry;
 import threads.thor.bt.kad.Key;
 import threads.thor.bt.kad.Node;
 import threads.thor.bt.kad.RPCCall;
@@ -39,26 +38,11 @@ import static threads.thor.bt.kad.tasks.CountedStat.STALLED;
  */
 public abstract class Task implements Comparable<Task> {
     static final String TAG = Task.class.getSimpleName();
-    final AtomicReference<TaskStats> counts = new AtomicReference<>(new TaskStats());
-    final AtomicReference<TaskState> state = new AtomicReference<>(TaskState.INITIAL);
-    private final RPCCallListener postProcessingListener = new RPCCallListener() {
-        public void stateTransition(RPCCall c, RPCState previous, RPCState current) {
-
-            switch (current) {
-                case RESPONDED:
-                case TIMEOUT:
-                case STALLED:
-                case ERROR:
-                    serializedUpdate.run();
-                    break;
-                default:
-                    break;
-            }
-
-        }
-    };
-    Node node;
-    Set<RPCCall> inFlight;
+    protected final AtomicReference<TaskStats> counts = new AtomicReference<>(new TaskStats());
+    protected final AtomicReference<TaskState> state = new AtomicReference<>(TaskState.INITIAL);
+    protected final Node node;
+    protected final Set<RPCCall> inFlight = ConcurrentHashMap.newKeySet();
+    protected final RPCServer rpc;
     private final RPCCallListener preProcessingListener = new RPCCallListener() {
         public void stateTransition(RPCCall c, RPCState previous, RPCState current) {
 
@@ -106,13 +90,28 @@ public abstract class Task implements Comparable<Task> {
         }
     };
     long firstResultTime;
-    RPCServer rpc;
     private String info;
     private long startTime;
     private int taskID;
     private List<TaskListener> listeners;
     private long finishTime;
     private final Runnable serializedUpdate = SerializedTaskExecutor.onceMore(this::runStuff);
+    private final RPCCallListener postProcessingListener = new RPCCallListener() {
+        public void stateTransition(RPCCall c, RPCState previous, RPCState current) {
+
+            switch (current) {
+                case RESPONDED:
+                case TIMEOUT:
+                case STALLED:
+                case ERROR:
+                    serializedUpdate.run();
+                    break;
+                default:
+                    break;
+            }
+
+        }
+    };
     private boolean lowPriority;
 
     /**
@@ -121,18 +120,13 @@ public abstract class Task implements Comparable<Task> {
      * @param rpc  The RPC server to do RPC calls
      * @param node The node
      */
-    Task(RPCServer rpc, Node node) {
-        if (rpc == null)
-            throw new IllegalArgumentException("RPC must not be null");
-
+    Task(@NonNull RPCServer rpc, @NonNull Node node) {
         this.rpc = rpc;
         this.node = node;
-
-        inFlight = ConcurrentHashMap.newKeySet();
     }
 
-    boolean setState(TaskState expected, TaskState newState) {
-        return setState(EnumSet.of(expected), newState);
+    boolean setState() {
+        return setState(EnumSet.of(TaskState.INITIAL), TaskState.QUEUED);
     }
 
     private boolean setState(Set<TaskState> expected, TaskState newState) {
@@ -246,10 +240,6 @@ public abstract class Task implements Comparable<Task> {
     }
 
 
-    public void setLowPriority(boolean lowPriority) {
-        this.lowPriority = lowPriority;
-    }
-
     public int requestConcurrency() {
         return lowPriority ? DHTConstants.MAX_CONCURRENT_REQUESTS_LOWPRIO : DHTConstants.MAX_CONCURRENT_REQUESTS;
     }
@@ -279,10 +269,6 @@ public abstract class Task implements Comparable<Task> {
         return checkFreeSlot() != RequestPermit.NONE_ALLOWED;
     }
 
-    boolean hasUnfinishedRequests() {
-        return counts.get().unanswered() > 0;
-    }
-
     /// Is the task finished
     public boolean isFinished() {
         return state.get().isTerminal();
@@ -296,13 +282,6 @@ public abstract class Task implements Comparable<Task> {
     /// Set the task ID
     void setTaskID(int tid) {
         taskID = tid;
-    }
-
-    /**
-     * @return the Count of Failed Requests
-     */
-    public int getFailedReqs() {
-        return counts.get().get(FAILED);
     }
 
     /**
@@ -361,10 +340,6 @@ public abstract class Task implements Comparable<Task> {
         return counts.get().unanswered();
     }
 
-    public boolean isQueued() {
-        return state.get() == TaskState.QUEUED;
-    }
-
     /// Kills the task
     public void kill() {
         if (setState(EnumSet.complementOf(EnumSet.of(TaskState.FINISHED, TaskState.KILLED)), TaskState.KILLED))
@@ -396,12 +371,6 @@ public abstract class Task implements Comparable<Task> {
         if (state.get().isTerminal())
             listener.finished(this);
         listeners.add(listener);
-    }
-
-    public void removeListener(TaskListener listener) {
-        if (listeners != null) {
-            listeners.remove(listener);
-        }
     }
 
     Duration age() {
@@ -464,11 +433,4 @@ public abstract class Task implements Comparable<Task> {
         FREE_STALL_SLOT
     }
 
-    interface CandidateSupplier {
-        boolean has();
-
-        KBucketEntry current();
-
-        void remove(KBucketEntry e);
-    }
 }

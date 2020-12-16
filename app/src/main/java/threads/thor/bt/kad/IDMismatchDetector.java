@@ -30,7 +30,7 @@ public class IDMismatchDetector {
     private static final long ACTIVE_CHECK_BACKOFF_INTERVAL = TimeUnit.MINUTES.toMillis(25);
     private final DHT dht;
     private final Map<InetSocketAddress, ObservationEntry> underObservation = new ConcurrentHashMap<>();
-    private final Map<InetAddress, Long> merged = new ConcurrentHashMap();
+    private final Map<InetAddress, Long> merged = new ConcurrentHashMap<>();
     private final Map<RPCServer, RPCCall> activeLookups = new ConcurrentHashMap<>();
 
     public IDMismatchDetector(DHT owner) {

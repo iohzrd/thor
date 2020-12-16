@@ -5,9 +5,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ThreadLocalRandom;
@@ -262,13 +260,6 @@ public class Database {
         return toCheck.equals(new ByteWrapper(rawToken));
     }
 
-    public Map<Key, PeersSeeds> getData() {
-        return new HashMap<>(items);
-    }
-
-    /**
-     * @return the stats
-     */
     DatabaseStats getStats() {
 
         return new DatabaseStats() {
@@ -280,10 +271,6 @@ public class Database {
                 return items.size();
             }
 
-            @Override
-            public int getItemCount() {
-                return items.values().stream().mapToInt(PeersSeeds::size).sum();
-            }
         };
     }
 

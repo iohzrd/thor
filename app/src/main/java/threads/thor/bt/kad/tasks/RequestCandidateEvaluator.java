@@ -62,10 +62,6 @@ class RequestCandidateEvaluator {
         return !closest.reachedTargetCapacity() || target.threeWayDistance(closest.tail(), candidate.getID()) > 0;
     }
 
-    public int activeInFlightBetterThanCandidate() {
-        return (int) activeInFlight().filter(k -> target.threeWayDistance(k, candidate.getID()) < 0).count();
-    }
-
     public boolean terminationPrecondition() {
         return !candidateAheadOfClosestSetTail() && (inStabilization() || closest.insertAttemptsSinceTailModification > closest.targetSize);
     }

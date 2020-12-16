@@ -87,16 +87,13 @@ public class PeerLookupTask extends IteratingTask {
         NodeList nodes = gpr.getNodes(rpc.getDHT().getType());
 
         if (nodes != null) {
-            nodes.entries().filter(e -> {
-                return !node.isLocalId(e.getID());
-            }).forEach(returnedNodes::add);
+            nodes.entries().filter(e -> !node.isLocalId(e.getID())).forEach(returnedNodes::add);
         }
 
         todo.addCandidates(match, returnedNodes);
 
         List<DBItem> items = gpr.getPeerItems();
-        //if(items.size() > 0)
-        //	System.out.println("unique:"+new HashSet<DBItem>(items).size()+" all:"+items.size()+" ver:"+gpr.getVersion()+" entries:"+items);
+
         for (DBItem item : items) {
             if (!(item instanceof PeerAddressDBItem))
                 continue;

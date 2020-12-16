@@ -75,15 +75,14 @@ public class Node {
      */
     private static final long throttleSaturation = 60;
     private static final long throttleThreshold = 30;
-    private static final String TAG = Node.class.getSimpleName();
     private final CowSet<Key> usedIDs = new CowSet<>();
     private final Object CoWLock = new Object();
     private final DHT dht;
     private final ConcurrentHashMap<InetAddress, Long> unsolicitedThrottle = new ConcurrentHashMap<>();
     private final Map<KBucket, Task> maintenanceTasks = new IdentityHashMap<>();
+    private final Collection<NetMask> trustedNodes = Collections.emptyList();
     private volatile RoutingTable routingTableCOW = new RoutingTable();
     private final Runnable singleThreadedUpdateHomeBuckets = SerializedTaskExecutor.onceMore(this::updateHomeBuckets);
-    private Collection<NetMask> trustedNodes = Collections.emptyList();
     private long timeOfLastPingCheck;
     private int num_entries;
     private Key baseKey;
@@ -341,10 +340,6 @@ public class Node {
         return routingTableCOW;
     }
 
-    public Stream<Map.Entry<InetAddress, Long>> throttledEntries() {
-        return unsolicitedThrottle.entrySet().stream();
-    }
-
 
     Key getRootID() {
         return baseKey;
@@ -399,10 +394,7 @@ public class Node {
 
     void removeId(Key k) {
         usedIDs.remove(k);
-
-
-        if (dht.isRunning()) // don't schedule another task if we're already shutting down
-            dht.getScheduler().execute(singleThreadedUpdateHomeBuckets);
+        dht.getScheduler().execute(singleThreadedUpdateHomeBuckets);
     }
 
     void registerServer(RPCServer srv) {
@@ -489,7 +481,7 @@ public class Node {
             boolean refreshNeeded = b.needsToBeRefreshed();
             boolean replacementNeeded = b.needsReplacementPing() || (isHome && b.findPingableReplacement().isPresent());
             if (refreshNeeded || replacementNeeded)
-                tryPingMaintenance(b, "Refreshing Bucket #" + e.prefix, null, (task) -> task.probeUnverifiedReplacement(replacementNeeded));
+                tryPingMaintenance(b, "Refreshing Bucket #" + e.prefix, null, PingRefreshTask::probeUnverifiedReplacement);
 
             if (!survival) {
                 // only replace 1 bad entry with a replacement bucket entry at a time (per bucket)
@@ -665,14 +657,6 @@ public class Node {
 
     public int getNumEntriesInRoutingTable() {
         return num_entries;
-    }
-
-    public Collection<NetMask> getTrustedNetMasks() {
-        return trustedNodes;
-    }
-
-    public void setTrustedNetMasks(Collection<NetMask> masks) {
-        trustedNodes = masks;
     }
 
     Optional<KBucketEntry> getRandomEntry() {

@@ -18,7 +18,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -75,41 +74,40 @@ public class DHT implements DHTBase {
     private final ScheduledThreadPoolExecutor scheduler;
     private final ThreadGroup executorGroup;
     private final DHTtype type;
-    private final Consumer<RPCServer> serverListener;
     private final RPCCallListener rpcListener;
     private final AtomicReference<BootstrapState> bootstrapping = new AtomicReference<>(BootstrapState.NONE);
-    private final List<DHTStatsListener> statsListeners;
     private final List<DHTStatusListener> statusListeners;
     private final List<DHTIndexingListener> indexingListeners;
-    private final DHTStats stats;
     private final PopulationEstimator estimator;
     private final List<ScheduledFuture<?>> scheduledActions = new ArrayList<>();
-    private final List<DHT> siblingGroup = new ArrayList<>();
     private final List<IncomingMessageListener> incomingMessageListeners = new ArrayList<>();
 
-    private IDMismatchDetector mismatchDetector;
-    private NonReachableCache unreachableCache;
-    private NIOConnectionManager connectionManager;
-    private boolean running;
+    private final IDMismatchDetector mismatchDetector;
+    private final NonReachableCache unreachableCache;
+    private final NIOConnectionManager connectionManager;
+    private final Node node;
+    private final RPCServerManager serverManager;
+    private final GenericStorage storage;
+    private final Database db;
+    private final TaskManager tman;
+    private final AnnounceNodeCache cache;
     private long lastBootstrap;
-    private Node node;
-    private RPCServerManager serverManager;
-    private GenericStorage storage;
-    private Database db;
-    private TaskManager tman;
-
     private DHTStatus status;
-    private AnnounceNodeCache cache;
-
     private Collection<InetSocketAddress> bootstrapAddresses = Collections.emptyList();
 
     public DHT(@NonNull DHTtype type) {
         this.type = type;
 
-        siblingGroup.add(this);
-        stats = new DHTStats();
+        storage = new GenericStorage();
+        db = new Database();
+        cache = new AnnounceNodeCache();
+
+
+        node = new Node(this);
+        tman = new TaskManager(this);
+
+
         status = DHTStatus.Stopped;
-        statsListeners = new ArrayList<>(2);
         statusListeners = new ArrayList<>(2);
         indexingListeners = new ArrayList<>();
         estimator = new PopulationEstimator();
@@ -124,7 +122,7 @@ public class DHT implements DHTBase {
             }
         };
 
-        serverListener = (srv) -> {
+        Consumer<RPCServer> serverListener = (srv) -> {
             node.registerServer(srv);
 
             srv.onEnqueue((c) -> c.addListener(rpcListener));
@@ -141,6 +139,15 @@ public class DHT implements DHTBase {
         scheduler.setCorePoolSize(threads);
         scheduler.setKeepAliveTime(20, TimeUnit.SECONDS);
         scheduler.allowCoreThreadTimeOut(true);
+
+
+        mismatchDetector = new IDMismatchDetector(this);
+        unreachableCache = new NonReachableCache();
+
+
+        connectionManager = new NIOConnectionManager("mlDHT " + type.shortName + " NIO Selector");
+        serverManager = new RPCServerManager(this);
+        serverManager.notifyOnServerAdded(serverListener);
     }
 
 
@@ -157,23 +164,12 @@ public class DHT implements DHTBase {
         return scheduler;
     }
 
-    private Optional<DHT> getSiblingByType(DHTtype type) {
-        return siblingGroup.stream().filter(sib -> sib.getType() == type).findAny();
-    }
-
-    public List<DHT> getSiblings() {
-        return Collections.unmodifiableList(siblingGroup);
-    }
-
 
     void incomingMessage(MessageBase msg) {
         incomingMessageListeners.forEach(e -> e.received(this, msg));
     }
 
     public void ping(PingRequest r) {
-        if (!isRunning()) {
-            return;
-        }
 
         // ignore requests we get from ourself
         if (node.isLocalId(r.getID())) {
@@ -188,9 +184,6 @@ public class DHT implements DHTBase {
     }
 
     public void findNode(AbstractLookupRequest r) {
-        if (!isRunning()) {
-            return;
-        }
 
         // ignore requests we get from ourself
         if (node.isLocalId(r.getID())) {
@@ -213,34 +206,30 @@ public class DHT implements DHTBase {
 
     private void populateResponse(Key target, AbstractLookupResponse rsp, int v4, int v6) {
         if (v4 > 0) {
-            getSiblingByType(DHTtype.IPV4_DHT).filter(DHT::isRunning).ifPresent(sib -> {
-                KClosestNodesSearch kns = new KClosestNodesSearch(target, v4, sib);
-                kns.fill(DHTtype.IPV4_DHT == type);
-                rsp.setNodes(kns.asNodeList());
-            });
+
+            KClosestNodesSearch kns = new KClosestNodesSearch(target, v4, this);
+            kns.fill(DHTtype.IPV4_DHT == type);
+            rsp.setNodes(kns.asNodeList());
+
         }
 
         if (v6 > 0) {
-            getSiblingByType(DHTtype.IPV6_DHT).filter(DHT::isRunning).ifPresent(sib -> {
-                KClosestNodesSearch kns = new KClosestNodesSearch(target, v6, sib);
-                kns.fill(DHTtype.IPV6_DHT == type);
-                rsp.setNodes(kns.asNodeList());
-            });
+
+            KClosestNodesSearch kns = new KClosestNodesSearch(target, v6, this);
+            kns.fill(DHTtype.IPV6_DHT == type);
+            rsp.setNodes(kns.asNodeList());
+
         }
     }
 
     public void response(MessageBase r) {
-        if (!isRunning()) {
-            return;
-        }
+
 
         node.recieved(r);
     }
 
     public void get(GetRequest req) {
-        if (!isRunning()) {
-            return;
-        }
+
 
         GetResponse rsp = new GetResponse(req.getMTID());
 
@@ -310,9 +299,7 @@ public class DHT implements DHTBase {
     }
 
     public void getPeers(GetPeersRequest r) {
-        if (!isRunning()) {
-            return;
-        }
+
 
         // ignore requests we get from ourself
         if (node.isLocalId(r.getID())) {
@@ -378,9 +365,7 @@ public class DHT implements DHTBase {
     }
 
     public void announce(AnnounceRequest r) {
-        if (!isRunning()) {
-            return;
-        }
+
 
         // ignore requests we get from ourself
         if (node.isLocalId(r.getID())) {
@@ -409,8 +394,6 @@ public class DHT implements DHTBase {
     }
 
     public void sample(SampleRequest r) {
-        if (!isRunning())
-            return;
 
         SampleResponse rsp = new SampleResponse(r.getMTID());
         rsp.setSamples(db.samples());
@@ -434,9 +417,7 @@ public class DHT implements DHTBase {
     }
 
     public void timeout(RPCCall r) {
-        if (isRunning()) {
-            node.onTimeout(r);
-        }
+        node.onTimeout(r);
     }
 
     /*
@@ -445,9 +426,7 @@ public class DHT implements DHTBase {
      * @see threads.thor.bt.kad.DHTBase#addDHTNode(java.lang.String, int)
      */
     public void addDHTNode(String host, int hport) {
-        if (!isRunning()) {
-            return;
-        }
+
         InetSocketAddress addr = new InetSocketAddress(host, hport);
 
         if (!addr.isUnresolved()) {
@@ -466,9 +445,7 @@ public class DHT implements DHTBase {
      * use the task-manager to actually start the task.
      */
     public PeerLookupTask createPeerLookup(byte[] info_hash) {
-        if (!isRunning()) {
-            return null;
-        }
+
         Key id = new Key(info_hash);
 
         RPCServer srv = serverManager.getRandomActiveServer(false);
@@ -479,9 +456,7 @@ public class DHT implements DHTBase {
     }
 
     public AnnounceTask announce(PeerLookupTask lookup, boolean isSeed, int btPort) {
-        if (!isRunning()) {
-            return null;
-        }
+
 
         // reuse the same server to make sure our tokens are still valid
         AnnounceTask announce = new AnnounceTask(lookup.getRPC(), node, lookup.getInfoHash(), btPort, lookup.getAnnounceCanidates());
@@ -517,60 +492,17 @@ public class DHT implements DHTBase {
         return unreachableCache;
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see threads.thor.bt.kad.DHTBase#getStats()
-     */
-    public DHTStats getStats() {
-        return stats;
-    }
-
-    /*
-     * (non-Javadoc)
-     *
-     * @see threads.thor.bt.kad.DHTBase#isRunning()
-     */
-    public boolean isRunning() {
-        return running;
-    }
-
-
-    private void populate() {
-
-        cache = new AnnounceNodeCache();
-
-        serverManager = new RPCServerManager(this);
-        mismatchDetector = new IDMismatchDetector(this);
-        node = new Node(this);
-        unreachableCache = new NonReachableCache();
-
-        serverManager.notifyOnServerAdded(serverListener);
-        db = new Database();
-        stats.setDbStats(db.getStats());
-        tman = new TaskManager(this);
-        running = true;
-        storage = new GenericStorage();
-    }
 
 
     public void start(PeerId peerId, int port) {
-        if (running) {
-            return;
-        }
 
 
         setStatus(DHTStatus.Stopped, DHTStatus.Initializing);
-        stats.resetStartedTimestamp();
 
         LogUtils.error(TAG, "Starting DHT on port " + port);
 
         // we need the IPs to filter bootstrap nodes out from the routing table. but don't block startup on DNS resolution
         scheduler.execute(this::resolveBootstrapAddresses);
-
-        connectionManager = new NIOConnectionManager("mlDHT " + type.shortName + " NIO Selector");
-
-        populate();
 
 
         node.initKey(peerId);
@@ -578,15 +510,12 @@ public class DHT implements DHTBase {
 
         // these checks are fairly expensive on large servers (network interface enumeration)
         // schedule them separately
-        scheduledActions.add(scheduler.scheduleWithFixedDelay(serverManager::doBindChecks, 10, 10, TimeUnit.SECONDS));
+        scheduledActions.add(scheduler.scheduleWithFixedDelay(serverManager::doBindChecks,
+                10, 10, TimeUnit.SECONDS));
 
-        scheduledActions.add(scheduler.scheduleWithFixedDelay(() -> {
-            // maintenance that should run all the time, before the first queries
-            tman.dequeue();
-
-            if (running)
-                onStatsUpdate();
-        }, 5000, DHTConstants.DHT_UPDATE_INTERVAL, TimeUnit.MILLISECONDS));
+        // maintenance that should run all the time, before the first queries
+        scheduledActions.add(scheduler.scheduleWithFixedDelay(tman::dequeue,
+                5000, DHTConstants.DHT_UPDATE_INTERVAL, TimeUnit.MILLISECONDS));
 
         // initialize as many RPC servers as we need
         serverManager.refresh(System.currentTimeMillis(), port);
@@ -685,9 +614,7 @@ public class DHT implements DHTBase {
 
 
     public void stop() {
-        if (!running) {
-            return;
-        }
+
 
         logInfo("Initated DHT shutdown");
         Stream.concat(Arrays.stream(tman.getActiveTasks()), Arrays.stream(tman.getQueuedTasks())).forEach(Task::kill);
@@ -697,10 +624,8 @@ public class DHT implements DHTBase {
             // none of the scheduled tasks should experience exceptions, log them if they did
             try {
                 future.get();
-            } catch (ExecutionException | InterruptedException e) {
-                LogUtils.error(TAG, e);
-            } catch (CancellationException e) {
-                // do nothing, we just cancelled it
+            } catch (Throwable throwable) {
+                LogUtils.error(TAG, throwable);
             }
         }
 
@@ -709,15 +634,9 @@ public class DHT implements DHTBase {
         scheduledActions.clear();
 
         logInfo("stopping servers");
-        running = false;
         serverManager.destroy();
 
-        stopped();
-        tman = null;
-        db = null;
-        node = null;
-        cache = null;
-        serverManager = null;
+
         setStatus(DHTStatus.Initializing, DHTStatus.Stopped);
         setStatus(DHTStatus.Running, DHTStatus.Stopped);
     }
@@ -748,15 +667,6 @@ public class DHT implements DHTBase {
         return tman;
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see threads.thor.bt.kad.DHTBase#stopped()
-     */
-    public void stopped() {
-        // TODO Auto-generated method stub
-
-    }
 
     /*
      * (non-Javadoc)
@@ -769,9 +679,6 @@ public class DHT implements DHTBase {
 
         serverManager.refresh(now, port);
 
-        if (!isRunning()) {
-            return;
-        }
 
         node.doBucketChecks(now);
 
@@ -819,7 +726,7 @@ public class DHT implements DHTBase {
      * to fill the Buckets.
      */
     private synchronized void bootstrap() {
-        if (!isRunning() || System.currentTimeMillis() - lastBootstrap < DHTConstants.BOOTSTRAP_MIN_INTERVAL) {
+        if (System.currentTimeMillis() - lastBootstrap < DHTConstants.BOOTSTRAP_MIN_INTERVAL) {
             return;
         }
 
@@ -850,7 +757,7 @@ public class DHT implements DHTBase {
             }
 
             // fill the remaining buckets once all bootstrap operations finished
-            if (count == 0 && running && node.getNumEntriesInRoutingTable() > DHTConstants.USE_BT_ROUTER_IF_LESS_THAN_X_PEERS) {
+            if (count == 0 && node.getNumEntriesInRoutingTable() > DHTConstants.USE_BT_ROUTER_IF_LESS_THAN_X_PEERS) {
                 node.fillBuckets();
             }
         };
@@ -871,7 +778,7 @@ public class DHT implements DHTBase {
 
     private void findNode(Key id, boolean isBootstrap,
                           boolean isPriority, RPCServer server, Consumer<NodeLookup> configureTask) {
-        if (!running || server == null) {
+        if (server == null) {
             return;
         }
 
@@ -895,26 +802,6 @@ public class DHT implements DHTBase {
         origMsg.getServer().sendMessage(errMsg);
     }
 
-    private void onStatsUpdate() {
-        stats.setNumTasks(tman.getNumTasks() + tman.getNumQueuedTasks());
-        stats.setNumPeers(node.getNumEntriesInRoutingTable());
-        long numSent = 0;
-        long numReceived = 0;
-        int activeCalls = 0;
-        for (RPCServer s : serverManager.getAllServers()) {
-            numSent += s.getNumSent();
-            numReceived += s.getNumReceived();
-            activeCalls += s.getNumActiveRPCCalls();
-        }
-        stats.setNumSentPackets(numSent);
-        stats.setNumReceivedPackets(numReceived);
-        stats.setNumRpcCalls(activeCalls);
-
-        for (int i = 0; i < statsListeners.size(); i++) {
-            statsListeners.get(i).statsUpdated(stats);
-        }
-    }
-
     private void setStatus(DHTStatus expected, DHTStatus newStatus) {
         if (this.status.equals(expected)) {
             DHTStatus old = this.status;
@@ -929,9 +816,6 @@ public class DHT implements DHTBase {
 
 
     public void printDiagnostics(PrintWriter w) {
-        if (!running)
-            return;
-
 
         for (ScheduledFuture<?> f : scheduledActions)
             if (f.isDone()) { // check for exceptions
@@ -948,13 +832,10 @@ public class DHT implements DHTBase {
         w.println("DHT Diagnostics. Type " + type);
         w.println("# of active servers / all servers: " + serverManager.getActiveServerCount() + '/' + serverManager.getServerCount());
 
-        if (!isRunning())
-            return;
 
         w.append("-----------------------\n");
         w.append("Stats\n");
-        w.append("Reachable node estimate: " + estimator.getEstimate() + " (" + estimator.getStability() + ")\n");
-        w.append(stats.toString());
+        w.append("Reachable node estimate: ").append(String.valueOf(estimator.getEstimate())).append(" (").append(String.valueOf(estimator.getStability())).append(")\n");
         w.append("-----------------------\n");
         w.append("Routing table\n");
         try {
@@ -969,7 +850,7 @@ public class DHT implements DHTBase {
             w.append(srv.toString());
         w.append("-----------------------\n");
         w.append("Blacklist\n");
-        w.append(mismatchDetector.toString() + '\n');
+        w.append(mismatchDetector.toString()).append(String.valueOf('\n'));
         w.append("-----------------------\n");
         w.append("Lookup Cache\n");
         cache.printDiagnostics(w);

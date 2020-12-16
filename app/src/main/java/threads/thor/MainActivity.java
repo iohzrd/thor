@@ -953,21 +953,21 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
             @Override
             public void onReceivedHttpError(
                     WebView view, WebResourceRequest request, WebResourceResponse errorResponse) {
-                LogUtils.error(TAG, errorResponse.toString());
+                LogUtils.info(TAG, "onReceivedHttpError" + errorResponse.toString());
 
             }
 
             @Override
             public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
-                LogUtils.error(TAG, error.toString());
                 super.onReceivedSslError(view, handler, error);
+                LogUtils.info(TAG, "onReceivedSslError " + error.toString());
             }
 
 
             @Override
             public void onPageCommitVisible(WebView view, String url) {
                 super.onPageCommitVisible(view, url);
-                LogUtils.error(TAG, "onPageCommitVisible " + url);
+                LogUtils.info(TAG, "onPageCommitVisible " + url);
 
                 mProgressBar.setVisibility(View.GONE);
 
@@ -1040,20 +1040,19 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
 
             @Override
             public void onLoadResource(WebView view, String url) {
-                LogUtils.error(TAG, "onLoadResource : " + url);
                 super.onLoadResource(view, url);
+                LogUtils.info(TAG, "onLoadResource : " + url);
             }
 
             @Override
             public void doUpdateVisitedHistory(WebView view, String url, boolean isReload) {
-                LogUtils.error(TAG, "doUpdateVisitedHistory : " + url + " " + isReload);
                 super.doUpdateVisitedHistory(view, url, isReload);
-
+                LogUtils.info(TAG, "doUpdateVisitedHistory : " + url + " " + isReload);
             }
 
             @Override
             public void onPageStarted(WebView view, String uri, Bitmap favicon) {
-                LogUtils.error(TAG, "onPageStarted : " + uri);
+                LogUtils.info(TAG, "onPageStarted : " + uri);
 
                 if (!isTablet) {
                     activeHide.set(true);
@@ -1065,7 +1064,7 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
 
             @Override
             public void onPageFinished(WebView view, String url) {
-                LogUtils.error(TAG, "onPageFinished : " + url);
+                LogUtils.info(TAG, "onPageFinished : " + url);
 
                 mProgressBar.setVisibility(View.GONE);
 
@@ -1087,7 +1086,7 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
 
             @Override
             public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
-                LogUtils.error(TAG, "onReceivedError " + view.getUrl() + " " + error.getDescription());
+                LogUtils.info(TAG, "onReceivedError " + view.getUrl() + " " + error.getDescription());
 
                 mProgressBar.setVisibility(View.GONE);
 
@@ -1102,7 +1101,7 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
 
                 try {
                     Uri uri = request.getUrl();
-                    LogUtils.error(TAG, "shouldOverrideUrlLoading : " + uri);
+                    LogUtils.info(TAG, "shouldOverrideUrlLoading : " + uri);
 
                     if (Objects.equals(uri.getScheme(), Content.HTTP) ||
                             Objects.equals(uri.getScheme(), Content.HTTPS)) {
@@ -1138,8 +1137,7 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
                             startActivity(intent);
 
                         } catch (Throwable throwable) {
-                            EVENTS.getInstance(getApplicationContext()).warning(
-                                    getString(R.string.no_activity_found_to_handle_uri));
+                            LogUtils.error(TAG, throwable);
                         }
                         return true;
                     }
@@ -1147,6 +1145,7 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
                 } catch (Throwable throwable) {
                     LogUtils.error(TAG, throwable);
                 }
+
                 return false;
 
             }
@@ -1167,9 +1166,8 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
             @Override
             public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
 
-
                 Uri uri = request.getUrl();
-                LogUtils.error(TAG, "shouldInterceptRequest : " + uri.toString());
+                LogUtils.info(TAG, "shouldInterceptRequest : " + uri.toString());
 
                 if (Objects.equals(uri.getScheme(), Content.HTTP) ||
                         Objects.equals(uri.getScheme(), Content.HTTPS)) {

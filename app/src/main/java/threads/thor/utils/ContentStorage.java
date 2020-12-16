@@ -67,8 +67,8 @@ public class ContentStorage implements Storage {
 
                 Objects.requireNonNull(child);
 
+                DocumentFile find = child.findFile(path);
                 if (i < (elements - 1)) {
-                    DocumentFile find = child.findFile(path);
 
                     if (find != null && find.exists() && find.isDirectory()) {
                         child = find;
@@ -77,7 +77,6 @@ public class ContentStorage implements Storage {
                     }
 
                 } else {
-                    DocumentFile find = child.findFile(path);
                     if (find != null && find.exists() && !find.isDirectory()) {
                         child = find;
                     } else {
@@ -105,7 +104,8 @@ public class ContentStorage implements Storage {
                         Thread.sleep(500);
                     }
                     if (unit.isFinished()) {
-                        unit.getFile().deleteOnExit();
+                        boolean deleted = unit.getFile().delete();
+                        LogUtils.error(TAG, unit.getFile().getAbsolutePath() + " " + deleted);
                     }
                 }
             }

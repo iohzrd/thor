@@ -6,11 +6,6 @@ package threads.thor.bt.kad;
 public interface DatabaseStats {
 
     /**
-     * @return the itemCount
-     */
-    int getItemCount();
-
-    /**
      * @return the keyCount
      */
     int getKeyCount();

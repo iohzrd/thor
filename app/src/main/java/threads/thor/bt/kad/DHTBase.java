@@ -1,7 +1,5 @@
 package threads.thor.bt.kad;
 
-import java.net.SocketException;
-
 import threads.thor.bt.kad.messages.AbstractLookupRequest;
 import threads.thor.bt.kad.messages.AnnounceRequest;
 import threads.thor.bt.kad.messages.ErrorMessage;
@@ -13,24 +11,12 @@ import threads.thor.bt.kad.tasks.PeerLookupTask;
 import threads.thor.bt.kad.tasks.TaskManager;
 import threads.thor.bt.net.PeerId;
 
-/**
- * @author Damokles
- */
 interface DHTBase {
-    /**
-     * Start the DHT
-     */
-    void start(PeerId peerId, int port) throws SocketException;
 
-    /**
-     * Stop the DHT
-     */
+    void start(PeerId peerId, int port);
+
     void stop();
 
-    /**
-     * Update the DHT
-     */
-    void update(int port);
 
     /**
      * Do an announce/scrape lookup on the DHT network
@@ -40,19 +26,10 @@ interface DHTBase {
      */
     PeerLookupTask createPeerLookup(byte[] info_hash);
 
-
     /**
      * Perform the put() operation for an announce
      */
     AnnounceTask announce(PeerLookupTask lookup, boolean isSeed, int btPort);
-
-    /**
-     * See if the DHT is running.
-     */
-    boolean isRunning();
-
-    /// Get statistics about the DHT
-    DHTStats getStats();
 
     /**
      * Add a DHT node. This node shall be pinged immediately.
@@ -63,8 +40,6 @@ interface DHTBase {
     void addDHTNode(String host, int hport);
 
     void started(int port);
-
-    void stopped();
 
     void ping(PingRequest r);
 

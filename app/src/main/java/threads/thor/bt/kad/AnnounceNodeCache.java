@@ -243,7 +243,7 @@ public class AnnounceNodeCache {
     }
 
     void printDiagnostics(PrintWriter b) {
-        b.append("anchors (" + anchors.size() + "):\n");
+        b.append("anchors (").append(String.valueOf(anchors.size())).append("):\n");
         // no need to print out all anchors for now
         //for(CacheAnchorPoint a : anchors.values())
         //	b.println(a);

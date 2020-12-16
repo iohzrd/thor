@@ -103,11 +103,4 @@ public class AnnounceTask extends TargetedTask {
         return todo.isEmpty() && getNumOutstandingRequests() == 0;
     }
 
-    /**
-     * @return the info_hash
-     */
-    public Key getInfoHash() {
-        return targetKey;
-    }
-
 }

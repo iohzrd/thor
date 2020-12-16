@@ -164,20 +164,20 @@ public class KBucketEntry {
     public String toString() {
         long now = System.currentTimeMillis();
         StringBuilder b = new StringBuilder(80);
-        b.append(nodeID + "/" + addr);
+        b.append(nodeID).append("/").append(addr);
         if (lastSendTime > 0)
-            b.append(";sent:" + Duration.ofMillis(now - lastSendTime));
-        b.append(";seen:" + Duration.ofMillis(now - lastSeen));
-        b.append(";age:" + Duration.ofMillis(now - timeCreated));
+            b.append(";sent:").append(Duration.ofMillis(now - lastSendTime));
+        b.append(";seen:").append(Duration.ofMillis(now - lastSeen));
+        b.append(";age:").append(Duration.ofMillis(now - timeCreated));
         if (failedQueries != 0)
-            b.append(";fail:" + failedQueries);
+            b.append(";fail:").append(failedQueries);
         if (verified)
             b.append(";verified");
         double rtt = avgRTT.getAverage();
         if (!Double.isNaN(rtt))
-            b.append(";rtt:" + rtt);
+            b.append(";rtt:").append(rtt);
         if (version != null)
-            b.append(";ver:" + prettyPrint(version));
+            b.append(";ver:").append(prettyPrint(version));
 
         return b.toString();
     }

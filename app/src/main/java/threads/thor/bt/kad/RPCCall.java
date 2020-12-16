@@ -49,9 +49,8 @@ public class RPCCall {
         return expectedRTT;
     }
 
-    public RPCCall setExpectedRTT(long rtt) {
+    public void setExpectedRTT(long rtt) {
         expectedRTT = rtt;
-        return this;
     }
 
     /**
@@ -199,17 +198,9 @@ public class RPCCall {
 
 
             switch (newState) {
-                case TIMEOUT:
-                    break;
                 case ERROR:
                 case RESPONDED:
                     responseTime = System.currentTimeMillis();
-                    break;
-                case SENT:
-                    break;
-                case STALLED:
-                    break;
-                case UNSENT:
                     break;
                 default:
                     break;
@@ -225,7 +216,6 @@ public class RPCCall {
                         l.onTimeout(this);
                         break;
                     case STALLED:
-                        l.onStall(this);
                         break;
                     case RESPONDED:
                         l.onResponse(this, rspMsg);
@@ -253,10 +243,6 @@ public class RPCCall {
 
     public RPCState state() {
         return state;
-    }
-
-    public boolean inFlight() {
-        return state != RPCState.TIMEOUT && state != RPCState.RESPONDED;
     }
 
 }

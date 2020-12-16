@@ -2,11 +2,9 @@ package threads.thor.bt.kad;
 
 import androidx.annotation.NonNull;
 
-import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.regex.Pattern;
 
 import threads.thor.bt.kad.utils.ThreadLocalUtils;
 
@@ -22,7 +20,6 @@ public class Key implements Comparable<Key> {
     public static final Key MAX_KEY;
     public static final int SHA1_HASH_LENGTH = 20;
     public static final int KEY_BITS = SHA1_HASH_LENGTH * 8;
-    public static final Pattern STRING_PATTERN = Pattern.compile("[a-fA-F0-9]{40}");
 
     static {
         MIN_KEY = new Key();
@@ -41,11 +38,7 @@ public class Key implements Comparable<Key> {
     Key() {
     }
 
-    /**
-     * Clone constructor
-     *
-     * @param k Key to clone
-     */
+
     public Key(Key k) {
         System.arraycopy(k.hash, 0, hash, 0, SHA1_HASH_LENGTH);
     }
@@ -149,10 +142,6 @@ public class Key implements Comparable<Key> {
         return hash.clone();
     }
 
-    public ByteBuffer asBuffer() {
-        return ByteBuffer.wrap(hash).asReadOnlyBuffer();
-    }
-
     public void toBuffer(ByteBuffer dst) {
         dst.put(hash);
     }
@@ -214,13 +203,6 @@ public class Key implements Comparable<Key> {
         return b.toString();
     }
 
-    public String toBinString() {
-        StringBuilder builder = new StringBuilder(160);
-        for (int i = 0; i < 160; i++)
-            builder.append((hash[i / 8] & (0x80 >> (i % 8))) != 0 ? '1' : '0');
-        return builder.toString();
-    }
-
     /**
      * Returns the approximate distance of this key to the other key.
      * <p>
@@ -267,18 +249,6 @@ public class Key implements Comparable<Key> {
         }
 
         return out;
-    }
-
-    /**
-     * calculates log2(this - otherKey % 2^161).<br />
-     * To get the natural distance for ascending key order this should be the successive element of otherKey
-     */
-    public double naturalDistance(Key otherKey) {
-        return Math.log(new BigInteger(1, hash).subtract(new BigInteger(1, otherKey.hash)).mod(new BigInteger(1, MAX_KEY.hash).add(new BigInteger("1"))).doubleValue()) / Math.log(2);
-    }
-
-    public int getRadix(int byteIndex) {
-        return hash[byteIndex] & 0xFF;
     }
 
     /**

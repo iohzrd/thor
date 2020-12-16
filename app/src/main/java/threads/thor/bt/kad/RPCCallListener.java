@@ -23,12 +23,6 @@ public interface RPCCallListener {
 
 
     /**
-     * The call has not timed out yet but is estimated to be unlikely to succeed
-     */
-    default void onStall(RPCCall c) {
-    }
-
-    /**
      * The call has timed out.
      *
      * @param c The call

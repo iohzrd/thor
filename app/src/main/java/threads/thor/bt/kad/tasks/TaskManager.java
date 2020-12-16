@@ -17,11 +17,7 @@ import threads.thor.bt.kad.DHTConstants;
 import threads.thor.bt.kad.RPCServer;
 import threads.thor.bt.kad.tasks.Task.TaskState;
 
-/**
- * Manages all dht tasks.
- *
- * @author Damokles
- */
+
 public class TaskManager {
 
     private final ConcurrentHashMap<RPCServer, ServerSet> taskSets;
@@ -36,16 +32,13 @@ public class TaskManager {
         taskSets = new ConcurrentHashMap<>();
         next_id.set(1);
 
-        finishListener = t -> {
-            dht.getStats().taskFinished(t);
-            setFor(t.getRPC()).ifPresent(s -> {
-                synchronized (s.active) {
-                    s.active.remove(t);
-                }
-                s.dequeue();
+        finishListener = t -> setFor(t.getRPC()).ifPresent(s -> {
+            synchronized (s.active) {
+                s.active.remove(t);
+            }
+            s.dequeue();
 
-            });
-        };
+        });
     }
 
     public void addTask(Task task) {
@@ -88,7 +81,7 @@ public class TaskManager {
             return;
         }
 
-        if (!task.setState(TaskState.INITIAL, TaskState.QUEUED))
+        if (!task.setState())
             return;
 
         synchronized (s.get().queued) {
@@ -114,15 +107,6 @@ public class TaskManager {
         }
     }
 
-    /// Get the number of running tasks
-    public int getNumTasks() {
-        return taskSets.values().stream().mapToInt(s -> s.active.size()).sum();
-    }
-
-    /// Get the number of queued tasks
-    public int getNumQueuedTasks() {
-        return taskSets.values().stream().mapToInt(s -> s.queued.size()).sum();
-    }
 
     public Task[] getActiveTasks() {
         Task[] t = taskSets.values().stream().flatMap(s -> s.snapshotActive().stream()).toArray(Task[]::new);

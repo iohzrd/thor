@@ -2,7 +2,6 @@ package threads.thor.bt.kad.tasks;
 
 import androidx.annotation.NonNull;
 
-import java.util.Comparator;
 import java.util.NavigableSet;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.stream.Stream;
@@ -26,7 +25,6 @@ class ClosestSet {
 
     ClosestSet(Key target, int targetSize) {
         this.target = target;
-        Comparator<Key> targetComp = new Key.DistanceOrder(target);
         closest = new ConcurrentSkipListSet<>(new KBucketEntry.DistanceOrder(target));
         this.targetSize = targetSize;
     }

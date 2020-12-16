@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
 
-import threads.thor.bt.kad.PeerAddressDBItem;
 import threads.thor.bt.utils.Arrays;
 import threads.thor.bt.utils.NetMask;
 
@@ -40,11 +39,6 @@ public class AddressUtils {
             throw new Error("should not happen");
         }
 
-    }
-
-    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-    public static boolean isBogon(PeerAddressDBItem item) {
-        return isBogon(item.getInetAddress(), item.getPort());
     }
 
     public static boolean isBogon(InetSocketAddress addr) {
