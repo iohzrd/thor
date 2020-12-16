@@ -91,7 +91,7 @@ public class SocketPeerConnection implements PeerConnection {
                 try {
                     readLock.lock();
                     try {
-                        condition.await(timeout < WAIT_BETWEEN_READS ? timeout : WAIT_BETWEEN_READS, TimeUnit.MILLISECONDS);
+                        condition.await(Math.min(timeout, WAIT_BETWEEN_READS), TimeUnit.MILLISECONDS);
                     } catch (InterruptedException e) {
                         throw new RuntimeException("Unexpectedly interrupted", e);
                     }
@@ -158,10 +158,6 @@ public class SocketPeerConnection implements PeerConnection {
     @Override
     public long getLastActive() {
         return lastActive.get();
-    }
-
-    private String getPeerString() {
-        return remotePeer.getInetAddress() + ":" + remotePort;
     }
 
 }

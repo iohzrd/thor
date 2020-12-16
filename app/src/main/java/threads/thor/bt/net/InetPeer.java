@@ -71,10 +71,6 @@ public class InetPeer implements Peer {
         return builder(address, port).build();
     }
 
-    public static InetPeer build(InetAddress address) {
-        return builder(address).build();
-    }
-
     @Override
     public InetAddress getInetAddress() {
         return addressSupplier.get();

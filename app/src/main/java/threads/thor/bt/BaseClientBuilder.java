@@ -73,7 +73,7 @@ public abstract class BaseClientBuilder<B extends BaseClientBuilder> {
         @SuppressWarnings("unchecked")
         Class<C> contextType = (Class<C>) context.getClass();
 
-        ListenerSource<C> listenerSource = new ListenerSource<>(contextType);
+        ListenerSource<C> listenerSource = new ListenerSource<>();
         collectStageListeners(listenerSource);
 
         return new DefaultClient<>(runtime, processor(runtime, contextType), context, listenerSource);

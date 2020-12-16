@@ -30,7 +30,7 @@ import threads.thor.bt.tracker.TrackerResponse;
  * @since 1.3
  */
 public class TrackerAnnouncer {
-
+    private static final String TAG = TrackerAnnouncer.class.getSimpleName();
     private final Optional<Tracker> trackerOptional;
     private final Torrent torrent;
     private final TorrentSessionState sessionState;
@@ -115,7 +115,7 @@ public class TrackerAnnouncer {
         if (message.isPresent()) {
             log += "; message: " + message;
         }
-
+        LogUtils.error(TAG, log);
     }
 
     private enum Event {

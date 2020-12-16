@@ -57,10 +57,6 @@ public final class TorrentRegistry {
         this.descriptors = new ConcurrentHashMap<>();
     }
 
-    public Collection<Torrent> getTorrents() {
-        return Collections.unmodifiableCollection(torrents.values());
-    }
-
     public Collection<TorrentId> getTorrentIds() {
         return Collections.unmodifiableCollection(torrentIds);
     }
@@ -70,17 +66,10 @@ public final class TorrentRegistry {
         return Optional.ofNullable(torrents.get(torrentId));
     }
 
-    public Optional<TorrentDescriptor> getDescriptor(Torrent torrent) {
-        return Optional.ofNullable(descriptors.get(torrent.getTorrentId()));
-    }
 
     public Optional<TorrentDescriptor> getDescriptor(TorrentId torrentId) {
         Objects.requireNonNull(torrentId, "Missing threads.torrent ID");
         return Optional.ofNullable(descriptors.get(torrentId));
-    }
-
-    public TorrentDescriptor getOrCreateDescriptor(Torrent torrent, Storage storage) {
-        return register(torrent, storage);
     }
 
     public TorrentDescriptor register(Torrent torrent, Storage storage) {

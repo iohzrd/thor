@@ -39,10 +39,6 @@ public class MagnetContext extends TorrentContext {
         this.magnetUri = magnetUri;
     }
 
-    public MagnetContext(MagnetUri magnetUri, PieceSelector pieceSelector, Storage storage) {
-        super(pieceSelector, storage, null);
-        this.magnetUri = magnetUri;
-    }
 
     public MagnetUri getMagnetUri() {
         return magnetUri;

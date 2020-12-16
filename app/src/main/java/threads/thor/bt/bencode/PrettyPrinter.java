@@ -31,18 +31,6 @@ public class PrettyPrinter {
         return st.codePoints().anyMatch(i -> i < 32 && i != '\r' && i != '\n');
     }
 
-    public void indent(CharSequence i) {
-        indent = i;
-    }
-
-    public void guessHumanReadableStringValues(boolean value) {
-        guessHuman = value;
-    }
-
-    public void truncateHex(boolean value) {
-        truncate = value;
-    }
-
     private void linebreak(LinebreakOmit state) {
         if (indent == null)
             return;

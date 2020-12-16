@@ -16,11 +16,14 @@
 
 package threads.thor.bt.service;
 
+import java.net.Inet6Address;
 import java.net.InetAddress;
+import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.Enumeration;
 
+import threads.LogUtils;
 import threads.thor.bt.BtException;
 
 /**
@@ -29,6 +32,24 @@ import threads.thor.bt.BtException;
  * @since 1.0
  */
 public class NetworkUtil {
+    private static final String TAG = NetworkUtil.class.getSimpleName();
+
+    public static boolean hasIpv6() {
+        try {
+            Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
+            while (networkInterfaces.hasMoreElements()) {
+                NetworkInterface networkInterface = networkInterfaces.nextElement();
+                for (InterfaceAddress address : networkInterface.getInterfaceAddresses()) {
+                    if (address.getAddress() instanceof Inet6Address) {
+                        return true;
+                    }
+                }
+            }
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable);
+        }
+        return false;
+    }
 
     /**
      * Get address for a local internet link.

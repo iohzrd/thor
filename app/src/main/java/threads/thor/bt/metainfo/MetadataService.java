@@ -91,7 +91,7 @@ public final class MetadataService {
         return buildTorrent(bs);
     }
 
-    @SuppressWarnings({"unchecked"})
+
     private Torrent buildTorrent(byte[] bs) {
         try (BEParser parser = new BEParser(bs)) {
             if (parser.readType() != BEType.MAP) {

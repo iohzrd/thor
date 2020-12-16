@@ -153,7 +153,6 @@ public class DownloadMagnetWorker extends Worker {
                 Objects.requireNonNull(rootDoc);
                 Config config = new Config();
                 config.setNumOfHashingThreads(Runtime.getRuntime().availableProcessors() * 2);
-                config.setShouldUseRouterBootstrap(true);
                 config.setAcceptorPort(IPFS.nextFreePort());
                 byte[] id = new IdentityService().getID();
                 config.setLocalPeerId(PeerId.fromBytes(id));

@@ -35,26 +35,17 @@ import threads.thor.bt.processor.ProcessingStage;
  */
 public class ListenerSource<C extends ProcessingContext> {
 
-    private final Class<C> contextType;
     private final Map<ProcessingEvent, Collection<BiFunction<C, ProcessingStage<C>, ProcessingStage<C>>>> listeners;
 
     /**
      * Create an instance of listener source for a particular type of processing context
      *
-     * @param contextType Type of processing context
      * @since 1.5
      */
-    public ListenerSource(Class<C> contextType) {
-        this.contextType = contextType;
+    public ListenerSource() {
         this.listeners = new HashMap<>();
     }
 
-    /**
-     * @since 1.5
-     */
-    public Class<C> getContextType() {
-        return contextType;
-    }
 
     /**
      * Add processing event listener.

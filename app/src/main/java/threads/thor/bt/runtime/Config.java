@@ -6,7 +6,6 @@ import java.net.InetAddress;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 
 import threads.thor.bt.net.InetPeerAddress;
 import threads.thor.bt.net.PeerId;
@@ -15,61 +14,50 @@ import threads.thor.bt.service.NetworkUtil;
 
 public class Config {
 
-    private InetAddress acceptorAddress;
+    private final InetAddress acceptorAddress;
     private int acceptorPort;
-    private Duration peerDiscoveryInterval;
-    private Duration peerHandshakeTimeout;
-    private Duration peerConnectionRetryInterval;
+    private final Duration peerDiscoveryInterval;
+    private final Duration peerHandshakeTimeout;
 
-    private Duration peerConnectionTimeout;
-    private Duration peerConnectionInactivityThreshold;
-    private Duration trackerQueryInterval;
-    private int maxPeerConnections;
-    private int maxPeerConnectionsPerTorrent;
-    private int transferBlockSize;
-    private int maxTransferBlockSize;
-    private int maxIOQueueSize;
+    private final Duration peerConnectionInactivityThreshold;
+    private final Duration trackerQueryInterval;
+    private final int maxPeerConnections;
+    private final int maxPeerConnectionsPerTorrent;
+    private final int transferBlockSize;
+
+    private final int maxIOQueueSize;
     private Duration shutdownHookTimeout;
     private int numOfHashingThreads;
-    private int maxConcurrentlyActivePeerConnectionsPerTorrent;
-    private Duration maxPieceReceivingTime;
-    private Duration maxMessageProcessingInterval;
-    private Duration unreachablePeerBanDuration;
-    private int maxPendingConnectionRequests;
-    private Duration timeoutedAssignmentPeerBanDuration;
-    private EncryptionPolicy encryptionPolicy;
-    private int metadataExchangeBlockSize;
-    private int metadataExchangeMaxSize;
-    private int msePrivateKeySize;
-    private int numberOfPeersToRequestFromTracker;
-    private int maxOutstandingRequests;
-    private int networkBufferSize;
-    private int listeningPort;
-    private boolean useRouterBootstrap;
-    private boolean useIPv6;
-    private Collection<InetPeerAddress> bootstrapNodes;
-
-    private Collection<InetPeerAddress> publicBootstrapNodes;
+    private final int maxConcurrentlyActivePeerConnectionsPerTorrent;
+    private final Duration maxPieceReceivingTime;
+    private final Duration maxMessageProcessingInterval;
+    private final Duration unreachablePeerBanDuration;
+    private final int maxPendingConnectionRequests;
+    private final Duration timeoutedAssignmentPeerBanDuration;
+    private final EncryptionPolicy encryptionPolicy;
+    private final int metadataExchangeBlockSize;
+    private final int metadataExchangeMaxSize;
+    private final int msePrivateKeySize;
+    private final int numberOfPeersToRequestFromTracker;
+    private final int maxOutstandingRequests;
+    private final int networkBufferSize;
+    private final Collection<InetPeerAddress> publicBootstrapNodes;
     private PeerId localPeerId;
 
-    /**
-     * Create a config with default parameters.
-     *
-     * @since 1.0
-     */
+
     public Config() {
         this.acceptorAddress = NetworkUtil.getInetAddressFromNetworkInterfaces();
         this.acceptorPort = 6891;
         this.peerDiscoveryInterval = Duration.ofSeconds(5);
-        this.peerConnectionRetryInterval = Duration.ofMinutes(5);
-        this.peerConnectionTimeout = Duration.ofSeconds(30);
+
+
         this.peerHandshakeTimeout = Duration.ofSeconds(30);
         this.peerConnectionInactivityThreshold = Duration.ofMinutes(3);
         this.trackerQueryInterval = Duration.ofMinutes(5);
         this.maxPeerConnections = 500;
         this.maxPeerConnectionsPerTorrent = maxPeerConnections; // assume single threads.torrent per runtime by default; change this to (maxActive * 2) maybe?
         this.transferBlockSize = 16 * 1024; // 16 KB
-        this.maxTransferBlockSize = 128 * 1024; // 128 KB
+
         this.maxIOQueueSize = Integer.MAX_VALUE;
         this.shutdownHookTimeout = Duration.ofSeconds(30);
         this.numOfHashingThreads = 1; // do not parallelize by default
@@ -86,10 +74,7 @@ public class Config {
         this.numberOfPeersToRequestFromTracker = 50;
         this.maxOutstandingRequests = 250;
         this.networkBufferSize = 1024 * 1024; // 1 MB
-        this.listeningPort = 49001;
-        this.useRouterBootstrap = false;
-        this.useIPv6 = false;
-        this.bootstrapNodes = Collections.emptyList();
+
 
         this.publicBootstrapNodes = Arrays.asList(
                 new InetPeerAddress("router.bittorrent.com", 6881),
@@ -99,7 +84,7 @@ public class Config {
     }
 
 
-    public Config(Config config) {
+    /*public Config(Config config) {
         this.acceptorAddress = config.getAcceptorAddress();
         this.acceptorPort = config.getAcceptorPort();
         this.peerDiscoveryInterval = config.getPeerDiscoveryInterval();
@@ -129,7 +114,7 @@ public class Config {
         this.numberOfPeersToRequestFromTracker = config.getNumberOfPeersToRequestFromTracker();
         this.maxOutstandingRequests = config.getMaxOutstandingRequests();
         this.networkBufferSize = config.getNetworkBufferSize();
-    }
+    }*/
 
     @NonNull
     public PeerId getLocalPeerId() {
@@ -138,47 +123,6 @@ public class Config {
 
     public void setLocalPeerId(@NonNull PeerId localPeerId) {
         this.localPeerId = localPeerId;
-    }
-
-    /**
-     * @param useRouterBootstrap Indicates whether public bootstrap services will be used
-     * @since 1.1
-     */
-    public void setShouldUseRouterBootstrap(boolean useRouterBootstrap) {
-        this.useRouterBootstrap = useRouterBootstrap;
-    }
-
-    /**
-     * @see #shouldUseIPv6()
-     * @since 1.1
-     */
-    public boolean shouldUseIPv6() {
-        return useIPv6;
-    }
-
-    /**
-     * @param useIPv6 Indicates whether IPv6 interface should be preferred for attaching the local DHT node.
-     *                Should not be set to true, if no IPv6 interfaces are available on current system.
-     * @since 1.1
-     */
-    public void setShouldUseIPv6(boolean useIPv6) {
-        this.useIPv6 = useIPv6;
-    }
-
-    /**
-     * @see #setBootstrapNodes(Collection)
-     * @since 1.3
-     */
-    public Collection<InetPeerAddress> getBootstrapNodes() {
-        return bootstrapNodes;
-    }
-
-    /**
-     * @param bootstrapNodes DHT nodes to use upon startup to connect to the swarm.
-     * @since 1.3
-     */
-    public void setBootstrapNodes(Collection<InetPeerAddress> bootstrapNodes) {
-        this.bootstrapNodes = bootstrapNodes;
     }
 
     /**
@@ -194,14 +138,6 @@ public class Config {
      */
     public InetAddress getAcceptorAddress() {
         return acceptorAddress;
-    }
-
-    /**
-     * @param acceptorAddress Local link that will be used by the incoming connection acceptor.
-     * @since 1.0
-     */
-    public void setAcceptorAddress(InetAddress acceptorAddress) {
-        this.acceptorAddress = acceptorAddress;
     }
 
     /**
@@ -227,56 +163,10 @@ public class Config {
     }
 
     /**
-     * @param peerDiscoveryInterval Interval at which peer sources should be queried for new peers.
-     * @since 1.0
-     */
-    public void setPeerDiscoveryInterval(Duration peerDiscoveryInterval) {
-        this.peerDiscoveryInterval = peerDiscoveryInterval;
-    }
-
-    /**
      * @since 1.0
      */
     public Duration getPeerHandshakeTimeout() {
         return peerHandshakeTimeout;
-    }
-
-    /**
-     * @param peerHandshakeTimeout Time to wait for a peer's handshake.
-     * @since 1.0
-     */
-    public void setPeerHandshakeTimeout(Duration peerHandshakeTimeout) {
-        this.peerHandshakeTimeout = peerHandshakeTimeout;
-    }
-
-    /**
-     * @since 1.0
-     */
-    private Duration getPeerConnectionRetryInterval() {
-        return peerConnectionRetryInterval;
-    }
-
-    /**
-     * @param peerConnectionRetryInterval Interval at which attempts to connect to a peer will be performed
-     * @since 1.0
-     */
-    public void setPeerConnectionRetryInterval(Duration peerConnectionRetryInterval) {
-        this.peerConnectionRetryInterval = peerConnectionRetryInterval;
-    }
-
-    /**
-     * @since 1.0
-     */
-    private Duration getPeerConnectionTimeout() {
-        return peerConnectionTimeout;
-    }
-
-    /**
-     * @param peerConnectionTimeout Amount of time to wait for establishing of a peer connection
-     * @since 1.0
-     */
-    public void setPeerConnectionTimeout(Duration peerConnectionTimeout) {
-        this.peerConnectionTimeout = peerConnectionTimeout;
     }
 
     /**
@@ -287,26 +177,10 @@ public class Config {
     }
 
     /**
-     * @param peerConnectionInactivityThreshold Amount of time after which an inactive peer connection will be dropped
-     * @since 1.0
-     */
-    public void setPeerConnectionInactivityThreshold(Duration peerConnectionInactivityThreshold) {
-        this.peerConnectionInactivityThreshold = peerConnectionInactivityThreshold;
-    }
-
-    /**
      * @since 1.0
      */
     public Duration getTrackerQueryInterval() {
         return trackerQueryInterval;
-    }
-
-    /**
-     * @param trackerQueryInterval Interval at which trackers will be queried for peers.
-     * @since 1.0
-     */
-    public void setTrackerQueryInterval(Duration trackerQueryInterval) {
-        this.trackerQueryInterval = trackerQueryInterval;
     }
 
     /**
@@ -317,28 +191,10 @@ public class Config {
     }
 
     /**
-     * @param maxPeerConnections Maximum amount of established peer connections per runtime
-     *                           (all threads.torrent processing sessions combined).
-     * @since 1.0
-     */
-    public void setMaxPeerConnections(int maxPeerConnections) {
-        this.maxPeerConnections = maxPeerConnections;
-    }
-
-    /**
      * @since 1.0
      */
     public int getMaxPeerConnectionsPerTorrent() {
         return maxPeerConnectionsPerTorrent;
-    }
-
-    /**
-     * @param maxPeerConnectionsPerTorrent Maximum number of established peer connections
-     *                                     within a threads.torrent processing session.
-     * @since 1.0
-     */
-    public void setMaxPeerConnectionsPerTorrent(int maxPeerConnectionsPerTorrent) {
-        this.maxPeerConnectionsPerTorrent = maxPeerConnectionsPerTorrent;
     }
 
     /**
@@ -349,40 +205,10 @@ public class Config {
     }
 
     /**
-     * @param transferBlockSize Network transfer block size
-     * @since 1.0
-     */
-    public void setTransferBlockSize(int transferBlockSize) {
-        this.transferBlockSize = transferBlockSize;
-    }
-
-    /**
-     * @since 1.0
-     */
-    private int getMaxTransferBlockSize() {
-        return maxTransferBlockSize;
-    }
-
-    /**
-     * @param maxTransferBlockSize Maximum supported transfer block size.
-     * @since 1.0
-     */
-    public void setMaxTransferBlockSize(int maxTransferBlockSize) {
-        this.maxTransferBlockSize = maxTransferBlockSize;
-    }
-
-    /**
      * @since 1.0
      */
     public int getMaxIOQueueSize() {
         return maxIOQueueSize;
-    }
-
-    /**
-     * @param maxIOQueueSize Maximum depth of I/O operations queue (read/write blocks).
-     */
-    public void setMaxIOQueueSize(int maxIOQueueSize) {
-        this.maxIOQueueSize = maxIOQueueSize;
     }
 
     /**
@@ -424,44 +250,10 @@ public class Config {
     }
 
     /**
-     * Maximum number of peer connections that are allowed to request and receive pieces.
-     * Affects performance (too few or too many is bad).
-     * <p>
-     * Note that this value implicitly affects when the threads.torrent processing session enters
-     * the so-called "endgame" mode. By default it's assumed that the endgame mode should
-     * be activated when the number of remaining (incomplete) pieces is smaller than the
-     * number of pending requests, which in its' turn is no greater than this value.
-     * <p>
-     * E.g. if the limit for concurrently active connections is 20, and there are in fact 20
-     * peers that we are downloading from at the moment, then the endgame will begin
-     * as soon as there are 20 pieces left to download. At the same time if there are only 15
-     * active connections, than the endgame will begin when there are 15 pieces left.
-     * Thus this value affects only the lower bound on the number of pieces to be left
-     * to trigger the beginning of an endgame.
-     *
-     * @param maxConcurrentlyActivePeerConnectionsPerTorrent Maximum number of peer connections
-     *                                                       that are allowed to request and receive pieces.
-     * @since 1.1
-     */
-    public void setMaxConcurrentlyActivePeerConnectionsPerTorrent(int maxConcurrentlyActivePeerConnectionsPerTorrent) {
-        this.maxConcurrentlyActivePeerConnectionsPerTorrent = maxConcurrentlyActivePeerConnectionsPerTorrent;
-    }
-
-    /**
      * @since 1.1
      */
     public Duration getMaxPieceReceivingTime() {
         return maxPieceReceivingTime;
-    }
-
-    /**
-     * @param maxPieceReceivingTime Limit on the amount of time it takes to receive all blocks in a piece
-     *                              from a peer until this peer is considered timeouted and banned for a short
-     *                              amount of time (with the piece being unassigned from this peer).
-     * @since 1.1
-     */
-    public void setMaxPieceReceivingTime(Duration maxPieceReceivingTime) {
-        this.maxPieceReceivingTime = maxPieceReceivingTime;
     }
 
     /**
@@ -472,34 +264,10 @@ public class Config {
     }
 
     /**
-     * This option is related to the adaptive message processing interval feature in the message dispatcher.
-     * The lower this value the higher the ingoing/outgoing message processing rate but also higher the CPU load.
-     * Reasonable value (in 100..1000 ms range) greatly reduces the CPU load when there is little network activity
-     * without compromising the overall message exchange rates.
-     *
-     * @param maxMessageProcessingInterval Maximum time to sleep between message processing loop iterations, in millis.
-     * @see threads.thor.bt.net.MessageDispatcher
-     * @since 1.1
-     */
-    public void setMaxMessageProcessingInterval(Duration maxMessageProcessingInterval) {
-        this.maxMessageProcessingInterval = maxMessageProcessingInterval;
-    }
-
-    /**
      * @since 1.1
      */
     public Duration getUnreachablePeerBanDuration() {
         return unreachablePeerBanDuration;
-    }
-
-    /**
-     * @param unreachablePeerBanDuration If a peer is not reachable (i.e. some kind of I/O error happens
-     *                                   when a connection attempt is made), then new requests to connect
-     *                                   to this peer will be ignored for this amount of time.
-     * @since 1.1
-     */
-    public void setUnreachablePeerBanDuration(Duration unreachablePeerBanDuration) {
-        this.unreachablePeerBanDuration = unreachablePeerBanDuration;
     }
 
     /**
@@ -510,31 +278,10 @@ public class Config {
     }
 
     /**
-     * @param maxPendingConnectionRequests Maximum allowed number of simultaneous connection requests
-     *                                     (both inbound and outbound). All subsequent requests will be queued
-     *                                     until some of the currently pending/processed requests is completed.
-     * @since 1.1
-     */
-    public void setMaxPendingConnectionRequests(int maxPendingConnectionRequests) {
-        this.maxPendingConnectionRequests = maxPendingConnectionRequests;
-    }
-
-    /**
      * @since 1.1
      */
     public Duration getTimeoutedAssignmentPeerBanDuration() {
         return timeoutedAssignmentPeerBanDuration;
-    }
-
-    /**
-     * @param timeoutedAssignmentPeerBanDuration Amount of time to keep the threads.torrent processing session from
-     *                                           requesting a peer for new pieces if this peer's previous assignment
-     *                                           was cancelled due to a timeout.
-     * @see #setMaxPieceReceivingTime(Duration)
-     * @since 1.1
-     */
-    public void setTimeoutedAssignmentPeerBanDuration(Duration timeoutedAssignmentPeerBanDuration) {
-        this.timeoutedAssignmentPeerBanDuration = timeoutedAssignmentPeerBanDuration;
     }
 
     /**
@@ -545,26 +292,10 @@ public class Config {
     }
 
     /**
-     * @param encryptionPolicy Message Stream Encryption policy
-     * @since 1.2
-     */
-    public void setEncryptionPolicy(EncryptionPolicy encryptionPolicy) {
-        this.encryptionPolicy = encryptionPolicy;
-    }
-
-    /**
      * @since 1.3
      */
     public int getMetadataExchangeBlockSize() {
         return metadataExchangeBlockSize;
-    }
-
-    /**
-     * @param metadataExchangeBlockSize BEP-9 transfer block size
-     * @since 1.3
-     */
-    public void setMetadataExchangeBlockSize(int metadataExchangeBlockSize) {
-        this.metadataExchangeBlockSize = metadataExchangeBlockSize;
     }
 
     /**
@@ -575,27 +306,10 @@ public class Config {
     }
 
     /**
-     * @param metadataExchangeMaxSize Maximum allowed metadata size for BEP-9 transfer
-     * @since 1.3
-     */
-    public void setMetadataExchangeMaxSize(int metadataExchangeMaxSize) {
-        this.metadataExchangeMaxSize = metadataExchangeMaxSize;
-    }
-
-    /**
      * @since 1.3
      */
     public int getMsePrivateKeySize() {
         return msePrivateKeySize;
-    }
-
-    /**
-     * @param msePrivateKeySize MSE private key size in bytes.
-     *                          Allowed values are 16..512 bytes (128..4096 bits). Default is 20 bytes (160 bit).
-     * @since 1.3
-     */
-    public void setMsePrivateKeySize(int msePrivateKeySize) {
-        this.msePrivateKeySize = msePrivateKeySize;
     }
 
     /**
@@ -606,14 +320,6 @@ public class Config {
     }
 
     /**
-     * @param numberOfPeersToRequestFromTracker Number of peers to request from a tracker
-     * @since 1.5
-     */
-    public void setNumberOfPeersToRequestFromTracker(int numberOfPeersToRequestFromTracker) {
-        this.numberOfPeersToRequestFromTracker = numberOfPeersToRequestFromTracker;
-    }
-
-    /**
      * @since 1.9
      */
     public int getMaxOutstandingRequests() {
@@ -621,26 +327,10 @@ public class Config {
     }
 
     /**
-     * @param maxOutstandingRequests Limit on the number of outstanding requests to a peer
-     * @since 1.9
-     */
-    public void setMaxOutstandingRequests(int maxOutstandingRequests) {
-        this.maxOutstandingRequests = maxOutstandingRequests;
-    }
-
-    /**
      * @since 1.9
      */
     public int getNetworkBufferSize() {
         return networkBufferSize;
-    }
-
-    /**
-     * @param networkBufferSize Size of send and receive network buffers (in bytes)
-     * @since 1.9
-     */
-    public void setNetworkBufferSize(int networkBufferSize) {
-        this.networkBufferSize = networkBufferSize;
     }
 
 }

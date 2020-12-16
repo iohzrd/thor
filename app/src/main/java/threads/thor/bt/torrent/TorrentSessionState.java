@@ -1,22 +1,5 @@
-/*
- * Copyright (c) 2016—2017 Andrei Tomashpolskiy and individual contributors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package threads.thor.bt.torrent;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -26,8 +9,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import threads.thor.bt.net.ConnectionKey;
 import threads.thor.bt.torrent.messaging.ConnectionState;
 import threads.thor.bt.torrent.messaging.TorrentWorker;
-
-import static java.util.stream.Collectors.summingLong;
 
 public final class TorrentSessionState {
 
@@ -75,15 +56,6 @@ public final class TorrentSessionState {
     }
 
 
-    public int getPiecesIncomplete() {
-        if (descriptor.getDataDescriptor() != null) {
-            return descriptor.getDataDescriptor().getBitfield().getPiecesIncomplete();
-        } else {
-            return 1;
-        }
-    }
-
-
     public int getPiecesRemaining() {
         if (descriptor.getDataDescriptor() != null) {
             return descriptor.getDataDescriptor().getBitfield().getPiecesRemaining();
@@ -93,30 +65,16 @@ public final class TorrentSessionState {
     }
 
 
-    public int getPiecesSkipped() {
-        if (descriptor.getDataDescriptor() != null) {
-            return descriptor.getDataDescriptor().getBitfield().getPiecesSkipped();
-        } else {
-            return 0;
-        }
-    }
-
-    public int getPiecesNotSkipped() {
-        if (descriptor.getDataDescriptor() != null) {
-            return descriptor.getDataDescriptor().getBitfield().getPiecesNotSkipped();
-        } else {
-            return 1;
-        }
-    }
-
     public synchronized long getDownloaded() {
-        long downloaded = getCurrentAmounts().values().stream().collect(summingLong(TransferAmounts::getDownloaded));
+        long downloaded = getCurrentAmounts().values().stream().
+                mapToLong(TransferAmounts::getDownloaded).sum();
         downloaded += downloadedFromDisconnected.get();
         return downloaded;
     }
 
     public synchronized long getUploaded() {
-        long uploaded = getCurrentAmounts().values().stream().collect(summingLong(TransferAmounts::getUploaded));
+        long uploaded = getCurrentAmounts().values().stream().
+                mapToLong(TransferAmounts::getUploaded).sum();
         uploaded += uploadedToDisconnected.get();
         return uploaded;
     }
@@ -151,10 +109,6 @@ public final class TorrentSessionState {
                             );
                         },
                         HashMap::putAll);
-    }
-
-    public Set<ConnectionKey> getConnectedPeers() {
-        return Collections.unmodifiableSet(worker.getPeers());
     }
 
     private static class TransferAmounts {

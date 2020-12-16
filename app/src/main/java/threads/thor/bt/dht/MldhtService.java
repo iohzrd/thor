@@ -1,19 +1,3 @@
-/*
- * Copyright (c) 2016—2017 Andrei Tomashpolskiy and individual contributors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package threads.thor.bt.dht;
 
 
@@ -25,6 +9,7 @@ import java.io.StringWriter;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.util.Collection;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Stream;
@@ -62,7 +47,6 @@ public class MldhtService implements DHTService {
     private final int acceptorPort;
     private final PeerId peerId;
     private final Collection<InetPeerAddress> publicBootstrapNodes;
-    private final Collection<InetPeerAddress> bootstrapNodes;
     private final Set<PortMapper> portMappers;
     private final TorrentRegistry torrentRegistry;
 
@@ -71,10 +55,10 @@ public class MldhtService implements DHTService {
                         @NonNull Set<PortMapper> portMappers,
                         @NonNull TorrentRegistry torrentRegistry,
                         @NonNull EventSource eventSource) {
-        this.dht = new DHT(config.shouldUseIPv6() ? DHTtype.IPV6_DHT : DHTtype.IPV4_DHT);
+
+        this.dht = new DHT(NetworkUtil.hasIpv6() ? DHTtype.IPV6_DHT : DHTtype.IPV4_DHT);
         this.acceptorPort = config.getAcceptorPort();
         this.publicBootstrapNodes = config.getPublicBootstrapNodes();
-        this.bootstrapNodes = config.getBootstrapNodes();
         this.portMappers = portMappers;
         this.torrentRegistry = torrentRegistry;
 
@@ -115,9 +99,7 @@ public class MldhtService implements DHTService {
         try {
             dht.start(peerId, port);
             publicBootstrapNodes.forEach(this::addNode);
-            bootstrapNodes.forEach(this::addNode);
             mapPorts();
-
         } catch (Throwable e) {
             throw new BtException("Failed to start DHT", e);
         }
@@ -158,6 +140,8 @@ public class MldhtService implements DHTService {
             dht.getServerManager().awaitActiveServer().get();
             final PeerLookupTask lookup = dht.createPeerLookup(torrentId.getBytes());
             final StreamAdapter<Peer> streamAdapter = new StreamAdapter<>();
+
+            Objects.requireNonNull(lookup);
             lookup.setResultHandler((k, p) -> {
                 Peer peer = InetPeer.build(p.getInetAddress(), p.getPort());
                 streamAdapter.addItem(peer);
