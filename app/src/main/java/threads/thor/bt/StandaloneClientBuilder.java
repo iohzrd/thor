@@ -16,8 +16,6 @@
 
 package threads.thor.bt;
 
-import android.content.Context;
-
 import threads.thor.bt.runtime.BtClient;
 import threads.thor.bt.runtime.BtRuntime;
 import threads.thor.bt.runtime.BtRuntimeBuilder;
@@ -41,16 +39,6 @@ public class StandaloneClientBuilder extends TorrentClientBuilder<StandaloneClie
      */
     public StandaloneClientBuilder config(Config config) {
         this.runtimeBuilder = BtRuntime.builder(config);
-        return this;
-    }
-
-    /**
-     * Set runtime configuration.
-     *
-     * @since 1.1
-     */
-    public StandaloneClientBuilder context(Context context) {
-        runtimeBuilder.context(context);
         return this;
     }
 

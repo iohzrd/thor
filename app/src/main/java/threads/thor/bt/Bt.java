@@ -16,8 +16,6 @@
 
 package threads.thor.bt;
 
-import threads.thor.bt.runtime.BtRuntime;
-
 /**
  * Main entry point to building Bt clients
  *
@@ -35,12 +33,5 @@ public class Bt {
         return new StandaloneClientBuilder();
     }
 
-    /**
-     * Create a standard client builder with the provided runtime
-     *
-     * @since 1.1
-     */
-    public static BtClientBuilder client(BtRuntime runtime) {
-        return new BtClientBuilder().runtime(runtime);
-    }
+
 }

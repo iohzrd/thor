@@ -213,7 +213,6 @@ public class PeerLookupTask extends IteratingTask {
     }
 
 
-
     public Map<KBucketEntry, byte[]> getAnnounceCanidates() {
         return announceCanidates;
     }

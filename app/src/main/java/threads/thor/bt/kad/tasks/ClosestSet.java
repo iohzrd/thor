@@ -29,6 +29,7 @@ class ClosestSet {
         this.targetSize = threads.thor.bt.kad.DHTConstants.MAX_ENTRIES_PER_BUCKET;
     }
 
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     boolean reachedTargetCapacity() {
         return closest.size() >= targetSize;
     }

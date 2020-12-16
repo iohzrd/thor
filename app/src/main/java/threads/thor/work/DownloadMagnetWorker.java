@@ -169,7 +169,6 @@ public class DownloadMagnetWorker extends Worker {
                         .runtime(runtime)
                         .config(config)
                         .storage(storage)
-                        .context(getApplicationContext())
                         .magnet(magnet)
                         .stopWhenDownloaded()
                         .build();

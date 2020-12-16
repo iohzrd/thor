@@ -1,18 +1,3 @@
-/*
- * Copyright (c) 2016—2017 Andrei Tomashpolskiy and individual contributors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 
 package threads.thor.bt.runtime;
 
@@ -25,7 +10,6 @@ import java.net.InetSocketAddress;
 import java.nio.channels.Selector;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -115,18 +99,11 @@ import threads.thor.bt.tracker.TrackerFactory;
 import threads.thor.bt.tracker.TrackerService;
 import threads.thor.bt.tracker.udp.UdpTrackerFactory;
 
-/**
- * A runtime is an orchestrator of multiple simultaneous threads.torrent sessions.
- * It provides a DI container with shared services and manages the application's lifecycle.
- *
- * @since 1.0
- */
 public class BtRuntime {
 
 
     private static final String TAG = BtRuntime.class.getSimpleName();
     public final boolean mDownload;
-    //private SharedSelector mSelector;
     public final MessageDispatcher mMessageDispatcher;
     public final ConnectionSource mConnectionSource;
     public final PeerRegistry mPeerRegistry;
@@ -144,7 +121,7 @@ public class BtRuntime {
     private final RuntimeLifecycleBinder mRuntimeLifecycleBinder;
     private final Set<BtClient> knownClients;
     private final AtomicBoolean started;
-    private boolean manualShutdownOnly;
+
 
     public BtRuntime(@NonNull Context context,
                      @NonNull Config config,
@@ -159,7 +136,7 @@ public class BtRuntime {
         this.mDownload = download;
         this.mEventBus = eventBus;
         this.mRuntimeLifecycleBinder = new RuntimeLifecycleBinder();
-        PeerExchangePeerSourceFactory mPeerExchangePeerSourceFactory = new PeerExchangePeerSourceFactory(
+        new PeerExchangePeerSourceFactory(
                 mEventBus, mRuntimeLifecycleBinder, new PeerExchangeConfig());
 
 
@@ -193,10 +170,8 @@ public class BtRuntime {
 
 
         Set<PortMapper> portMappers = new HashSet<>();
-        // TODO portMappers.add(new NoOpPortMapper());
 
-        PortMappingInitializer mPortMappingInitializer =
-                new PortMappingInitializer(portMappers, mRuntimeLifecycleBinder, mConfig);
+        new PortMappingInitializer(portMappers, mRuntimeLifecycleBinder, mConfig);
 
 
         DataReceiver dataReceiver = new DataReceivingLoop(mSelector, mRuntimeLifecycleBinder);
@@ -205,12 +180,12 @@ public class BtRuntime {
         IChannelPipelineFactory channelPipelineFactory =
                 new ChannelPipelineFactory(bufferManager, mBufferedPieceRegistry);
 
-        Set<HandshakeHandler> boundHandshakeHandlers = new HashSet<>(); // TODO
+        Set<HandshakeHandler> boundHandshakeHandlers = new HashSet<>();
         Map<String, MessageHandler<? extends ExtendedMessage>> handlersByTypeName = new HashMap<>();
         handlersByTypeName.put("ut_pex", new PeerExchangeMessageHandler());
         handlersByTypeName.put("ut_metadata", new UtMetadataMessageHandler());
         ExtendedMessageTypeMapping messageTypeMapping =
-                provideExtendedMessageTypeMapping(handlersByTypeName); // TODO
+                provideExtendedMessageTypeMapping(handlersByTypeName);
 
         ExtendedProtocol extendedProtocol = new ExtendedProtocol(messageTypeMapping, handlersByTypeName);
         PortMessageHandler portMessageHandler = new PortMessageHandler();
@@ -264,7 +239,7 @@ public class BtRuntime {
         Cookie cookie = LocalServiceDiscoveryModule.provideLocalServiceDiscoveryCookie();
 
 
-        LocalServiceDiscoveryService mLocalServiceDiscoveryService = new LocalServiceDiscoveryService(
+        new LocalServiceDiscoveryService(
                 cookie,
                 info,
                 groupChannels,
@@ -272,9 +247,8 @@ public class BtRuntime {
                 mRuntimeLifecycleBinder,
                 new LocalServiceDiscoveryConfig());
 
-        LocalServiceDiscoveryPeerSourceFactory mLocalServiceDiscoveryPeerSourceFactory =
-                new LocalServiceDiscoveryPeerSourceFactory(groupChannels,
-                        mRuntimeLifecycleBinder, cookie, new LocalServiceDiscoveryConfig());
+        new LocalServiceDiscoveryPeerSourceFactory(groupChannels,
+                mRuntimeLifecycleBinder, cookie, new LocalServiceDiscoveryConfig());
 
 
         MldhtService mMldhtService = new MldhtService(mRuntimeLifecycleBinder, mConfig,
@@ -301,7 +275,7 @@ public class BtRuntime {
                 mRuntimeLifecycleBinder, mConnectionPool, mTorrentRegistry, config);
 
 
-        this.mMessagingAgents = new HashSet<>(); // todo
+        this.mMessagingAgents = new HashSet<>();
 
 
         this.started = new AtomicBoolean(false);
@@ -417,14 +391,6 @@ public class BtRuntime {
         return mEventBus;
     }
 
-    /**
-     * Disable automatic runtime shutdown, when all clients have been stopped.
-     *
-     * @since 1.0
-     */
-    void disableAutomaticShutdown() {
-        this.manualShutdownOnly = true;
-    }
 
 
     /**
@@ -448,11 +414,6 @@ public class BtRuntime {
         return started.get();
     }
 
-    /**
-     * Manually start the runtime (possibly with no clients attached).
-     *
-     * @since 1.0
-     */
     public void startup() {
         if (started.compareAndSet(false, true)) {
             synchronized (lock) {
@@ -461,37 +422,19 @@ public class BtRuntime {
         }
     }
 
-    /**
-     * Attach the provided client to this runtime.
-     *
-     * @since 1.0
-     */
+
     public void attachClient(BtClient client) {
         knownClients.add(client);
     }
 
-    /**
-     * Detach the client from this runtime.
-     *
-     * @since 1.0
-     */
     public void detachClient(BtClient client) {
         if (knownClients.remove(client)) {
-            if (!manualShutdownOnly && knownClients.isEmpty()) {
+            if (knownClients.isEmpty()) {
                 shutdown();
             }
         } else {
             throw new IllegalArgumentException("Unknown client: " + client);
         }
-    }
-
-    /**
-     * Get all clients, that are attached to this runtime.
-     *
-     * @since 1.1
-     */
-    public Collection<BtClient> getClients() {
-        return Collections.unmodifiableCollection(knownClients);
     }
 
 
@@ -529,7 +472,7 @@ public class BtRuntime {
                 event,
                 binding -> {
                     if (binding.isAsync()) {
-                        futures.put(binding, CompletableFuture.runAsync(toRunnable(event, binding), executor));
+                        futures.put(binding, CompletableFuture.runAsync(toRunnable(binding), executor));
                     } else {
                         syncBindings.add(binding);
                     }
@@ -538,7 +481,7 @@ public class BtRuntime {
         syncBindings.forEach(binding -> {
             String errorMessage = createErrorMessage(event, binding);
             try {
-                toRunnable(event, binding).run();
+                toRunnable(binding).run();
             } catch (Throwable e) {
                 errorConsumer.accept(new BtException(errorMessage, e));
             }
@@ -590,12 +533,12 @@ public class BtRuntime {
         }
     }
 
-    private Runnable toRunnable(RuntimeLifecycleBinder.LifecycleEvent event, LifecycleBinding binding) {
+    private Runnable toRunnable(LifecycleBinding binding) {
         return () -> {
             Runnable r = binding.getRunnable();
 
             Optional<String> descriptionOptional = binding.getDescription();
-            String description = descriptionOptional.orElseGet(r::toString);
+            descriptionOptional.orElseGet(r::toString);
 
             r.run();
         };

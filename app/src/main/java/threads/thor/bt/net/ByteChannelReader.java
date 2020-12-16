@@ -60,10 +60,6 @@ public class ByteChannelReader {
         return new ByteChannelReader(channel, timeout, Optional.of(waitBetweenReads), min, limit);
     }
 
-    public ByteChannelReader readExactly(int bytes) {
-        return new ByteChannelReader(channel, timeout, waitBetweenReads, bytes, bytes);
-    }
-
     public ByteChannelReader readAtLeast(int minBytes) {
         return new ByteChannelReader(channel, timeout, waitBetweenReads, minBytes, limit);
     }
