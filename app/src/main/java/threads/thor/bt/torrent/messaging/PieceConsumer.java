@@ -117,9 +117,7 @@ public class PieceConsumer implements IProduces, IConsumers {
         } else {
             future.whenComplete((block, error) -> {
 
-                if (block.isRejected()) {
-
-                } else {
+                if (!block.isRejected()) {
                     Optional<CompletableFuture<Boolean>> verificationFuture = block.getVerificationFuture();
                     if (verificationFuture.isPresent()) {
                         verificationFuture.get().whenComplete((verified, error1) -> {

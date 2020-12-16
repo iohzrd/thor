@@ -17,7 +17,6 @@
 package threads.thor.bt.protocol;
 
 import java.nio.Buffer;
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.BitSet;
 
@@ -101,22 +100,6 @@ public class Protocols {
     }
 
     /**
-     * Decode the binary representation of a {@link Long} from a buffer.
-     *
-     * @param buffer Buffer to read from.
-     *               Decoding will be done starting with the index denoted by {@link Buffer#position()}
-     * @return Decoded value, or null if there are insufficient bytes in buffer
-     * (i.e. <b>buffer.remaining()</b> &lt; 8)
-     * @since 1.0
-     */
-    public static Long readLong(ByteBuffer buffer) {
-        if (buffer.remaining() < Long.BYTES) {
-            return null;
-        }
-        return buffer.getLong();
-    }
-
-    /**
      * Decode the binary representation of an {@link Integer} from a byte array.
      *
      * @param bytes  Arbitrary byte array.
@@ -134,22 +117,6 @@ public class Protocols {
                 ((bytes[offset + 1] & 0xFF) << 16) |
                 ((bytes[offset + 2] & 0xFF) << 8) |
                 (bytes[offset + 3] & 0xFF);
-    }
-
-    /**
-     * Decode the binary representation of an {@link Integer} from a buffer.
-     *
-     * @param buffer Buffer to read from.
-     *               Decoding will be done starting with the index denoted by {@link Buffer#position()}
-     * @return Decoded value, or null if there are insufficient bytes in buffer
-     * (i.e. <b>buffer.remaining()</b> &lt; 4)
-     * @since 1.0
-     */
-    public static Integer readInt(ByteBuffer buffer) {
-        if (buffer.remaining() < Integer.BYTES) {
-            return null;
-        }
-        return buffer.getInt();
     }
 
     /**
@@ -184,22 +151,6 @@ public class Protocols {
         }
         return (short) (((bytes[offset] & 0xFF) << 8) |
                 ((bytes[offset + 1] & 0xFF)));
-    }
-
-    /**
-     * Decode the binary representation of a {@link Short} from a buffer.
-     *
-     * @param buffer Buffer to read from.
-     *               Decoding will be done starting with the index denoted by {@link Buffer#position()}
-     * @return Decoded value, or null if there are insufficient bytes in buffer
-     * (i.e. <b>buffer.remaining()</b> &lt; 2)
-     * @since 1.0
-     */
-    public static Short readShort(ByteBuffer buffer) {
-        if (buffer.remaining() < Short.BYTES) {
-            return null;
-        }
-        return buffer.getShort();
     }
 
     /**

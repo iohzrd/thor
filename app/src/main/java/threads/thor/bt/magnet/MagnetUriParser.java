@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -102,7 +103,7 @@ public class MagnetUriParser {
 
         Map<String, List<String>> paramsMap = collectParams(uri);
 
-        Set<String> infoHashes = getRequiredParam(UriParams.TORRENT_ID, paramsMap).stream()
+        Set<String> infoHashes = getRequiredParam(paramsMap).stream()
                 .filter(value -> value.startsWith(INFOHASH_PREFIX))
                 .map(value -> value.substring(INFOHASH_PREFIX.length()))
                 .collect(Collectors.toSet());
@@ -151,11 +152,12 @@ public class MagnetUriParser {
         return paramsMap;
     }
 
-    private List<String> getRequiredParam(String paramName,
-                                          Map<String, List<String>> paramsMap) {
-        List<String> values = paramsMap.getOrDefault(paramName, Collections.emptyList());
+    private List<String> getRequiredParam(Map<String, List<String>> paramsMap) {
+        List<String> values = paramsMap.getOrDefault(UriParams.TORRENT_ID, Collections.emptyList());
+        Objects.requireNonNull(values);
         if (values.isEmpty()) {
-            throw new IllegalStateException(String.format("Required parameter '%s' is missing: %s", paramName, values.size()));
+            throw new IllegalStateException(String.format("Required parameter '%s' is missing: %s",
+                    UriParams.TORRENT_ID, values.size()));
         }
         return values;
     }

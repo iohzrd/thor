@@ -37,11 +37,6 @@ import threads.thor.bt.protocol.Request;
 import threads.thor.bt.torrent.data.BlockRead;
 import threads.thor.bt.torrent.data.DataWorker;
 
-/**
- * Consumes block requests, received from the remote peer, and produces blocks.
- *
- * @since 1.0
- */
 public class PeerRequestConsumer implements IProduces, IConsumers {
 
     private final TorrentId torrentId;

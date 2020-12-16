@@ -56,24 +56,6 @@ public abstract class BaseClientBuilder<B extends BaseClientBuilder> {
     }
 
     /**
-     * Initialize the client eagerly.
-     * <p>
-     * By default the client is initialized lazily
-     * upon calling {@link BtClient#startAsync()} method or one of its' overloaded version.
-     * <p>
-     * Initialization is implementation-specific and may include fetching torrent metainfo,
-     * creating threads.torrent and data descriptors, reserving storage space,
-     * instantiating client-specific services, triggering DI injection, etc.
-     *
-     * @since 1.1
-     */
-    @SuppressWarnings("unchecked")
-    public B initEagerly() {
-        this.shouldInitEagerly = true;
-        return (B) this;
-    }
-
-    /**
      * @since 1.1
      */
     public BtClient build() {

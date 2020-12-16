@@ -14,7 +14,8 @@ import java.util.stream.Stream;
 
 public class CowSet<E> implements Set<E> {
 
-    private static final AtomicReferenceFieldUpdater<CowSet, HashMap> u = AtomicReferenceFieldUpdater.newUpdater(CowSet.class, HashMap.class, "backingStore");
+    private static final AtomicReferenceFieldUpdater<CowSet, HashMap> u =
+            AtomicReferenceFieldUpdater.newUpdater(CowSet.class, HashMap.class, "backingStore");
 
     private volatile HashMap<E, Boolean> backingStore = new HashMap<>();
 

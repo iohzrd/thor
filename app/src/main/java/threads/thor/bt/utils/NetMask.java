@@ -1,6 +1,7 @@
 package threads.thor.bt.utils;
 
 import java.net.InetAddress;
+import java.util.Objects;
 
 import static threads.thor.bt.utils.Functional.unchecked;
 
@@ -17,7 +18,8 @@ public class NetMask {
 
     public static NetMask fromString(String toParse) {
         String[] parts = toParse.split("/");
-        return new NetMask(unchecked(() -> InetAddress.getByName(parts[0])), Integer.parseInt(parts[1]));
+        return new NetMask(Objects.requireNonNull(unchecked(()
+                -> InetAddress.getByName(parts[0]))), Integer.parseInt(parts[1]));
     }
 
     public boolean contains(InetAddress toTest) {

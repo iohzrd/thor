@@ -1,4 +1,3 @@
-
 package threads.thor.bt.runtime;
 
 import android.content.Context;
@@ -9,7 +8,6 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.Selector;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -68,13 +66,6 @@ import threads.thor.bt.net.pipeline.IChannelPipelineFactory;
 import threads.thor.bt.net.portmapping.PortMapper;
 import threads.thor.bt.net.portmapping.impl.PortMappingInitializer;
 import threads.thor.bt.peer.PeerRegistry;
-import threads.thor.bt.peer.lan.AnnounceGroupChannel;
-import threads.thor.bt.peer.lan.Cookie;
-import threads.thor.bt.peer.lan.LocalServiceDiscoveryConfig;
-import threads.thor.bt.peer.lan.LocalServiceDiscoveryInfo;
-import threads.thor.bt.peer.lan.LocalServiceDiscoveryModule;
-import threads.thor.bt.peer.lan.LocalServiceDiscoveryPeerSourceFactory;
-import threads.thor.bt.peer.lan.LocalServiceDiscoveryService;
 import threads.thor.bt.peerexchange.PeerExchangeConfig;
 import threads.thor.bt.peerexchange.PeerExchangeMessageHandler;
 import threads.thor.bt.peerexchange.PeerExchangePeerSourceFactory;
@@ -171,7 +162,7 @@ public class BtRuntime {
 
         Set<PortMapper> portMappers = new HashSet<>();
 
-        new PortMappingInitializer(portMappers, mRuntimeLifecycleBinder, mConfig);
+        PortMappingInitializer.portMappingInitializer(portMappers, mRuntimeLifecycleBinder, mConfig);
 
 
         DataReceiver dataReceiver = new DataReceivingLoop(mSelector, mRuntimeLifecycleBinder);
@@ -227,28 +218,6 @@ public class BtRuntime {
         connectionAcceptors.add(
                 provideSocketChannelConnectionAcceptor(mSelector,
                         peerConnectionFactory, config));
-
-        LocalServiceDiscoveryInfo info = LocalServiceDiscoveryModule.provideLocalServiceDiscoveryInfo(
-                connectionAcceptors, new LocalServiceDiscoveryConfig());
-
-        Collection<AnnounceGroupChannel> groupChannels =
-                LocalServiceDiscoveryModule.provideGroupChannels(info,
-                        mSelector, mRuntimeLifecycleBinder);
-
-
-        Cookie cookie = LocalServiceDiscoveryModule.provideLocalServiceDiscoveryCookie();
-
-
-        new LocalServiceDiscoveryService(
-                cookie,
-                info,
-                groupChannels,
-                mEventBus,
-                mRuntimeLifecycleBinder,
-                new LocalServiceDiscoveryConfig());
-
-        new LocalServiceDiscoveryPeerSourceFactory(groupChannels,
-                mRuntimeLifecycleBinder, cookie, new LocalServiceDiscoveryConfig());
 
 
         MldhtService mMldhtService = new MldhtService(mRuntimeLifecycleBinder, mConfig,
@@ -390,7 +359,6 @@ public class BtRuntime {
     public EventBus getEventBus() {
         return mEventBus;
     }
-
 
 
     /**

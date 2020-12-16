@@ -26,17 +26,4 @@ public class BtRuntimeBuilder {
     }
 
 
-
-    /**
-     * Get this builder's config.
-     *
-     * @return Runtime config
-     * @since 1.0
-     */
-    public Config getConfig() {
-        return config;
-    }
-
-
-
 }

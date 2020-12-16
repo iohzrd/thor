@@ -173,7 +173,7 @@ public class LRUBlockCache implements BlockCache {
     }
 
     private BlockReader readFromSlot(Slot slot, int offset, int length) {
-        int usedBy = slot.currentUsers += 1;
+        slot.currentUsers += 1;
 
         slot.buffer.limit(offset + length);
         slot.buffer.position(offset);

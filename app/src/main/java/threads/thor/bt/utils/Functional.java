@@ -1,17 +1,9 @@
 package threads.thor.bt.utils;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.CompletionStage;
 import java.util.function.Consumer;
 import java.util.function.Function;
-
-import static java.util.Collections.emptyList;
-import static java.util.concurrent.CompletableFuture.completedFuture;
 
 public class Functional {
 
@@ -44,10 +36,6 @@ public class Functional {
                 return null;
             }
         };
-    }
-
-    public static <T> CompletionStage<List<T>> awaitAll(Collection<? extends CompletionStage<T>> stages) {
-        return stages.stream().map(st -> st.thenApply(Collections::singletonList)).reduce(completedFuture(emptyList()), (f1, f2) -> f1.thenCombine(f2, (a, b) -> tap(new ArrayList<>(a), l -> l.addAll(b))));
     }
 
     public static <IN, OUT, EX extends Throwable> Function<IN, OUT> castOrThrow(Class<OUT> type, Function<IN, EX> ex) {
