@@ -328,10 +328,6 @@ public class BtRuntime {
     }
 
 
-    public static BtRuntimeBuilder builder() {
-        return new BtRuntimeBuilder();
-    }
-
     public ExecutorService getExecutor() {
         return mExecutor;
     }
