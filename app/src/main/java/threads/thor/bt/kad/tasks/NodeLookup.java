@@ -8,6 +8,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import threads.LogUtils;
+import threads.thor.bt.kad.AddressUtils;
 import threads.thor.bt.kad.DHT.DHTtype;
 import threads.thor.bt.kad.DHTConstants;
 import threads.thor.bt.kad.KBucketEntry;
@@ -22,7 +23,6 @@ import threads.thor.bt.kad.messages.FindNodeResponse;
 import threads.thor.bt.kad.messages.MessageBase;
 import threads.thor.bt.kad.messages.MessageBase.Method;
 import threads.thor.bt.kad.messages.MessageBase.Type;
-import threads.thor.bt.kad.utils.AddressUtils;
 
 /**
  * @author Damokles

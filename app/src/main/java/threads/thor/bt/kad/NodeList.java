@@ -9,7 +9,6 @@ import java.util.stream.Stream;
 
 import threads.thor.bt.bencode.BEncoder.StringWriter;
 import threads.thor.bt.kad.DHT.DHTtype;
-import threads.thor.bt.kad.utils.AddressUtils;
 
 import static threads.thor.bt.utils.Functional.unchecked;
 

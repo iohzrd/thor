@@ -7,7 +7,6 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 import threads.thor.bt.kad.messages.PutRequest;
-import threads.thor.bt.kad.utils.ThreadLocalUtils;
 
 import static threads.thor.bt.bencode.Utils.buf2ary;
 

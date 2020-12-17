@@ -5,12 +5,12 @@ import android.annotation.SuppressLint;
 import java.util.stream.Collectors;
 
 import threads.LogUtils;
+import threads.thor.bt.kad.AddressUtils;
 import threads.thor.bt.kad.Key;
 import threads.thor.bt.kad.Node;
 import threads.thor.bt.kad.RPCServer;
 import threads.thor.bt.kad.RPCState;
 import threads.thor.bt.kad.tasks.IterativeLookupCandidates.LookupGraphNode;
-import threads.thor.bt.kad.utils.AddressUtils;
 
 public abstract class IteratingTask extends TargetedTask {
 

@@ -15,6 +15,7 @@ import java.util.stream.Stream;
 import threads.LogUtils;
 import threads.thor.bt.bencode.PathMatcher;
 import threads.thor.bt.bencode.Tokenizer;
+import threads.thor.bt.kad.AddressUtils;
 import threads.thor.bt.kad.BloomFilterBEP33;
 import threads.thor.bt.kad.DBItem;
 import threads.thor.bt.kad.DHT.DHTtype;
@@ -25,7 +26,6 @@ import threads.thor.bt.kad.PeerAddressDBItem;
 import threads.thor.bt.kad.messages.ErrorMessage.ErrorCode;
 import threads.thor.bt.kad.messages.MessageBase.Method;
 import threads.thor.bt.kad.messages.MessageBase.Type;
-import threads.thor.bt.kad.utils.AddressUtils;
 import threads.thor.bt.utils.Functional;
 
 import static threads.thor.bt.bencode.Utils.prettyPrint;

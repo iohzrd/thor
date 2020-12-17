@@ -1,4 +1,4 @@
-package threads.thor.bt.kad.utils;
+package threads.thor.bt.kad;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -8,8 +8,6 @@ import java.util.List;
 import java.util.Set;
 
 import threads.LogUtils;
-import threads.thor.bt.kad.Key;
-import threads.thor.bt.kad.Prefix;
 import threads.thor.bt.utils.ExponentialWeightendMovingAverage;
 
 

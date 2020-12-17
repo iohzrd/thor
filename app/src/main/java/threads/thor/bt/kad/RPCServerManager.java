@@ -22,8 +22,6 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import threads.thor.bt.kad.utils.AddressUtils;
-import threads.thor.bt.kad.utils.ThreadLocalUtils;
 import threads.thor.bt.service.NetworkUtil;
 
 public class RPCServerManager {

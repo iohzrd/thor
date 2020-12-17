@@ -12,9 +12,6 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-import threads.thor.bt.kad.utils.ByteWrapper;
-import threads.thor.bt.kad.utils.ThreadLocalUtils;
-
 /**
  * @author Damokles
  */

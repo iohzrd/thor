@@ -1,13 +1,10 @@
-package threads.thor.bt.kad.utils;
+package threads.thor.bt.kad;
 
 import androidx.annotation.NonNull;
 
 import java.util.Arrays;
 import java.util.Formatter;
 
-import threads.thor.bt.kad.DHTConstants;
-import threads.thor.bt.kad.RPCCall;
-import threads.thor.bt.kad.RPCCallListener;
 import threads.thor.bt.kad.messages.MessageBase;
 
 import static threads.thor.bt.utils.Functional.tap;

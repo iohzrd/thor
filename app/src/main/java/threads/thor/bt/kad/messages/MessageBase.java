@@ -12,12 +12,12 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import threads.thor.bt.bencode.BEncoder;
+import threads.thor.bt.kad.AddressUtils;
 import threads.thor.bt.kad.DHT;
 import threads.thor.bt.kad.DHTConstants;
 import threads.thor.bt.kad.Key;
 import threads.thor.bt.kad.RPCCall;
 import threads.thor.bt.kad.RPCServer;
-import threads.thor.bt.kad.utils.AddressUtils;
 
 import static threads.thor.bt.bencode.Utils.prettyPrint;
 

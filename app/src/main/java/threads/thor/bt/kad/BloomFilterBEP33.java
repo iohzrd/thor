@@ -7,8 +7,6 @@ import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-import threads.thor.bt.kad.utils.BitVector;
-
 import static java.lang.Math.log1p;
 
 

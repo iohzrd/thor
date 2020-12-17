@@ -59,9 +59,6 @@ import threads.thor.bt.kad.tasks.PingRefreshTask;
 import threads.thor.bt.kad.tasks.Task;
 import threads.thor.bt.kad.tasks.TaskListener;
 import threads.thor.bt.kad.tasks.TaskManager;
-import threads.thor.bt.kad.utils.AddressUtils;
-import threads.thor.bt.kad.utils.ByteWrapper;
-import threads.thor.bt.kad.utils.PopulationEstimator;
 import threads.thor.bt.net.PeerId;
 import threads.thor.bt.utils.NIOConnectionManager;
 

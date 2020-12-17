@@ -1,4 +1,4 @@
-package threads.thor.bt.kad.utils;
+package threads.thor.bt.kad;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;

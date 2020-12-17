@@ -6,8 +6,6 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Comparator;
 
-import threads.thor.bt.kad.utils.ThreadLocalUtils;
-
 import static threads.thor.bt.utils.Arrays.compareUnsigned;
 import static threads.thor.bt.utils.Arrays.mismatch;
 
