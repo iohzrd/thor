@@ -323,7 +323,7 @@ class InboundMessageProcessor {
             if (bufferQueue.isEmpty()) {
                 undisposedDataOffset = globalOffset;
             }
-            bufferQueue.add(new BufferedDataWithOffset(piece, bufferedData, globalOffset, buffer.remaining()));
+            bufferQueue.add(new BufferedDataWithOffset(bufferedData, globalOffset, buffer.remaining()));
         }
     }
 
@@ -391,9 +391,7 @@ class InboundMessageProcessor {
         final int offset;
         final int length;
 
-        private BufferedDataWithOffset(Piece piece, BufferedData buffer, int offset, int length) {
-            int pieceIndex = piece.getPieceIndex();
-            int pieceOffset = piece.getOffset();
+        private BufferedDataWithOffset(BufferedData buffer, int offset, int length) {
             this.buffer = buffer;
             this.offset = offset;
             this.length = length;
