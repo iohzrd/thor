@@ -14,7 +14,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import threads.LogUtils;
@@ -98,32 +97,11 @@ public final class MetadataService {
             if (root.containsKey(INFOMAP_KEY)) {
                 // standard BEP-3 format
                 infoDictionary = (BEMap) root.get(INFOMAP_KEY);
-                source = new TorrentSource() {
-                    @Override
-                    public Optional<byte[]> getMetadata() {
-                        return Optional.of(metadata.getContent());
-                    }
-
-                    @Override
-                    public byte[] getExchangedMetadata() {
-                        return infoDictionary.getContent();
-                    }
-                };
             } else {
                 // BEP-9 exchanged metadata (just the info dictionary)
                 infoDictionary = metadata;
-                source = new TorrentSource() {
-                    @Override
-                    public Optional<byte[]> getMetadata() {
-                        return Optional.empty();
-                    }
-
-                    @Override
-                    public byte[] getExchangedMetadata() {
-                        return infoDictionary.getContent();
-                    }
-                };
             }
+            source = infoDictionary::getContent;
 
 
             TorrentId torrentId = TorrentId.fromBytes(CryptoUtil.getSha1Digest(
