@@ -1,18 +1,3 @@
-/*
- * Copyright (c) 2016—2017 Andrei Tomashpolskiy and individual contributors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 
 package threads.thor.bt.magnet;
 
@@ -27,11 +12,6 @@ import java.util.Optional;
 import threads.thor.bt.metainfo.TorrentId;
 import threads.thor.bt.net.InetPeerAddress;
 
-/**
- * Programmatic API for working with BEP-9 v1 magnet links.
- *
- * @since 1.3
- */
 public class MagnetUri {
 
     private final TorrentId torrentId;
@@ -89,18 +69,6 @@ public class MagnetUri {
      */
     public Optional<String> getDisplayName() {
         return Optional.ofNullable(displayName);
-    }
-
-    /**
-     * Represents the collection of values of "tr" parameters. Values are URL decoded.
-     * E.g. {@code tr=http%3A%2F%2Fmytracker.com%3A6363&tr=udp%3A%2F%2Fothertrack.org%3A7777}
-     * =&gt; ["http://mytracker.com:6363", "udp://othertrack.org:7777"]
-     *
-     * @return Collection of tracker URLs
-     * @since 1.3
-     */
-    public Collection<String> getTrackerUrls() {
-        return trackerUrls;
     }
 
     /**
