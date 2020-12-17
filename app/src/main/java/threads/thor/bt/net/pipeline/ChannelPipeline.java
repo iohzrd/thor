@@ -15,6 +15,7 @@ public interface ChannelPipeline {
      * @return true, if there is sufficient space to encode the message
      * @since 1.6
      */
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     boolean encode(Message message);
 
     /**
