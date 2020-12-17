@@ -64,9 +64,7 @@ public class JUMModelBuilder implements BEObjectModelBuilder<Map> {
                     case "list": {
                         return buildList(map);
                     }
-                    case "binary": {
-                        return new BEStringModel(Collections.emptyList());
-                    }
+                    case "binary":
                     case "string": {
                         return new BEStringModel(Collections.emptyList());
                     }
