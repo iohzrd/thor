@@ -1,7 +1,6 @@
-package threads.thor.bt.processor.torrent;
+package threads.thor.bt.processor;
 
 import threads.thor.bt.event.EventSink;
-import threads.thor.bt.processor.ContextFinalizer;
 import threads.thor.bt.torrent.TorrentDescriptor;
 import threads.thor.bt.torrent.TorrentRegistry;
 

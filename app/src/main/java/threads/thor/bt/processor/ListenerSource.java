@@ -1,4 +1,4 @@
-package threads.thor.bt.processor.listener;
+package threads.thor.bt.processor;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -7,9 +7,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.BiFunction;
-
-import threads.thor.bt.processor.ProcessingContext;
-import threads.thor.bt.processor.ProcessingStage;
 
 public class ListenerSource<C extends ProcessingContext> {
 

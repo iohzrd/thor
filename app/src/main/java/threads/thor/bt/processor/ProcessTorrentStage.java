@@ -1,11 +1,8 @@
-package threads.thor.bt.processor.torrent;
+package threads.thor.bt.processor;
 
 import threads.LogUtils;
 import threads.thor.bt.event.EventSink;
 import threads.thor.bt.metainfo.TorrentId;
-import threads.thor.bt.processor.ProcessingStage;
-import threads.thor.bt.processor.TerminateOnErrorProcessingStage;
-import threads.thor.bt.processor.listener.ProcessingEvent;
 import threads.thor.bt.torrent.TorrentDescriptor;
 import threads.thor.bt.torrent.TorrentRegistry;
 

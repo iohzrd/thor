@@ -1,4 +1,4 @@
-package threads.thor.bt.processor.torrent;
+package threads.thor.bt.processor;
 
 import androidx.annotation.Nullable;
 
@@ -7,7 +7,6 @@ import java.util.Optional;
 import threads.thor.bt.data.Bitfield;
 import threads.thor.bt.data.Storage;
 import threads.thor.bt.metainfo.Torrent;
-import threads.thor.bt.processor.ProcessingContext;
 import threads.thor.bt.torrent.PieceStatistics;
 import threads.thor.bt.torrent.TorrentSessionState;
 import threads.thor.bt.torrent.messaging.Assignments;

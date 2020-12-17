@@ -1,8 +1,6 @@
-package threads.thor.bt.processor.magnet;
+package threads.thor.bt.processor;
 
 import threads.thor.bt.event.EventSink;
-import threads.thor.bt.processor.ProcessingStage;
-import threads.thor.bt.processor.torrent.ProcessTorrentStage;
 import threads.thor.bt.torrent.TorrentRegistry;
 
 public class ProcessMagnetTorrentStage extends ProcessTorrentStage<MagnetContext> {

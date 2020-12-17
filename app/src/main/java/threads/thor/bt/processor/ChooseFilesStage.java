@@ -1,4 +1,4 @@
-package threads.thor.bt.processor.torrent;
+package threads.thor.bt.processor;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -9,9 +9,6 @@ import threads.thor.bt.data.Bitfield;
 import threads.thor.bt.data.DataDescriptor;
 import threads.thor.bt.metainfo.Torrent;
 import threads.thor.bt.metainfo.TorrentFile;
-import threads.thor.bt.processor.ProcessingStage;
-import threads.thor.bt.processor.TerminateOnErrorProcessingStage;
-import threads.thor.bt.processor.listener.ProcessingEvent;
 import threads.thor.bt.runtime.Config;
 import threads.thor.bt.torrent.PieceStatistics;
 import threads.thor.bt.torrent.TorrentDescriptor;

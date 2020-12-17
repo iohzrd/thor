@@ -7,9 +7,9 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
+import threads.thor.bt.processor.ListenerSource;
+import threads.thor.bt.processor.MagnetContext;
 import threads.thor.bt.processor.Processor;
-import threads.thor.bt.processor.listener.ListenerSource;
-import threads.thor.bt.processor.magnet.MagnetContext;
 import threads.thor.bt.runtime.BtClient;
 import threads.thor.bt.runtime.BtRuntime;
 import threads.thor.bt.torrent.TorrentSessionState;

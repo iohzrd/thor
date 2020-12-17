@@ -7,8 +7,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.function.BiFunction;
 
 import threads.LogUtils;
-import threads.thor.bt.processor.listener.ListenerSource;
-import threads.thor.bt.processor.listener.ProcessingEvent;
 
 public class ChainProcessor<C extends ProcessingContext> implements Processor<C> {
 

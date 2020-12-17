@@ -1,4 +1,4 @@
-package threads.thor.bt.processor.torrent;
+package threads.thor.bt.processor;
 
 import threads.thor.bt.data.Bitfield;
 import threads.thor.bt.event.EventSink;
@@ -7,9 +7,6 @@ import threads.thor.bt.metainfo.TorrentId;
 import threads.thor.bt.net.IPeerConnectionPool;
 import threads.thor.bt.net.extended.ExtendedHandshakeConsumer;
 import threads.thor.bt.net.pipeline.IBufferedPieceRegistry;
-import threads.thor.bt.processor.ProcessingStage;
-import threads.thor.bt.processor.TerminateOnErrorProcessingStage;
-import threads.thor.bt.processor.listener.ProcessingEvent;
 import threads.thor.bt.runtime.Config;
 import threads.thor.bt.torrent.PieceStatistics;
 import threads.thor.bt.torrent.TorrentDescriptor;

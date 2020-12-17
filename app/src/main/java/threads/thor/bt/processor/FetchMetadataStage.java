@@ -1,4 +1,4 @@
-package threads.thor.bt.processor.magnet;
+package threads.thor.bt.processor;
 
 import android.content.Context;
 
@@ -8,9 +8,6 @@ import threads.thor.bt.metainfo.Torrent;
 import threads.thor.bt.metainfo.TorrentId;
 import threads.thor.bt.net.InetPeer;
 import threads.thor.bt.peer.PeerRegistry;
-import threads.thor.bt.processor.ProcessingStage;
-import threads.thor.bt.processor.TerminateOnErrorProcessingStage;
-import threads.thor.bt.processor.listener.ProcessingEvent;
 import threads.thor.bt.runtime.Config;
 import threads.thor.bt.torrent.TorrentDescriptor;
 import threads.thor.bt.torrent.TorrentRegistry;

@@ -1,4 +1,4 @@
-package threads.thor.bt.processor.listener;
+package threads.thor.bt.processor;
 
 public enum ProcessingEvent {
 

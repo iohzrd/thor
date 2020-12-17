@@ -1,4 +1,4 @@
-package threads.thor.bt.processor.magnet;
+package threads.thor.bt.processor;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -10,9 +10,6 @@ import threads.thor.bt.metainfo.TorrentId;
 import threads.thor.bt.net.ConnectionKey;
 import threads.thor.bt.net.IPeerConnectionPool;
 import threads.thor.bt.net.pipeline.IBufferedPieceRegistry;
-import threads.thor.bt.processor.ProcessingStage;
-import threads.thor.bt.processor.listener.ProcessingEvent;
-import threads.thor.bt.processor.torrent.InitializeTorrentProcessingStage;
 import threads.thor.bt.protocol.BitOrder;
 import threads.thor.bt.runtime.Config;
 import threads.thor.bt.torrent.PieceStatistics;

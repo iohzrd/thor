@@ -1,4 +1,4 @@
-package threads.thor.bt.processor.torrent;
+package threads.thor.bt.processor;
 
 import java.util.Set;
 import java.util.function.Supplier;
@@ -9,9 +9,6 @@ import threads.thor.bt.event.EventSource;
 import threads.thor.bt.metainfo.TorrentId;
 import threads.thor.bt.net.IConnectionSource;
 import threads.thor.bt.net.IMessageDispatcher;
-import threads.thor.bt.processor.ProcessingStage;
-import threads.thor.bt.processor.TerminateOnErrorProcessingStage;
-import threads.thor.bt.processor.listener.ProcessingEvent;
 import threads.thor.bt.runtime.Config;
 import threads.thor.bt.torrent.PieceStatistics;
 import threads.thor.bt.torrent.TorrentDescriptor;
