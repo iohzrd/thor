@@ -255,11 +255,10 @@ class InboundMessageProcessor {
             regionA = regionB;
             regionB = null;
             buffer.limit(buffer.capacity());
-            buffer.position(decodingView.undecodedLimit);
         } else {
             buffer.limit(regionA.offset - 1);
-            buffer.position(decodingView.undecodedLimit);
         }
+        buffer.position(decodingView.undecodedLimit);
     }
 
     private int consumeAB() {
