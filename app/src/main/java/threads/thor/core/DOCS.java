@@ -141,7 +141,7 @@ public class DOCS {
 
     @NonNull
     public String resolveName(@NonNull Uri uri, @NonNull String name,
-                              @NonNull Closeable closeable, final boolean offline) throws ResolveNameException {
+                              @NonNull Closeable closeable) throws ResolveNameException {
 
         Resolver resolver = pages.getResolver(name);
         if (resolver != null) {
@@ -158,7 +158,7 @@ public class DOCS {
         }
 
 
-        IPFS.ResolvedName resolvedName = ipfs.resolveName(name, sequence, closeable, offline);
+        IPFS.ResolvedName resolvedName = ipfs.resolveName(name, sequence, closeable);
         if (resolvedName == null) {
 
             if (ipns != null) {
@@ -266,8 +266,8 @@ public class DOCS {
     }
 
     @Nullable
-    public String getRoot(@NonNull Uri uri, @NonNull Closeable closeable,
-                          final boolean offline) throws ResolveNameException, InvalidNameException {
+    public String getRoot(@NonNull Uri uri, @NonNull Closeable closeable)
+            throws ResolveNameException, InvalidNameException {
         String host = uri.getHost();
         Objects.requireNonNull(host);
 
@@ -277,7 +277,7 @@ public class DOCS {
             if (!ipfs.isValidCID(host)) {
                 throw new InvalidNameException(uri.toString());
             }
-            root = resolveName(uri, host, closeable, offline);
+            root = resolveName(uri, host, closeable);
 
         } else {
             if (!ipfs.isValidCID(host)) {
@@ -478,13 +478,13 @@ public class DOCS {
     }
 
     @NonNull
-    public FileInfo getFileInfo(@NonNull Uri uri, @NonNull Closeable closeable, final boolean offline)
+    public FileInfo getFileInfo(@NonNull Uri uri, @NonNull Closeable closeable)
             throws InvalidNameException, ResolveNameException, TimeoutException {
 
         String host = uri.getHost();
         Objects.requireNonNull(host);
 
-        String root = getRoot(uri, closeable, offline);
+        String root = getRoot(uri, closeable);
         Objects.requireNonNull(root);
 
 
@@ -505,7 +505,7 @@ public class DOCS {
     }
 
     @NonNull
-    public WebResourceResponse getResponse(@NonNull Uri uri, boolean online, long timeout) throws Exception {
+    public WebResourceResponse getResponse(@NonNull Uri uri, long timeout) throws Exception {
 
         String host = uri.getHost();
         Objects.requireNonNull(host);
@@ -521,7 +521,7 @@ public class DOCS {
 
         String root;
         if (Objects.equals(uri.getScheme(), Content.IPNS)) {
-            root = resolveName(uri, host, closeable, !online);
+            root = resolveName(uri, host, closeable);
         } else {
             root = host;
         }

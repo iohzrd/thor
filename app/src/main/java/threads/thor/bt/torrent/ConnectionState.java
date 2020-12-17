@@ -131,50 +131,32 @@ public class ConnectionState {
         this.lastChoked = lastChoked;
     }
 
-    /**
-     * @return true if remote peer is choking the connection
-     * @since 1.0
-     */
+
     boolean isPeerChoking() {
         return peerChoking;
     }
 
-    /**
-     * @see #isPeerChoking()
-     * @since 1.0
-     */
+
     void setPeerChoking(boolean peerChoking) {
         this.peerChoking = peerChoking;
     }
 
-    /**
-     * @return Amount of data downloaded from remote peer via this connection
-     * @since 1.0
-     */
+
     public long getDownloaded() {
         return downloaded;
     }
 
-    /**
-     * @see #getDownloaded()
-     * @since 1.0
-     */
+
     void incrementDownloaded(long downloaded) {
         this.downloaded += downloaded;
     }
 
-    /**
-     * @return Amount of data uploaded to remote peer via this connection
-     * @since 1.0
-     */
+
     public long getUploaded() {
         return uploaded;
     }
 
-    /**
-     * @see #getUploaded()
-     * @since 1.0
-     */
+
     void incrementUploaded(long uploaded) {
         this.uploaded += uploaded;
     }

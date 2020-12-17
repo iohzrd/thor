@@ -38,11 +38,9 @@ import threads.thor.bt.magnet.MagnetUri;
 import threads.thor.bt.magnet.MagnetUriParser;
 import threads.thor.bt.net.PeerId;
 import threads.thor.core.Content;
-import threads.thor.core.events.EVENTS;
 import threads.thor.ipfs.IPFS;
 import threads.thor.services.ThorService;
 import threads.thor.utils.ContentStorage;
-import threads.thor.utils.Network;
 
 public class DownloadMagnetWorker extends Worker {
 
@@ -76,10 +74,6 @@ public class DownloadMagnetWorker extends Worker {
     }
 
     public static void download(@NonNull Context context, @NonNull Uri magnet, @NonNull Uri dest) {
-
-        if (!Network.isConnected(context)) {
-            EVENTS.getInstance(context).warning(context.getString(R.string.offline_mode));
-        }
         WorkManager.getInstance(context).enqueue(getWork(magnet, dest));
     }
 

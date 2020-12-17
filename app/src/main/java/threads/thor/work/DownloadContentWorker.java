@@ -38,14 +38,12 @@ import threads.thor.MainActivity;
 import threads.thor.R;
 import threads.thor.core.Content;
 import threads.thor.core.DOCS;
-import threads.thor.core.events.EVENTS;
 import threads.thor.ipfs.IPFS;
 import threads.thor.ipfs.LinkInfo;
 import threads.thor.ipfs.Progress;
 import threads.thor.services.MimeTypeService;
 import threads.thor.services.ThorService;
 import threads.thor.utils.MimeType;
-import threads.thor.utils.Network;
 
 public class DownloadContentWorker extends Worker {
 
@@ -81,9 +79,6 @@ public class DownloadContentWorker extends Worker {
     }
 
     public static void download(@NonNull Context context, @NonNull Uri uri, @NonNull Uri content) {
-        if (!Network.isConnected(context)) {
-            EVENTS.getInstance(context).warning(context.getString(R.string.offline_mode));
-        }
         WorkManager.getInstance(context).enqueue(getWork(uri, content));
     }
 
@@ -138,8 +133,7 @@ public class DownloadContentWorker extends Worker {
 
                 try {
 
-                    DOCS.FileInfo fileInfo = docs.getFileInfo(uri, this::isStopped,
-                            !Network.isConnected(getApplicationContext()));
+                    DOCS.FileInfo fileInfo = docs.getFileInfo(uri, this::isStopped);
 
 
                     String root = fileInfo.getContent();

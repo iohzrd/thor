@@ -478,7 +478,7 @@ public class IPFS implements Listener {
 
     @Nullable
     public ResolvedName resolveName(@NonNull String name, final long sequence,
-                                    @NonNull Closeable closeable, final boolean offline) {
+                                    @NonNull Closeable closeable) {
         if (!isDaemonRunning()) {
             return null;
         }
@@ -517,7 +517,7 @@ public class IPFS implements Listener {
                     }
 
                 }
-            }, name, offline, 8);
+            }, name, false, 8);
 
         } catch (Throwable e) {
             LogUtils.error(TAG, e);

@@ -81,7 +81,6 @@ import threads.thor.utils.AdBlocker;
 import threads.thor.utils.CustomWebChromeClient;
 import threads.thor.utils.FileDocumentsProvider;
 import threads.thor.utils.MimeType;
-import threads.thor.utils.Network;
 import threads.thor.work.ClearCacheWorker;
 import threads.thor.work.DownloadContentWorker;
 import threads.thor.work.DownloadFileWorker;
@@ -1212,13 +1211,10 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
                                 return createEmptyResource();
                             }
                         }
-                        boolean online = Network.isConnected(getApplicationContext());
 
-                        if (online) {
-                            docs.connectUri(uri);
-                        }
+                        docs.connectUri(uri);
 
-                        return docs.getResponse(uri, online, 30000);
+                        return docs.getResponse(uri, 30000);
 
                     } catch (Throwable throwable) {
                         return createErrorMessage(throwable);
