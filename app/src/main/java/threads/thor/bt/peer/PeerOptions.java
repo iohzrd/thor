@@ -2,13 +2,6 @@ package threads.thor.bt.peer;
 
 import threads.thor.bt.protocol.crypto.EncryptionPolicy;
 
-/**
- * Provides information on various options, preferences and modes of operations of a particular peer.
- * Instances of this class are immutable; mutator methods return new instances
- * with corresponding changes applied to the original object.
- *
- * @since 1.2
- */
 public class PeerOptions {
 
     private final EncryptionPolicy encryptionPolicy;

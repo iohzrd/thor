@@ -1,11 +1,10 @@
-package threads.thor.bt.net.portmapping.impl;
+package threads.thor.bt.net.portmapping;
 
 import androidx.annotation.NonNull;
 
 import java.net.InetAddress;
 import java.util.Set;
 
-import threads.thor.bt.net.portmapping.PortMapper;
 import threads.thor.bt.runtime.Config;
 import threads.thor.bt.service.LifecycleBinding;
 import threads.thor.bt.service.RuntimeLifecycleBinder;

@@ -61,7 +61,7 @@ import threads.thor.bt.net.pipeline.BufferedPieceRegistry;
 import threads.thor.bt.net.pipeline.ChannelPipelineFactory;
 import threads.thor.bt.net.pipeline.IChannelPipelineFactory;
 import threads.thor.bt.net.portmapping.PortMapper;
-import threads.thor.bt.net.portmapping.impl.PortMappingInitializer;
+import threads.thor.bt.net.portmapping.PortMappingInitializer;
 import threads.thor.bt.peer.PeerRegistry;
 import threads.thor.bt.peerexchange.PeerExchangeConfig;
 import threads.thor.bt.peerexchange.PeerExchangeMessageHandler;

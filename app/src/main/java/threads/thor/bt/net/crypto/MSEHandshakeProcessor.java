@@ -1,19 +1,3 @@
-/*
- * Copyright (c) 2016—2017 Andrei Tomashpolskiy and individual contributors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package threads.thor.bt.net.crypto;
 
 import android.annotation.SuppressLint;
@@ -49,11 +33,6 @@ import threads.thor.bt.runtime.Config;
 import threads.thor.bt.torrent.TorrentDescriptor;
 import threads.thor.bt.torrent.TorrentRegistry;
 
-/**
- * Implements Message Stream Encryption protocol negotiation.
- * <p>
- * This class is not a part of the public API and is subject to change.
- */
 public class MSEHandshakeProcessor {
     private static final String TAG = MSEHandshakeProcessor.class.getSimpleName();
     private static final Duration receiveTimeout = Duration.ofSeconds(10);
@@ -120,7 +99,7 @@ public class MSEHandshakeProcessor {
         this.protocol = protocol;
     }
 
-    public Optional<MSECipher> negotiateOutgoing(Peer peer, ByteChannel channel, TorrentId torrentId, ByteBuffer in, ByteBuffer out) throws IOException {
+    public Optional<MSECipher> negotiateOutgoing(ByteChannel channel, TorrentId torrentId, ByteBuffer in, ByteBuffer out) throws IOException {
         if (mseDisabled) {
             return Optional.empty();
         }

@@ -12,9 +12,6 @@ public class InetPeerAddress {
     private final Object lock;
     private volatile InetAddress address;
 
-    /**
-     * @since 1.3
-     */
     public InetPeerAddress(String hostname, int port) {
         this.hostname = Objects.requireNonNull(hostname);
         this.port = port;
@@ -22,9 +19,7 @@ public class InetPeerAddress {
         this.lock = new Object();
     }
 
-    /**
-     * @since 1.9
-     */
+
     public InetAddress getAddress() {
         if (address == null) {
             synchronized (lock) {
