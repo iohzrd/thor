@@ -228,7 +228,7 @@ public class RPCServerManager {
 
         CompletableFuture<RPCServer> cf = activeServerFuture.getAndSet(null);
         if (cf != null) {
-            cf.completeExceptionally(new DHTException("could not obtain active server, DHT was shut down"));
+            cf.completeExceptionally(new RuntimeException("could not obtain active server, DHT was shut down"));
         }
 
     }
