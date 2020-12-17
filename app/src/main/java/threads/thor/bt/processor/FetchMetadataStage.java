@@ -2,13 +2,13 @@ package threads.thor.bt.processor;
 
 import android.content.Context;
 
+import threads.thor.bt.Config;
 import threads.thor.bt.event.EventSink;
 import threads.thor.bt.metainfo.MetadataService;
 import threads.thor.bt.metainfo.Torrent;
 import threads.thor.bt.metainfo.TorrentId;
 import threads.thor.bt.net.InetPeer;
 import threads.thor.bt.peer.PeerRegistry;
-import threads.thor.bt.runtime.Config;
 import threads.thor.bt.torrent.TorrentDescriptor;
 import threads.thor.bt.torrent.TorrentRegistry;
 import threads.thor.bt.torrent.messaging.BitfieldCollectingConsumer;

@@ -12,6 +12,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 import threads.LogUtils;
+import threads.thor.bt.Config;
 import threads.thor.bt.event.EventSource;
 import threads.thor.bt.metainfo.TorrentId;
 import threads.thor.bt.net.buffer.BorrowedBuffer;
@@ -26,7 +27,6 @@ import threads.thor.bt.net.pipeline.SocketChannelHandler;
 import threads.thor.bt.protocol.Message;
 import threads.thor.bt.protocol.crypto.MSECipher;
 import threads.thor.bt.protocol.handler.MessageHandler;
-import threads.thor.bt.runtime.Config;
 import threads.thor.bt.torrent.TorrentRegistry;
 
 public class PeerConnectionFactory implements IPeerConnectionFactory {

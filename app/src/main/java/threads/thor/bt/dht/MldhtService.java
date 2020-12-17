@@ -16,6 +16,7 @@ import java.util.stream.Stream;
 
 import threads.LogUtils;
 import threads.thor.bt.BtException;
+import threads.thor.bt.Config;
 import threads.thor.bt.data.DataDescriptor;
 import threads.thor.bt.event.EventSource;
 import threads.thor.bt.kad.DHT;
@@ -30,7 +31,6 @@ import threads.thor.bt.net.InetPeerAddress;
 import threads.thor.bt.net.Peer;
 import threads.thor.bt.net.PeerId;
 import threads.thor.bt.net.portmapping.PortMapper;
-import threads.thor.bt.runtime.Config;
 import threads.thor.bt.service.LifecycleBinding;
 import threads.thor.bt.service.NetworkUtil;
 import threads.thor.bt.service.RuntimeLifecycleBinder;

@@ -26,13 +26,13 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Consumer;
 
+import threads.thor.bt.Config;
 import threads.thor.bt.IConsumers;
 import threads.thor.bt.IProduces;
 import threads.thor.bt.magnet.UtMetadata;
 import threads.thor.bt.metainfo.Torrent;
 import threads.thor.bt.net.Peer;
 import threads.thor.bt.protocol.Message;
-import threads.thor.bt.runtime.Config;
 
 public class MetadataProducer implements IProduces, IConsumers {
 

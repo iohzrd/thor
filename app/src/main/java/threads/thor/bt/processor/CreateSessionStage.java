@@ -3,13 +3,13 @@ package threads.thor.bt.processor;
 import java.util.Set;
 import java.util.function.Supplier;
 
+import threads.thor.bt.Config;
 import threads.thor.bt.IAgent;
 import threads.thor.bt.data.Bitfield;
 import threads.thor.bt.event.EventSource;
 import threads.thor.bt.metainfo.TorrentId;
 import threads.thor.bt.net.IConnectionSource;
 import threads.thor.bt.net.IMessageDispatcher;
-import threads.thor.bt.runtime.Config;
 import threads.thor.bt.torrent.PieceStatistics;
 import threads.thor.bt.torrent.TorrentDescriptor;
 import threads.thor.bt.torrent.TorrentRegistry;

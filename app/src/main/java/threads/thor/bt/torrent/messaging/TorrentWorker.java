@@ -28,6 +28,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Supplier;
 
+import threads.thor.bt.Config;
 import threads.thor.bt.data.Bitfield;
 import threads.thor.bt.event.EventSource;
 import threads.thor.bt.metainfo.TorrentId;
@@ -39,7 +40,6 @@ import threads.thor.bt.protocol.Have;
 import threads.thor.bt.protocol.Interested;
 import threads.thor.bt.protocol.Message;
 import threads.thor.bt.protocol.NotInterested;
-import threads.thor.bt.runtime.Config;
 import threads.thor.bt.torrent.PieceStatistics;
 
 /**

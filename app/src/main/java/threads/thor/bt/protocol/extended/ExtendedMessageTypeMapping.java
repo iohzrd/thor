@@ -1,4 +1,3 @@
-
 package threads.thor.bt.protocol.extended;
 
 import java.util.function.BiConsumer;

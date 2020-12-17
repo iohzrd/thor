@@ -10,7 +10,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.locks.ReentrantLock;
 
-import threads.thor.bt.runtime.Config;
+import threads.thor.bt.Config;
 
 public class BufferManager implements IBufferManager {
 

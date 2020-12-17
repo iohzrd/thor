@@ -1,4 +1,4 @@
-package threads.thor.bt.runtime;
+package threads.thor.bt;
 
 import androidx.annotation.NonNull;
 

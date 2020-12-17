@@ -4,7 +4,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import threads.thor.bt.runtime.BtClient;
 import threads.thor.bt.torrent.TorrentSessionState;
 
 class LazyClient implements BtClient {

@@ -23,9 +23,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import threads.thor.bt.Config;
 import threads.thor.bt.data.Bitfield;
 import threads.thor.bt.net.ConnectionKey;
-import threads.thor.bt.runtime.Config;
 import threads.thor.bt.torrent.PieceStatistics;
 import threads.thor.bt.torrent.selector.PieceSelector;
 

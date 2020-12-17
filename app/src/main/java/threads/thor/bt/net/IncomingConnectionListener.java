@@ -5,8 +5,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import threads.LogUtils;
+import threads.thor.bt.Config;
 import threads.thor.bt.CountingThreadFactory;
-import threads.thor.bt.runtime.Config;
 
 class IncomingConnectionListener {
     private static final String TAG = IncomingConnectionListener.class.getSimpleName();

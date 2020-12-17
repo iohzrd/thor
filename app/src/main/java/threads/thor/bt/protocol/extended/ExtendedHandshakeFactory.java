@@ -1,19 +1,3 @@
-/*
- * Copyright (c) 2016—2017 Andrei Tomashpolskiy and individual contributors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package threads.thor.bt.protocol.extended;
 
 import java.math.BigInteger;
@@ -23,22 +7,18 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import threads.LogUtils;
+import threads.thor.bt.Config;
 import threads.thor.bt.bencoding.model.BEInteger;
 import threads.thor.bt.bencoding.model.BEString;
 import threads.thor.bt.metainfo.Torrent;
 import threads.thor.bt.metainfo.TorrentId;
 import threads.thor.bt.protocol.crypto.EncryptionPolicy;
-import threads.thor.bt.runtime.Config;
 import threads.thor.bt.torrent.TorrentRegistry;
 
 import static threads.thor.bt.protocol.extended.ExtendedHandshake.ENCRYPTION_PROPERTY;
 import static threads.thor.bt.protocol.extended.ExtendedHandshake.TCPPORT_PROPERTY;
 import static threads.thor.bt.protocol.extended.ExtendedHandshake.VERSION_PROPERTY;
 
-/**
- * <p><b>Note that this class implements a service.
- * Hence, is not a part of the public API and is a subject to change.</b></p>
- */
 public final class ExtendedHandshakeFactory {
     private static final String TAG = ExtendedHandshakeFactory.class.getSimpleName();
     private static final String UT_METADATA_SIZE_PROPERTY = "metadata_size";

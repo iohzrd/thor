@@ -10,8 +10,6 @@ import java.util.function.Consumer;
 import threads.thor.bt.processor.ListenerSource;
 import threads.thor.bt.processor.MagnetContext;
 import threads.thor.bt.processor.Processor;
-import threads.thor.bt.runtime.BtClient;
-import threads.thor.bt.runtime.BtRuntime;
 import threads.thor.bt.torrent.TorrentSessionState;
 
 class DefaultClient implements BtClient {

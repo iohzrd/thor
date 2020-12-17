@@ -11,8 +11,6 @@ import threads.thor.bt.processor.MagnetContext;
 import threads.thor.bt.processor.ProcessingContext;
 import threads.thor.bt.processor.ProcessingEvent;
 import threads.thor.bt.processor.TorrentProcessorFactory;
-import threads.thor.bt.runtime.BtClient;
-import threads.thor.bt.runtime.BtRuntime;
 import threads.thor.bt.torrent.selector.PieceSelector;
 import threads.thor.bt.torrent.selector.RarestFirstSelector;
 

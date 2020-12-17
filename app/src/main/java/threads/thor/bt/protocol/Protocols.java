@@ -1,19 +1,3 @@
-/*
- * Copyright (c) 2016—2017 Andrei Tomashpolskiy and individual contributors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package threads.thor.bt.protocol;
 
 import java.nio.Buffer;
@@ -23,46 +7,11 @@ import java.util.BitSet;
 import threads.thor.bt.BtException;
 import threads.thor.bt.net.buffer.ByteBufferView;
 
-/**
- * Provides utility functions for binary protocol implementations.
- *
- * @since 1.0
- */
 public class Protocols {
 
     //-------------------------//
     //--- utility functions ---//
     //-------------------------//
-
-    /**
-     * Get 8-bytes binary representation of a {@link Long}.
-     *
-     * @since 1.0
-     */
-    public static byte[] getLongBytes(long l) {
-        return new byte[]{
-                (byte) (l >> 56),
-                (byte) (l >> 48),
-                (byte) (l >> 40),
-                (byte) (l >> 32),
-                (byte) (l >> 24),
-                (byte) (l >> 16),
-                (byte) (l >> 8),
-                (byte) l};
-    }
-
-    /**
-     * Get 4-bytes binary representation of an {@link Integer}.
-     *
-     * @since 1.0
-     */
-    public static byte[] getIntBytes(int i) {
-        return new byte[]{
-                (byte) (i >> 24),
-                (byte) (i >> 16),
-                (byte) (i >> 8),
-                (byte) i};
-    }
 
     /**
      * Get 2-bytes binary representation of a {@link Short}.
@@ -73,30 +22,6 @@ public class Protocols {
         return new byte[]{
                 (byte) (s >> 8),
                 (byte) s};
-    }
-
-    /**
-     * Decode the binary representation of a {@link Long} from a byte array.
-     *
-     * @param bytes  Arbitrary byte array.
-     *               It's length must be at least <b>offset</b> + 8.
-     * @param offset Offset in byte array to start decoding from (inclusive, 0-based)
-     * @since 1.0
-     */
-    public static long readLong(byte[] bytes, int offset) {
-
-        if (bytes.length < offset + Long.BYTES) {
-            throw new ArrayIndexOutOfBoundsException("insufficient byte array length (length: " + bytes.length +
-                    ", offset: " + offset + ")");
-        }
-        return ((bytes[offset] & 0xFFL) << 56) |
-                ((bytes[offset + 1] & 0xFFL) << 48) |
-                ((bytes[offset + 2] & 0xFFL) << 40) |
-                ((bytes[offset + 3] & 0xFFL) << 32) |
-                ((bytes[offset + 4] & 0xFFL) << 24) |
-                ((bytes[offset + 5] & 0xFF) << 16) |
-                ((bytes[offset + 6] & 0xFF) << 8) |
-                (bytes[offset + 7] & 0xFF);
     }
 
     /**

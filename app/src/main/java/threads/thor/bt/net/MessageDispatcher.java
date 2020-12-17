@@ -10,9 +10,9 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import threads.LogUtils;
+import threads.thor.bt.Config;
 import threads.thor.bt.metainfo.TorrentId;
 import threads.thor.bt.protocol.Message;
-import threads.thor.bt.runtime.Config;
 import threads.thor.bt.service.RuntimeLifecycleBinder;
 import threads.thor.bt.torrent.TorrentRegistry;
 

@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.HashSet;
 
 import threads.LogUtils;
+import threads.thor.bt.Config;
 import threads.thor.bt.data.Bitfield;
 import threads.thor.bt.event.EventSink;
 import threads.thor.bt.metainfo.TorrentId;
@@ -11,7 +12,6 @@ import threads.thor.bt.net.ConnectionKey;
 import threads.thor.bt.net.IPeerConnectionPool;
 import threads.thor.bt.net.pipeline.IBufferedPieceRegistry;
 import threads.thor.bt.protocol.BitOrder;
-import threads.thor.bt.runtime.Config;
 import threads.thor.bt.torrent.PieceStatistics;
 import threads.thor.bt.torrent.TorrentRegistry;
 import threads.thor.bt.torrent.data.DataWorker;

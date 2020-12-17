@@ -1,4 +1,4 @@
-package threads.thor.bt.runtime;
+package threads.thor.bt;
 
 import android.content.Context;
 
@@ -26,8 +26,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 import threads.LogUtils;
-import threads.thor.bt.BtException;
-import threads.thor.bt.IAgent;
 import threads.thor.bt.data.ChunkVerifier;
 import threads.thor.bt.data.DataDescriptorFactory;
 import threads.thor.bt.data.DataReaderFactory;

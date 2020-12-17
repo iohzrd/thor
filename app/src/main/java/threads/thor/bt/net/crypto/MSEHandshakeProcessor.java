@@ -17,6 +17,7 @@ import java.util.Optional;
 import java.util.Random;
 
 import threads.LogUtils;
+import threads.thor.bt.Config;
 import threads.thor.bt.metainfo.TorrentId;
 import threads.thor.bt.net.BigIntegers;
 import threads.thor.bt.net.ByteChannelReader;
@@ -29,7 +30,6 @@ import threads.thor.bt.protocol.Protocols;
 import threads.thor.bt.protocol.crypto.EncryptionPolicy;
 import threads.thor.bt.protocol.crypto.MSECipher;
 import threads.thor.bt.protocol.handler.MessageHandler;
-import threads.thor.bt.runtime.Config;
 import threads.thor.bt.torrent.TorrentDescriptor;
 import threads.thor.bt.torrent.TorrentRegistry;
 

@@ -5,11 +5,11 @@ import java.util.Set;
 import java.util.function.IntPredicate;
 import java.util.stream.IntStream;
 
+import threads.thor.bt.Config;
 import threads.thor.bt.data.Bitfield;
 import threads.thor.bt.data.DataDescriptor;
 import threads.thor.bt.metainfo.Torrent;
 import threads.thor.bt.metainfo.TorrentFile;
-import threads.thor.bt.runtime.Config;
 import threads.thor.bt.torrent.PieceStatistics;
 import threads.thor.bt.torrent.TorrentDescriptor;
 import threads.thor.bt.torrent.TorrentRegistry;

@@ -2,7 +2,7 @@ package threads.thor.bt.processor;
 
 import androidx.annotation.NonNull;
 
-import threads.thor.bt.runtime.BtRuntime;
+import threads.thor.bt.BtRuntime;
 
 public class TorrentProcessorFactory {
 
