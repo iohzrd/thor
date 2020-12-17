@@ -168,7 +168,6 @@ public class DownloadMagnetWorker extends Worker {
                         .runtime(runtime)
                         .storage(storage)
                         .magnet(magnet)
-                        .stopWhenDownloaded()
                         .build();
 
                 AtomicInteger atomicProgress = new AtomicInteger(0);

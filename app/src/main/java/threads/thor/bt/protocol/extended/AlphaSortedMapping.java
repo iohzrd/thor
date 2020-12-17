@@ -70,11 +70,6 @@ public class AlphaSortedMapping implements ExtendedMessageTypeMapping {
     }
 
     @Override
-    public Integer getIdForTypeName(String typeName) {
-        return idMap.get(Objects.requireNonNull(typeName));
-    }
-
-    @Override
     public String getTypeNameForJavaType(Class<?> type) {
         return typeMap.get(Objects.requireNonNull(type));
     }

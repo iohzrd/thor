@@ -23,7 +23,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import threads.thor.bt.BtException;
-import threads.thor.bt.module.ExtendedMessageHandlers;
 import threads.thor.bt.net.buffer.ByteBufferView;
 import threads.thor.bt.protocol.DecodingContext;
 import threads.thor.bt.protocol.EncodingContext;
@@ -60,7 +59,7 @@ public class ExtendedProtocol extends BaseMessageHandler<ExtendedMessage> {
     private final ExtendedMessageTypeMapping messageTypeMapping;
 
     public ExtendedProtocol(ExtendedMessageTypeMapping messageTypeMapping,
-                            @ExtendedMessageHandlers Map<String, MessageHandler<? extends ExtendedMessage>> handlersByTypeName) {
+                            Map<String, MessageHandler<? extends ExtendedMessage>> handlersByTypeName) {
 
         this.messageTypeMapping = messageTypeMapping;
 

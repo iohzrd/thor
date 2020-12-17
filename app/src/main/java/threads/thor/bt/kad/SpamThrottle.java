@@ -25,7 +25,7 @@ public class SpamThrottle {
         hitcounter.remove(addr);
     }
 
-    @SuppressWarnings("ConstantConditions")
+
     public boolean test(InetAddress addr) {
         try {
             return hitcounter.getOrDefault(addr, 0) >= BURST;

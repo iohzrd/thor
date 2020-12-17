@@ -26,7 +26,6 @@ import java.util.Objects;
 
 import threads.thor.bt.BtException;
 import threads.thor.bt.metainfo.TorrentId;
-import threads.thor.bt.module.MessageHandlers;
 import threads.thor.bt.net.PeerId;
 import threads.thor.bt.net.buffer.ByteBufferView;
 import threads.thor.bt.protocol.handler.BitfieldHandler;
@@ -126,7 +125,7 @@ public class StandardBittorrentProtocol implements MessageHandler<Message> {
     private final Map<Class<? extends Message>, Integer> idMap;
 
 
-    public StandardBittorrentProtocol(@MessageHandlers Map<Integer, MessageHandler<?>> extraHandlers) {
+    public StandardBittorrentProtocol(Map<Integer, MessageHandler<?>> extraHandlers) {
 
         Map<Integer, MessageHandler<?>> handlers = new HashMap<>();
         handlers.put(CHOKE_ID, new ChokeHandler());

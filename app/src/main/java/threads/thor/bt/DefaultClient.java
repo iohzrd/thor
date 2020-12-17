@@ -7,19 +7,19 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
-import threads.thor.bt.processor.ProcessingContext;
 import threads.thor.bt.processor.Processor;
 import threads.thor.bt.processor.listener.ListenerSource;
+import threads.thor.bt.processor.magnet.MagnetContext;
 import threads.thor.bt.runtime.BtClient;
 import threads.thor.bt.runtime.BtRuntime;
 import threads.thor.bt.torrent.TorrentSessionState;
 
-class DefaultClient<C extends ProcessingContext> implements BtClient {
+class DefaultClient implements BtClient {
 
     private final BtRuntime runtime;
-    private final Processor<C> processor;
-    private final ListenerSource<C> listenerSource;
-    private final C context;
+    private final Processor<MagnetContext> processor;
+    private final ListenerSource<MagnetContext> listenerSource;
+    private final MagnetContext context;
 
     private volatile Optional<CompletableFuture<?>> futureOptional;
     private volatile Optional<Consumer<TorrentSessionState>> listenerOptional;
@@ -27,9 +27,9 @@ class DefaultClient<C extends ProcessingContext> implements BtClient {
     private volatile ScheduledExecutorService listenerExecutor;
 
     DefaultClient(BtRuntime runtime,
-                  Processor<C> processor,
-                  C context,
-                  ListenerSource<C> listenerSource) {
+                  Processor<MagnetContext> processor,
+                  MagnetContext context,
+                  ListenerSource<MagnetContext> listenerSource) {
         this.runtime = runtime;
         this.processor = processor;
         this.context = context;

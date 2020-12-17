@@ -16,7 +16,7 @@ import threads.thor.bt.torrent.TorrentDescriptor;
 import threads.thor.bt.torrent.TorrentRegistry;
 import threads.thor.bt.torrent.messaging.BitfieldCollectingConsumer;
 import threads.thor.bt.torrent.messaging.MetadataConsumer;
-import threads.thor.bt.tracker.AnnounceKey;
+
 
 public class FetchMetadataStage extends TerminateOnErrorProcessingStage<MagnetContext> {
 
@@ -55,11 +55,6 @@ public class FetchMetadataStage extends TerminateOnErrorProcessingStage<MagnetCo
 
         context.getMagnetUri().getPeerAddresses().forEach(peerAddress ->
                 peerRegistry.addPeer(torrentId, InetPeer.build(peerAddress)));
-
-        context.getMagnetUri().getTrackerUrls().forEach(trackerUrl -> {
-            // TODO: should we use a single multi-key instead, containing all trackers from the magnet link?
-            peerRegistry.addPeerSource(torrentId, new AnnounceKey(trackerUrl));
-        });
 
 
         Torrent torrent = metadataConsumer.waitForTorrent();

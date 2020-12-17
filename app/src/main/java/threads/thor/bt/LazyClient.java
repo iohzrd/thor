@@ -12,9 +12,7 @@ class LazyClient implements BtClient {
     private final Supplier<BtClient> clientSupplier;
     private volatile BtClient delegate;
 
-    /**
-     * @since 1.0
-     */
+
     LazyClient(Supplier<BtClient> clientSupplier) {
         this.clientSupplier = clientSupplier;
     }

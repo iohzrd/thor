@@ -96,7 +96,7 @@ public class NIOConnectionManager {
         }
     }
 
-    private void handleRegistrations() throws IOException {
+    private void handleRegistrations() {
         // register new connections
         Selectable toRegister;
         while ((toRegister = registrations.poll()) != null) {

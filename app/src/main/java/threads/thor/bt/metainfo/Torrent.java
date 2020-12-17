@@ -31,7 +31,7 @@ import java.util.Objects;
 
 import threads.LogUtils;
 import threads.thor.bt.BtException;
-import threads.thor.bt.tracker.AnnounceKey;
+
 
 public final class Torrent {
     private static final String TAG = Torrent.class.getSimpleName();
@@ -50,7 +50,7 @@ public final class Torrent {
     private boolean isPrivate;
     private String createdBy;
     private String comment;
-    private AnnounceKey announceKey;
+
 
     private Torrent(@NonNull TorrentId torrentId, @NonNull String name,
                     @NonNull TorrentSource source, @NonNull List<TorrentFile> torrentFiles,
@@ -58,7 +58,6 @@ public final class Torrent {
         this.torrentId = torrentId;
         this.name = name;
         this.source = source;
-        this.announceKey = null;
         this.creationDate = System.currentTimeMillis();
         this.chunkHashes = chunkHashes;
         this.size = size;
@@ -108,7 +107,6 @@ public final class Torrent {
                 ", isPrivate=" + isPrivate +
                 ", createdBy='" + createdBy + '\'' +
                 ", comment='" + comment + '\'' +
-                ", announceKey=" + announceKey +
                 '}';
     }
 
@@ -120,7 +118,6 @@ public final class Torrent {
         return chunkSize == that.chunkSize &&
                 size == that.size &&
                 isPrivate == that.isPrivate &&
-                Objects.equals(announceKey, that.announceKey) &&
                 Objects.equals(torrentId, that.torrentId) &&
                 Objects.equals(name, that.name) &&
                 Arrays.equals(chunkHashes, that.chunkHashes) &&
@@ -131,21 +128,13 @@ public final class Torrent {
 
     @Override
     public int hashCode() {
-        int result = Objects.hash(announceKey, torrentId, name, chunkSize, size, files, isPrivate, creationDate, createdBy);
+        int result = Objects.hash(torrentId, name, chunkSize, size, files, isPrivate, creationDate, createdBy);
         result = 31 * result + Arrays.hashCode(chunkHashes);
         return result;
     }
 
     public TorrentSource getSource() {
         return source;
-    }
-
-    public AnnounceKey getAnnounceKey() {
-        return announceKey;
-    }
-
-    public void setAnnounceKey(@Nullable AnnounceKey announceKey) {
-        this.announceKey = announceKey;
     }
 
     public TorrentId getTorrentId() {

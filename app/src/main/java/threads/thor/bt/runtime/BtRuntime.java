@@ -40,9 +40,6 @@ import threads.thor.bt.dht.MldhtService;
 import threads.thor.bt.event.EventBus;
 import threads.thor.bt.event.EventSource;
 import threads.thor.bt.magnet.UtMetadataMessageHandler;
-import threads.thor.bt.module.BitTorrentProtocol;
-import threads.thor.bt.module.ExtendedMessageHandlers;
-import threads.thor.bt.module.PeerConnectionSelector;
 import threads.thor.bt.net.BitfieldConnectionHandler;
 import threads.thor.bt.net.ConnectionHandlerFactory;
 import threads.thor.bt.net.ConnectionSource;
@@ -86,9 +83,6 @@ import threads.thor.bt.torrent.data.BlockCache;
 import threads.thor.bt.torrent.data.DataWorker;
 import threads.thor.bt.torrent.data.DefaultDataWorker;
 import threads.thor.bt.torrent.data.LRUBlockCache;
-import threads.thor.bt.tracker.TrackerFactory;
-import threads.thor.bt.tracker.TrackerService;
-import threads.thor.bt.tracker.udp.UdpTrackerFactory;
 
 public class BtRuntime {
 
@@ -102,7 +96,7 @@ public class BtRuntime {
     public final Set<IAgent> mMessagingAgents;
     public final DataWorker mDataWorker;
     public final PeerConnectionPool mConnectionPool;
-    public final TrackerService mTrackerService;
+    //public final TrackerService mTrackerService;
     public final BufferedPieceRegistry mBufferedPieceRegistry;
     private final Object lock;
     private final Config mConfig;
@@ -147,15 +141,8 @@ public class BtRuntime {
         this.mTorrentRegistry = new TorrentRegistry(
                 dataDescriptorFactory, mRuntimeLifecycleBinder);
 
-        UdpTrackerFactory mUdpTrackerFactory = new UdpTrackerFactory(
-                mRuntimeLifecycleBinder, mConfig);
-
-        Map<String, TrackerFactory> trackerFactories = new HashMap<>();
-        trackerFactories.put("udp", mUdpTrackerFactory);
-
-        mTrackerService = new TrackerService(trackerFactories);
         this.mPeerRegistry = new PeerRegistry(mRuntimeLifecycleBinder,
-                mTorrentRegistry, mTrackerService, mEventBus, config);
+                mTorrentRegistry, mEventBus, config);
 
 
         Set<PortMapper> portMappers = new HashSet<>();
@@ -266,7 +253,7 @@ public class BtRuntime {
     }
 
     private static ExtendedMessageTypeMapping provideExtendedMessageTypeMapping(
-            @ExtendedMessageHandlers Map<String, MessageHandler<? extends ExtendedMessage>> handlersByTypeName) {
+            Map<String, MessageHandler<? extends ExtendedMessage>> handlersByTypeName) {
         return new AlphaSortedMapping(handlersByTypeName);
     }
 
@@ -297,7 +284,6 @@ public class BtRuntime {
         return new EventBus();
     }
 
-    @PeerConnectionSelector
     private static SharedSelector provideSelector(RuntimeLifecycleBinder lifecycleBinder) {
         SharedSelector selector;
         try {
@@ -320,9 +306,9 @@ public class BtRuntime {
     }
 
     private static IPeerConnectionFactory providePeerConnectionFactory(
-            @PeerConnectionSelector SharedSelector selector,
+            SharedSelector selector,
             IConnectionHandlerFactory connectionHandlerFactory,
-            @BitTorrentProtocol MessageHandler<Message> bittorrentProtocol,
+            MessageHandler<Message> bittorrentProtocol,
             TorrentRegistry torrentRegistry,
             IChannelPipelineFactory channelPipelineFactory,
             IBufferManager bufferManager,
@@ -334,20 +320,16 @@ public class BtRuntime {
     }
 
     private static SocketChannelConnectionAcceptor provideSocketChannelConnectionAcceptor(
-            @PeerConnectionSelector SharedSelector selector,
+            SharedSelector selector,
             IPeerConnectionFactory connectionFactory,
             Config config) {
         InetSocketAddress localAddress = new InetSocketAddress(config.getAcceptorAddress(), config.getAcceptorPort());
         return new SocketChannelConnectionAcceptor(selector, connectionFactory, localAddress);
     }
 
-    /**
-     * @param config Custom configuration
-     * @return Runtime builder
-     * @since 1.0
-     */
-    public static BtRuntimeBuilder builder(Config config) {
-        return new BtRuntimeBuilder(config);
+
+    public static BtRuntimeBuilder builder() {
+        return new BtRuntimeBuilder();
     }
 
     public ExecutorService getExecutor() {

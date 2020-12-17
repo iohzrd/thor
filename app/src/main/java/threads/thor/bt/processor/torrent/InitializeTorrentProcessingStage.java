@@ -1,19 +1,3 @@
-/*
- * Copyright (c) 2016—2017 Andrei Tomashpolskiy and individual contributors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package threads.thor.bt.processor.torrent;
 
 import threads.thor.bt.data.Bitfield;
@@ -65,7 +49,7 @@ public class InitializeTorrentProcessingStage<C extends TorrentContext> extends 
 
     @Override
     protected void doExecute(C context) {
-        Torrent torrent = context.getTorrent().get();
+        Torrent torrent = context.getTorrent();
         TorrentDescriptor descriptor = torrentRegistry.register(torrent, context.getStorage());
 
         TorrentId torrentId = torrent.getTorrentId();
@@ -78,7 +62,7 @@ public class InitializeTorrentProcessingStage<C extends TorrentContext> extends 
         context.getRouter().registerMessagingAgent(new PieceConsumer(torrentId, bitfield, dataWorker, bufferedPieceRegistry, eventSink));
         context.getRouter().registerMessagingAgent(new PeerRequestConsumer(torrentId, dataWorker));
         context.getRouter().registerMessagingAgent(new RequestProducer(descriptor.getDataDescriptor(), config.getMaxOutstandingRequests()));
-        context.getRouter().registerMessagingAgent(new MetadataProducer(() -> context.getTorrent().orElse(null), config));
+        context.getRouter().registerMessagingAgent(new MetadataProducer(context.getTorrent(), config));
 
         context.setBitfield(bitfield);
         context.setPieceStatistics(pieceStatistics);

@@ -16,30 +16,22 @@ public class PeerExchangeConfig {
         this.maxEventsPerMessage = 50;
     }
 
-    /**
-     * @since 1.0
-     */
+
     public Duration getMinMessageInterval() {
         return minMessageInterval;
     }
 
-    /**
-     * @since 1.0
-     */
+
     public int getMinEventsPerMessage() {
         return minEventsPerMessage;
     }
 
-    /**
-     * @since 1.0
-     */
+
     public int getMaxEventsPerMessage() {
         return maxEventsPerMessage;
     }
 
-    /**
-     * @since 1.9
-     */
+
     public Duration getMaxMessageInterval() {
         return maxMessageInterval;
     }

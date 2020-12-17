@@ -28,7 +28,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import threads.LogUtils;
-import threads.thor.bt.module.PeerConnectionSelector;
 import threads.thor.bt.net.pipeline.ChannelHandlerContext;
 import threads.thor.bt.service.RuntimeLifecycleBinder;
 
@@ -42,8 +41,7 @@ public class DataReceivingLoop implements Runnable, DataReceiver {
     private volatile boolean shutdown;
 
 
-    public DataReceivingLoop(@PeerConnectionSelector SharedSelector selector,
-                             RuntimeLifecycleBinder lifecycleBinder) {
+    public DataReceivingLoop(SharedSelector selector, RuntimeLifecycleBinder lifecycleBinder) {
         this.selector = selector;
         this.interestOpsUpdates = new ConcurrentHashMap<>();
 

@@ -168,11 +168,6 @@ class DefaultDataDescriptor implements DataDescriptor {
     }
 
     @Override
-    public DataReader getReader() {
-        return reader;
-    }
-
-    @Override
     public void close() {
         storageUnits.forEach(unit -> {
             try {

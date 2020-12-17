@@ -16,6 +16,8 @@
 
 package threads.thor.bt.torrent.messaging;
 
+import androidx.annotation.Nullable;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
@@ -23,7 +25,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 import threads.thor.bt.IConsumers;
 import threads.thor.bt.IProduces;
@@ -35,13 +36,13 @@ import threads.thor.bt.runtime.Config;
 
 public class MetadataProducer implements IProduces, IConsumers {
 
-    private final Supplier<Torrent> torrentSupplier;
+    private final Torrent torrentSupplier;
     private final ConcurrentMap<Peer, Queue<Message>> outboundMessages;
     private final int metadataExchangeBlockSize;
     // initialized on the first metadata request if the threads.torrent is present
     private volatile ExchangedMetadata metadata;
 
-    public MetadataProducer(Supplier<Torrent> torrentSupplier,
+    public MetadataProducer(@Nullable Torrent torrentSupplier,
                             Config config) {
         this.torrentSupplier = torrentSupplier;
         this.outboundMessages = new ConcurrentHashMap<>();
@@ -83,7 +84,7 @@ public class MetadataProducer implements IProduces, IConsumers {
     private void processMetadataRequest(Peer peer, int pieceIndex) {
         Message response;
 
-        Torrent torrent = torrentSupplier.get();
+        Torrent torrent = torrentSupplier;
         if (torrent == null || torrent.isPrivate()) {
             // reject all requests if:
             // - we don't have the torrent yet

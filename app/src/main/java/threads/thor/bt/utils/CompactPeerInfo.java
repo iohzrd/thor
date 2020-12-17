@@ -1,20 +1,4 @@
-/*
- * Copyright (c) 2016—2017 Andrei Tomashpolskiy and individual contributors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-package threads.thor.bt.tracker;
+package threads.thor.bt.utils;
 
 import androidx.annotation.NonNull;
 
@@ -26,7 +10,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.Optional;
 
 import threads.thor.bt.BtException;
 import threads.thor.bt.net.InetPeer;
@@ -34,43 +17,20 @@ import threads.thor.bt.net.Peer;
 import threads.thor.bt.peer.PeerOptions;
 import threads.thor.bt.protocol.crypto.EncryptionPolicy;
 
-/**
- * Wrapper for binary representation of a list of peers,
- * which is used by the majority of HTTP trackers and all UDP trackers.
- * See BEP-23 for more details.
- * <p>
- * Decoding is performed lazily when {@link Iterable#iterator()} is used.
- * Results are cached, so it's only done once per instance of this class.
- *
- * @since 1.0
- */
 public class CompactPeerInfo implements Iterable<Peer> {
 
     private static final int PORT_LENGTH = 2;
     private final int addressLength;
     private final byte[] peers;
-    private final Optional<byte[]> cryptoFlags;
+    private final byte[] cryptoFlags;
     private final List<Peer> peerList;
 
-    /**
-     * Create a list of peers from its' binary representation,
-     * using the specified address type for decoding individual addresses.
-     *
-     * @since 1.0
-     */
+
     public CompactPeerInfo(byte[] peers, AddressType addressType) {
         this(peers, addressType, null);
     }
 
-    /**
-     * Create a list of peers from its' binary representation,
-     * using the specified address type for decoding individual addresses.
-     *
-     * @param cryptoFlags Byte array, where each byte indicates
-     *                    whether the corresponding peer from {@code peers} supports MSE:
-     *                    1 if peer supports encryption, 0 otherwise.
-     * @since 1.2
-     */
+
     public CompactPeerInfo(byte[] peers, AddressType addressType, byte[] cryptoFlags) {
         Objects.requireNonNull(peers);
         Objects.requireNonNull(addressType);
@@ -87,7 +47,7 @@ public class CompactPeerInfo implements Iterable<Peer> {
         }
         this.addressLength = addressType.length();
         this.peers = peers;
-        this.cryptoFlags = Optional.ofNullable(cryptoFlags);
+        this.cryptoFlags = cryptoFlags;
 
         this.peerList = new ArrayList<>();
     }
@@ -130,7 +90,7 @@ public class CompactPeerInfo implements Iterable<Peer> {
                 port = (((peers[from] << 8) & 0xFF00) + (peers[to - 1] & 0x00FF));
 
                 PeerOptions options = PeerOptions.defaultOptions();
-                boolean requiresEncryption = cryptoFlags.isPresent() && cryptoFlags.get()[index] == 1;
+                boolean requiresEncryption = cryptoFlags != null && cryptoFlags[index] == 1;
                 if (requiresEncryption) {
                     options = options.withEncryptionPolicy(EncryptionPolicy.PREFER_ENCRYPTED);
                 }

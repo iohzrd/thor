@@ -20,8 +20,8 @@ import threads.thor.bt.net.Peer;
 import threads.thor.bt.protocol.InvalidMessageException;
 import threads.thor.bt.protocol.crypto.EncryptionPolicy;
 import threads.thor.bt.protocol.extended.ExtendedMessage;
-import threads.thor.bt.tracker.CompactPeerInfo;
-import threads.thor.bt.tracker.CompactPeerInfo.AddressType;
+import threads.thor.bt.utils.CompactPeerInfo;
+import threads.thor.bt.utils.CompactPeerInfo.AddressType;
 
 class PeerExchange extends ExtendedMessage {
 

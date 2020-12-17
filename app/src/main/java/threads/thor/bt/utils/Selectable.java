@@ -8,7 +8,7 @@ import java.nio.channels.SelectionKey;
 public interface Selectable {
     SelectableChannel getChannel();
 
-    void registrationEvent(NIOConnectionManager manager, SelectionKey key) throws IOException;
+    void registrationEvent(NIOConnectionManager manager, SelectionKey key);
 
     void selectionEvent(SelectionKey key) throws IOException;
 

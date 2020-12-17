@@ -18,7 +18,6 @@ public class Config {
     private final Duration peerDiscoveryInterval;
     private final Duration peerHandshakeTimeout;
     private final Duration peerConnectionInactivityThreshold;
-    private final Duration trackerQueryInterval;
     private final int maxPeerConnections;
     private final int maxPeerConnectionsPerTorrent;
     private final int transferBlockSize;
@@ -33,12 +32,12 @@ public class Config {
     private final int metadataExchangeBlockSize;
     private final int metadataExchangeMaxSize;
     private final int msePrivateKeySize;
-    private final int numberOfPeersToRequestFromTracker;
+
     private final int maxOutstandingRequests;
     private final int networkBufferSize;
     private final Collection<InetPeerAddress> publicBootstrapNodes;
+    private final Duration shutdownHookTimeout;
     private int acceptorPort;
-    private Duration shutdownHookTimeout;
     private int numOfHashingThreads;
     private PeerId localPeerId;
 
@@ -51,7 +50,6 @@ public class Config {
 
         this.peerHandshakeTimeout = Duration.ofSeconds(30);
         this.peerConnectionInactivityThreshold = Duration.ofMinutes(3);
-        this.trackerQueryInterval = Duration.ofMinutes(5);
         this.maxPeerConnections = 500;
         this.maxPeerConnectionsPerTorrent = maxPeerConnections; // assume single threads.torrent per runtime by default; change this to (maxActive * 2) maybe?
         this.transferBlockSize = 16 * 1024; // 16 KB
@@ -69,7 +67,6 @@ public class Config {
         this.metadataExchangeBlockSize = 16 * 1024; // 16 KB
         this.metadataExchangeMaxSize = 2 * 1024 * 1024; // 2 MB
         this.msePrivateKeySize = 20; // 20 bytes
-        this.numberOfPeersToRequestFromTracker = 50;
         this.maxOutstandingRequests = 250;
         this.networkBufferSize = 1024 * 1024; // 1 MB
 
@@ -174,12 +171,6 @@ public class Config {
         return peerConnectionInactivityThreshold;
     }
 
-    /**
-     * @since 1.0
-     */
-    public Duration getTrackerQueryInterval() {
-        return trackerQueryInterval;
-    }
 
     /**
      * @since 1.0
@@ -216,13 +207,6 @@ public class Config {
         return shutdownHookTimeout;
     }
 
-    /**
-     * @param shutdownHookTimeout Amount of time to wait for a shutdown hook to execute before killing it
-     * @since 1.0
-     */
-    public void setShutdownHookTimeout(Duration shutdownHookTimeout) {
-        this.shutdownHookTimeout = shutdownHookTimeout;
-    }
 
     /**
      * @since 1.1
@@ -310,12 +294,6 @@ public class Config {
         return msePrivateKeySize;
     }
 
-    /**
-     * @since 1.5
-     */
-    public int getNumberOfPeersToRequestFromTracker() {
-        return numberOfPeersToRequestFromTracker;
-    }
 
     /**
      * @since 1.9

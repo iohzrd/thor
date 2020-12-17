@@ -10,12 +10,6 @@ import threads.LogUtils;
 import threads.thor.bt.processor.listener.ListenerSource;
 import threads.thor.bt.processor.listener.ProcessingEvent;
 
-/**
- * Base implementation of a generic asynchronous executor of processing chains.
- *
- * @param <C> Type of processing context
- * @since 1.5
- */
 public class ChainProcessor<C extends ProcessingContext> implements Processor<C> {
 
     private final ProcessingStage<C> chainHead;

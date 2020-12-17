@@ -45,7 +45,6 @@ import threads.thor.bt.bencoding.model.BEString;
 import threads.thor.bt.bencoding.model.ValidationResult;
 import threads.thor.bt.bencoding.model.YamlBEObjectModelLoader;
 import threads.thor.bt.service.CryptoUtil;
-import threads.thor.bt.tracker.AnnounceKey;
 
 
 /**
@@ -182,7 +181,8 @@ public final class MetadataService {
 
                     torrentSize = torrentSize.add(fileSize);
 
-                    List<BEString> pathElements = (List<BEString>) fileMap.get(FILE_PATH_ELEMENTS_KEY).getValue();
+                    List<BEString> pathElements = (List<BEString>)
+                            fileMap.get(FILE_PATH_ELEMENTS_KEY).getValue();
 
                     torrentFile.setPathElements(pathElements.stream()
                             .map(bytes -> bytes.getValue(defaultCharset))
@@ -221,7 +221,6 @@ public final class MetadataService {
                 torrent.setCreatedBy(new String(createdBy, defaultCharset));
             }
 
-            AnnounceKey announceKey = null;
             // TODO: support for private torrents with multiple trackers
             if (!isPrivate && root.containsKey(ANNOUNCE_LIST_KEY)) {
 
@@ -242,16 +241,11 @@ public final class MetadataService {
                     trackerUrls.add(tierTackerUrls);
                 }
 
-                announceKey = new AnnounceKey(trackerUrls);
-
             } else if (root.containsKey(ANNOUNCE_KEY)) {
                 byte[] trackerUrl = (byte[]) root.get(ANNOUNCE_KEY).getValue();
-                announceKey = new AnnounceKey(new String(trackerUrl, defaultCharset));
+                LogUtils.error(TAG, new String(trackerUrl));
             }
 
-            if (announceKey != null) {
-                torrent.setAnnounceKey(announceKey);
-            }
             return torrent;
 
         } catch (Exception e) {
