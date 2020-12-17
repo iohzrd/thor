@@ -44,7 +44,7 @@ public interface PeerConnection extends Closeable {
      * @return Message, or null if there isn't any
      * @since 1.0
      */
-    Message readMessageNow() throws IOException;
+    Message readMessageNow();
 
     /**
      * Attempt to read an incoming message within a specified time interval.
@@ -58,7 +58,7 @@ public interface PeerConnection extends Closeable {
      * @return Message, or null if there isn't any
      * @since 1.0
      */
-    Message readMessage(long timeout) throws IOException;
+    Message readMessage(long timeout);
 
     /**
      * Send a message to remote peer.

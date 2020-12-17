@@ -33,7 +33,7 @@ class IncomingHandshakeHandler implements ConnectionHandler {
         Message firstMessage = null;
         try {
             firstMessage = connection.readMessage(handshakeTimeout.toMillis());
-        } catch (IOException ignored) {
+        } catch (Throwable ignored) {
             // ignore exception
         }
 

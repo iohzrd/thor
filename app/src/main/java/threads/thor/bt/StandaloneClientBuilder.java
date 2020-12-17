@@ -1,14 +1,12 @@
 package threads.thor.bt;
 
 import java.util.Objects;
-import java.util.function.Supplier;
 
 import threads.thor.bt.data.Storage;
 import threads.thor.bt.magnet.MagnetUri;
 import threads.thor.bt.magnet.MagnetUriParser;
 import threads.thor.bt.processor.ListenerSource;
 import threads.thor.bt.processor.MagnetContext;
-import threads.thor.bt.processor.ProcessingContext;
 import threads.thor.bt.processor.ProcessingEvent;
 import threads.thor.bt.processor.TorrentProcessorFactory;
 import threads.thor.bt.torrent.PieceSelector;
@@ -53,19 +51,13 @@ public class StandaloneClientBuilder {
 
     public BtClient build() {
         Objects.requireNonNull(runtime, "Missing runtime");
-        Supplier<BtClient> clientSupplier = () -> buildClient(runtime);
-        return new LazyClient(clientSupplier);
-    }
-
-
-    private <C extends ProcessingContext> BtClient buildClient(BtRuntime runtime) {
-
         ListenerSource<MagnetContext> listenerSource = new ListenerSource<>();
         listenerSource.addListener(ProcessingEvent.DOWNLOAD_COMPLETE, (context, next) -> null);
 
-        return new DefaultClient(runtime,
+        return new BtClient(runtime,
                 TorrentProcessorFactory.createMagnetProcessor(runtime),
                 new MagnetContext(magnetUri, pieceSelector, storage), listenerSource);
     }
+
 
 }

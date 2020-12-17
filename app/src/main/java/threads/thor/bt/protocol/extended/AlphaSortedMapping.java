@@ -11,7 +11,6 @@ import threads.thor.bt.protocol.handler.MessageHandler;
 public class AlphaSortedMapping implements ExtendedMessageTypeMapping {
 
     private final Map<Integer, String> nameMap;
-    private final Map<String, Integer> idMap;
     private final Map<Class<?>, String> typeMap;
 
     /**
@@ -28,12 +27,10 @@ public class AlphaSortedMapping implements ExtendedMessageTypeMapping {
         });
 
         nameMap = new HashMap<>();
-        idMap = new HashMap<>();
 
         Integer localTypeId = 1;
         for (String typeName : sortedTypeNames) {
             nameMap.put(localTypeId, typeName);
-            idMap.put(typeName, localTypeId);
             localTypeId++;
         }
     }

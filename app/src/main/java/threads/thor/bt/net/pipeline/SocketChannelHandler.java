@@ -71,25 +71,21 @@ public class SocketChannelHandler implements ChannelHandler {
     @Override
     public void register() {
         dataReceiver.registerChannel(channel, context);
-        context.fireChannelRegistered();
     }
 
     @Override
     public void unregister() {
         dataReceiver.unregisterChannel(channel);
-        context.fireChannelUnregistered();
     }
 
     @Override
     public void activate() {
         dataReceiver.activateChannel(channel);
-        context.fireChannelActive();
     }
 
     @Override
     public void deactivate() {
         dataReceiver.deactivateChannel(channel);
-        context.fireChannelInactive();
     }
 
     private boolean processInboundData() throws IOException {

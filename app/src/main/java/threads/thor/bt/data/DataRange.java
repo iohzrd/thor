@@ -1,4 +1,3 @@
-
 package threads.thor.bt.data;
 
 import threads.thor.bt.data.range.Range;

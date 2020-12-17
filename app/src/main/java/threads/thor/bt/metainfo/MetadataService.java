@@ -1,4 +1,3 @@
-
 package threads.thor.bt.metainfo;
 
 import android.content.Context;

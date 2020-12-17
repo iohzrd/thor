@@ -46,7 +46,7 @@ class DefaultDataDescriptor implements DataDescriptor {
     private final Storage storage;
 
     private final Torrent torrent;
-    private final DataReader reader;
+
     private final ChunkVerifier verifier;
     private List<ChunkDescriptor> chunkDescriptors;
     private Bitfield bitfield;
@@ -64,7 +64,7 @@ class DefaultDataDescriptor implements DataDescriptor {
 
         init(transferBlockSize);
 
-        this.reader = dataReaderFactory.createReader(torrent, this);
+        dataReaderFactory.createReader(torrent, this);
     }
 
     private void init(long transferBlockSize) {

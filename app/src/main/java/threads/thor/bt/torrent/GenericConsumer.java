@@ -1,4 +1,3 @@
-
 package threads.thor.bt.torrent;
 
 import java.util.ArrayList;
@@ -113,7 +112,6 @@ public class GenericConsumer implements IConsumers {
         });
         return list;
     }
-
 
 
     private void consume(Choke choke, MessageContext context) {

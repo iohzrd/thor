@@ -1,4 +1,3 @@
-
 package threads.thor.bt.torrent;
 
 import java.util.ArrayList;
@@ -97,18 +96,12 @@ public class PieceConsumer implements IProduces, IConsumers {
 
                 if (!block.isRejected()) {
                     Optional<CompletableFuture<Boolean>> verificationFuture = block.getVerificationFuture();
-                    if (verificationFuture.isPresent()) {
-                        verificationFuture.get().whenComplete((verified, error1) -> {
-                            if (error1 != null) {
-
-                            } else if (verified) {
-                                completedPieces.add(piece.getPieceIndex());
-                                eventSink.firePieceVerified(context.getTorrentId(), piece.getPieceIndex());
-                            } else {
-
-                            }
-                        });
-                    }
+                    verificationFuture.ifPresent(booleanCompletableFuture -> booleanCompletableFuture.whenComplete((verified, error1) -> {
+                        if (error1 == null && verified) {
+                            completedPieces.add(piece.getPieceIndex());
+                            eventSink.firePieceVerified(context.getTorrentId(), piece.getPieceIndex());
+                        }
+                    }));
                 }
             });
         }
@@ -126,7 +119,7 @@ public class PieceConsumer implements IProduces, IConsumers {
         return connectionState.getPendingRequests().remove(key);
     }
 
-    private /*nullable*/CompletableFuture<BlockWrite> addBlock(Peer peer, ConnectionState connectionState, Piece piece) {
+    private CompletableFuture<BlockWrite> addBlock(Peer peer, ConnectionState connectionState, Piece piece) {
         int pieceIndex = piece.getPieceIndex(),
                 offset = piece.getOffset(),
                 blockLength = piece.getLength();

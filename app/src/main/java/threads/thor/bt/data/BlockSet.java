@@ -1,4 +1,3 @@
-
 package threads.thor.bt.data;
 
 /**

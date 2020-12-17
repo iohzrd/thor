@@ -1,46 +1,104 @@
 package threads.thor.bt;
 
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
+import threads.thor.bt.processor.ListenerSource;
+import threads.thor.bt.processor.MagnetContext;
+import threads.thor.bt.processor.Processor;
 import threads.thor.bt.torrent.TorrentSessionState;
 
-public interface BtClient {
+public class BtClient {
 
-    /**
-     * Start threads.torrent processing asynchronously in a separate thread.
-     *
-     * @return Future, that can be joined by the calling thread
-     * or used in any other way, which is convenient for the caller.
-     * @since 1.0
-     */
-    CompletableFuture<?> startAsync();
+    private final BtRuntime runtime;
+    private final Processor<MagnetContext> processor;
+    private final ListenerSource<MagnetContext> listenerSource;
+    private final MagnetContext context;
 
-    /**
-     * Start threads.torrent processing asynchronously in a separate thread
-     * and schedule periodic callback invocations.
-     *
-     * @param listener Callback, that is periodically provided
-     *                 with an up-to-date state of threads.torrent session.
-     * @param period   Interval at which the listener should be invoked, in milliseconds.
-     * @return Future, that can be joined by the calling thread
-     * or used in any other way, which is convenient for the caller.
-     * @since 1.0
-     */
-    CompletableFuture<?> startAsync(Consumer<TorrentSessionState> listener, long period);
+    private volatile Optional<CompletableFuture<?>> futureOptional;
+    private volatile Optional<Consumer<TorrentSessionState>> listenerOptional;
 
-    /**
-     * Stop threads.torrent processing.
-     *
-     * @since 1.0
-     */
-    void stop();
+    private volatile ScheduledExecutorService listenerExecutor;
 
-    /**
-     * Check if this client is started.
-     *
-     * @return true if this client is started
-     * @since 1.1
-     */
-    boolean isStarted();
+    BtClient(BtRuntime runtime,
+             Processor<MagnetContext> processor,
+             MagnetContext context,
+             ListenerSource<MagnetContext> listenerSource) {
+        this.runtime = runtime;
+        this.processor = processor;
+        this.context = context;
+        this.listenerSource = listenerSource;
+
+        this.futureOptional = Optional.empty();
+        this.listenerOptional = Optional.empty();
+    }
+
+
+    public synchronized CompletableFuture<?> startAsync(Consumer<TorrentSessionState> listener, long period) {
+        if (futureOptional.isPresent()) {
+            throw new BtException("Can't start -- already running");
+        }
+
+        this.listenerExecutor = Executors.newSingleThreadScheduledExecutor();
+        this.listenerOptional = Optional.of(listener);
+
+        listenerExecutor.scheduleAtFixedRate(this::notifyListener, period, period, TimeUnit.MILLISECONDS);
+
+        return doStartAsync();
+    }
+
+    private void notifyListener() {
+        listenerOptional.ifPresent(listener ->
+                context.getState().ifPresent(listener));
+    }
+
+    private void shutdownListener() {
+        listenerExecutor.shutdownNow();
+    }
+
+    private CompletableFuture<?> doStartAsync() {
+        ensureRuntimeStarted();
+        attachToRuntime();
+
+        CompletableFuture<?> future = processor.process(context, listenerSource);
+
+        future.whenComplete((r, t) -> notifyListener())
+                .whenComplete((r, t) -> shutdownListener())
+                .whenComplete((r, t) -> stop());
+
+        this.futureOptional = Optional.of(future);
+
+        return future;
+    }
+
+    public synchronized void stop() {
+        // order is important (more precisely, unsetting futureOptional BEFORE completing the future)
+        // to prevent attempt to detach the client after it has already been detached once
+        // (may happen when #stop() is called from the outside)
+        if (futureOptional.isPresent()) {
+            CompletableFuture<?> f = futureOptional.get();
+            futureOptional = Optional.empty();
+            detachFromRuntime();
+            f.complete(null);
+        }
+    }
+
+    private void ensureRuntimeStarted() {
+        if (!runtime.isRunning()) {
+            runtime.startup();
+        }
+    }
+
+    private void attachToRuntime() {
+        runtime.attachClient(this);
+    }
+
+    private void detachFromRuntime() {
+        runtime.detachClient(this);
+    }
+
 }

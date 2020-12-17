@@ -41,7 +41,7 @@ class OutgoingHandshakeHandler implements ConnectionHandler {
         Message firstMessage = null;
         try {
             firstMessage = connection.readMessage(handshakeTimeout);
-        } catch (IOException ignored) {
+        } catch (Throwable ignored) {
             // ignore exception
         }
         if (firstMessage != null) {

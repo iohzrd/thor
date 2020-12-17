@@ -1,9 +1,6 @@
-
 package threads.thor.bt.data;
 
 import java.util.BitSet;
-import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.locks.ReentrantLock;
 
 import threads.thor.bt.BtException;
@@ -29,11 +26,7 @@ public class Bitfield {
      * Total number of pieces in torrent.
      */
     private final int piecesTotal;
-    /**
-     * List of torrent's chunk descriptors.
-     * Absent when this Bitfield instance is describing data that some peer has.
-     */
-    private final Optional<List<ChunkDescriptor>> chunks;
+
     private final ReentrantLock lock;
     /**
      * Bitmask indicating pieces that should be skipped.
@@ -52,7 +45,6 @@ public class Bitfield {
     public Bitfield(int piecesTotal) {
         this.piecesTotal = piecesTotal;
         this.bitmask = new BitSet(piecesTotal);
-        this.chunks = Optional.empty();
         this.lock = new ReentrantLock();
     }
 
@@ -69,7 +61,6 @@ public class Bitfield {
     public Bitfield(byte[] value, BitOrder bitOrder, int piecesTotal) {
         this.piecesTotal = piecesTotal;
         this.bitmask = createBitmask(value, bitOrder, piecesTotal);
-        this.chunks = Optional.empty();
         this.lock = new ReentrantLock();
     }
 
@@ -217,40 +208,6 @@ public class Bitfield {
     }
 
     /**
-     * @return Number of pieces that should be skipped
-     * @since 1.7
-     */
-    public int getPiecesSkipped() {
-        if (skipped == null) {
-            return 0;
-        }
-
-        lock.lock();
-        try {
-            return skipped.cardinality();
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    /**
-     * @return Number of pieces that should NOT be skipped
-     * @since 1.7
-     */
-    public int getPiecesNotSkipped() {
-        if (skipped == null) {
-            return piecesTotal;
-        }
-
-        lock.lock();
-        try {
-            return piecesTotal - skipped.cardinality();
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    /**
      * @param pieceIndex Piece index (0-based)
      * @return Status of the corresponding piece.
      * @see DataDescriptor#getChunkDescriptors()
@@ -271,13 +228,6 @@ public class Bitfield {
 
         if (verified) {
             status = PieceStatus.COMPLETE_VERIFIED;
-        } else if (chunks.isPresent()) {
-            ChunkDescriptor chunk = chunks.get().get(pieceIndex);
-            if (chunk.isComplete()) {
-                status = PieceStatus.COMPLETE;
-            } else {
-                status = PieceStatus.INCOMPLETE;
-            }
         } else {
             status = PieceStatus.INCOMPLETE;
         }
@@ -329,12 +279,6 @@ public class Bitfield {
 
     private void assertChunkComplete(int pieceIndex) {
         validatePieceIndex(pieceIndex);
-
-        if (chunks.isPresent()) {
-            if (!chunks.get().get(pieceIndex).isComplete()) {
-                throw new IllegalStateException("Chunk is not complete: " + pieceIndex);
-            }
-        }
     }
 
     private void validatePieceIndex(Integer pieceIndex) {
