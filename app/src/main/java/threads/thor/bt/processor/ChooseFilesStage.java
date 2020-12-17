@@ -10,13 +10,13 @@ import threads.thor.bt.data.Bitfield;
 import threads.thor.bt.data.DataDescriptor;
 import threads.thor.bt.metainfo.Torrent;
 import threads.thor.bt.metainfo.TorrentFile;
+import threads.thor.bt.torrent.Assignments;
+import threads.thor.bt.torrent.IncompletePiecesValidator;
+import threads.thor.bt.torrent.PieceSelector;
 import threads.thor.bt.torrent.PieceStatistics;
 import threads.thor.bt.torrent.TorrentDescriptor;
 import threads.thor.bt.torrent.TorrentRegistry;
-import threads.thor.bt.torrent.messaging.Assignments;
-import threads.thor.bt.torrent.selector.IncompletePiecesValidator;
-import threads.thor.bt.torrent.selector.PieceSelector;
-import threads.thor.bt.torrent.selector.ValidatingSelector;
+import threads.thor.bt.torrent.ValidatingSelector;
 
 public class ChooseFilesStage<C extends TorrentContext> extends TerminateOnErrorProcessingStage<C> {
     private final TorrentRegistry torrentRegistry;

@@ -25,8 +25,8 @@ import threads.thor.bt.peer.PeerSourceFactory;
 import threads.thor.bt.protocol.Message;
 import threads.thor.bt.protocol.extended.ExtendedHandshake;
 import threads.thor.bt.service.RuntimeLifecycleBinder;
-import threads.thor.bt.torrent.messaging.MessageConsumer;
-import threads.thor.bt.torrent.messaging.MessageContext;
+import threads.thor.bt.torrent.MessageConsumer;
+import threads.thor.bt.torrent.MessageContext;
 
 public class PeerExchangePeerSourceFactory implements PeerSourceFactory, IConsumers {
 

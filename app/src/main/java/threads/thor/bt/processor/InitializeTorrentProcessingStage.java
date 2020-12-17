@@ -8,16 +8,16 @@ import threads.thor.bt.metainfo.TorrentId;
 import threads.thor.bt.net.IPeerConnectionPool;
 import threads.thor.bt.net.extended.ExtendedHandshakeConsumer;
 import threads.thor.bt.net.pipeline.IBufferedPieceRegistry;
+import threads.thor.bt.torrent.BitfieldConsumer;
+import threads.thor.bt.torrent.DataWorker;
+import threads.thor.bt.torrent.GenericConsumer;
+import threads.thor.bt.torrent.MetadataProducer;
+import threads.thor.bt.torrent.PeerRequestConsumer;
+import threads.thor.bt.torrent.PieceConsumer;
 import threads.thor.bt.torrent.PieceStatistics;
+import threads.thor.bt.torrent.RequestProducer;
 import threads.thor.bt.torrent.TorrentDescriptor;
 import threads.thor.bt.torrent.TorrentRegistry;
-import threads.thor.bt.torrent.data.DataWorker;
-import threads.thor.bt.torrent.messaging.BitfieldConsumer;
-import threads.thor.bt.torrent.messaging.GenericConsumer;
-import threads.thor.bt.torrent.messaging.MetadataProducer;
-import threads.thor.bt.torrent.messaging.PeerRequestConsumer;
-import threads.thor.bt.torrent.messaging.PieceConsumer;
-import threads.thor.bt.torrent.messaging.RequestProducer;
 
 public class InitializeTorrentProcessingStage<C extends TorrentContext> extends TerminateOnErrorProcessingStage<C> {
 

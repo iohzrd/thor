@@ -9,8 +9,8 @@ import threads.thor.bt.net.IPeerConnectionPool;
 import threads.thor.bt.net.InetPeer;
 import threads.thor.bt.protocol.Message;
 import threads.thor.bt.protocol.extended.ExtendedHandshake;
-import threads.thor.bt.torrent.messaging.MessageConsumer;
-import threads.thor.bt.torrent.messaging.MessageContext;
+import threads.thor.bt.torrent.MessageConsumer;
+import threads.thor.bt.torrent.MessageContext;
 
 public class ExtendedHandshakeConsumer implements IConsumers {
 

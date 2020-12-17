@@ -12,9 +12,9 @@ import threads.thor.bt.net.ConnectionKey;
 import threads.thor.bt.net.IPeerConnectionPool;
 import threads.thor.bt.net.pipeline.IBufferedPieceRegistry;
 import threads.thor.bt.protocol.BitOrder;
+import threads.thor.bt.torrent.DataWorker;
 import threads.thor.bt.torrent.PieceStatistics;
 import threads.thor.bt.torrent.TorrentRegistry;
-import threads.thor.bt.torrent.data.DataWorker;
 
 public class InitializeMagnetTorrentProcessingStage extends InitializeTorrentProcessingStage<MagnetContext> {
 

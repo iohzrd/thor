@@ -7,11 +7,11 @@ import java.util.Optional;
 import threads.thor.bt.data.Bitfield;
 import threads.thor.bt.data.Storage;
 import threads.thor.bt.metainfo.Torrent;
+import threads.thor.bt.torrent.Assignments;
+import threads.thor.bt.torrent.MessageRouter;
+import threads.thor.bt.torrent.PieceSelector;
 import threads.thor.bt.torrent.PieceStatistics;
 import threads.thor.bt.torrent.TorrentSessionState;
-import threads.thor.bt.torrent.messaging.Assignments;
-import threads.thor.bt.torrent.messaging.MessageRouter;
-import threads.thor.bt.torrent.selector.PieceSelector;
 
 public abstract class TorrentContext implements ProcessingContext {
 

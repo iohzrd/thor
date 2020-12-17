@@ -4,8 +4,8 @@ package threads.thor.bt;
 import java.util.List;
 
 import threads.thor.bt.protocol.Message;
-import threads.thor.bt.torrent.messaging.MessageConsumer;
-import threads.thor.bt.torrent.messaging.MessageContext;
+import threads.thor.bt.torrent.MessageConsumer;
+import threads.thor.bt.torrent.MessageContext;
 
 public interface IConsumers extends IAgent {
     void doConsume(Message message, MessageContext messageContext);

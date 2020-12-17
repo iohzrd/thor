@@ -3,8 +3,8 @@ package threads.thor.bt.processor;
 import threads.thor.bt.data.Storage;
 import threads.thor.bt.magnet.MagnetUri;
 import threads.thor.bt.metainfo.TorrentId;
-import threads.thor.bt.torrent.messaging.BitfieldCollectingConsumer;
-import threads.thor.bt.torrent.selector.PieceSelector;
+import threads.thor.bt.torrent.BitfieldCollectingConsumer;
+import threads.thor.bt.torrent.PieceSelector;
 
 public class MagnetContext extends TorrentContext {
 

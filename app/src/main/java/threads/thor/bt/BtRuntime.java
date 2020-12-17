@@ -76,11 +76,11 @@ import threads.thor.bt.protocol.handler.MessageHandler;
 import threads.thor.bt.protocol.handler.PortMessageHandler;
 import threads.thor.bt.service.LifecycleBinding;
 import threads.thor.bt.service.RuntimeLifecycleBinder;
+import threads.thor.bt.torrent.BlockCache;
+import threads.thor.bt.torrent.DataWorker;
+import threads.thor.bt.torrent.DefaultDataWorker;
+import threads.thor.bt.torrent.LRUBlockCache;
 import threads.thor.bt.torrent.TorrentRegistry;
-import threads.thor.bt.torrent.data.BlockCache;
-import threads.thor.bt.torrent.data.DataWorker;
-import threads.thor.bt.torrent.data.DefaultDataWorker;
-import threads.thor.bt.torrent.data.LRUBlockCache;
 
 public class BtRuntime {
 

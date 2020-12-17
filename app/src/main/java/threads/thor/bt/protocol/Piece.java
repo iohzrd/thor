@@ -3,7 +3,7 @@ package threads.thor.bt.protocol;
 import java.nio.ByteBuffer;
 import java.util.Objects;
 
-import threads.thor.bt.torrent.data.BlockReader;
+import threads.thor.bt.torrent.BlockReader;
 
 public final class Piece implements Message {
 

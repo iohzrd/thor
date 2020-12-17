@@ -9,10 +9,10 @@ import threads.thor.bt.metainfo.Torrent;
 import threads.thor.bt.metainfo.TorrentId;
 import threads.thor.bt.net.InetPeer;
 import threads.thor.bt.peer.PeerRegistry;
+import threads.thor.bt.torrent.BitfieldCollectingConsumer;
+import threads.thor.bt.torrent.MetadataConsumer;
 import threads.thor.bt.torrent.TorrentDescriptor;
 import threads.thor.bt.torrent.TorrentRegistry;
-import threads.thor.bt.torrent.messaging.BitfieldCollectingConsumer;
-import threads.thor.bt.torrent.messaging.MetadataConsumer;
 
 
 public class FetchMetadataStage extends TerminateOnErrorProcessingStage<MagnetContext> {

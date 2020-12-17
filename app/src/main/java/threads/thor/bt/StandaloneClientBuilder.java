@@ -11,8 +11,8 @@ import threads.thor.bt.processor.MagnetContext;
 import threads.thor.bt.processor.ProcessingContext;
 import threads.thor.bt.processor.ProcessingEvent;
 import threads.thor.bt.processor.TorrentProcessorFactory;
-import threads.thor.bt.torrent.selector.PieceSelector;
-import threads.thor.bt.torrent.selector.RarestFirstSelector;
+import threads.thor.bt.torrent.PieceSelector;
+import threads.thor.bt.torrent.RarestFirstSelector;
 
 
 public class StandaloneClientBuilder {

@@ -10,16 +10,16 @@ import threads.thor.bt.event.EventSource;
 import threads.thor.bt.metainfo.TorrentId;
 import threads.thor.bt.net.IConnectionSource;
 import threads.thor.bt.net.IMessageDispatcher;
+import threads.thor.bt.torrent.Assignments;
+import threads.thor.bt.torrent.DefaultMessageRouter;
+import threads.thor.bt.torrent.IPeerWorkerFactory;
+import threads.thor.bt.torrent.MessageRouter;
+import threads.thor.bt.torrent.PeerWorkerFactory;
 import threads.thor.bt.torrent.PieceStatistics;
 import threads.thor.bt.torrent.TorrentDescriptor;
 import threads.thor.bt.torrent.TorrentRegistry;
 import threads.thor.bt.torrent.TorrentSessionState;
-import threads.thor.bt.torrent.messaging.Assignments;
-import threads.thor.bt.torrent.messaging.DefaultMessageRouter;
-import threads.thor.bt.torrent.messaging.IPeerWorkerFactory;
-import threads.thor.bt.torrent.messaging.MessageRouter;
-import threads.thor.bt.torrent.messaging.PeerWorkerFactory;
-import threads.thor.bt.torrent.messaging.TorrentWorker;
+import threads.thor.bt.torrent.TorrentWorker;
 
 public class CreateSessionStage<C extends TorrentContext> extends TerminateOnErrorProcessingStage<C> {
 
