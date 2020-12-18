@@ -2,7 +2,6 @@ package threads.thor.bt.torrent;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,10 +21,6 @@ public class DefaultMessageRouter implements MessageRouter {
     // collection of added consumers/producers in the form of runnable "commands"..
     // quick and dirty!
     private final List<Runnable> changes;
-
-    public DefaultMessageRouter() {
-        this(Collections.emptyList());
-    }
 
     public DefaultMessageRouter(Collection<IAgent> messagingAgents) {
 
@@ -57,11 +52,6 @@ public class DefaultMessageRouter implements MessageRouter {
             });
             addProducers(list);
         }
-    }
-
-    @Override
-    public void unregisterMessagingAgent(IAgent agent) {
-        // TODO
     }
 
     @SuppressWarnings("unchecked")

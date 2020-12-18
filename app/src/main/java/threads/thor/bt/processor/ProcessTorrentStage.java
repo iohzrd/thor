@@ -1,6 +1,5 @@
 package threads.thor.bt.processor;
 
-import threads.LogUtils;
 import threads.thor.bt.event.EventSink;
 import threads.thor.bt.metainfo.TorrentId;
 import threads.thor.bt.torrent.TorrentDescriptor;
@@ -26,40 +25,18 @@ public class ProcessTorrentStage<C extends TorrentContext> extends TerminateOnEr
         TorrentDescriptor descriptor = getDescriptor(torrentId);
 
         descriptor.start();
-        start(context);
 
         eventSink.fireTorrentStarted(torrentId);
 
         while (descriptor.isActive()) {
             try {
                 Thread.sleep(1000);
-                if (context.getState().get().getPiecesRemaining() == 0) {
-                    complete(context);
+                if (context.getState().getPiecesRemaining() == 0) {
                     break;
                 }
             } catch (InterruptedException e) {
                 throw new RuntimeException("Unexpectedly interrupted", e);
             }
-        }
-    }
-
-    private void start(C context) {
-        try {
-            onStarted(context);
-        } catch (Exception e) {
-            LogUtils.error(LogUtils.TAG, e);
-        }
-    }
-
-    protected void onStarted(C context) {
-    }
-
-    private void complete(C context) {
-        try {
-            TorrentId id = context.getTorrentId();
-            getDescriptor(id).complete();
-        } catch (Exception e) {
-            LogUtils.error(LogUtils.TAG, e);
         }
     }
 

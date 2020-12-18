@@ -8,11 +8,11 @@ public interface ByteBufferView {
 
     int position();
 
-    ByteBufferView position(int newPosition);
+    void position(int newPosition);
 
     int limit();
 
-    ByteBufferView limit(int newLimit);
+    void limit(int newLimit);
 
     int capacity();
 
@@ -26,7 +26,7 @@ public interface ByteBufferView {
 
     int getInt();
 
-    ByteBufferView get(byte[] dst);
+    void get(byte[] dst);
 
     void transferTo(ByteBuffer buffer);
 

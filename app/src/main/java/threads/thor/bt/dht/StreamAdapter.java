@@ -63,13 +63,14 @@ class StreamAdapter<T> {
     }
 
     /**
-     * @return true if the item has been added, false otherwise
      * @throws NullPointerException if the item is null
      * @since 1.7
      */
-    synchronized boolean addItem(T item) {
+    synchronized void addItem(T item) {
         Objects.requireNonNull(item);
-        return !streamFinished.get() && blockingQueue.add(item);
+        if (!streamFinished.get()) {
+            blockingQueue.add(item);
+        }
     }
 
     /**

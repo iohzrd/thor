@@ -9,7 +9,6 @@ import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.time.Duration;
 import java.util.Objects;
-import java.util.Optional;
 
 import threads.LogUtils;
 import threads.thor.bt.Config;
@@ -19,25 +18,24 @@ import threads.thor.bt.net.buffer.BorrowedBuffer;
 import threads.thor.bt.net.buffer.IBufferManager;
 import threads.thor.bt.net.crypto.CipherBufferMutator;
 import threads.thor.bt.net.crypto.MSEHandshakeProcessor;
-import threads.thor.bt.net.pipeline.ChannelHandler;
 import threads.thor.bt.net.pipeline.ChannelPipeline;
 import threads.thor.bt.net.pipeline.ChannelPipelineBuilder;
-import threads.thor.bt.net.pipeline.IChannelPipelineFactory;
+import threads.thor.bt.net.pipeline.ChannelPipelineFactory;
 import threads.thor.bt.net.pipeline.SocketChannelHandler;
 import threads.thor.bt.protocol.Message;
 import threads.thor.bt.protocol.crypto.MSECipher;
 import threads.thor.bt.protocol.handler.MessageHandler;
 import threads.thor.bt.torrent.TorrentRegistry;
 
-public class PeerConnectionFactory implements IPeerConnectionFactory {
+public class PeerConnectionFactory {
     private static final String TAG = PeerConnectionFactory.class.getSimpleName();
     private static final Duration socketTimeout = Duration.ofSeconds(30);
 
     private final MessageHandler<Message> protocol;
 
     private final Selector selector;
-    private final IConnectionHandlerFactory connectionHandlerFactory;
-    private final IChannelPipelineFactory channelPipelineFactory;
+    private final ConnectionHandlerFactory connectionHandlerFactory;
+    private final ChannelPipelineFactory channelPipelineFactory;
     private final IBufferManager bufferManager;
     private final MSEHandshakeProcessor cryptoHandshakeProcessor;
     private final DataReceiver dataReceiver;
@@ -46,8 +44,8 @@ public class PeerConnectionFactory implements IPeerConnectionFactory {
     private final InetSocketAddress localOutgoingSocketAddress;
 
     public PeerConnectionFactory(Selector selector,
-                                 IConnectionHandlerFactory connectionHandlerFactory,
-                                 IChannelPipelineFactory channelPipelineFactory,
+                                 ConnectionHandlerFactory connectionHandlerFactory,
+                                 ChannelPipelineFactory channelPipelineFactory,
                                  MessageHandler<Message> protocol,
                                  TorrentRegistry torrentRegistry,
                                  IBufferManager bufferManager,
@@ -66,7 +64,7 @@ public class PeerConnectionFactory implements IPeerConnectionFactory {
         this.localOutgoingSocketAddress = new InetSocketAddress(config.getAcceptorAddress(), 0);
     }
 
-    @Override
+
     public ConnectionResult createOutgoingConnection(Peer peer, TorrentId torrentId) {
         Objects.requireNonNull(peer);
         Objects.requireNonNull(torrentId);
@@ -95,7 +93,7 @@ public class PeerConnectionFactory implements IPeerConnectionFactory {
         return outgoingChannel;
     }
 
-    @Override
+
     public ConnectionResult createIncomingConnection(Peer peer, SocketChannel channel) {
         return createConnection(peer, null, channel, true);
     }
@@ -131,20 +129,20 @@ public class PeerConnectionFactory implements IPeerConnectionFactory {
 
         ByteBuffer inBuffer = in.lockAndGet();
         ByteBuffer outBuffer = out.lockAndGet();
-        Optional<MSECipher> cipherOptional;
+        MSECipher cipher;
         try {
             if (incoming) {
-                cipherOptional = cryptoHandshakeProcessor.negotiateIncoming(peer, channel, inBuffer, outBuffer);
+                cipher = cryptoHandshakeProcessor.negotiateIncoming(peer, channel, inBuffer, outBuffer);
             } else {
-                cipherOptional = cryptoHandshakeProcessor.negotiateOutgoing(channel, torrentId, inBuffer, outBuffer);
+                cipher = cryptoHandshakeProcessor.negotiateOutgoing(channel, torrentId, inBuffer, outBuffer);
             }
         } finally {
             in.unlock();
             out.unlock();
         }
 
-        ChannelPipeline pipeline = createPipeline(peer, channel, in, out, cipherOptional);
-        ChannelHandler channelHandler = new SocketChannelHandler(
+        ChannelPipeline pipeline = createPipeline(peer, channel, in, out, cipher);
+        SocketChannelHandler channelHandler = new SocketChannelHandler(
                 channel, in, out, pipeline::bindHandler, dataReceiver);
         channelHandler.register();
 
@@ -166,7 +164,7 @@ public class PeerConnectionFactory implements IPeerConnectionFactory {
         }
     }
 
-    private void subscribeHandler(TorrentId torrentId, ChannelHandler channelHandler) {
+    private void subscribeHandler(TorrentId torrentId, SocketChannelHandler channelHandler) {
         eventSource.onTorrentStarted(event -> {
             if (event.getTorrentId().equals(torrentId)) {
                 channelHandler.activate();
@@ -184,7 +182,7 @@ public class PeerConnectionFactory implements IPeerConnectionFactory {
             ByteChannel channel,
             BorrowedBuffer<ByteBuffer> in,
             BorrowedBuffer<ByteBuffer> out,
-            Optional<MSECipher> cipherOptional) {
+            MSECipher cipher) {
 
         ChannelPipelineBuilder builder = channelPipelineFactory.buildPipeline(peer);
         builder.channel(channel);
@@ -192,18 +190,16 @@ public class PeerConnectionFactory implements IPeerConnectionFactory {
         builder.inboundBuffer(in);
         builder.outboundBuffer(out);
 
-        cipherOptional.ifPresent(cipher -> {
+        if (cipher != null) {
             builder.decoders(new CipherBufferMutator(cipher.getDecryptionCipher()));
             builder.encoders(new CipherBufferMutator(cipher.getEncryptionCipher()));
-        });
+        }
 
         return builder.build();
     }
 
     private boolean initConnection(PeerConnection newConnection, ConnectionHandler connectionHandler) {
-        boolean success = connectionHandler.handleConnection(newConnection);
-        int remotePort = newConnection.getRemotePort();
-        return success;
+        return connectionHandler.handleConnection(newConnection);
     }
 
     private void closeQuietly(SocketChannel channel) {

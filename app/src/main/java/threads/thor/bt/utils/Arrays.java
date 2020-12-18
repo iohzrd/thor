@@ -37,7 +37,7 @@ public class Arrays {
                     Byte.toUnsignedLong(a[i + 4]) << 24 |
                     Byte.toUnsignedLong(a[i + 5]) << 16 |
                     Byte.toUnsignedLong(a[i + 6]) << 8 |
-                    Byte.toUnsignedLong(a[i + 7]) << 0;
+                    Byte.toUnsignedLong(a[i + 7]);
             long lb = Byte.toUnsignedLong(b[i]) << 56 |
                     Byte.toUnsignedLong(b[i + 1]) << 48 |
                     Byte.toUnsignedLong(b[i + 2]) << 40 |
@@ -45,16 +45,15 @@ public class Arrays {
                     Byte.toUnsignedLong(b[i + 4]) << 24 |
                     Byte.toUnsignedLong(b[i + 5]) << 16 |
                     Byte.toUnsignedLong(b[i + 6]) << 8 |
-                    Byte.toUnsignedLong(b[i + 7]) << 0;
+                    Byte.toUnsignedLong(b[i + 7]);
 
             if (la != lb)
                 return Long.compareUnsigned(la, lb);
 
         }
 
-        int offset = minLength - minLength & 0x7;
 
-        for (int i = offset; i < minLength; i++) {
+        for (int i = 0; i < minLength; i++) {
             int ia = Byte.toUnsignedInt(a[i]);
             int ib = Byte.toUnsignedInt(b[i]);
             if (ia != ib)

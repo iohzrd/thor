@@ -19,9 +19,8 @@ public class DelegatingByteBufferView implements ByteBufferView {
     }
 
     @Override
-    public ByteBufferView position(int newPosition) {
+    public void position(int newPosition) {
         delegate.position(newPosition);
-        return this;
     }
 
     @Override
@@ -30,9 +29,8 @@ public class DelegatingByteBufferView implements ByteBufferView {
     }
 
     @Override
-    public ByteBufferView limit(int newLimit) {
+    public void limit(int newLimit) {
         delegate.limit(newLimit);
-        return this;
     }
 
     @Override
@@ -66,9 +64,8 @@ public class DelegatingByteBufferView implements ByteBufferView {
     }
 
     @Override
-    public ByteBufferView get(byte[] dst) {
+    public void get(byte[] dst) {
         delegate.get(dst);
-        return this;
     }
 
     @Override

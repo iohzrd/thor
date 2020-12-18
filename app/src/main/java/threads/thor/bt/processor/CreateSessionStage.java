@@ -8,11 +8,10 @@ import threads.thor.bt.IAgent;
 import threads.thor.bt.data.Bitfield;
 import threads.thor.bt.event.EventSource;
 import threads.thor.bt.metainfo.TorrentId;
-import threads.thor.bt.net.IConnectionSource;
-import threads.thor.bt.net.IMessageDispatcher;
+import threads.thor.bt.net.ConnectionSource;
+import threads.thor.bt.net.MessageDispatcher;
 import threads.thor.bt.torrent.Assignments;
 import threads.thor.bt.torrent.DefaultMessageRouter;
-import threads.thor.bt.torrent.IPeerWorkerFactory;
 import threads.thor.bt.torrent.MessageRouter;
 import threads.thor.bt.torrent.PeerWorkerFactory;
 import threads.thor.bt.torrent.PieceStatistics;
@@ -25,16 +24,16 @@ public class CreateSessionStage<C extends TorrentContext> extends TerminateOnErr
 
     private final TorrentRegistry torrentRegistry;
     private final EventSource eventSource;
-    private final IConnectionSource connectionSource;
-    private final IMessageDispatcher messageDispatcher;
+    private final ConnectionSource connectionSource;
+    private final MessageDispatcher messageDispatcher;
     private final Set<IAgent> messagingAgents;
     private final Config config;
 
     public CreateSessionStage(ProcessingStage<C> next,
                               TorrentRegistry torrentRegistry,
                               EventSource eventSource,
-                              IConnectionSource connectionSource,
-                              IMessageDispatcher messageDispatcher,
+                              ConnectionSource connectionSource,
+                              MessageDispatcher messageDispatcher,
                               Set<IAgent> messagingAgents,
                               Config config) {
         super(next);
@@ -52,7 +51,7 @@ public class CreateSessionStage<C extends TorrentContext> extends TerminateOnErr
         TorrentDescriptor descriptor = torrentRegistry.register(torrentId);
 
         MessageRouter router = new DefaultMessageRouter(messagingAgents);
-        IPeerWorkerFactory peerWorkerFactory = new PeerWorkerFactory(router);
+        PeerWorkerFactory peerWorkerFactory = new PeerWorkerFactory(router);
 
         Supplier<Bitfield> bitfieldSupplier = context::getBitfield;
         Supplier<Assignments> assignmentsSupplier = context::getAssignments;

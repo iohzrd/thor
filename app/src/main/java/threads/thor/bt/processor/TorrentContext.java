@@ -2,8 +2,6 @@ package threads.thor.bt.processor;
 
 import androidx.annotation.Nullable;
 
-import java.util.Optional;
-
 import threads.thor.bt.data.Bitfield;
 import threads.thor.bt.data.Storage;
 import threads.thor.bt.metainfo.Torrent;
@@ -54,8 +52,8 @@ public abstract class TorrentContext implements ProcessingContext {
     }
 
     @Override
-    public Optional<TorrentSessionState> getState() {
-        return Optional.ofNullable(state);
+    public TorrentSessionState getState() {
+        return state;
     }
 
     public void setState(TorrentSessionState state) {

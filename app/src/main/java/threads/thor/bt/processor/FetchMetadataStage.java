@@ -58,7 +58,7 @@ public class FetchMetadataStage extends TerminateOnErrorProcessingStage<MagnetCo
 
 
         context.setTorrent(torrent);
-        eventSink.fireMetadataAvailable(torrentId, torrent);
+        eventSink.fireMetadataAvailable(torrentId);
 
         context.setBitfieldConsumer(bitfieldConsumer);
     }

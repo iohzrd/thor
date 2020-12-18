@@ -2,7 +2,7 @@ package threads.thor.bt.torrent;
 
 import threads.thor.bt.net.ConnectionKey;
 
-public class PeerWorkerFactory implements IPeerWorkerFactory {
+public class PeerWorkerFactory {
 
     private final MessageRouter router;
 
@@ -10,7 +10,6 @@ public class PeerWorkerFactory implements IPeerWorkerFactory {
         this.router = router;
     }
 
-    @Override
     public PeerWorker createPeerWorker(ConnectionKey connectionKey) {
         return new RoutingPeerWorker(connectionKey, router);
     }

@@ -33,8 +33,8 @@ public class MSECipher {
         Key receiverKey = getReceiverEncryptionKey(S, torrentId.getBytes());
         Key outgoingKey = initiator ? initiatorKey : receiverKey;
         Key incomingKey = initiator ? receiverKey : initiatorKey;
-        this.incomingCipher = createCipher(Cipher.DECRYPT_MODE, transformation, incomingKey);
-        this.outgoingCipher = createCipher(Cipher.ENCRYPT_MODE, transformation, outgoingKey);
+        this.incomingCipher = createCipher(Cipher.DECRYPT_MODE, incomingKey);
+        this.outgoingCipher = createCipher(Cipher.ENCRYPT_MODE, outgoingKey);
     }
 
     /**
@@ -106,25 +106,25 @@ public class MSECipher {
     }
 
     private Key getEncryptionKey(String s, byte[] S, byte[] SKEY) {
-        MessageDigest digest = getDigest("SHA-1");
+        MessageDigest digest = getDigest();
         digest.update(s.getBytes(StandardCharsets.US_ASCII));
         digest.update(S);
         digest.update(SKEY);
         return new SecretKeySpec(digest.digest(), "ARCFOUR");
     }
 
-    private MessageDigest getDigest(String algorithm) {
+    private MessageDigest getDigest() {
         try {
-            return MessageDigest.getInstance(algorithm);
+            return MessageDigest.getInstance("SHA-1");
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private Cipher createCipher(int mode, String transformation, Key key) {
+    private Cipher createCipher(int mode, Key key) {
         Cipher cipher;
         try {
-            cipher = Cipher.getInstance(transformation);
+            cipher = Cipher.getInstance(MSECipher.transformation);
             cipher.init(mode, key);
             cipher.update(new byte[1024]); // discard first 1024 bytes
         } catch (Exception e) {

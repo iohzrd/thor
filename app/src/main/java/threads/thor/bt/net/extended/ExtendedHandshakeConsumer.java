@@ -5,8 +5,8 @@ import java.util.List;
 
 import threads.thor.bt.IConsumers;
 import threads.thor.bt.bencoding.model.BEInteger;
-import threads.thor.bt.net.IPeerConnectionPool;
 import threads.thor.bt.net.InetPeer;
+import threads.thor.bt.net.PeerConnectionPool;
 import threads.thor.bt.protocol.Message;
 import threads.thor.bt.protocol.extended.ExtendedHandshake;
 import threads.thor.bt.torrent.MessageConsumer;
@@ -14,9 +14,9 @@ import threads.thor.bt.torrent.MessageContext;
 
 public class ExtendedHandshakeConsumer implements IConsumers {
 
-    private final IPeerConnectionPool connectionPool;
+    private final PeerConnectionPool connectionPool;
 
-    public ExtendedHandshakeConsumer(IPeerConnectionPool connectionPool) {
+    public ExtendedHandshakeConsumer(PeerConnectionPool connectionPool) {
         this.connectionPool = connectionPool;
     }
 

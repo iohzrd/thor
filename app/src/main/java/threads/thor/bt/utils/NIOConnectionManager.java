@@ -110,7 +110,7 @@ public class NIOConnectionManager {
             }
 
             connections.add(toRegister);
-            toRegister.registrationEvent(NIOConnectionManager.this, key);
+
         }
     }
 
@@ -175,10 +175,6 @@ public class NIOConnectionManager {
             wakeupCalled = true;
             selector.wakeup();
         }
-    }
-
-    public Selector getSelector() {
-        return selector;
     }
 
 }

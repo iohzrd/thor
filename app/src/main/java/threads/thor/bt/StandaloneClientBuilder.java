@@ -27,25 +27,25 @@ public class StandaloneClientBuilder {
 
     public StandaloneClientBuilder storage(Storage storage) {
         this.storage = Objects.requireNonNull(storage, "Missing data storage");
-        return (StandaloneClientBuilder) this;
+        return this;
     }
 
 
     public StandaloneClientBuilder magnet(String magnetUri) {
         this.magnetUri = MagnetUriParser.lenientParser().parse(magnetUri);
-        return (StandaloneClientBuilder) this;
+        return this;
     }
 
 
     public StandaloneClientBuilder magnet(MagnetUri magnetUri) {
         this.magnetUri = Objects.requireNonNull(magnetUri, "Missing magnet URI");
-        return (StandaloneClientBuilder) this;
+        return this;
     }
 
 
     public StandaloneClientBuilder runtime(BtRuntime runtime) {
         this.runtime = Objects.requireNonNull(runtime, "Missing runtime");
-        return (StandaloneClientBuilder) this;
+        return this;
     }
 
 

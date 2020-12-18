@@ -1,39 +1,75 @@
 package threads.thor.bt.data;
 
-/**
- * Each threads.torrent is split into chunks (also called "pieces").
- *
- * <p>A chunk is a part of the threads.torrent's collection of files,
- * possibly overlapping several files (in case of multi-file torrents)
- * or being just a part of a single-file threads.torrent.
- *
- * <p>There is a SHA-1 checksum for each chunk in the threads.torrent's metainfo file,
- * so it's effectively an elementary unit of data in BitTorrent.
- * All chunks in a given threads.torrent have the same size
- * except for the last one, which can be smaller.
- *
- * <p>A typical chunk is usually too large to work with at I/O level.
- * So, for the needs of network transfer and storage each chunk is additionally split into "blocks".
- * Size of a block is quite an important parameter of threads.torrent messaging,
- * and it's usually client-specific (meaning that each client is free to choose the concrete value).
- *
- * @since 1.0
- */
-public interface ChunkDescriptor extends BlockSet {
+public class ChunkDescriptor implements BlockSet {
+
+    private final DataRange data;
+    private final BlockSet blockSet;
 
     /**
-     * Expected hash of this chunk's contents as indicated in threads.torrent file.
-     *
-     * @return Expected hash of this chunk's contents; used to verify integrity of chunk's data
-     * @since 1.2
+     * Hash of this chunk's contents; used to verify integrity of chunk's data
      */
-    byte[] getChecksum();
+    private final byte[] checksum;
 
     /**
-     * Get chunk's data accessor.
-     *
-     * @return Chunk's data accessor
-     * @since 1.2
+     * @param data     Subrange of the threads.torrent data, that this chunk represents
+     * @param blockSet Data represented as a set of blocks
+     * @param checksum Chunk's hash
      */
-    DataRange getData();
+    public ChunkDescriptor(DataRange data,
+                           BlockSet blockSet,
+                           byte[] checksum) {
+        this.data = data;
+        this.blockSet = blockSet;
+        this.checksum = checksum;
+    }
+
+
+    public byte[] getChecksum() {
+        return checksum;
+    }
+
+
+    public DataRange getData() {
+        return data;
+    }
+
+    @Override
+    public int blockCount() {
+        return blockSet.blockCount();
+    }
+
+    @Override
+    public long length() {
+        return blockSet.length();
+    }
+
+    @Override
+    public long blockSize() {
+        return blockSet.blockSize();
+    }
+
+    @Override
+    public long lastBlockSize() {
+        return blockSet.lastBlockSize();
+    }
+
+    @Override
+    public boolean isPresent(int blockIndex) {
+        return blockSet.isPresent(blockIndex);
+    }
+
+    @Override
+    public boolean isComplete() {
+        return blockSet.isComplete();
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return blockSet.isEmpty();
+    }
+
+    @Override
+    public void clear() {
+        blockSet.clear();
+    }
 }

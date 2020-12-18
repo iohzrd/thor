@@ -444,7 +444,7 @@ public final class DHT {
         return new PeerLookupTask(srv, node, id);
     }
 
-    public AnnounceTask announce(PeerLookupTask lookup, boolean isSeed, int btPort) {
+    public void announce(PeerLookupTask lookup, boolean isSeed, int btPort) {
 
 
         // reuse the same server to make sure our tokens are still valid
@@ -453,7 +453,6 @@ public final class DHT {
 
         tman.addTask(announce);
 
-        return announce;
     }
 
 

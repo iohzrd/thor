@@ -1,6 +1,5 @@
 package threads.thor.bt;
 
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -19,8 +18,8 @@ public class BtClient {
     private final ListenerSource<MagnetContext> listenerSource;
     private final MagnetContext context;
 
-    private volatile Optional<CompletableFuture<?>> futureOptional;
-    private volatile Optional<Consumer<TorrentSessionState>> listenerOptional;
+    private volatile CompletableFuture<?> futureOptional;
+    private volatile Consumer<TorrentSessionState> listenerOptional;
 
     private volatile ScheduledExecutorService listenerExecutor;
 
@@ -33,18 +32,18 @@ public class BtClient {
         this.context = context;
         this.listenerSource = listenerSource;
 
-        this.futureOptional = Optional.empty();
-        this.listenerOptional = Optional.empty();
+        this.futureOptional = null;
+        this.listenerOptional = null;
     }
 
 
     public synchronized CompletableFuture<?> startAsync(Consumer<TorrentSessionState> listener, long period) {
-        if (futureOptional.isPresent()) {
+        if (futureOptional != null) {
             throw new BtException("Can't start -- already running");
         }
 
         this.listenerExecutor = Executors.newSingleThreadScheduledExecutor();
-        this.listenerOptional = Optional.of(listener);
+        this.listenerOptional = listener;
 
         listenerExecutor.scheduleAtFixedRate(this::notifyListener, period, period, TimeUnit.MILLISECONDS);
 
@@ -52,8 +51,9 @@ public class BtClient {
     }
 
     private void notifyListener() {
-        listenerOptional.ifPresent(listener ->
-                context.getState().ifPresent(listener));
+        if (listenerOptional != null) {
+            listenerOptional.accept(context.getState());
+        }
     }
 
     private void shutdownListener() {
@@ -70,7 +70,7 @@ public class BtClient {
                 .whenComplete((r, t) -> shutdownListener())
                 .whenComplete((r, t) -> stop());
 
-        this.futureOptional = Optional.of(future);
+        this.futureOptional = future;
 
         return future;
     }
@@ -79,9 +79,9 @@ public class BtClient {
         // order is important (more precisely, unsetting futureOptional BEFORE completing the future)
         // to prevent attempt to detach the client after it has already been detached once
         // (may happen when #stop() is called from the outside)
-        if (futureOptional.isPresent()) {
-            CompletableFuture<?> f = futureOptional.get();
-            futureOptional = Optional.empty();
+        if (futureOptional != null) {
+            CompletableFuture<?> f = futureOptional;
+            futureOptional = null;
             detachFromRuntime();
             f.complete(null);
         }

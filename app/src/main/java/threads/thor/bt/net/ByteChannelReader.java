@@ -5,21 +5,20 @@ import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
 import java.time.Duration;
 import java.util.Objects;
-import java.util.Optional;
 
 import threads.thor.bt.net.buffer.Buffers;
 
 public class ByteChannelReader {
 
     private final ReadableByteChannel channel;
-    private final Optional<Duration> timeout;
-    private final Optional<Duration> waitBetweenReads;
+    private final Duration timeout;
+    private final Duration waitBetweenReads;
     private final int min;
     private final int limit;
 
     private ByteChannelReader(ReadableByteChannel channel,
-                              Optional<Duration> timeout,
-                              Optional<Duration> waitBetweenReads,
+                              Duration timeout,
+                              Duration waitBetweenReads,
                               int min,
                               int limit) {
         if (min < 0 || limit < 0 || limit < min) {
@@ -33,15 +32,15 @@ public class ByteChannelReader {
     }
 
     public static ByteChannelReader forChannel(ReadableByteChannel channel) {
-        return new ByteChannelReader(channel, Optional.empty(), Optional.empty(), 0, Integer.MAX_VALUE);
+        return new ByteChannelReader(channel, null, null, 0, Integer.MAX_VALUE);
     }
 
     public ByteChannelReader withTimeout(Duration timeout) {
-        return new ByteChannelReader(channel, Optional.of(timeout), waitBetweenReads, min, limit);
+        return new ByteChannelReader(channel, timeout, waitBetweenReads, min, limit);
     }
 
     public ByteChannelReader waitBetweenReads(Duration waitBetweenReads) {
-        return new ByteChannelReader(channel, timeout, Optional.of(waitBetweenReads), min, limit);
+        return new ByteChannelReader(channel, timeout, waitBetweenReads, min, limit);
     }
 
     public ByteChannelReader readAtLeast(int minBytes) {
@@ -154,11 +153,17 @@ public class ByteChannelReader {
     }
 
     private long getTimeoutMillis() {
-        return timeout.map(Duration::toMillis).orElse(0L);
+        if (timeout != null) {
+            return timeout.toMillis();
+        }
+        return 0L;
     }
 
     private long getWaitBetweenReadsMillis() {
-        return waitBetweenReads.map(Duration::toMillis).orElse(0L);
+        if (waitBetweenReads != null) {
+            return waitBetweenReads.toMillis();
+        }
+        return 0L;
     }
 
     private void ensureSufficientSpace(ByteBuffer buf) {

@@ -11,7 +11,7 @@ import threads.thor.bt.net.BigIntegers;
 
 class MSEKeyPairGenerator {
 
-    static final int PUBLIC_KEY_BYTES = 96;
+    public static final int PUBLIC_KEY_BYTES = 96;
     // 768-bit prime
     private static final BigInteger P = new BigInteger(
             "FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD1" +
@@ -34,10 +34,6 @@ class MSEKeyPairGenerator {
         MSEPrivateKey privateKey = new MSEPrivateKey(privateKeySize, random);
         MSEPublicKey publicKey = privateKey.getPublicKey();
         return new KeyPair(publicKey, privateKey);
-    }
-
-    int getPublicKeySize() {
-        return PUBLIC_KEY_BYTES;
     }
 
     BigInteger calculateSharedSecret(BigInteger publicKey, PrivateKey privateKey) {

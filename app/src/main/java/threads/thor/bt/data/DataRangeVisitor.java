@@ -1,10 +1,5 @@
 package threads.thor.bt.data;
 
-/**
- * Traverses a data range on a per-unit basis.
- *
- * @since 1.2
- */
 public interface DataRangeVisitor {
 
     /**
@@ -16,8 +11,7 @@ public interface DataRangeVisitor {
      * @param lim  Limit that designates the end of this chunk's part in the file, exclusive;
      *             visitor must not access the file at or past this index
      *             (i.e. the limit does not belong to this chunk)
-     * @return true if next file should be visited; false to stop
      * @since 1.2
      */
-    boolean visitUnit(StorageUnit unit, long off, long lim);
+    void visitUnit(StorageUnit unit, long off, long lim);
 }

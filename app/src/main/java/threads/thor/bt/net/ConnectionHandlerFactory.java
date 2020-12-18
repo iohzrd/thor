@@ -10,7 +10,7 @@ import threads.thor.bt.metainfo.TorrentId;
 import threads.thor.bt.protocol.HandshakeFactory;
 import threads.thor.bt.torrent.TorrentRegistry;
 
-public class ConnectionHandlerFactory implements IConnectionHandlerFactory {
+public class ConnectionHandlerFactory {
 
     private final HandshakeFactory handshakeFactory;
     private final ConnectionHandler incomingHandler;
@@ -34,12 +34,10 @@ public class ConnectionHandlerFactory implements IConnectionHandlerFactory {
         this.peerHandshakeTimeout = peerHandshakeTimeout;
     }
 
-    @Override
     public ConnectionHandler getIncomingHandler() {
         return incomingHandler;
     }
 
-    @Override
     public ConnectionHandler getOutgoingHandler(TorrentId torrentId) {
         Objects.requireNonNull(torrentId, "Missing threads.torrent ID");
         ConnectionHandler outgoing = outgoingHandlers.get(torrentId);

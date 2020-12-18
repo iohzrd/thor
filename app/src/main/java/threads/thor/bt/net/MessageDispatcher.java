@@ -16,7 +16,7 @@ import threads.thor.bt.protocol.Message;
 import threads.thor.bt.service.RuntimeLifecycleBinder;
 import threads.thor.bt.torrent.TorrentRegistry;
 
-public class MessageDispatcher implements IMessageDispatcher {
+public class MessageDispatcher {
 
     private static final String TAG = MessageDispatcher.class.getSimpleName();
     private final Map<TorrentId, Map<ConnectionKey, Collection<Consumer<Message>>>> consumers;
@@ -26,7 +26,7 @@ public class MessageDispatcher implements IMessageDispatcher {
     private final Object modificationLock;
 
     public MessageDispatcher(RuntimeLifecycleBinder lifecycleBinder,
-                             IPeerConnectionPool pool,
+                             PeerConnectionPool pool,
                              TorrentRegistry torrentRegistry,
                              Config config) {
 
@@ -39,7 +39,7 @@ public class MessageDispatcher implements IMessageDispatcher {
     }
 
     private void initializeMessageLoop(RuntimeLifecycleBinder lifecycleBinder,
-                                       IPeerConnectionPool pool,
+                                       PeerConnectionPool pool,
                                        Config config) {
         ExecutorService executor = Executors.newSingleThreadExecutor(r -> new Thread(r, "bt.net.message-dispatcher"));
         LoopControl loopControl = new LoopControl(config.getMaxMessageProcessingInterval().toMillis());
@@ -54,7 +54,6 @@ public class MessageDispatcher implements IMessageDispatcher {
         });
     }
 
-    @Override
     public void addMessageConsumer(ConnectionKey connectionKey, Consumer<Message> messageConsumer) {
         synchronized (modificationLock) {
             Map<ConnectionKey, Collection<Consumer<Message>>> consumerMapByPeer =
@@ -67,7 +66,6 @@ public class MessageDispatcher implements IMessageDispatcher {
         }
     }
 
-    @Override
     public void addMessageSupplier(ConnectionKey connectionKey, Supplier<Message> messageSupplier) {
         synchronized (modificationLock) {
             Map<ConnectionKey, Collection<Supplier<Message>>> supplierMapByPeer =
@@ -126,12 +124,12 @@ public class MessageDispatcher implements IMessageDispatcher {
     }
 
     private class MessageDispatchingLoop implements Runnable {
-        private final IPeerConnectionPool pool;
+        private final PeerConnectionPool pool;
         private final LoopControl loopControl;
 
         private volatile boolean shutdown;
 
-        MessageDispatchingLoop(IPeerConnectionPool pool, LoopControl loopControl) {
+        MessageDispatchingLoop(PeerConnectionPool pool, LoopControl loopControl) {
             this.pool = pool;
             this.loopControl = loopControl;
         }

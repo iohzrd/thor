@@ -104,11 +104,7 @@ public final class PieceStatistics {
         }
     }
 
-    /**
-     * Get peer's bitfield, if present.
-     *
-     * @since 1.0
-     */
+
     public Optional<Bitfield> getPeerBitfield(ConnectionKey connectionKey) {
         return Optional.ofNullable(peerBitFields.get(connectionKey));
     }

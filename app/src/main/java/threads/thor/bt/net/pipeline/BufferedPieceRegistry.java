@@ -6,7 +6,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import threads.thor.bt.net.buffer.BufferedData;
 
-public class BufferedPieceRegistry implements IBufferedPieceRegistry {
+public class BufferedPieceRegistry {
 
     private final ConcurrentMap<Long, BufferedData> bufferMap;
 
@@ -19,7 +19,6 @@ public class BufferedPieceRegistry implements IBufferedPieceRegistry {
         return (((long) pieceIndex) << 32) + offset;
     }
 
-    @Override
     public boolean addBufferedPiece(int pieceIndex, int offset, BufferedData buffer) {
         if (pieceIndex < 0) {
             throw new IllegalArgumentException("Illegal piece index: " + pieceIndex);
@@ -30,7 +29,6 @@ public class BufferedPieceRegistry implements IBufferedPieceRegistry {
         return (existing == null);
     }
 
-    @Override
     public BufferedData getBufferedPiece(int pieceIndex, int offset) {
         return bufferMap.remove(zip(pieceIndex, offset));
     }

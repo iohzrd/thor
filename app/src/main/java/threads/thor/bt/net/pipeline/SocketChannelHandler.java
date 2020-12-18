@@ -12,7 +12,7 @@ import threads.thor.bt.net.DataReceiver;
 import threads.thor.bt.net.buffer.BorrowedBuffer;
 import threads.thor.bt.protocol.Message;
 
-public class SocketChannelHandler implements ChannelHandler {
+public class SocketChannelHandler {
 
     private final SocketChannel channel;
     private final BorrowedBuffer<ByteBuffer> inboundBuffer;
@@ -28,7 +28,7 @@ public class SocketChannelHandler implements ChannelHandler {
             SocketChannel channel,
             BorrowedBuffer<ByteBuffer> inboundBuffer,
             BorrowedBuffer<ByteBuffer> outboundBuffer,
-            Function<ChannelHandler, ChannelHandlerContext> contextFactory,
+            Function<SocketChannelHandler, ChannelHandlerContext> contextFactory,
             DataReceiver dataReceiver) {
 
         this.channel = channel;
@@ -42,7 +42,7 @@ public class SocketChannelHandler implements ChannelHandler {
         this.shutdown = new AtomicBoolean(false);
     }
 
-    @Override
+
     public void send(Message message) {
         if (!context.pipeline().encode(message)) {
             flush();
@@ -53,12 +53,12 @@ public class SocketChannelHandler implements ChannelHandler {
         flush();
     }
 
-    @Override
+
     public Message receive() {
         return context.pipeline().decode();
     }
 
-    @Override
+
     public boolean read() {
         try {
             return processInboundData();
@@ -68,22 +68,22 @@ public class SocketChannelHandler implements ChannelHandler {
         }
     }
 
-    @Override
+
     public void register() {
         dataReceiver.registerChannel(channel, context);
     }
 
-    @Override
+
     public void unregister() {
         dataReceiver.unregisterChannel(channel);
     }
 
-    @Override
+
     public void activate() {
         dataReceiver.activateChannel(channel);
     }
 
-    @Override
+
     public void deactivate() {
         dataReceiver.deactivateChannel(channel);
     }
@@ -111,7 +111,7 @@ public class SocketChannelHandler implements ChannelHandler {
         }
     }
 
-    @Override
+
     public void flush() {
         synchronized (outboundBufferLock) {
             ByteBuffer buffer = outboundBuffer.lockAndGet();
@@ -134,7 +134,7 @@ public class SocketChannelHandler implements ChannelHandler {
         }
     }
 
-    @Override
+
     public void close() {
         synchronized (inboundBufferLock) {
             synchronized (outboundBufferLock) {
@@ -176,7 +176,7 @@ public class SocketChannelHandler implements ChannelHandler {
         }
     }
 
-    @Override
+
     public boolean isClosed() {
         return shutdown.get();
     }

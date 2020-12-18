@@ -24,7 +24,7 @@ class InboundMessageProcessor {
     private final DecodingBufferView decodingView;
     private final MessageDeserializer deserializer;
     private final List<BufferMutator> decoders;
-    private final IBufferedPieceRegistry bufferedPieceRegistry;
+    private final BufferedPieceRegistry bufferedPieceRegistry;
     private final Queue<Message> messageQueue;
     private final Queue<BufferedDataWithOffset> bufferQueue;
     private Region regionA;
@@ -35,7 +35,7 @@ class InboundMessageProcessor {
                                    ByteBuffer buffer,
                                    MessageDeserializer deserializer,
                                    List<BufferMutator> decoders,
-                                   IBufferedPieceRegistry bufferedPieceRegistry) {
+                                   BufferedPieceRegistry bufferedPieceRegistry) {
         if (buffer.position() != 0 || buffer.limit() != buffer.capacity() || buffer.capacity() == 0) {
             throw new IllegalArgumentException("Illegal buffer params (position: "
                     + buffer.position() + ", limit: " + buffer.limit() + ", capacity: " + buffer.capacity() + ")");
@@ -47,8 +47,8 @@ class InboundMessageProcessor {
         this.bufferedPieceRegistry = bufferedPieceRegistry;
 
         this.bufferView = new DelegatingByteBufferView(buffer);
-        this.decodingView = new DecodingBufferView(0, 0, 0);
-        this.regionA = new Region(0, 0);
+        this.decodingView = new DecodingBufferView();
+        this.regionA = new Region();
         this.regionB = null;
         this.messageQueue = new LinkedBlockingQueue<>();
         this.bufferQueue = new ArrayDeque<>();
@@ -127,7 +127,7 @@ class InboundMessageProcessor {
             int freeSpaceBeforeOffset = regionA.offset - 1;
             int freeSpaceAfterLimit = buffer.capacity() - regionA.limit;
             if (freeSpaceBeforeOffset > freeSpaceAfterLimit) {
-                regionB = new Region(0, 0);
+                regionB = new Region();
                 decodingView.undecodedOffset = regionB.offset;
                 decodingView.undecodedLimit = regionB.limit;
                 // Adjust buffer's position and limit,
@@ -331,9 +331,9 @@ class InboundMessageProcessor {
         private int offset;
         private int limit;
 
-        Region(int offset, int limit) {
-            this.offset = offset;
-            this.limit = limit;
+        Region() {
+            this.offset = 0;
+            this.limit = 0;
         }
 
         public int getOffset() {
@@ -377,10 +377,10 @@ class InboundMessageProcessor {
         int undecodedOffset;
         int undecodedLimit;
 
-        private DecodingBufferView(int unconsumedOffset, int undecodedOffset, int undecodedLimit) {
-            this.unconsumedOffset = unconsumedOffset;
-            this.undecodedOffset = undecodedOffset;
-            this.undecodedLimit = undecodedLimit;
+        private DecodingBufferView() {
+            this.unconsumedOffset = 0;
+            this.undecodedOffset = 0;
+            this.undecodedLimit = 0;
         }
 
 

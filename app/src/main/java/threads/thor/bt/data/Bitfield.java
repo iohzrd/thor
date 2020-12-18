@@ -7,13 +7,6 @@ import threads.thor.bt.BtException;
 import threads.thor.bt.protocol.BitOrder;
 import threads.thor.bt.protocol.Protocols;
 
-/**
- * Status of threads.torrent's data.
- * <p>
- * Instances of this class are thread-safe.
- *
- * @since 1.0
- */
 public class Bitfield {
 
     // TODO: use EMPTY and PARTIAL instead of INCOMPLETE
@@ -98,25 +91,6 @@ public class Bitfield {
         lock.lock();
         try {
             return Protocols.copyOf(bitmask);
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    /**
-     * @return Bitmask of skipped pieces.
-     * If the n-th bit is set, then the n-th piece
-     * should be skipped.
-     * @since 1.8
-     */
-    BitSet getSkippedBitmask() {
-        if (skipped == null) {
-            return new BitSet(getPiecesTotal());
-        }
-
-        lock.lock();
-        try {
-            return Protocols.copyOf(skipped);
         } finally {
             lock.unlock();
         }

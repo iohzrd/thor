@@ -59,7 +59,7 @@ public class BEncoder {
 
         if (o instanceof Long) {
             buf.put((byte) 'i');
-            encodeLong((Long) o, 'e');
+            encodeLong((Long) o);
             return;
         }
 
@@ -150,9 +150,9 @@ public class BEncoder {
         buf.put(terminator);
     }
 
-    private void encodeLong(long val, char terminator) {
+    private void encodeLong(long val) {
         str2buf(Long.toString(val), buf);
-        buf.put((byte) terminator);
+        buf.put((byte) 'e');
     }
 
     public interface StringWriter {

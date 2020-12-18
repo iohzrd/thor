@@ -15,7 +15,7 @@ import threads.thor.bt.event.EventSink;
 import threads.thor.bt.metainfo.TorrentId;
 import threads.thor.bt.net.Peer;
 import threads.thor.bt.net.buffer.BufferedData;
-import threads.thor.bt.net.pipeline.IBufferedPieceRegistry;
+import threads.thor.bt.net.pipeline.BufferedPieceRegistry;
 import threads.thor.bt.protocol.Have;
 import threads.thor.bt.protocol.Message;
 import threads.thor.bt.protocol.Piece;
@@ -26,14 +26,14 @@ public class PieceConsumer implements IProduces, IConsumers {
     private final TorrentId torrentId;
     private final Bitfield bitfield;
     private final DataWorker dataWorker;
-    private final IBufferedPieceRegistry bufferedPieceRegistry;
+    private final BufferedPieceRegistry bufferedPieceRegistry;
     private final EventSink eventSink;
     private final Queue<Integer> completedPieces;
 
     public PieceConsumer(TorrentId torrentId,
                          Bitfield bitfield,
                          DataWorker dataWorker,
-                         IBufferedPieceRegistry bufferedPieceRegistry,
+                         BufferedPieceRegistry bufferedPieceRegistry,
                          EventSink eventSink) {
         this.torrentId = torrentId;
         this.bitfield = bitfield;
@@ -124,7 +124,7 @@ public class PieceConsumer implements IProduces, IConsumers {
                 offset = piece.getOffset(),
                 blockLength = piece.getLength();
 
-        connectionState.incrementDownloaded(piece.getLength());
+
         if (connectionState.getCurrentAssignment().isPresent()) {
             Assignment assignment = connectionState.getCurrentAssignment().get();
             if (assignment.isAssigned(pieceIndex)) {

@@ -3,7 +3,6 @@
     <string name="channel_name">Storage Notifications</string>
     <string name="channel_description">For upload and download notifications</string>
     <string name="share">Share</string>
-    <string name="offline_mode">Offline Mode</string>
     <string name="no_activity_found_to_handle_uri">No application found which support this kind of file.</string>
     <string name="download_failed">Download failed for \"%1$s\"</string>
     <string name="download_complete">Download complete for \"%1$s\"</string>

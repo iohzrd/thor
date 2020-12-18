@@ -1,19 +1,3 @@
-/*
- * Copyright (c) 2016—2017 Andrei Tomashpolskiy and individual contributors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package threads.thor.bt.data.digest;
 
 import java.nio.ByteBuffer;
@@ -25,7 +9,7 @@ import threads.thor.bt.BtException;
 import threads.thor.bt.data.DataRange;
 import threads.thor.bt.data.range.Range;
 
-public class JavaSecurityDigester implements Digester {
+public class JavaSecurityDigester {
 
     private final String algorithm;
     private final int step;
@@ -41,17 +25,7 @@ public class JavaSecurityDigester implements Digester {
         this.step = step;
     }
 
-    public String getAlgorithm() {
-        return algorithm;
-    }
 
-    public byte[] digest(byte[] input) {
-        MessageDigest digest = createDigest();
-        digest.update(input);
-        return digest.digest();
-    }
-
-    @Override
     public byte[] digest(DataRange data) {
         MessageDigest digest = createDigest();
 
@@ -68,7 +42,7 @@ public class JavaSecurityDigester implements Digester {
                 int read = unit.readBlock(bytes, off);
                 if (read == -1) {
                     // end of data, terminate
-                    return false;
+                    return;
                 } else if (read < bytes.length) {
                     digest.update(Arrays.copyOfRange(bytes, 0, read));
                     remaining -= read;
@@ -80,13 +54,12 @@ public class JavaSecurityDigester implements Digester {
                 }
             } while (remaining > 0);
 
-            return true;
         });
 
         return digest.digest();
     }
 
-    @Override
+
     public byte[] digestForced(DataRange data) {
         MessageDigest digest = createDigest();
 
@@ -112,13 +85,12 @@ public class JavaSecurityDigester implements Digester {
                 off += step;
             } while (remaining > 0);
 
-            return true;
         });
 
         return digest.digest();
     }
 
-    @Override
+
     public byte[] digest(Range<?> data) {
         MessageDigest digest = createDigest();
 

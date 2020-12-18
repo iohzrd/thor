@@ -9,7 +9,7 @@ public interface EventSource {
      *
      * @since 1.5
      */
-    EventSource onPeerDiscovered(Consumer<PeerDiscoveredEvent> listener);
+    void onPeerDiscovered(Consumer<PeerDiscoveredEvent> listener);
 
     /**
      * Fired, when a new connection with some peer has been established.
@@ -23,7 +23,7 @@ public interface EventSource {
      *
      * @since 1.5
      */
-    EventSource onPeerDisconnected(Consumer<PeerDisconnectedEvent> listener);
+    void onPeerDisconnected(Consumer<PeerDisconnectedEvent> listener);
 
     /**
      * Fired, when local information about some peer's data has been updated.
@@ -37,7 +37,7 @@ public interface EventSource {
      *
      * @since 1.5
      */
-    EventSource onTorrentStarted(Consumer<TorrentStartedEvent> listener);
+    void onTorrentStarted(Consumer<TorrentStartedEvent> listener);
 
     /**
      * Fired, when threads.torrent's metadata has been fetched.
@@ -51,7 +51,7 @@ public interface EventSource {
      *
      * @since 1.5
      */
-    EventSource onTorrentStopped(Consumer<TorrentStoppedEvent> listener);
+    void onTorrentStopped(Consumer<TorrentStoppedEvent> listener);
 
     /**
      * Fired, when downloading and verification of one of threads.torrent's pieces has been finished.

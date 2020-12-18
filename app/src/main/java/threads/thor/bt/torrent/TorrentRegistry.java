@@ -1,6 +1,6 @@
 package threads.thor.bt.torrent;
 
-import java.io.IOException;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Objects;
@@ -9,6 +9,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import threads.LogUtils;
 import threads.thor.bt.data.DataDescriptorFactory;
 import threads.thor.bt.data.Storage;
 import threads.thor.bt.metainfo.Torrent;
@@ -16,7 +17,7 @@ import threads.thor.bt.metainfo.TorrentId;
 import threads.thor.bt.service.RuntimeLifecycleBinder;
 
 public final class TorrentRegistry {
-
+    private static final String TAG = TorrentRegistry.class.getSimpleName();
     private final DataDescriptorFactory dataDescriptorFactory;
     private final RuntimeLifecycleBinder lifecycleBinder;
 
@@ -106,8 +107,8 @@ public final class TorrentRegistry {
             if (descriptor.getDataDescriptor() != null) {
                 try {
                     descriptor.getDataDescriptor().close();
-                } catch (IOException e) {
-                    e.printStackTrace();
+                } catch (Throwable e) {
+                    LogUtils.error(TAG, e);
                 }
             }
         });

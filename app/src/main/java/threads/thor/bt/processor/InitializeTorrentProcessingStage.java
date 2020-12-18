@@ -5,9 +5,9 @@ import threads.thor.bt.data.Bitfield;
 import threads.thor.bt.event.EventSink;
 import threads.thor.bt.metainfo.Torrent;
 import threads.thor.bt.metainfo.TorrentId;
-import threads.thor.bt.net.IPeerConnectionPool;
+import threads.thor.bt.net.PeerConnectionPool;
 import threads.thor.bt.net.extended.ExtendedHandshakeConsumer;
-import threads.thor.bt.net.pipeline.IBufferedPieceRegistry;
+import threads.thor.bt.net.pipeline.BufferedPieceRegistry;
 import threads.thor.bt.torrent.BitfieldConsumer;
 import threads.thor.bt.torrent.DataWorker;
 import threads.thor.bt.torrent.GenericConsumer;
@@ -21,18 +21,18 @@ import threads.thor.bt.torrent.TorrentRegistry;
 
 public class InitializeTorrentProcessingStage<C extends TorrentContext> extends TerminateOnErrorProcessingStage<C> {
 
-    private final IPeerConnectionPool connectionPool;
+    private final PeerConnectionPool connectionPool;
     private final TorrentRegistry torrentRegistry;
     private final DataWorker dataWorker;
-    private final IBufferedPieceRegistry bufferedPieceRegistry;
+    private final BufferedPieceRegistry bufferedPieceRegistry;
     private final EventSink eventSink;
     private final Config config;
 
     public InitializeTorrentProcessingStage(ProcessingStage<C> next,
-                                            IPeerConnectionPool connectionPool,
+                                            PeerConnectionPool connectionPool,
                                             TorrentRegistry torrentRegistry,
                                             DataWorker dataWorker,
-                                            IBufferedPieceRegistry bufferedPieceRegistry,
+                                            BufferedPieceRegistry bufferedPieceRegistry,
                                             EventSink eventSink,
                                             Config config) {
         super(next);

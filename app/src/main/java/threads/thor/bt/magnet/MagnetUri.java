@@ -105,9 +105,8 @@ public class MagnetUri {
          * @param displayName Suggested display name
          * @since 1.3
          */
-        public Builder name(String displayName) {
+        public void name(String displayName) {
             this.displayName = Objects.requireNonNull(displayName);
-            return this;
         }
 
         /**
@@ -117,13 +116,12 @@ public class MagnetUri {
          * @param trackerUrl Tracker URL
          * @since 1.3
          */
-        public Builder tracker(String trackerUrl) {
+        public void tracker(String trackerUrl) {
             Objects.requireNonNull(trackerUrl);
             if (trackerUrls == null) {
                 trackerUrls = new HashSet<>();
             }
             trackerUrls.add(trackerUrl);
-            return this;
         }
 
         /**
@@ -132,13 +130,12 @@ public class MagnetUri {
          * @param peerAddress Well-known peer address
          * @since 1.3
          */
-        public Builder peer(InetPeerAddress peerAddress) {
+        public void peer(InetPeerAddress peerAddress) {
             Objects.requireNonNull(peerAddress);
             if (peerAddresses == null) {
                 peerAddresses = new HashSet<>();
             }
             peerAddresses.add(peerAddress);
-            return this;
         }
 
         /**

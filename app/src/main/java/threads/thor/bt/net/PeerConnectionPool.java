@@ -22,7 +22,7 @@ import threads.thor.bt.event.EventSink;
 import threads.thor.bt.metainfo.TorrentId;
 import threads.thor.bt.service.RuntimeLifecycleBinder;
 
-public class PeerConnectionPool implements IPeerConnectionPool {
+public class PeerConnectionPool {
     private static final String TAG = PeerConnectionPool.class.getSimpleName();
     private final Config config;
     private final EventSink eventSink;
@@ -54,27 +54,17 @@ public class PeerConnectionPool implements IPeerConnectionPool {
         lifecycleBinder.onShutdown("Shutdown connection pool", this::shutdown);
     }
 
-    @Override
-    public PeerConnection getConnection(Peer peer, TorrentId torrentId) {
-        return connections.get(peer, peer.getPort(), torrentId).orElse(null);
-    }
 
-    @Override
     public PeerConnection getConnection(ConnectionKey key) {
         return connections.get(key).orElse(null);
     }
 
-    @Override
-    public void visitConnections(TorrentId torrentId, Consumer<PeerConnection> visitor) {
-        connections.visitConnections(torrentId, visitor);
-    }
 
-    @Override
     public int size() {
         return connections.count();
     }
 
-    @Override
+
     public PeerConnection addConnectionIfAbsent(PeerConnection newConnection) {
         PeerConnection existingConnection = null;
 
@@ -115,7 +105,7 @@ public class PeerConnectionPool implements IPeerConnectionPool {
         }
     }
 
-    @Override
+
     public void checkDuplicateConnections(TorrentId torrentId, Peer peer) {
         connectionLock.lock();
         try {
@@ -220,7 +210,7 @@ class Connections {
         return connections.size();
     }
 
-    synchronized boolean remove(ConnectionKey key, PeerConnection connection) {
+    synchronized void remove(ConnectionKey key, PeerConnection connection) {
         Objects.requireNonNull(connection);
 
         PeerConnection removed = connections.remove(key);
@@ -232,7 +222,6 @@ class Connections {
                 connectionsByTorrent.remove(key.getTorrentId());
             }
         }
-        return success;
     }
 
     synchronized PeerConnection putIfAbsent(ConnectionKey key, PeerConnection connection) {
@@ -246,22 +235,19 @@ class Connections {
         return existing;
     }
 
-    Optional<PeerConnection> get(Peer peer, int remotePort, TorrentId torrentId) {
-        return get(new ConnectionKey(peer, remotePort, torrentId));
-    }
 
     Optional<PeerConnection> get(ConnectionKey key) {
         return Optional.ofNullable(connections.get(key));
     }
 
     void visitConnections(Consumer<PeerConnection> visitor) {
-        connections.values().forEach(visitor::accept);
+        connections.values().forEach(visitor);
     }
 
     void visitConnections(TorrentId torrentId, Consumer<PeerConnection> visitor) {
         Collection<PeerConnection> connections = connectionsByTorrent.get(torrentId);
         if (connections != null) {
-            connections.forEach(visitor::accept);
+            connections.forEach(visitor);
         }
     }
 }

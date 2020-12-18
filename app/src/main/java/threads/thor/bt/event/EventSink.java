@@ -1,7 +1,6 @@
 package threads.thor.bt.event;
 
 import threads.thor.bt.data.Bitfield;
-import threads.thor.bt.metainfo.Torrent;
 import threads.thor.bt.metainfo.TorrentId;
 import threads.thor.bt.net.ConnectionKey;
 import threads.thor.bt.net.Peer;
@@ -48,7 +47,7 @@ public interface EventSink {
      *
      * @since 1.9
      */
-    void fireMetadataAvailable(TorrentId torrentId, Torrent torrent);
+    void fireMetadataAvailable(TorrentId torrentId);
 
     /**
      * Generate event, that processing of some threads.torrent has finished.

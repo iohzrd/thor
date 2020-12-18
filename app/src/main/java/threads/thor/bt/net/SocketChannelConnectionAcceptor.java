@@ -13,18 +13,18 @@ import java.nio.channels.SocketChannel;
 import threads.LogUtils;
 
 
-public class SocketChannelConnectionAcceptor implements PeerConnectionAcceptor {
+public class SocketChannelConnectionAcceptor {
 
     private final static String TAG = SocketChannelConnectionAcceptor.class.getSimpleName();
     private final Selector selector;
-    private final IPeerConnectionFactory connectionFactory;
+    private final PeerConnectionFactory connectionFactory;
     private final InetSocketAddress localAddress;
 
     private ServerSocketChannel serverChannel;
 
     public SocketChannelConnectionAcceptor(
             Selector selector,
-            IPeerConnectionFactory connectionFactory,
+            PeerConnectionFactory connectionFactory,
             InetSocketAddress localAddress) {
 
         this.selector = selector;
@@ -32,7 +32,7 @@ public class SocketChannelConnectionAcceptor implements PeerConnectionAcceptor {
         this.localAddress = localAddress;
     }
 
-    @Override
+
     public ConnectionRoutine accept() {
         ServerSocketChannel serverChannel;
         SocketAddress localAddress;

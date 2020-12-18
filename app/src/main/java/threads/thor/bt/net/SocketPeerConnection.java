@@ -8,7 +8,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import threads.LogUtils;
 import threads.thor.bt.metainfo.TorrentId;
-import threads.thor.bt.net.pipeline.ChannelHandler;
+import threads.thor.bt.net.pipeline.SocketChannelHandler;
 import threads.thor.bt.protocol.Message;
 
 public class SocketPeerConnection implements PeerConnection {
@@ -19,14 +19,14 @@ public class SocketPeerConnection implements PeerConnection {
     private final Peer remotePeer;
     private final int remotePort;
 
-    private final ChannelHandler handler;
+    private final SocketChannelHandler handler;
 
     private final AtomicLong lastActive;
 
     private final ReentrantLock readLock;
     private final Condition condition;
 
-    SocketPeerConnection(Peer remotePeer, int remotePort, ChannelHandler handler) {
+    SocketPeerConnection(Peer remotePeer, int remotePort, SocketChannelHandler handler) {
         this.torrentId = new AtomicReference<>();
         this.remotePeer = remotePeer;
         this.remotePort = remotePort;

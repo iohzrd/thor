@@ -33,6 +33,8 @@ import threads.thor.bt.protocol.handler.MessageHandler;
 import threads.thor.bt.torrent.TorrentDescriptor;
 import threads.thor.bt.torrent.TorrentRegistry;
 
+import static threads.thor.bt.net.crypto.MSEKeyPairGenerator.PUBLIC_KEY_BYTES;
+
 public class MSEHandshakeProcessor {
     private static final String TAG = MSEHandshakeProcessor.class.getSimpleName();
     private static final Duration receiveTimeout = Duration.ofSeconds(10);
@@ -99,9 +101,9 @@ public class MSEHandshakeProcessor {
         this.protocol = protocol;
     }
 
-    public Optional<MSECipher> negotiateOutgoing(ByteChannel channel, TorrentId torrentId, ByteBuffer in, ByteBuffer out) throws IOException {
+    public MSECipher negotiateOutgoing(ByteChannel channel, TorrentId torrentId, ByteBuffer in, ByteBuffer out) throws IOException {
         if (mseDisabled) {
-            return Optional.empty();
+            return null;
         }
 
 
@@ -126,14 +128,14 @@ public class MSEHandshakeProcessor {
         // send our public key
         KeyPair keys = keyGenerator.generateKeyPair();
         out.put(keys.getPublic().getEncoded());
-        out.put(getPadding(paddingMaxLength));
+        out.put(getPadding());
         out.flip();
         channel.write(out);
         out.clear();
 
         // 2. B->A: Diffie Hellman Yb, PadB
         // receive peer's public key
-        int phase1Min = keyGenerator.getPublicKeySize();
+        int phase1Min = PUBLIC_KEY_BYTES;
         int phase1Limit = phase1Min + paddingMaxLength;
         int phase1Read = reader.readBetween(phase1Min, phase1Limit).read(in);
         in.flip();
@@ -144,17 +146,17 @@ public class MSEHandshakeProcessor {
         BigInteger S = keyGenerator.calculateSharedSecret(peerPublicKey, keys.getPrivate());
 
         // 3. A->B:
-        MessageDigest digest = getDigest("SHA-1");
+        MessageDigest digest = getDigest();
         // - HASH('req1', S)
         digest.update("req1".getBytes(StandardCharsets.US_ASCII));
-        digest.update(BigIntegers.encodeUnsigned(S, keyGenerator.getPublicKeySize()));
+        digest.update(BigIntegers.encodeUnsigned(S, PUBLIC_KEY_BYTES));
         out.put(digest.digest());
         // - HASH('req2', SKEY) xor HASH('req3', S)
         digest.update("req2".getBytes(StandardCharsets.US_ASCII));
         digest.update(torrentId.getBytes());
         byte[] b1 = digest.digest();
         digest.update("req3".getBytes(StandardCharsets.US_ASCII));
-        digest.update(BigIntegers.encodeUnsigned(S, keyGenerator.getPublicKeySize()));
+        digest.update(BigIntegers.encodeUnsigned(S, PUBLIC_KEY_BYTES));
         byte[] b2 = digest.digest();
         out.put(xor(b1, b2));
         // write
@@ -162,13 +164,13 @@ public class MSEHandshakeProcessor {
         channel.write(out);
         out.clear();
 
-        byte[] Sbytes = BigIntegers.encodeUnsigned(S, MSEKeyPairGenerator.PUBLIC_KEY_BYTES);
+        byte[] Sbytes = BigIntegers.encodeUnsigned(S, PUBLIC_KEY_BYTES);
         MSECipher cipher = MSECipher.forInitiator(Sbytes, torrentId);
         ByteChannel encryptedChannel = new EncryptedChannel(channel, cipher.getDecryptionCipher(), cipher.getEncryptionCipher());
         // - ENCRYPT(VC, crypto_provide, len(PadC), PadC, len(IA))
         out.put(VC_RAW_BYTES);
         out.put(getCryptoProvideBitfield(localEncryptionPolicy));
-        byte[] padding = getZeroPadding(512);
+        byte[] padding = getZeroPadding();
         out.put(Protocols.getShortBytes(padding.length));
         out.put(padding);
         // - ENCRYPT(IA)
@@ -250,11 +252,11 @@ public class MSEHandshakeProcessor {
         switch (negotiatedEncryptionPolicy) {
             case REQUIRE_PLAINTEXT:
             case PREFER_PLAINTEXT: {
-                return Optional.empty();
+                return null;
             }
             case PREFER_ENCRYPTED:
             case REQUIRE_ENCRYPTED: {
-                return Optional.of(cipher);
+                return cipher;
             }
             default: {
                 throw new IllegalStateException("Unknown encryption policy: " + negotiatedEncryptionPolicy.name());
@@ -262,9 +264,10 @@ public class MSEHandshakeProcessor {
         }
     }
 
-    public Optional<MSECipher> negotiateIncoming(Peer peer, ByteChannel channel, ByteBuffer in, ByteBuffer out) throws IOException {
+
+    public MSECipher negotiateIncoming(Peer peer, ByteChannel channel, ByteBuffer in, ByteBuffer out) throws IOException {
         if (mseDisabled) {
-            return Optional.empty();
+            return null;
         }
 
         /*
@@ -302,11 +305,11 @@ public class MSEHandshakeProcessor {
         // TODO: can this be done without knowing the protocol specifics? (KeepAlive can be especially misleading: 0x00 0x00 0x00 0x00)
         if (consumed > 0 && context.getMessage() instanceof Handshake) {
             // decoding was successful, can use plaintext (if supported)
-            assertPolicyIsCompatible(EncryptionPolicy.REQUIRE_PLAINTEXT);
-            return Optional.empty();
+            assertPolicyIsCompatible();
+            return null;
         }
 
-        int phase1Min = keyGenerator.getPublicKeySize();
+        int phase1Min = PUBLIC_KEY_BYTES;
         int phase1Limit = phase1Min + paddingMaxLength;
         in.limit(in.capacity());
         in.position(phase0Read);
@@ -319,14 +322,14 @@ public class MSEHandshakeProcessor {
         }
 
         in.flip();
-        BigInteger peerPublicKey = BigIntegers.decodeUnsigned(in, keyGenerator.getPublicKeySize());
+        BigInteger peerPublicKey = BigIntegers.decodeUnsigned(in, PUBLIC_KEY_BYTES);
         in.clear(); // discard padding
 
         // 2. B->A: Diffie Hellman Yb, PadB
         // send our public key
         KeyPair keys = keyGenerator.generateKeyPair();
         out.put(keys.getPublic().getEncoded());
-        out.put(getPadding(paddingMaxLength));
+        out.put(getPadding());
         out.flip();
         channel.write(out);
         out.clear();
@@ -335,15 +338,15 @@ public class MSEHandshakeProcessor {
         BigInteger S = keyGenerator.calculateSharedSecret(peerPublicKey, keys.getPrivate());
 
         // 3. A->B:
-        int phase2Min = 20 + 20 + 8 + 4 + 2 + 0 + 2;
+        int phase2Min = 20 + 20 + 8 + 4 + 2 + 2;
         int phase2Limit = 20 + 20 + 8 + 4 + 2 + 512 + 2;
-        MessageDigest digest = getDigest("SHA-1");
+        MessageDigest digest = getDigest();
         // padding from phase 1 may be arriving later than expected, so we need to synchronize
         // on the incoming stream of data, looking for a correct S hash
         byte[] bytes = new byte[20];
         // - HASH('req1', S)
         digest.update("req1".getBytes(StandardCharsets.US_ASCII));
-        digest.update(BigIntegers.encodeUnsigned(S, keyGenerator.getPublicKeySize()));
+        digest.update(BigIntegers.encodeUnsigned(S, PUBLIC_KEY_BYTES));
         byte[] req1hash = digest.digest();
         // syncing will also ensure that the peer knows S (otherwise synchronization will fail due to not finding the pattern)
         int phase2Read = reader.readAtLeast(phase2Min)
@@ -355,7 +358,7 @@ public class MSEHandshakeProcessor {
         in.get(bytes); // read SKEY/S hash
         TorrentId requestedTorrent = null;
         digest.update("req3".getBytes(StandardCharsets.US_ASCII));
-        digest.update(BigIntegers.encodeUnsigned(S, keyGenerator.getPublicKeySize()));
+        digest.update(BigIntegers.encodeUnsigned(S, PUBLIC_KEY_BYTES));
         byte[] b2 = digest.digest();
         for (TorrentId torrentId : torrentRegistry.getTorrentIds()) {
             digest.update("req2".getBytes(StandardCharsets.US_ASCII));
@@ -377,7 +380,7 @@ public class MSEHandshakeProcessor {
             }
         }
 
-        byte[] Sbytes = BigIntegers.encodeUnsigned(S, MSEKeyPairGenerator.PUBLIC_KEY_BYTES);
+        byte[] Sbytes = BigIntegers.encodeUnsigned(S, PUBLIC_KEY_BYTES);
         MSECipher cipher = MSECipher.forReceiver(Sbytes, requestedTorrent);
         ByteChannel encryptedChannel = new EncryptedChannel(channel, cipher.getDecryptionCipher(), cipher.getEncryptionCipher());
         ByteChannelReader encryptedReader = reader(encryptedChannel);
@@ -431,7 +434,7 @@ public class MSEHandshakeProcessor {
         // - ENCRYPT2(Payload Stream)
         out.put(VC_RAW_BYTES);
         out.put(getCryptoProvideBitfield(negotiatedEncryptionPolicy));
-        byte[] padding = getZeroPadding(512);
+        byte[] padding = getZeroPadding();
         out.putShort((short) padding.length);
         out.put(padding);
         out.flip();
@@ -441,11 +444,11 @@ public class MSEHandshakeProcessor {
         switch (negotiatedEncryptionPolicy) {
             case REQUIRE_PLAINTEXT:
             case PREFER_PLAINTEXT: {
-                return Optional.empty();
+                return null;
             }
             case PREFER_ENCRYPTED:
             case REQUIRE_ENCRYPTED: {
-                return Optional.of(cipher);
+                return cipher;
             }
             default: {
                 throw new IllegalStateException("Unknown encryption policy: " + negotiatedEncryptionPolicy.name());
@@ -457,32 +460,32 @@ public class MSEHandshakeProcessor {
         return ByteChannelReader.forChannel(channel).withTimeout(receiveTimeout).waitBetweenReads(waitBetweenReads);
     }
 
-    private void assertPolicyIsCompatible(EncryptionPolicy peerEncryptionPolicy) {
-        if (!localEncryptionPolicy.isCompatible(peerEncryptionPolicy)) {
-            throw new RuntimeException("Encryption policies are incompatible: peer's (" + peerEncryptionPolicy.name()
+    private void assertPolicyIsCompatible() {
+        if (!localEncryptionPolicy.isCompatible(EncryptionPolicy.REQUIRE_PLAINTEXT)) {
+            throw new RuntimeException("Encryption policies are incompatible: peer's (" + EncryptionPolicy.REQUIRE_PLAINTEXT.name()
                     + "), local (" + localEncryptionPolicy.name() + ")");
         }
     }
 
-    private byte[] getPadding(int length) {
+    private byte[] getPadding() {
         // todo: use this constructor everywhere in the project
         Random r = new Random();
-        byte[] padding = new byte[r.nextInt(length + 1)];
+        byte[] padding = new byte[r.nextInt(MSEHandshakeProcessor.paddingMaxLength + 1)];
         for (int i = 0; i < padding.length; i++) {
             padding[i] = (byte) r.nextInt(256);
         }
         return padding;
     }
 
-    private byte[] getZeroPadding(int length) {
+    private byte[] getZeroPadding() {
         // todo: use this constructor everywhere in the project
         Random r = new Random();
-        return new byte[r.nextInt(length + 1)];
+        return new byte[r.nextInt(512 + 1)];
     }
 
-    private MessageDigest getDigest(String algorithm) {
+    private MessageDigest getDigest() {
         try {
-            return MessageDigest.getInstance(algorithm);
+            return MessageDigest.getInstance("SHA-1");
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
         }

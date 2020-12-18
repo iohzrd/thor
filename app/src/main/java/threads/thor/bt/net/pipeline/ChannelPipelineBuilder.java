@@ -1,5 +1,7 @@
 package threads.thor.bt.net.pipeline;
 
+import androidx.annotation.Nullable;
+
 import java.nio.ByteBuffer;
 import java.nio.channels.ByteChannel;
 import java.util.ArrayList;
@@ -7,7 +9,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
 import threads.thor.bt.net.Peer;
 import threads.thor.bt.net.buffer.BorrowedBuffer;
@@ -29,36 +30,30 @@ public abstract class ChannelPipelineBuilder {
         this.peer = Objects.requireNonNull(peer);
     }
 
-    public ChannelPipelineBuilder channel(ByteChannel channel) {
+    public void channel(ByteChannel channel) {
         this.channel = Objects.requireNonNull(channel);
-        return this;
     }
 
-    public ChannelPipelineBuilder protocol(MessageHandler<Message> protocol) {
+    public void protocol(MessageHandler<Message> protocol) {
         this.protocol = Objects.requireNonNull(protocol);
-        return this;
     }
 
-    public ChannelPipelineBuilder inboundBuffer(BorrowedBuffer<ByteBuffer> inboundBuffer) {
+    public void inboundBuffer(BorrowedBuffer<ByteBuffer> inboundBuffer) {
         this.inboundBuffer = Objects.requireNonNull(inboundBuffer);
-        return this;
     }
 
-    public ChannelPipelineBuilder outboundBuffer(BorrowedBuffer<ByteBuffer> outboundBuffer) {
+    public void outboundBuffer(BorrowedBuffer<ByteBuffer> outboundBuffer) {
         this.outboundBuffer = Objects.requireNonNull(outboundBuffer);
-        return this;
     }
 
-    public ChannelPipelineBuilder decoders(BufferMutator firstDecoder, BufferMutator... otherDecoders) {
+    public void decoders(BufferMutator firstDecoder, BufferMutator... otherDecoders) {
         Objects.requireNonNull(firstDecoder);
         decoders = asList(firstDecoder, otherDecoders);
-        return this;
     }
 
-    public ChannelPipelineBuilder encoders(BufferMutator firstEncoder, BufferMutator... otherEncoders) {
+    public void encoders(BufferMutator firstEncoder, BufferMutator... otherEncoders) {
         Objects.requireNonNull(firstEncoder);
         encoders = asList(firstEncoder, otherEncoders);
-        return this;
     }
 
     private List<BufferMutator> asList(BufferMutator firstMutator, BufferMutator... otherMutators) {
@@ -74,20 +69,18 @@ public abstract class ChannelPipelineBuilder {
         Objects.requireNonNull(channel, "Missing channel");
         Objects.requireNonNull(protocol, "Missing protocol");
 
-        Optional<BorrowedBuffer<ByteBuffer>> _inboundBuffer = Optional.ofNullable(inboundBuffer);
-        Optional<BorrowedBuffer<ByteBuffer>> _outboundBuffer = Optional.ofNullable(outboundBuffer);
+
         List<BufferMutator> _decoders = (decoders == null) ? Collections.emptyList() : decoders;
         List<BufferMutator> _encoders = (encoders == null) ? Collections.emptyList() : encoders;
 
-        return doBuild(peer, channel, protocol, _inboundBuffer, _outboundBuffer, _decoders, _encoders);
+        return doBuild(peer, protocol, inboundBuffer, outboundBuffer, _decoders, _encoders);
     }
 
     protected abstract ChannelPipeline doBuild(
             Peer peer,
-            ByteChannel channel,
             MessageHandler<Message> protocol,
-            Optional<BorrowedBuffer<ByteBuffer>> inboundBuffer,
-            Optional<BorrowedBuffer<ByteBuffer>> outboundBuffer,
+            @Nullable BorrowedBuffer<ByteBuffer> inboundBuffer,
+            @Nullable BorrowedBuffer<ByteBuffer> outboundBuffer,
             List<BufferMutator> decoders,
             List<BufferMutator> encoders);
 }

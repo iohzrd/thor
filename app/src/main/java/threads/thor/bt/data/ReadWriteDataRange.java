@@ -23,9 +23,6 @@ import java.util.List;
 
 import threads.thor.bt.net.buffer.ByteBufferView;
 
-/**
- * @since 1.2
- */
 class ReadWriteDataRange implements DataRange {
 
     private final List<StorageUnit> units;
@@ -62,14 +59,12 @@ class ReadWriteDataRange implements DataRange {
                        long offsetInFirstUnit,
                        long limitInLastUnit) {
         this(units,
-                0,
                 offsetInFirstUnit,
                 units.size() - 1,
                 limitInLastUnit);
     }
 
     private ReadWriteDataRange(List<StorageUnit> units,
-                               int firstUnit,
                                long offsetInFirstUnit,
                                int lastUnit,
                                long limitInLastUnit) {
@@ -77,24 +72,24 @@ class ReadWriteDataRange implements DataRange {
         if (units.isEmpty()) {
             throw new IllegalArgumentException("Empty list of units");
         }
-        if (firstUnit < 0 || firstUnit > units.size() - 1) {
-            throw new IllegalArgumentException("Invalid first unit index: " + firstUnit + ", expected 0.." + (units.size() - 1));
+        if (0 > units.size() - 1) {
+            throw new IllegalArgumentException("Invalid first unit index: " + 0 + ", expected 0.." + (units.size() - 1));
         }
         if (lastUnit < 0 || lastUnit > units.size() - 1) {
             throw new IllegalArgumentException("Invalid last unit index: " + lastUnit + ", expected 0.." + (units.size() - 1));
         }
-        if (firstUnit > lastUnit) {
-            throw new IllegalArgumentException("First unit index is greater than last unit index: " + firstUnit + " > " + lastUnit);
+        if (0 > lastUnit) {
+            throw new IllegalArgumentException("First unit index is greater than last unit index: " + 0 + " > " + lastUnit);
         }
-        if (offsetInFirstUnit < 0 || offsetInFirstUnit > units.get(firstUnit).capacity() - 1) {
+        if (offsetInFirstUnit < 0 || offsetInFirstUnit > units.get(0).capacity() - 1) {
             throw new IllegalArgumentException("Invalid offset in first unit: " + offsetInFirstUnit +
-                    ", expected 0.." + (units.get(firstUnit).capacity() - 1));
+                    ", expected 0.." + (units.get(0).capacity() - 1));
         }
         if (limitInLastUnit <= 0 || limitInLastUnit > units.get(lastUnit).capacity()) {
             throw new IllegalArgumentException("Invalid limit in last unit: " + limitInLastUnit +
                     ", expected 1.." + (units.get(lastUnit).capacity()));
         }
-        if (firstUnit == lastUnit && offsetInFirstUnit >= limitInLastUnit) {
+        if (0 == lastUnit && offsetInFirstUnit >= limitInLastUnit) {
             throw new IllegalArgumentException("Offset is greater than limit in a single-unit range: " +
                     offsetInFirstUnit + " >= " + limitInLastUnit);
         }
@@ -102,7 +97,7 @@ class ReadWriteDataRange implements DataRange {
         this.units = units;
         this.fileOffsets = calculateOffsets(units, offsetInFirstUnit);
 
-        this.firstUnit = firstUnit;
+        this.firstUnit = 0;
         this.lastUnit = lastUnit;
         this.offsetInFirstUnit = offsetInFirstUnit;
         this.limitInLastUnit = limitInLastUnit;
@@ -256,7 +251,7 @@ class ReadWriteDataRange implements DataRange {
             int offsetInBlock = 0;
 
             @Override
-            public boolean visitUnit(StorageUnit unit, long off, long lim) {
+            public void visitUnit(StorageUnit unit, long off, long lim) {
                 long len = lim - off;
                 if (len > Integer.MAX_VALUE) {
                     throw new IllegalStateException("Too much data requested");
@@ -275,7 +270,6 @@ class ReadWriteDataRange implements DataRange {
                 }
                 offsetInBlock += len;
 
-                return true;
             }
         });
     }
@@ -315,7 +309,7 @@ class ReadWriteDataRange implements DataRange {
             int limitInBlock;
 
             @Override
-            public boolean visitUnit(StorageUnit unit, long off, long lim) {
+            public void visitUnit(StorageUnit unit, long off, long lim) {
                 long fileSize = lim - off;
                 if (fileSize > Integer.MAX_VALUE) {
                     throw new IllegalStateException("Unexpected file size -- insufficient data in block");
@@ -330,7 +324,6 @@ class ReadWriteDataRange implements DataRange {
                 }
                 offsetInBlock = limitInBlock;
 
-                return offsetInBlock < blockLength - 1;
             }
         });
     }
@@ -345,7 +338,7 @@ class ReadWriteDataRange implements DataRange {
             int limitInBlock;
 
             @Override
-            public boolean visitUnit(StorageUnit unit, long off, long lim) {
+            public void visitUnit(StorageUnit unit, long off, long lim) {
                 long fileSize = lim - off;
                 if (fileSize > Integer.MAX_VALUE) {
                     throw new IllegalStateException("Unexpected file size -- insufficient data in block");
@@ -360,7 +353,6 @@ class ReadWriteDataRange implements DataRange {
                 }
                 offsetInBlock = limitInBlock;
 
-                return offsetInBlock < blockLength - 1;
             }
         });
     }

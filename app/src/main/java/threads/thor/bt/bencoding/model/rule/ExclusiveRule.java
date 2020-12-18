@@ -1,19 +1,3 @@
-/*
- * Copyright (c) 2016—2017 Andrei Tomashpolskiy and individual contributors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package threads.thor.bt.bencoding.model.rule;
 
 import androidx.annotation.NonNull;
@@ -64,9 +48,9 @@ import threads.thor.bt.bencoding.model.ClassUtil;
 public class ExclusiveRule implements Rule {
 
     private final Collection<Set<String>> exclusives;
-    private boolean shouldCheckRequired;
-    private RequiredRule exclusiveRequired;
-    private RequiredRule otherRequired;
+    private final boolean shouldCheckRequired;
+    private final RequiredRule exclusiveRequired;
+    private final RequiredRule otherRequired;
 
     /**
      * @param exclusives Collection of sets of mutually exclusive attributes.
@@ -87,14 +71,6 @@ public class ExclusiveRule implements Rule {
         exclusiveRequiredKeys.removeAll(otherRequiredKeys);
         this.exclusiveRequired = new RequiredRule(exclusiveRequiredKeys);
 
-        this.exclusives = exclusives;
-    }
-
-    /**
-     * @param exclusives Collection of sets of mutually exclusive attributes.
-     * @since 1.0
-     */
-    public ExclusiveRule(Collection<Set<String>> exclusives) {
         this.exclusives = exclusives;
     }
 

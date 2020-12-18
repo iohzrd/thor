@@ -87,8 +87,6 @@ class RoutingPeerWorker implements PeerWorker {
             if (isCancelled(piece)) {
                 // dispose of message
                 return null;
-            } else {
-                connectionState.incrementUploaded(piece.getLength());
             }
         }
         if (Interested.class.equals(messageType)) {

@@ -9,8 +9,8 @@ import threads.thor.bt.data.Bitfield;
 import threads.thor.bt.event.EventSink;
 import threads.thor.bt.metainfo.TorrentId;
 import threads.thor.bt.net.ConnectionKey;
-import threads.thor.bt.net.IPeerConnectionPool;
-import threads.thor.bt.net.pipeline.IBufferedPieceRegistry;
+import threads.thor.bt.net.PeerConnectionPool;
+import threads.thor.bt.net.pipeline.BufferedPieceRegistry;
 import threads.thor.bt.protocol.BitOrder;
 import threads.thor.bt.torrent.DataWorker;
 import threads.thor.bt.torrent.PieceStatistics;
@@ -21,10 +21,10 @@ public class InitializeMagnetTorrentProcessingStage extends InitializeTorrentPro
     private final EventSink eventSink;
 
     public InitializeMagnetTorrentProcessingStage(ProcessingStage<MagnetContext> next,
-                                                  IPeerConnectionPool connectionPool,
+                                                  PeerConnectionPool connectionPool,
                                                   TorrentRegistry torrentRegistry,
                                                   DataWorker dataWorker,
-                                                  IBufferedPieceRegistry bufferedPieceRegistry,
+                                                  BufferedPieceRegistry bufferedPieceRegistry,
                                                   EventSink eventSink,
                                                   Config config) {
         super(next, connectionPool, torrentRegistry, dataWorker, bufferedPieceRegistry, eventSink, config);
@@ -66,7 +66,7 @@ public class InitializeMagnetTorrentProcessingStage extends InitializeTorrentPro
                     bitfield -> eventSink.firePeerBitfieldUpdated(torrentId, peer, bitfield));
         });
         // unregistering only now, so that there were no gaps in bitfield receiving
-        context.getRouter().unregisterMessagingAgent(context.getBitfieldConsumer());
+
         context.setBitfieldConsumer(null); // mark for gc collection
     }
 

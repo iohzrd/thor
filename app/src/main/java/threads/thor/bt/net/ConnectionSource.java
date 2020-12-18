@@ -5,7 +5,6 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -15,11 +14,11 @@ import threads.thor.bt.CountingThreadFactory;
 import threads.thor.bt.metainfo.TorrentId;
 import threads.thor.bt.service.RuntimeLifecycleBinder;
 
-public class ConnectionSource implements IConnectionSource {
+public class ConnectionSource {
 
     private static final String TAG = ConnectionSource.class.getSimpleName();
-    private final IPeerConnectionFactory connectionFactory;
-    private final IPeerConnectionPool connectionPool;
+    private final PeerConnectionFactory connectionFactory;
+    private final PeerConnectionPool connectionPool;
     private final ExecutorService connectionExecutor;
     private final Config config;
 
@@ -27,9 +26,9 @@ public class ConnectionSource implements IConnectionSource {
     // TODO: weak map
     private final ConcurrentMap<Peer, Long> unreachablePeers;
 
-    public ConnectionSource(Set<PeerConnectionAcceptor> connectionAcceptors,
-                            IPeerConnectionFactory connectionFactory,
-                            IPeerConnectionPool connectionPool,
+    public ConnectionSource(Set<SocketChannelConnectionAcceptor> connectionAcceptors,
+                            PeerConnectionFactory connectionFactory,
+                            PeerConnectionPool connectionPool,
                             RuntimeLifecycleBinder lifecycleBinder,
                             Config config) {
 
@@ -53,24 +52,13 @@ public class ConnectionSource implements IConnectionSource {
 
     }
 
-    @Override
-    public ConnectionResult getConnection(Peer peer, TorrentId torrentId) {
-        try {
-            return getConnectionAsync(peer, torrentId).get();
-        } catch (InterruptedException e) {
-            return ConnectionResult.failure("Interrupted while waiting for connection", e);
-        } catch (ExecutionException e) {
-            return ConnectionResult.failure("Failed to establish connection due to error", e);
-        }
-    }
 
-    @Override
-    public CompletableFuture<ConnectionResult> getConnectionAsync(Peer peer, TorrentId torrentId) {
+    public void getConnectionAsync(Peer peer, TorrentId torrentId) {
         ConnectionKey key = new ConnectionKey(peer, peer.getPort(), torrentId);
 
         CompletableFuture<ConnectionResult> connection = getExistingOrPendingConnection(key);
         if (connection != null) {
-            return connection;
+            return;
         }
 
         Long bannedAt = unreachablePeers.get(peer);
@@ -80,19 +68,21 @@ public class ConnectionSource implements IConnectionSource {
                 unreachablePeers.remove(peer);
             } else {
 
-                return CompletableFuture.completedFuture(ConnectionResult.failure("Peer is unreachable"));
+                CompletableFuture.completedFuture(ConnectionResult.failure("Peer is unreachable"));
+                return;
             }
         }
 
         if (connectionPool.size() >= config.getMaxPeerConnections()) {
 
-            return CompletableFuture.completedFuture(ConnectionResult.failure("Connections limit exceeded"));
+            CompletableFuture.completedFuture(ConnectionResult.failure("Connections limit exceeded"));
+            return;
         }
 
         synchronized (pendingConnections) {
             connection = getExistingOrPendingConnection(key);
             if (connection != null) {
-                return connection;
+                return;
             }
 
             connection = CompletableFuture.supplyAsync(() -> {
@@ -125,7 +115,6 @@ public class ConnectionSource implements IConnectionSource {
             });
 
             pendingConnections.put(key, connection);
-            return connection;
         }
     }
 

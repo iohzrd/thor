@@ -12,11 +12,7 @@ import java.util.concurrent.CompletableFuture;
 import threads.thor.bt.protocol.Cancel;
 import threads.thor.bt.protocol.Request;
 
-/**
- * Contains basic information about a connection's state.
- *
- * @since 1.0
- */
+
 public class ConnectionState {
 
     private final Set<Object> cancelledPeerRequests;
@@ -28,16 +24,14 @@ public class ConnectionState {
     private volatile boolean peerInterested;
     private volatile boolean choking;
     private volatile boolean peerChoking;
-    private volatile long downloaded;
-    private volatile long uploaded;
-    private Optional<Boolean> shouldChoke;
+    private Boolean shouldChoke;
     private long lastChoked;
-    private Optional<Assignment> assignment;
+    private Assignment assignment;
 
     ConnectionState() {
         this.choking = true;
         this.peerChoking = true;
-        this.shouldChoke = Optional.empty();
+        this.shouldChoke = null;
         this.cancelledPeerRequests = new HashSet<>();
         this.pendingRequests = new HashSet<>();
         this.pendingWrites = new HashMap<>();
@@ -45,7 +39,7 @@ public class ConnectionState {
         this.enqueuedPieces = new HashSet<>();
         this.requestQueue = new ArrayDeque<>();
 
-        this.assignment = Optional.empty();
+        this.assignment = null;
     }
 
     /**
@@ -93,7 +87,7 @@ public class ConnectionState {
      */
     void setChoking(boolean choking) {
         this.choking = choking;
-        this.shouldChoke = Optional.empty();
+        this.shouldChoke = null;
     }
 
     /**
@@ -101,7 +95,7 @@ public class ConnectionState {
      * @since 1.0
      */
     Optional<Boolean> getShouldChoke() {
-        return shouldChoke;
+        return Optional.of(shouldChoke);
     }
 
     /**
@@ -111,7 +105,7 @@ public class ConnectionState {
      * @since 1.0
      */
     void setShouldChoke(boolean shouldChoke) {
-        this.shouldChoke = Optional.of(shouldChoke);
+        this.shouldChoke = shouldChoke;
     }
 
     /**
@@ -141,25 +135,6 @@ public class ConnectionState {
         this.peerChoking = peerChoking;
     }
 
-
-    public long getDownloaded() {
-        return downloaded;
-    }
-
-
-    void incrementDownloaded(long downloaded) {
-        this.downloaded += downloaded;
-    }
-
-
-    public long getUploaded() {
-        return uploaded;
-    }
-
-
-    void incrementUploaded(long uploaded) {
-        this.uploaded += uploaded;
-    }
 
     /**
      * Get keys of block requests, that have been cancelled by remote peer.
@@ -214,14 +189,14 @@ public class ConnectionState {
     }
 
     Optional<Assignment> getCurrentAssignment() {
-        return assignment;
+        return Optional.of(assignment);
     }
 
     void setCurrentAssignment(Assignment assignment) {
-        this.assignment = Optional.of(assignment);
+        this.assignment = assignment;
     }
 
     void removeAssignment() {
-        this.assignment = Optional.empty();
+        this.assignment = null;
     }
 }

@@ -28,10 +28,5 @@ public interface MessageRouter {
      */
     void registerMessagingAgent(IAgent agent);
 
-    /**
-     * Remove a messaging agent, if it's registered in this message router.
-     *
-     * @since 1.3
-     */
-    void unregisterMessagingAgent(IAgent agent);
+
 }

@@ -34,9 +34,6 @@ import static threads.thor.bt.utils.Functional.tap;
 import static threads.thor.bt.utils.Functional.tapThrow;
 import static threads.thor.bt.utils.Functional.typedGet;
 
-/**
- * @author Damokles
- */
 public class MessageDecoder {
 
     private static final String TAG = MessageDecoder.class.getSimpleName();

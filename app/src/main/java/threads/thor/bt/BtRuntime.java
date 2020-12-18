@@ -28,13 +28,10 @@ import java.util.function.Consumer;
 import threads.LogUtils;
 import threads.thor.bt.data.ChunkVerifier;
 import threads.thor.bt.data.DataDescriptorFactory;
-import threads.thor.bt.data.DataReaderFactory;
-import threads.thor.bt.data.DefaultChunkVerifier;
-import threads.thor.bt.data.digest.Digester;
 import threads.thor.bt.data.digest.JavaSecurityDigester;
 import threads.thor.bt.dht.DHTHandshakeHandler;
 import threads.thor.bt.dht.DHTPeerSourceFactory;
-import threads.thor.bt.dht.MldhtService;
+import threads.thor.bt.dht.DHTService;
 import threads.thor.bt.event.EventBus;
 import threads.thor.bt.event.EventSource;
 import threads.thor.bt.magnet.UtMetadataMessageHandler;
@@ -42,12 +39,8 @@ import threads.thor.bt.net.BitfieldConnectionHandler;
 import threads.thor.bt.net.ConnectionHandlerFactory;
 import threads.thor.bt.net.ConnectionSource;
 import threads.thor.bt.net.DataReceiver;
-import threads.thor.bt.net.DataReceivingLoop;
 import threads.thor.bt.net.HandshakeHandler;
-import threads.thor.bt.net.IConnectionHandlerFactory;
-import threads.thor.bt.net.IPeerConnectionFactory;
 import threads.thor.bt.net.MessageDispatcher;
-import threads.thor.bt.net.PeerConnectionAcceptor;
 import threads.thor.bt.net.PeerConnectionFactory;
 import threads.thor.bt.net.PeerConnectionPool;
 import threads.thor.bt.net.SharedSelector;
@@ -57,7 +50,6 @@ import threads.thor.bt.net.buffer.IBufferManager;
 import threads.thor.bt.net.extended.ExtendedProtocolHandshakeHandler;
 import threads.thor.bt.net.pipeline.BufferedPieceRegistry;
 import threads.thor.bt.net.pipeline.ChannelPipelineFactory;
-import threads.thor.bt.net.pipeline.IChannelPipelineFactory;
 import threads.thor.bt.net.portmapping.PortMapper;
 import threads.thor.bt.net.portmapping.PortMappingInitializer;
 import threads.thor.bt.peer.PeerRegistry;
@@ -79,7 +71,6 @@ import threads.thor.bt.service.RuntimeLifecycleBinder;
 import threads.thor.bt.torrent.BlockCache;
 import threads.thor.bt.torrent.DataWorker;
 import threads.thor.bt.torrent.DefaultDataWorker;
-import threads.thor.bt.torrent.LRUBlockCache;
 import threads.thor.bt.torrent.TorrentRegistry;
 
 public class BtRuntime {
@@ -94,7 +85,6 @@ public class BtRuntime {
     public final Set<IAgent> mMessagingAgents;
     public final DataWorker mDataWorker;
     public final PeerConnectionPool mConnectionPool;
-    //public final TrackerService mTrackerService;
     public final BufferedPieceRegistry mBufferedPieceRegistry;
     private final Object lock;
     private final Config mConfig;
@@ -129,12 +119,12 @@ public class BtRuntime {
 
         SharedSelector mSelector = provideSelector(mRuntimeLifecycleBinder);
 
-        Digester digester = provideDigester();
+        JavaSecurityDigester digester = provideDigester();
         ChunkVerifier chunkVerifier = provideVerifier(eventBus, config, digester);
 
 
         DataDescriptorFactory dataDescriptorFactory = provideDataDescriptorFactory(
-                config, mEventBus, chunkVerifier);
+                config, chunkVerifier);
 
         this.mTorrentRegistry = new TorrentRegistry(
                 dataDescriptorFactory, mRuntimeLifecycleBinder);
@@ -148,10 +138,10 @@ public class BtRuntime {
         PortMappingInitializer.portMappingInitializer(portMappers, mRuntimeLifecycleBinder, mConfig);
 
 
-        DataReceiver dataReceiver = new DataReceivingLoop(mSelector, mRuntimeLifecycleBinder);
+        DataReceiver dataReceiver = new DataReceiver(mSelector, mRuntimeLifecycleBinder);
         BufferManager bufferManager = new BufferManager(config);
         mBufferedPieceRegistry = new BufferedPieceRegistry();
-        IChannelPipelineFactory channelPipelineFactory =
+        ChannelPipelineFactory channelPipelineFactory =
                 new ChannelPipelineFactory(bufferManager, mBufferedPieceRegistry);
 
         Set<HandshakeHandler> boundHandshakeHandlers = new HashSet<>();
@@ -176,12 +166,12 @@ public class BtRuntime {
                 messageTypeMapping,
                 config);
 
-        IConnectionHandlerFactory connectionHandlerFactory =
+        ConnectionHandlerFactory connectionHandlerFactory =
                 provideConnectionHandlerFactory(handshakeFactory, mTorrentRegistry,
                         boundHandshakeHandlers, extendedHandshakeFactory, config);
 
 
-        IPeerConnectionFactory peerConnectionFactory = providePeerConnectionFactory(
+        PeerConnectionFactory peerConnectionFactory = providePeerConnectionFactory(
                 mSelector,
                 connectionHandlerFactory,
                 bittorrentProtocol,
@@ -197,26 +187,26 @@ public class BtRuntime {
                 mRuntimeLifecycleBinder, config);
 
 
-        Set<PeerConnectionAcceptor> connectionAcceptors = new HashSet<>();
+        Set<SocketChannelConnectionAcceptor> connectionAcceptors = new HashSet<>();
         connectionAcceptors.add(
                 provideSocketChannelConnectionAcceptor(mSelector,
                         peerConnectionFactory, config));
 
 
-        MldhtService mMldhtService = new MldhtService(mRuntimeLifecycleBinder, mConfig,
+        DHTService mDHTService = new DHTService(mRuntimeLifecycleBinder, mConfig,
                 portMappers, mTorrentRegistry, mEventBus);
-        DHTHandshakeHandler dHTHandshakeHandler = new DHTHandshakeHandler(mMldhtService.getPort());
+        DHTHandshakeHandler dHTHandshakeHandler = new DHTHandshakeHandler(mDHTService.getPort());
         boundHandshakeHandlers.add(dHTHandshakeHandler);
 
         DHTPeerSourceFactory mDHTPeerSourceFactory =
-                new DHTPeerSourceFactory(mRuntimeLifecycleBinder, mMldhtService);
+                new DHTPeerSourceFactory(mRuntimeLifecycleBinder, mDHTService);
         mPeerRegistry.addPeerSourceFactory(mDHTPeerSourceFactory);
 
 
         mDataWorker = provideDataWorker(
                 mRuntimeLifecycleBinder, mTorrentRegistry,
                 chunkVerifier,
-                new LRUBlockCache(mTorrentRegistry, mEventBus),
+                new BlockCache(mTorrentRegistry, mEventBus),
                 config);
 
 
@@ -236,7 +226,7 @@ public class BtRuntime {
 
     }
 
-    private static IConnectionHandlerFactory provideConnectionHandlerFactory(
+    private static ConnectionHandlerFactory provideConnectionHandlerFactory(
             HandshakeFactory handshakeFactory, TorrentRegistry torrentRegistry,
             Set<HandshakeHandler> boundHandshakeHandlers,
             ExtendedHandshakeFactory extendedHandshakeFactory, Config config) {
@@ -255,18 +245,17 @@ public class BtRuntime {
         return new AlphaSortedMapping(handlersByTypeName);
     }
 
-    private static Digester provideDigester() {
+    private static JavaSecurityDigester provideDigester() {
         int step = 2 << 22; // 8 MB
         return new JavaSecurityDigester("SHA-1", step);
     }
 
-    private static ChunkVerifier provideVerifier(EventBus eventBus, Config config, Digester digester) {
-        return new DefaultChunkVerifier(eventBus, digester, config.getNumOfHashingThreads());
+    private static ChunkVerifier provideVerifier(EventBus eventBus, Config config, JavaSecurityDigester digester) {
+        return new ChunkVerifier(eventBus, digester, config.getNumOfHashingThreads());
     }
 
-    private static DataDescriptorFactory provideDataDescriptorFactory(Config config, EventSource eventSource, ChunkVerifier verifier) {
-        DataReaderFactory dataReaderFactory = new DataReaderFactory(eventSource);
-        return new DataDescriptorFactory(dataReaderFactory, verifier, config.getTransferBlockSize());
+    private static DataDescriptorFactory provideDataDescriptorFactory(Config config, ChunkVerifier verifier) {
+        return new DataDescriptorFactory(verifier, config.getTransferBlockSize());
     }
 
     private static DataWorker provideDataWorker(
@@ -303,12 +292,12 @@ public class BtRuntime {
         return selector;
     }
 
-    private static IPeerConnectionFactory providePeerConnectionFactory(
+    private static PeerConnectionFactory providePeerConnectionFactory(
             SharedSelector selector,
-            IConnectionHandlerFactory connectionHandlerFactory,
+            ConnectionHandlerFactory connectionHandlerFactory,
             MessageHandler<Message> bittorrentProtocol,
             TorrentRegistry torrentRegistry,
-            IChannelPipelineFactory channelPipelineFactory,
+            ChannelPipelineFactory channelPipelineFactory,
             IBufferManager bufferManager,
             DataReceiver dataReceiver,
             EventSource eventSource,
@@ -319,7 +308,7 @@ public class BtRuntime {
 
     private static SocketChannelConnectionAcceptor provideSocketChannelConnectionAcceptor(
             SharedSelector selector,
-            IPeerConnectionFactory connectionFactory,
+            PeerConnectionFactory connectionFactory,
             Config config) {
         InetSocketAddress localAddress = new InetSocketAddress(config.getAcceptorAddress(), config.getAcceptorPort());
         return new SocketChannelConnectionAcceptor(selector, connectionFactory, localAddress);
@@ -470,7 +459,6 @@ public class BtRuntime {
             }
         } catch (InterruptedException e) {
             // ignore
-
             executor.shutdownNow();
         }
     }
@@ -487,9 +475,6 @@ public class BtRuntime {
     }
 
     private void onShutdownHookError(Throwable e) {
-        // logging facilities might be unavailable at this moment,
-        // so using standard output
-        e.printStackTrace(System.err);
-        System.err.flush();
+        LogUtils.error(TAG, e);
     }
 }

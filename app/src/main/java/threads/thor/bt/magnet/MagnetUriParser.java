@@ -22,23 +22,9 @@ public class MagnetUriParser {
     private static final String TAG = MagnetUriParser.class.getSimpleName();
     private static final String SCHEME = "magnet";
     private static final String INFOHASH_PREFIX = "urn:btih:";
-    private static final String MULTIHASH_PREFIX = "urn:btmh:";
-    private final boolean lenient;
 
-    private MagnetUriParser(boolean lenient) {
-        this.lenient = lenient;
-    }
 
-    /**
-     * Creates a parser, that will throw an exception,
-     * when some of the elements of the magnet link can not be parsed,
-     * e.g. invalid peer addresses.
-     *
-     * @return Magnet URI parser
-     * @since 1.3
-     */
-    public static MagnetUriParser parser() {
-        return new MagnetUriParser(false);
+    private MagnetUriParser() {
     }
 
     /**
@@ -50,7 +36,7 @@ public class MagnetUriParser {
      * @since 1.3
      */
     public static MagnetUriParser lenientParser() {
-        return new MagnetUriParser(true);
+        return new MagnetUriParser();
     }
 
     /**
@@ -101,11 +87,7 @@ public class MagnetUriParser {
             try {
                 builder.peer(parsePeer(value));
             } catch (Exception e) {
-                if (lenient) {
-                    LogUtils.warning(TAG, "Failed to parse peer address: " + value);
-                } else {
-                    throw new RuntimeException("Failed to parse peer address: " + value, e);
-                }
+                LogUtils.warning(TAG, "Failed to parse peer address: " + value);
             }
         });
 

@@ -26,7 +26,6 @@ class OutgoingHandshakeHandler implements ConnectionHandler {
 
     @Override
     public boolean handleConnection(PeerConnection connection) {
-        Peer peer = connection.getRemotePeer();
 
         Handshake handshake = handshakeFactory.createHandshake(torrentId);
         handshakeHandlers.forEach(handler ->

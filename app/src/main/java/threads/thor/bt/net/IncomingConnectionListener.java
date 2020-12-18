@@ -10,17 +10,17 @@ import threads.thor.bt.CountingThreadFactory;
 
 class IncomingConnectionListener {
     private static final String TAG = IncomingConnectionListener.class.getSimpleName();
-    private final Set<PeerConnectionAcceptor> connectionAcceptors;
+    private final Set<SocketChannelConnectionAcceptor> connectionAcceptors;
     private final ExecutorService connectionExecutor;
-    private final IPeerConnectionPool connectionPool;
+    private final PeerConnectionPool connectionPool;
     private final Config config;
 
     private final ExecutorService executor;
     private volatile boolean shutdown;
 
-    IncomingConnectionListener(Set<PeerConnectionAcceptor> connectionAcceptors,
+    IncomingConnectionListener(Set<SocketChannelConnectionAcceptor> connectionAcceptors,
                                ExecutorService connectionExecutor,
-                               IPeerConnectionPool connectionPool,
+                               PeerConnectionPool connectionPool,
                                Config config) {
         this.connectionAcceptors = connectionAcceptors;
         this.connectionExecutor = connectionExecutor;

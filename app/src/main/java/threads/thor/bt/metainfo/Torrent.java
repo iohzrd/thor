@@ -33,7 +33,6 @@ public final class Torrent {
     private long creationDate;
     private boolean isPrivate;
     private String createdBy;
-    private String comment;
 
 
     private Torrent(@NonNull TorrentId torrentId, @NonNull String name,
@@ -90,7 +89,6 @@ public final class Torrent {
                 ", creationDate=" + creationDate +
                 ", isPrivate=" + isPrivate +
                 ", createdBy='" + createdBy + '\'' +
-                ", comment='" + comment + '\'' +
                 '}';
     }
 
@@ -133,10 +131,6 @@ public final class Torrent {
         return chunkSize;
     }
 
-    public byte[] getChunkHashes() {
-        return chunkHashes;
-    }
-
     public Iterable<byte[]> getIterableChunkHashes() {
 
         return () -> new Iterator<byte[]>() {
@@ -176,30 +170,12 @@ public final class Torrent {
         this.isPrivate = isPrivate;
     }
 
-    public long getCreationDate() {
-        return creationDate;
-    }
-
     public void setCreationDate(long creationDate) {
         this.creationDate = creationDate;
     }
 
-    @Nullable
-    public String getCreatedBy() {
-        return createdBy;
-    }
-
     public void setCreatedBy(@Nullable String createdBy) {
         this.createdBy = createdBy;
-    }
-
-    @Nullable
-    public String getComment() {
-        return comment;
-    }
-
-    public void setComment(@Nullable String comment) {
-        this.comment = comment;
     }
 
     private void build() {

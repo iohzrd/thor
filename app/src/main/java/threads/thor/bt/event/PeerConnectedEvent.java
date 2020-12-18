@@ -6,7 +6,6 @@ import java.util.Objects;
 
 import threads.thor.bt.metainfo.TorrentId;
 import threads.thor.bt.net.ConnectionKey;
-import threads.thor.bt.net.Peer;
 
 public class PeerConnectedEvent extends BaseEvent implements TorrentEvent {
 
@@ -20,13 +19,6 @@ public class PeerConnectedEvent extends BaseEvent implements TorrentEvent {
     @Override
     public TorrentId getTorrentId() {
         return connectionKey.getTorrentId();
-    }
-
-    /**
-     * @since 1.5
-     */
-    public Peer getPeer() {
-        return connectionKey.getPeer();
     }
 
     /**

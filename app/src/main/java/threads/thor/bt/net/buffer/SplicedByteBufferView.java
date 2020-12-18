@@ -60,7 +60,7 @@ public class SplicedByteBufferView implements ByteBufferView {
     }
 
     @Override
-    public ByteBufferView position(int newPosition) {
+    public void position(int newPosition) {
         if (newPosition > limit) {
             throw new IllegalArgumentException("Position is greater than limit: " + newPosition + " > " + limit);
         } else if (newPosition < 0) {
@@ -74,7 +74,6 @@ public class SplicedByteBufferView implements ByteBufferView {
             left.position(leftOffset + position);
             right.position(rightOffset);
         }
-        return this;
     }
 
     @Override
@@ -83,7 +82,7 @@ public class SplicedByteBufferView implements ByteBufferView {
     }
 
     @Override
-    public ByteBufferView limit(int newLimit) {
+    public void limit(int newLimit) {
         if (newLimit > capacity) {
             throw new IllegalArgumentException("Limit is greater than capacity: " + newLimit + " > " + capacity);
         } else if (newLimit < 0) {
@@ -100,7 +99,6 @@ public class SplicedByteBufferView implements ByteBufferView {
         if (position > limit) {
             position = limit;
         }
-        return this;
     }
 
     @Override
@@ -143,9 +141,8 @@ public class SplicedByteBufferView implements ByteBufferView {
     }
 
     @Override
-    public ByteBufferView get(byte[] dst) {
+    public void get(byte[] dst) {
         readBytes(dst);
-        return this;
     }
 
     private void readBytes(byte[] dst) {

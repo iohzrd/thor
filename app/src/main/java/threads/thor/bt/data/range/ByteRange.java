@@ -36,27 +36,26 @@ public class ByteRange implements Range<ByteRange> {
      * @since 1.3
      */
     public ByteRange(byte[] bytes) {
-        this(bytes, 0, bytes.length);
+        this(bytes, bytes.length);
     }
 
     /**
      * Create a binary range from a subrange of a byte array.
      *
-     * @param bytes  Byte array
-     * @param offset Offset in {@code bytes}, inclusive
-     * @param limit  Limit in {@code bytes}, exclusive; must not be larger than {@code bytes.length}
+     * @param bytes Byte array
+     * @param limit Limit in {@code bytes}, exclusive; must not be larger than {@code bytes.length}
      * @since 1.3
      */
-    private ByteRange(byte[] bytes, int offset, int limit) {
+    private ByteRange(byte[] bytes, int limit) {
         int available = bytes.length;
         if (available == 0) {
             throw new IllegalArgumentException("Empty byte array");
         }
-        checkOffsetAndLimit(offset, limit, available);
+        checkOffsetAndLimit(limit, available);
 
         ByteBuffer buf = ByteBuffer.wrap(bytes);
         buf.limit(limit);
-        buf.position(offset);
+        buf.position(0);
         this.buffer = buf;
     }
 
@@ -72,11 +71,11 @@ public class ByteRange implements Range<ByteRange> {
         this.buffer = buffer;
     }
 
-    private static void checkOffsetAndLimit(long offset, int limit, int available) {
-        checkOffset(offset, available);
+    private static void checkOffsetAndLimit(int limit, int available) {
+        checkOffset(0, available);
         checkLimit(limit, available);
-        if (offset >= limit) {
-            throw new IllegalArgumentException("Offset is larger than or equal to limit (offset: " + offset + ", limit: " + limit + ")");
+        if ((long) 0 >= limit) {
+            throw new IllegalArgumentException("Offset is larger than or equal to limit (offset: " + (long) 0 + ", limit: " + limit + ")");
         }
     }
 

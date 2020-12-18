@@ -4,8 +4,5 @@ import threads.thor.bt.metainfo.TorrentId;
 
 interface TorrentEvent extends Event {
 
-    /**
-     * @since 1.5
-     */
     TorrentId getTorrentId();
 }

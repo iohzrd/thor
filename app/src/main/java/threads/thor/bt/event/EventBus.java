@@ -10,7 +10,6 @@ import java.util.function.Consumer;
 
 import threads.LogUtils;
 import threads.thor.bt.data.Bitfield;
-import threads.thor.bt.metainfo.Torrent;
 import threads.thor.bt.metainfo.TorrentId;
 import threads.thor.bt.net.ConnectionKey;
 import threads.thor.bt.net.Peer;
@@ -75,11 +74,11 @@ public class EventBus implements EventSink, EventSource {
     }
 
     @Override
-    public void fireMetadataAvailable(TorrentId torrentId, Torrent torrent) {
+    public void fireMetadataAvailable(TorrentId torrentId) {
         long timestamp = System.currentTimeMillis();
         if (hasListeners(MetadataAvailableEvent.class)) {
             long id = nextId();
-            fireEvent(new MetadataAvailableEvent(id, timestamp, torrentId, torrent));
+            fireEvent(new MetadataAvailableEvent(id, timestamp, torrentId));
         }
     }
 
@@ -128,9 +127,8 @@ public class EventBus implements EventSink, EventSource {
     }
 
     @Override
-    public EventSource onPeerDiscovered(Consumer<PeerDiscoveredEvent> listener) {
+    public void onPeerDiscovered(Consumer<PeerDiscoveredEvent> listener) {
         addListener(PeerDiscoveredEvent.class, listener);
-        return this;
     }
 
     @Override
@@ -140,9 +138,8 @@ public class EventBus implements EventSink, EventSource {
     }
 
     @Override
-    public EventSource onPeerDisconnected(Consumer<PeerDisconnectedEvent> listener) {
+    public void onPeerDisconnected(Consumer<PeerDisconnectedEvent> listener) {
         addListener(PeerDisconnectedEvent.class, listener);
-        return this;
     }
 
     @Override
@@ -152,9 +149,8 @@ public class EventBus implements EventSink, EventSource {
     }
 
     @Override
-    public EventSource onTorrentStarted(Consumer<TorrentStartedEvent> listener) {
+    public void onTorrentStarted(Consumer<TorrentStartedEvent> listener) {
         addListener(TorrentStartedEvent.class, listener);
-        return this;
     }
 
     @Override
@@ -164,9 +160,8 @@ public class EventBus implements EventSink, EventSource {
     }
 
     @Override
-    public EventSource onTorrentStopped(Consumer<TorrentStoppedEvent> listener) {
+    public void onTorrentStopped(Consumer<TorrentStoppedEvent> listener) {
         addListener(TorrentStoppedEvent.class, listener);
-        return this;
     }
 
     @Override
@@ -177,12 +172,11 @@ public class EventBus implements EventSink, EventSource {
 
 
     public boolean removePieceVerified(Consumer<PieceVerifiedEvent> listener) {
-        return removeListener(PieceVerifiedEvent.class, listener);
+        return removeListener(listener);
     }
 
-    private <E extends BaseEvent> boolean removeListener(@NonNull Class<E> eventType,
-                                                         @NonNull Consumer<E> listener) {
-        Collection<Consumer<? extends BaseEvent>> listeners = this.listeners.get(eventType);
+    private <E extends BaseEvent> boolean removeListener(@NonNull Consumer<E> listener) {
+        Collection<Consumer<? extends BaseEvent>> listeners = this.listeners.get(PieceVerifiedEvent.class);
         if (listeners != null) {
             return listeners.remove(listener);
         }

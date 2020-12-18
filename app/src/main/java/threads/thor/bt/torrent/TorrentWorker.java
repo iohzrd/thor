@@ -17,8 +17,8 @@ import threads.thor.bt.data.Bitfield;
 import threads.thor.bt.event.EventSource;
 import threads.thor.bt.metainfo.TorrentId;
 import threads.thor.bt.net.ConnectionKey;
-import threads.thor.bt.net.IConnectionSource;
-import threads.thor.bt.net.IMessageDispatcher;
+import threads.thor.bt.net.ConnectionSource;
+import threads.thor.bt.net.MessageDispatcher;
 import threads.thor.bt.net.Peer;
 import threads.thor.bt.protocol.Have;
 import threads.thor.bt.protocol.Interested;
@@ -29,13 +29,13 @@ public class TorrentWorker {
 
     private static final Duration UPDATE_ASSIGNMENTS_OPTIONAL_INTERVAL = Duration.ofSeconds(1);
     private static final Duration UPDATE_ASSIGNMENTS_MANDATORY_INTERVAL = Duration.ofSeconds(5);
-    private final IConnectionSource connectionSource;
+    private final ConnectionSource connectionSource;
     private final int MAX_CONCURRENT_ACTIVE_CONNECTIONS;
     private final int MAX_TOTAL_CONNECTIONS;
     private final TorrentId torrentId;
-    private final IMessageDispatcher dispatcher;
+    private final MessageDispatcher dispatcher;
     private final Config config;
-    private final IPeerWorkerFactory peerWorkerFactory;
+    private final PeerWorkerFactory peerWorkerFactory;
     private final ConcurrentMap<ConnectionKey, PieceAnnouncingPeerWorker> peerMap;
     private final Map<ConnectionKey, Long> timeoutedPeers;
     private final Queue<ConnectionKey> disconnectedPeers;
@@ -46,9 +46,9 @@ public class TorrentWorker {
     private long lastUpdatedAssignments;
 
     public TorrentWorker(TorrentId torrentId,
-                         IMessageDispatcher dispatcher,
-                         IConnectionSource connectionSource,
-                         IPeerWorkerFactory peerWorkerFactory,
+                         MessageDispatcher dispatcher,
+                         ConnectionSource connectionSource,
+                         PeerWorkerFactory peerWorkerFactory,
                          Supplier<Bitfield> bitfieldSupplier,
                          Supplier<Assignments> assignmentsSupplier,
                          Supplier<PieceStatistics> statisticsSupplier,

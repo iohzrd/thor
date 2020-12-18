@@ -1,7 +1,6 @@
 package threads.thor.bt.net;
 
 import java.util.Objects;
-import java.util.Optional;
 
 public class ConnectionResult {
 
@@ -59,21 +58,4 @@ public class ConnectionResult {
         return connection;
     }
 
-    /**
-     * @return Optional failure cause, if {@link #isSuccess()} is false
-     * @throws IllegalStateException if {@link #isSuccess()} is true
-     */
-    public Optional<Throwable> getError() {
-        if (isSuccess()) {
-            throw new IllegalStateException("Attempt to retrieve error from successful result");
-        }
-        return Optional.ofNullable(error);
-    }
-
-    /**
-     * @return Optional message
-     */
-    public Optional<String> getMessage() {
-        return Optional.ofNullable(message);
-    }
 }

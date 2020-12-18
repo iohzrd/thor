@@ -25,11 +25,6 @@ public final class TorrentDescriptor {
         active = false;
     }
 
-    public void complete() {
-        // do nothing
-        // TODO: should this be deprecated in TorrentDescriptor interface?
-    }
-
 
     public DataDescriptor getDataDescriptor() {
         return dataDescriptor;
@@ -38,4 +33,5 @@ public final class TorrentDescriptor {
     void setDataDescriptor(DataDescriptor dataDescriptor) {
         this.dataDescriptor = dataDescriptor;
     }
+
 }

@@ -10,9 +10,4 @@ public class ProcessMagnetTorrentStage extends ProcessTorrentStage<MagnetContext
                                      EventSink eventSink) {
         super(next, torrentRegistry, eventSink);
     }
-
-    @Override
-    protected void onStarted(MagnetContext context) {
-
-    }
 }

@@ -25,7 +25,7 @@ public class BufferManager implements IBufferManager {
     @Override
     @SuppressWarnings("unchecked")
     public BorrowedBuffer<ByteBuffer> borrowByteBuffer() {
-        Deque<SoftReference<?>> deque = getReleasedBuffersDeque(ByteBuffer.class);
+        Deque<SoftReference<?>> deque = getReleasedBuffersDeque();
         SoftReference<ByteBuffer> ref;
         ByteBuffer buffer = null;
         do {
@@ -45,8 +45,8 @@ public class BufferManager implements IBufferManager {
         return new DefaultBorrowedBuffer<>(buffer);
     }
 
-    private <T extends Buffer> Deque<SoftReference<?>> getReleasedBuffersDeque(Class<T> bufferType) {
-        return releasedBuffers.computeIfAbsent(bufferType, it -> new LinkedBlockingDeque<>());
+    private <T extends Buffer> Deque<SoftReference<?>> getReleasedBuffersDeque() {
+        return releasedBuffers.computeIfAbsent(ByteBuffer.class, it -> new LinkedBlockingDeque<>());
     }
 
     private class DefaultBorrowedBuffer<T extends Buffer> implements BorrowedBuffer<T> {
@@ -80,7 +80,7 @@ public class BufferManager implements IBufferManager {
                     throw new IllegalStateException("Buffer is locked and can't be released");
                 }*/
                 if (buffer != null) {
-                    getReleasedBuffersDeque(ByteBuffer.class).add(new SoftReference<>(buffer));
+                    getReleasedBuffersDeque().add(new SoftReference<>(buffer));
                     buffer = null;
                 }
             } finally {

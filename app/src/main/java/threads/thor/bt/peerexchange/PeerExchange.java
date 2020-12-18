@@ -172,16 +172,14 @@ class PeerExchange extends ExtendedMessage {
             dropped = new HashSet<>();
         }
 
-        public Builder added(Peer peer) {
+        public void added(Peer peer) {
             added.add(peer);
             dropped.remove(peer);
-            return this;
         }
 
-        public Builder dropped(Peer peer) {
+        public void dropped(Peer peer) {
             dropped.add(peer);
             added.remove(peer);
-            return this;
         }
 
         public PeerExchange build() {

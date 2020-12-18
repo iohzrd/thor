@@ -27,17 +27,6 @@ public class Functional {
     }
 
 
-    public static <R, T> Function<T, R> unchecked(ThrowingFunction<R, T, ?> f) {
-        return (arg) -> {
-            try {
-                return f.apply(arg);
-            } catch (Throwable e) {
-                throwAsUnchecked(e);
-                return null;
-            }
-        };
-    }
-
     public static <IN, OUT, EX extends Throwable> Function<IN, OUT> castOrThrow(Class<OUT> type, Function<IN, EX> ex) {
         return (in) -> {
             if (!type.isInstance(in))
@@ -66,10 +55,6 @@ public class Functional {
         T get() throws E;
     }
 
-    @FunctionalInterface
-    interface ThrowingFunction<R, T, E extends Throwable> {
-        R apply(T arg) throws E;
-    }
 
     private static class Thrower {
 

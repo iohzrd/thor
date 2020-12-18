@@ -101,7 +101,7 @@ public final class ExtendedHandshake extends ExtendedMessage {
             data = new HashMap<>();
         }
 
-        Builder property(String name, BEObject<?> value) {
+        void property(String name, BEObject<?> value) {
             Objects.requireNonNull(name);
             if (MESSAGE_TYPE_MAPPING_KEY.equals(name)) {
                 throw new IllegalArgumentException("Property name is reserved: " + MESSAGE_TYPE_MAPPING_KEY);
@@ -109,7 +109,6 @@ public final class ExtendedHandshake extends ExtendedMessage {
 
             Objects.requireNonNull(value);
             data.put(name, value);
-            return this;
         }
 
         /**
@@ -119,7 +118,7 @@ public final class ExtendedHandshake extends ExtendedMessage {
          * @param typeId   Numeric message type ID
          * @since 1.0
          */
-        public Builder addMessageType(String typeName, Integer typeId) {
+        public void addMessageType(String typeName, Integer typeId) {
 
             if (messageTypeMap == null) {
                 messageTypeMap = new HashMap<>();
@@ -130,7 +129,6 @@ public final class ExtendedHandshake extends ExtendedMessage {
             }
 
             messageTypeMap.put(typeName, new BEInteger(null, BigInteger.valueOf((long) typeId)));
-            return this;
         }
 
         /**

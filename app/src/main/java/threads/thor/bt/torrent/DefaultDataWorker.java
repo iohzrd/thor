@@ -60,21 +60,21 @@ public class DefaultDataWorker implements DataWorker {
         DataDescriptor data = getDataDescriptor(torrentId);
         if (!data.getBitfield().isVerified(pieceIndex)) {
 
-            return CompletableFuture.completedFuture(BlockRead.rejected(peer, pieceIndex, offset, length));
+            return CompletableFuture.completedFuture(BlockRead.rejected(pieceIndex, offset, length));
         } else if (!tryIncrementTaskCount()) {
 
-            return CompletableFuture.completedFuture(BlockRead.exceptional(peer,
+            return CompletableFuture.completedFuture(BlockRead.exceptional(
                     QUEUE_FULL_EXCEPTION, pieceIndex, offset, length));
         }
 
         return CompletableFuture.supplyAsync(() -> {
             try {
                 BlockReader blockReader = blockCache.get(torrentId, pieceIndex, offset, length);
-                return BlockRead.ready(peer, pieceIndex, offset, length, blockReader);
+                return BlockRead.ready(pieceIndex, offset, length, blockReader);
             } catch (Throwable e) {
                 LogUtils.error(TAG, "Failed to perform request to read block:" +
                         " piece index {" + pieceIndex + "}, offset {" + offset + "}, length {" + length + "}, peer {" + peer + "}", e);
-                return BlockRead.exceptional(peer, e, pieceIndex, offset, length);
+                return BlockRead.exceptional(e, pieceIndex, offset, length);
             } finally {
                 pendingTasksCount.decrementAndGet();
             }
@@ -86,8 +86,8 @@ public class DefaultDataWorker implements DataWorker {
         if (!tryIncrementTaskCount()) {
 
             buffer.dispose();
-            return CompletableFuture.completedFuture(BlockWrite.exceptional(peer,
-                    QUEUE_FULL_EXCEPTION, pieceIndex, offset, buffer.length()));
+            return CompletableFuture.completedFuture(BlockWrite.exceptional(
+                    QUEUE_FULL_EXCEPTION));
         }
 
         return CompletableFuture.supplyAsync(() -> {
@@ -97,7 +97,7 @@ public class DefaultDataWorker implements DataWorker {
 
                 if (chunk.isComplete()) {
 
-                    return BlockWrite.rejected(peer, pieceIndex, offset, buffer.length());
+                    return BlockWrite.rejected();
                 }
 
                 chunk.getData().getSubrange(offset).putBytes(buffer.buffer());
@@ -117,9 +117,9 @@ public class DefaultDataWorker implements DataWorker {
                     }, executor);
                 }
 
-                return BlockWrite.complete(peer, pieceIndex, offset, buffer.length(), verificationFuture);
+                return BlockWrite.complete(verificationFuture);
             } catch (Throwable e) {
-                return BlockWrite.exceptional(peer, e, pieceIndex, offset, buffer.length());
+                return BlockWrite.exceptional(e);
             } finally {
                 pendingTasksCount.decrementAndGet();
                 buffer.dispose();

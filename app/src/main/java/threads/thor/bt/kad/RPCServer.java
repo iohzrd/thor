@@ -91,7 +91,6 @@ public class RPCServer {
     private Instant startTime;
     private InetSocketAddress consensusExternalAddress;
     private SpamThrottle requestThrottle;
-    private final Runnable drainTrigger = SerializedTaskExecutor.onceMore(this::drainQueue);
     private volatile boolean isReachable = false;
     private final RPCCallListener rpcListener = new RPCCallListener() {
 
@@ -115,6 +114,7 @@ public class RPCServer {
                 unverifiedLossrate.updateAverage(0.0);
         }
     };
+    private final Runnable drainTrigger = SerializedTaskExecutor.onceMore(this::drainQueue);
     private int numReceivesAtLastCheck = 0;
     private long timeOfLastReceiveCountChange = 0;
 
@@ -718,10 +718,6 @@ public class RPCServer {
             }
 
 
-        }
-
-        @Override
-        public void registrationEvent(NIOConnectionManager manager, SelectionKey key) {
         }
 
         @Override

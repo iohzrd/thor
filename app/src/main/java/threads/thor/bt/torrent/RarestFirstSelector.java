@@ -3,7 +3,6 @@ package threads.thor.bt.torrent;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
 import java.util.PrimitiveIterator;
 import java.util.PriorityQueue;
 import java.util.Random;
@@ -27,21 +26,10 @@ import java.util.Random;
 public class RarestFirstSelector extends BaseStreamSelector {
 
     private static final Comparator<Long> comparator = new PackedIntComparator();
-    private final Optional<Random> random;
+    private final Random random;
 
-    private RarestFirstSelector(boolean randomized) {
-        this.random = randomized ? Optional.of(new Random(System.currentTimeMillis())) : Optional.empty();
-    }
-
-    /**
-     * Regular rarest-first selector.
-     * Selects whichever pieces that are the least available
-     * (strictly following the order of increasing availability).
-     *
-     * @since 1.1
-     */
-    public static RarestFirstSelector rarest() {
-        return new RarestFirstSelector(false);
+    private RarestFirstSelector() {
+        this.random = new Random(System.currentTimeMillis());
     }
 
     /**
@@ -53,7 +41,7 @@ public class RarestFirstSelector extends BaseStreamSelector {
      * @since 1.1
      */
     public static RarestFirstSelector randomizedRarest() {
-        return new RarestFirstSelector(true);
+        return new RarestFirstSelector();
     }
 
     private static long zip(int pieceIndex, int count) {
@@ -71,8 +59,8 @@ public class RarestFirstSelector extends BaseStreamSelector {
     @Override
     protected PrimitiveIterator.OfInt createIterator(PieceStatistics pieceStatistics) {
         List<Long> queue = orderedQueue(pieceStatistics);
-        return random.isPresent() ?
-                new RandomizedIteratorOfInt(queue, random.get()) : new SequentialIteratorOfInt(queue);
+        return random != null ?
+                new RandomizedIteratorOfInt(queue, random) : new SequentialIteratorOfInt(queue);
     }
 
     // TODO: this is very inefficient when only a few pieces are needed,
