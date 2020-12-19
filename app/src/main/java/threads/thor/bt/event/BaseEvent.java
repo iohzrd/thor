@@ -2,7 +2,7 @@ package threads.thor.bt.event;
 
 import androidx.annotation.NonNull;
 
-public abstract class BaseEvent implements Comparable<BaseEvent>, Event {
+public abstract class BaseEvent implements Comparable<BaseEvent> {
 
     private final long id;
     private final Object objectId;
@@ -20,16 +20,6 @@ public abstract class BaseEvent implements Comparable<BaseEvent>, Event {
         this.id = id;
         this.objectId = id;
         this.timestamp = timestamp;
-    }
-
-    @Override
-    public Object getId() {
-        return objectId;
-    }
-
-    @Override
-    public long getTimestamp() {
-        return timestamp;
     }
 
     @Override

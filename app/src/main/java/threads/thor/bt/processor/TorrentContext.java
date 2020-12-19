@@ -11,7 +11,7 @@ import threads.thor.bt.torrent.PieceSelector;
 import threads.thor.bt.torrent.PieceStatistics;
 import threads.thor.bt.torrent.TorrentSessionState;
 
-public abstract class TorrentContext implements ProcessingContext {
+public abstract class TorrentContext {
 
     private final PieceSelector pieceSelector;
     private final Storage storage;
@@ -41,7 +41,6 @@ public abstract class TorrentContext implements ProcessingContext {
     }
 
 
-    @Override
     @Nullable
     public Torrent getTorrent() {
         return torrent;
@@ -51,7 +50,7 @@ public abstract class TorrentContext implements ProcessingContext {
         this.torrent = torrent;
     }
 
-    @Override
+    @Nullable
     public TorrentSessionState getState() {
         return state;
     }

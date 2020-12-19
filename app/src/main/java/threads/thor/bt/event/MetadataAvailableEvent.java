@@ -21,7 +21,6 @@ public class MetadataAvailableEvent extends BaseEvent implements TorrentEvent {
     @NonNull
     @Override
     public String toString() {
-        return "[" + this.getClass().getSimpleName() + "] id {" + getId() + "}, timestamp {" + getTimestamp() +
-                "}, threads.torrent {" + torrentId + "}";
+        return "[" + this.getClass().getSimpleName() + "]  threads.torrent {" + torrentId + "}";
     }
 }

@@ -20,7 +20,7 @@ import threads.thor.bt.torrent.TorrentRegistry;
 import threads.thor.bt.torrent.TorrentSessionState;
 import threads.thor.bt.torrent.TorrentWorker;
 
-public class CreateSessionStage<C extends TorrentContext> extends TerminateOnErrorProcessingStage<C> {
+public class CreateSessionStage extends TerminateOnErrorProcessingStage {
 
     private final TorrentRegistry torrentRegistry;
     private final EventSource eventSource;
@@ -29,7 +29,7 @@ public class CreateSessionStage<C extends TorrentContext> extends TerminateOnErr
     private final Set<IAgent> messagingAgents;
     private final Config config;
 
-    public CreateSessionStage(ProcessingStage<C> next,
+    public CreateSessionStage(ProcessingStage next,
                               TorrentRegistry torrentRegistry,
                               EventSource eventSource,
                               ConnectionSource connectionSource,
@@ -46,7 +46,7 @@ public class CreateSessionStage<C extends TorrentContext> extends TerminateOnErr
     }
 
     @Override
-    protected void doExecute(C context) {
+    protected void doExecute(MagnetContext context) {
         TorrentId torrentId = context.getTorrentId();
         TorrentDescriptor descriptor = torrentRegistry.register(torrentId);
 

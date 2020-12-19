@@ -7,19 +7,19 @@ import threads.thor.bt.Runtime;
 public class TorrentProcessorFactory {
 
 
-    public static ChainProcessor<MagnetContext> createMagnetProcessor(@NonNull Runtime runtime) {
+    public static ChainProcessor createMagnetProcessor(@NonNull Runtime runtime) {
 
 
-        ProcessingStage<MagnetContext> stage5 = new SeedStage<>(null,
+        ProcessingStage stage5 = new SeedStage(null,
                 runtime.mTorrentRegistry);
 
-        ProcessingStage<MagnetContext> stage4 = new ProcessMagnetTorrentStage(stage5,
+        ProcessingStage stage4 = new ProcessMagnetTorrentStage(stage5,
                 runtime.mTorrentRegistry, runtime.getEventBus());
 
-        ProcessingStage<MagnetContext> stage3 = new ChooseFilesStage<>(stage4,
+        ProcessingStage stage3 = new ChooseFilesStage(stage4,
                 runtime.mTorrentRegistry, runtime.getConfig());
 
-        ProcessingStage<MagnetContext> stage2 = new InitializeMagnetTorrentProcessingStage(stage3,
+        ProcessingStage stage2 = new InitializeMagnetTorrentProcessingStage(stage3,
                 runtime.mConnectionPool,
                 runtime.mTorrentRegistry,
                 runtime.mDataWorker,
@@ -28,7 +28,7 @@ public class TorrentProcessorFactory {
                 runtime.getConfig());
 
 
-        ProcessingStage<MagnetContext> stage1 = new FetchMetadataStage(stage2,
+        ProcessingStage stage1 = new FetchMetadataStage(stage2,
                 runtime.mTorrentRegistry,
                 runtime.mPeerRegistry,
                 runtime.getEventBus(),
@@ -36,7 +36,7 @@ public class TorrentProcessorFactory {
                 runtime.getContext());
 
 
-        ProcessingStage<MagnetContext> stage0 = new CreateSessionStage<>(stage1,
+        ProcessingStage stage0 = new CreateSessionStage(stage1,
                 runtime.mTorrentRegistry,
                 runtime.getEventBus(),
                 runtime.mConnectionSource,
@@ -44,8 +44,8 @@ public class TorrentProcessorFactory {
                 runtime.mMessagingAgents,
                 runtime.getConfig());
 
-        return new ChainProcessor<>(stage0, runtime.getExecutor(),
-                new TorrentContextFinalizer<>(runtime.mTorrentRegistry, runtime.getEventBus()));
+        return new ChainProcessor(stage0, runtime.getExecutor(),
+                new TorrentContextFinalizer(runtime.mTorrentRegistry, runtime.getEventBus()));
     }
 
 

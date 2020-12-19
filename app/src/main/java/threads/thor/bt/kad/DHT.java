@@ -2,9 +2,6 @@ package threads.thor.bt.kad;
 
 import androidx.annotation.NonNull;
 
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.UncheckedIOException;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -18,7 +15,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -387,7 +383,7 @@ public final class DHT {
         SampleResponse rsp = new SampleResponse(r.getMTID());
         rsp.setSamples(db.samples());
         rsp.setDestination(r.getOrigin());
-        rsp.setNum(db.getStats().getKeyCount());
+        rsp.setNum(db.getStats());
         rsp.setInterval((int) TimeUnit.MILLISECONDS.toSeconds(DHTConstants.CHECK_FOR_EXPIRED_ENTRIES));
         populateResponse(r.getTarget(), rsp, r.doesWant4() ? DHTConstants.MAX_ENTRIES_PER_BUCKET : 0, r.doesWant6() ? DHTConstants.MAX_ENTRIES_PER_BUCKET : 0);
 
@@ -782,48 +778,6 @@ public final class DHT {
         origMsg.getServer().sendMessage(errMsg);
     }
 
-
-    public void printDiagnostics(PrintWriter w) {
-
-        for (ScheduledFuture<?> f : scheduledActions)
-            if (f.isDone()) { // check for exceptions
-                try {
-                    f.get();
-                } catch (ExecutionException | InterruptedException e) {
-                    e.printStackTrace(w);
-                }
-
-            }
-
-
-        w.println("==========================");
-        w.println("DHT Diagnostics. Type " + type);
-        w.println("# of active servers / all servers: " + serverManager.getActiveServerCount() + '/' + serverManager.getServerCount());
-
-
-        w.append("-----------------------\n");
-        w.append("Routing table\n");
-        try {
-            node.buildDiagnistics(w);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-        w.append('\n');
-        w.append("-----------------------\n");
-        w.append("RPC Servers\n");
-        for (RPCServer srv : serverManager.getAllServers())
-            w.append(srv.toString());
-        w.append("-----------------------\n");
-        w.append("Blacklist\n");
-        w.append(mismatchDetector.toString()).append(String.valueOf('\n'));
-        w.append("-----------------------\n");
-        w.append("Lookup Cache\n");
-        cache.printDiagnostics(w);
-        w.append("-----------------------\n");
-        w.append("Tasks\n");
-        w.append(tman.toString());
-        w.append("\n\n\n");
-    }
 
     public enum DHTtype {
         IPV4_DHT("IPv4", 20 + 4 + 2, 4 + 2, Inet4Address.class, 1450, StandardProtocolFamily.INET),

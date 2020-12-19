@@ -1,10 +1,10 @@
 package threads.thor.bt.processor;
 
-public interface ProcessingStage<C extends ProcessingContext> {
+public interface ProcessingStage {
 
 
     ProcessingEvent after();
 
 
-    ProcessingStage<C> execute(C context);
+    ProcessingStage execute(MagnetContext context);
 }

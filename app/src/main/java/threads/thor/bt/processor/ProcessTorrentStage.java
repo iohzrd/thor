@@ -5,13 +5,13 @@ import threads.thor.bt.metainfo.TorrentId;
 import threads.thor.bt.torrent.TorrentDescriptor;
 import threads.thor.bt.torrent.TorrentRegistry;
 
-public class ProcessTorrentStage<C extends TorrentContext> extends TerminateOnErrorProcessingStage<C> {
+public class ProcessTorrentStage extends TerminateOnErrorProcessingStage {
 
     private final TorrentRegistry torrentRegistry;
 
     private final EventSink eventSink;
 
-    public ProcessTorrentStage(ProcessingStage<C> next,
+    public ProcessTorrentStage(ProcessingStage next,
                                TorrentRegistry torrentRegistry,
                                EventSink eventSink) {
         super(next);
@@ -20,7 +20,7 @@ public class ProcessTorrentStage<C extends TorrentContext> extends TerminateOnEr
     }
 
     @Override
-    protected void doExecute(C context) {
+    protected void doExecute(MagnetContext context) {
         TorrentId torrentId = context.getTorrentId();
         TorrentDescriptor descriptor = getDescriptor(torrentId);
 

@@ -1,5 +1,7 @@
 package threads.thor.bt.processor;
 
+import androidx.annotation.NonNull;
+
 import threads.thor.bt.data.Storage;
 import threads.thor.bt.magnet.MagnetUri;
 import threads.thor.bt.metainfo.TorrentId;
@@ -20,7 +22,7 @@ public class MagnetContext extends TorrentContext {
         return magnetUri;
     }
 
-    @Override
+    @NonNull
     public TorrentId getTorrentId() {
         return magnetUri.getTorrentId();
     }

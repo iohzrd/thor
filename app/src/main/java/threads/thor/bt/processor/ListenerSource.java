@@ -8,9 +8,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.BiFunction;
 
-public class ListenerSource<C extends ProcessingContext> {
+public class ListenerSource {
 
-    private final Map<ProcessingEvent, Collection<BiFunction<C, ProcessingStage<C>, ProcessingStage<C>>>> listeners;
+    private final Map<ProcessingEvent, Collection<BiFunction<MagnetContext, ProcessingStage, ProcessingStage>>> listeners;
 
     /**
      * Create an instance of listener source for a particular type of processing context
@@ -33,7 +33,7 @@ public class ListenerSource<C extends ProcessingContext> {
      * @param listener Routing function
      * @since 1.5
      */
-    public void addListener(ProcessingEvent event, BiFunction<C, ProcessingStage<C>, ProcessingStage<C>> listener) {
+    public void addListener(ProcessingEvent event, BiFunction<MagnetContext, ProcessingStage, ProcessingStage> listener) {
         listeners.computeIfAbsent(event, it -> new ArrayList<>()).add(listener);
     }
 
@@ -42,7 +42,7 @@ public class ListenerSource<C extends ProcessingContext> {
      * @return Collection of listeners, that are interested in being notified of a given event
      * @since 1.5
      */
-    public Collection<BiFunction<C, ProcessingStage<C>, ProcessingStage<C>>> getListeners(ProcessingEvent event) {
+    public Collection<BiFunction<MagnetContext, ProcessingStage, ProcessingStage>> getListeners(ProcessingEvent event) {
         Objects.requireNonNull(event);
         return listeners.getOrDefault(event, Collections.emptyList());
     }

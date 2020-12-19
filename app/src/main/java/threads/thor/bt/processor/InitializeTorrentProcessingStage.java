@@ -19,7 +19,7 @@ import threads.thor.bt.torrent.RequestProducer;
 import threads.thor.bt.torrent.TorrentDescriptor;
 import threads.thor.bt.torrent.TorrentRegistry;
 
-public class InitializeTorrentProcessingStage<C extends TorrentContext> extends TerminateOnErrorProcessingStage<C> {
+public class InitializeTorrentProcessingStage extends TerminateOnErrorProcessingStage {
 
     private final PeerConnectionPool connectionPool;
     private final TorrentRegistry torrentRegistry;
@@ -28,7 +28,7 @@ public class InitializeTorrentProcessingStage<C extends TorrentContext> extends 
     private final EventSink eventSink;
     private final Config config;
 
-    public InitializeTorrentProcessingStage(ProcessingStage<C> next,
+    public InitializeTorrentProcessingStage(ProcessingStage next,
                                             PeerConnectionPool connectionPool,
                                             TorrentRegistry torrentRegistry,
                                             DataWorker dataWorker,
@@ -45,7 +45,7 @@ public class InitializeTorrentProcessingStage<C extends TorrentContext> extends 
     }
 
     @Override
-    protected void doExecute(C context) {
+    protected void doExecute(MagnetContext context) {
         Torrent torrent = context.getTorrent();
         TorrentDescriptor descriptor = torrentRegistry.register(torrent, context.getStorage());
 

@@ -1,6 +1,6 @@
 package threads.thor.bt.processor;
 
-public interface ContextFinalizer<C extends ProcessingContext> {
+public interface ContextFinalizer {
 
-    void finalizeContext(C context);
+    void finalizeContext(MagnetContext context);
 }

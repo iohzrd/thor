@@ -257,8 +257,8 @@ public class Database {
         return toCheck.equals(new ByteWrapper(rawToken));
     }
 
-    DatabaseStats getStats() {
-        return items::size;
+    int getStats() {
+        return items.size();
     }
 
     static class PeersSeeds {
@@ -340,11 +340,11 @@ public class Database {
 
                 // bloom filter supports adding, only deletions need a rebuild.
                 BloomFilterBEP33 currentFilter = filter;
-                if (currentFilter != null)
+                if (currentFilter != null) {
                     synchronized (currentFilter) {
                         currentFilter.insert(toAdd.getInetAddress());
                     }
-
+                }
 
             }
         }

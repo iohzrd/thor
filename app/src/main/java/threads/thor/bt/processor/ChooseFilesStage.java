@@ -18,11 +18,11 @@ import threads.thor.bt.torrent.TorrentDescriptor;
 import threads.thor.bt.torrent.TorrentRegistry;
 import threads.thor.bt.torrent.ValidatingSelector;
 
-public class ChooseFilesStage<C extends TorrentContext> extends TerminateOnErrorProcessingStage<C> {
+public class ChooseFilesStage extends TerminateOnErrorProcessingStage {
     private final TorrentRegistry torrentRegistry;
     private final Config config;
 
-    public ChooseFilesStage(ProcessingStage<C> next,
+    public ChooseFilesStage(ProcessingStage next,
                             TorrentRegistry torrentRegistry,
                             Config config) {
         super(next);
@@ -31,7 +31,7 @@ public class ChooseFilesStage<C extends TorrentContext> extends TerminateOnError
     }
 
     @Override
-    protected void doExecute(C context) {
+    protected void doExecute(MagnetContext context) {
         Torrent torrent = context.getTorrent();
         TorrentDescriptor descriptor = torrentRegistry.getDescriptor(torrent.getTorrentId()).get();
 

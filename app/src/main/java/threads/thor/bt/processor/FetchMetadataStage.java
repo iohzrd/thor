@@ -15,7 +15,7 @@ import threads.thor.bt.torrent.TorrentDescriptor;
 import threads.thor.bt.torrent.TorrentRegistry;
 
 
-public class FetchMetadataStage extends TerminateOnErrorProcessingStage<MagnetContext> {
+public class FetchMetadataStage extends TerminateOnErrorProcessingStage {
 
     private final MetadataService metadataService;
     private final TorrentRegistry torrentRegistry;
@@ -23,7 +23,7 @@ public class FetchMetadataStage extends TerminateOnErrorProcessingStage<MagnetCo
     private final EventSink eventSink;
     private final Config config;
 
-    public FetchMetadataStage(ProcessingStage<MagnetContext> next,
+    public FetchMetadataStage(ProcessingStage next,
                               TorrentRegistry torrentRegistry,
                               PeerRegistry peerRegistry,
                               EventSink eventSink,

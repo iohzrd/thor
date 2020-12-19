@@ -31,7 +31,6 @@ public class PeerDisconnectedEvent extends BaseEvent implements TorrentEvent {
     @NonNull
     @Override
     public String toString() {
-        return "[" + this.getClass().getSimpleName() + "] id {" + getId() + "}, timestamp {" + getTimestamp() +
-                "}, connection key {" + connectionKey + "}";
+        return "[" + this.getClass().getSimpleName() + "]  connection key {" + connectionKey + "}";
     }
 }

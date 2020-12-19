@@ -1,6 +1,5 @@
 package threads.thor.bt.kad;
 
-import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -236,26 +235,6 @@ public class AnnounceNodeCache {
                 next = entry.getValue();
             }
         }
-
-    }
-
-    void printDiagnostics(PrintWriter b) {
-        b.append("anchors (").append(String.valueOf(anchors.size())).append("):\n");
-        // no need to print out all anchors for now
-        //for(CacheAnchorPoint a : anchors.values())
-        //	b.println(a);
-
-        int bucketCount = 0;
-        int entryCount = 0;
-        for (CacheBucket buck : cache.values()) {
-            bucketCount++;
-            entryCount += buck.entries.size();
-        }
-
-        b.println("buckets (" + bucketCount + ") / entries (" + entryCount + "):\n");
-
-        for (CacheBucket buck : cache.values())
-            b.println(buck.prefix + " entries: " + buck.entries.size());
 
     }
 

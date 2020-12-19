@@ -4,7 +4,7 @@ import threads.thor.bt.event.EventSink;
 import threads.thor.bt.torrent.TorrentDescriptor;
 import threads.thor.bt.torrent.TorrentRegistry;
 
-public class TorrentContextFinalizer<C extends TorrentContext> implements ContextFinalizer<C> {
+public class TorrentContextFinalizer implements ContextFinalizer {
 
     private final TorrentRegistry torrentRegistry;
     private final EventSink eventSink;
@@ -15,7 +15,7 @@ public class TorrentContextFinalizer<C extends TorrentContext> implements Contex
     }
 
     @Override
-    public void finalizeContext(C context) {
+    public void finalizeContext(MagnetContext context) {
         torrentRegistry.getDescriptor(context.getTorrentId()).ifPresent(TorrentDescriptor::stop);
         eventSink.fireTorrentStopped(context.getTorrentId());
     }

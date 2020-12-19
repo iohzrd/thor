@@ -6,16 +6,16 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
+import threads.thor.bt.processor.ChainProcessor;
 import threads.thor.bt.processor.ListenerSource;
 import threads.thor.bt.processor.MagnetContext;
-import threads.thor.bt.processor.Processor;
 import threads.thor.bt.torrent.TorrentSessionState;
 
 public class Client {
 
     private final Runtime runtime;
-    private final Processor<MagnetContext> processor;
-    private final ListenerSource<MagnetContext> listenerSource;
+    private final ChainProcessor processor;
+    private final ListenerSource listenerSource;
     private final MagnetContext context;
 
     private volatile CompletableFuture<?> futureOptional;
@@ -24,9 +24,9 @@ public class Client {
     private volatile ScheduledExecutorService listenerExecutor;
 
     Client(Runtime runtime,
-           Processor<MagnetContext> processor,
+           ChainProcessor processor,
            MagnetContext context,
-           ListenerSource<MagnetContext> listenerSource) {
+           ListenerSource listenerSource) {
         this.runtime = runtime;
         this.processor = processor;
         this.context = context;

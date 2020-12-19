@@ -4,18 +4,18 @@ import threads.thor.bt.metainfo.TorrentId;
 import threads.thor.bt.torrent.TorrentDescriptor;
 import threads.thor.bt.torrent.TorrentRegistry;
 
-public class SeedStage<C extends TorrentContext> extends TerminateOnErrorProcessingStage<C> {
+public class SeedStage extends TerminateOnErrorProcessingStage {
 
     private final TorrentRegistry torrentRegistry;
 
-    public SeedStage(ProcessingStage<C> next,
+    public SeedStage(ProcessingStage next,
                      TorrentRegistry torrentRegistry) {
         super(next);
         this.torrentRegistry = torrentRegistry;
     }
 
     @Override
-    protected void doExecute(C context) {
+    protected void doExecute(MagnetContext context) {
         TorrentDescriptor descriptor = getDescriptor(context.getTorrentId());
 
         while (descriptor.isActive()) {

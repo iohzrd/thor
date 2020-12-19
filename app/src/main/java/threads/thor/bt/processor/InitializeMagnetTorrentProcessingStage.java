@@ -16,11 +16,11 @@ import threads.thor.bt.torrent.DataWorker;
 import threads.thor.bt.torrent.PieceStatistics;
 import threads.thor.bt.torrent.TorrentRegistry;
 
-public class InitializeMagnetTorrentProcessingStage extends InitializeTorrentProcessingStage<MagnetContext> {
+public class InitializeMagnetTorrentProcessingStage extends InitializeTorrentProcessingStage {
 
     private final EventSink eventSink;
 
-    public InitializeMagnetTorrentProcessingStage(ProcessingStage<MagnetContext> next,
+    public InitializeMagnetTorrentProcessingStage(ProcessingStage next,
                                                   PeerConnectionPool connectionPool,
                                                   TorrentRegistry torrentRegistry,
                                                   DataWorker dataWorker,

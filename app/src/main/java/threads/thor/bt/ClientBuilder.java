@@ -51,7 +51,7 @@ public class ClientBuilder {
 
     public Client build() {
         Objects.requireNonNull(runtime, "Missing runtime");
-        ListenerSource<MagnetContext> listenerSource = new ListenerSource<>();
+        ListenerSource listenerSource = new ListenerSource();
         listenerSource.addListener(ProcessingEvent.DOWNLOAD_COMPLETE, (context, next) -> null);
 
         return new Client(runtime,

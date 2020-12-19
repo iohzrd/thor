@@ -8,49 +8,48 @@ import java.util.function.BiFunction;
 
 import threads.LogUtils;
 
-public class ChainProcessor<C extends ProcessingContext> implements Processor<C> {
+public class ChainProcessor {
 
-    private final ProcessingStage<C> chainHead;
+    private final ProcessingStage chainHead;
     private final ExecutorService executor;
-    private final ContextFinalizer<C> finalizer;
+    private final ContextFinalizer finalizer;
 
 
-    public ChainProcessor(ProcessingStage<C> chainHead, ExecutorService executor,
-                          ContextFinalizer<C> finalizer) {
+    public ChainProcessor(ProcessingStage chainHead, ExecutorService executor,
+                          ContextFinalizer finalizer) {
         this.chainHead = chainHead;
         this.finalizer = finalizer;
         this.executor = executor;
     }
 
-    @Override
-    public CompletableFuture<?> process(C context, ListenerSource<C> listenerSource) {
+    public CompletableFuture<?> process(MagnetContext context, ListenerSource listenerSource) {
         Runnable r = () -> executeStage(chainHead, context, listenerSource);
         return CompletableFuture.runAsync(r, executor);
     }
 
-    private void executeStage(ProcessingStage<C> chainHead,
-                              C context,
-                              ListenerSource<C> listenerSource) {
+    private void executeStage(ProcessingStage chainHead,
+                              MagnetContext context,
+                              ListenerSource listenerSource) {
         ProcessingEvent stageFinished = chainHead.after();
-        Collection<BiFunction<C, ProcessingStage<C>, ProcessingStage<C>>> listeners;
+        Collection<BiFunction<MagnetContext, ProcessingStage, ProcessingStage>> listeners;
         if (stageFinished != null) {
             listeners = listenerSource.getListeners(stageFinished);
         } else {
             listeners = Collections.emptyList();
         }
 
-        ProcessingStage<C> next = doExecute(chainHead, context, listeners);
+        ProcessingStage next = doExecute(chainHead, context, listeners);
         if (next != null) {
             executeStage(next, context, listenerSource);
         }
     }
 
-    private ProcessingStage<C> doExecute(ProcessingStage<C> stage,
-                                         C context,
-                                         Collection<BiFunction<C, ProcessingStage<C>, ProcessingStage<C>>> listeners) {
+    private ProcessingStage doExecute(ProcessingStage stage,
+                                      MagnetContext context,
+                                      Collection<BiFunction<MagnetContext, ProcessingStage, ProcessingStage>> listeners) {
 
 
-        ProcessingStage<C> next;
+        ProcessingStage next;
         try {
             next = stage.execute(context);
 
@@ -61,7 +60,7 @@ public class ChainProcessor<C extends ProcessingContext> implements Processor<C>
             throw e;
         }
 
-        for (BiFunction<C, ProcessingStage<C>, ProcessingStage<C>> listener : listeners) {
+        for (BiFunction<MagnetContext, ProcessingStage, ProcessingStage> listener : listeners) {
             try {
                 // TODO: different listeners may return different next stages (including nulls)
                 next = listener.apply(context, next);

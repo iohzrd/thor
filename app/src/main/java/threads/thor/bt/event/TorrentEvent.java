@@ -2,7 +2,7 @@ package threads.thor.bt.event;
 
 import threads.thor.bt.metainfo.TorrentId;
 
-interface TorrentEvent extends Event {
+interface TorrentEvent {
 
     TorrentId getTorrentId();
 }

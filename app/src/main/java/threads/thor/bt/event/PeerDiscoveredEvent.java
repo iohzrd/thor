@@ -33,7 +33,6 @@ public class PeerDiscoveredEvent extends BaseEvent implements TorrentEvent {
     @NonNull
     @Override
     public String toString() {
-        return "[" + this.getClass().getSimpleName() + "] id {" + getId() + "}, timestamp {" + getTimestamp() +
-                "}, threads.torrent {" + torrentId + "}, peer {" + peer + "}";
+        return "[" + this.getClass().getSimpleName() + "]  threads.torrent {" + torrentId + "}, peer {" + peer + "}";
     }
 }

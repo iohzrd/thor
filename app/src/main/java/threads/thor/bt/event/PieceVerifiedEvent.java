@@ -27,7 +27,6 @@ public class PieceVerifiedEvent extends BaseEvent implements TorrentEvent {
     @NonNull
     @Override
     public String toString() {
-        return "[" + this.getClass().getSimpleName() + "] id {" + getId() + "}, timestamp {" + getTimestamp() +
-                "}, threads.torrent {" + torrentId + "}, piece index {" + pieceIndex + "}";
+        return "[" + this.getClass().getSimpleName() + "]  threads.torrent {" + torrentId + "}, piece index {" + pieceIndex + "}";
     }
 }

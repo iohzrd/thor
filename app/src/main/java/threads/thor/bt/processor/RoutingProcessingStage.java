@@ -1,18 +1,18 @@
 package threads.thor.bt.processor;
 
-public abstract class RoutingProcessingStage<C extends ProcessingContext> implements ProcessingStage<C> {
+public abstract class RoutingProcessingStage implements ProcessingStage {
 
-    private final ProcessingStage<C> next;
+    private final ProcessingStage next;
 
-    RoutingProcessingStage(ProcessingStage<C> next) {
+    RoutingProcessingStage(ProcessingStage next) {
         this.next = next;
     }
 
     @Override
-    public ProcessingStage<C> execute(C context) {
+    public ProcessingStage execute(MagnetContext context) {
         return doExecute(context, next);
     }
 
 
-    protected abstract ProcessingStage<C> doExecute(C context, ProcessingStage<C> next);
+    protected abstract ProcessingStage doExecute(MagnetContext context, ProcessingStage next);
 }
