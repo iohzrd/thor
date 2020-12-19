@@ -5,7 +5,7 @@ import androidx.annotation.NonNull;
 import java.net.InetAddress;
 import java.util.Set;
 
-import threads.thor.bt.Config;
+import threads.thor.Settings;
 import threads.thor.bt.service.LifecycleBinding;
 import threads.thor.bt.service.RuntimeLifecycleBinder;
 
@@ -15,10 +15,9 @@ public class PortMappingInitializer {
 
     public static void portMappingInitializer(@NonNull Set<PortMapper> portMappers,
                                               @NonNull RuntimeLifecycleBinder lifecycleBinder,
-                                              @NonNull Config config) {
+                                              final int acceptorPort) {
 
-        final int acceptorPort = config.getAcceptorPort();
-        final InetAddress acceptorAddress = config.getAcceptorAddress();
+        final InetAddress acceptorAddress = Settings.acceptorAddress;
 
         lifecycleBinder.onStartup(LifecycleBinding.bind(() ->
                 portMappers.forEach(m -> mapPort(acceptorPort, acceptorAddress, m)))

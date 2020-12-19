@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.Set;
 
 import threads.LogUtils;
+import threads.thor.Settings;
 import threads.thor.bt.data.range.BlockRange;
 import threads.thor.bt.data.range.Ranges;
 import threads.thor.bt.data.range.SynchronizedBlockSet;
@@ -36,18 +37,17 @@ public class DataDescriptor implements Closeable {
 
     DataDescriptor(Storage storage,
                    Torrent torrent,
-                   ChunkVerifier verifier,
-                   int transferBlockSize) {
+                   ChunkVerifier verifier) {
         this.storage = storage;
         this.torrent = torrent;
         this.verifier = verifier;
 
-        init(transferBlockSize);
+        init();
 
     }
 
-    private void init(long transferBlockSize) {
-
+    private void init() {
+        long transferBlockSize = Settings.transferBlockSize;
         List<TorrentFile> files = torrent.getFiles();
 
         long totalSize = torrent.getSize();

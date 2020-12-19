@@ -3,7 +3,6 @@ package threads.thor.bt.processor;
 import java.util.Set;
 import java.util.function.Supplier;
 
-import threads.thor.bt.Config;
 import threads.thor.bt.IAgent;
 import threads.thor.bt.data.Bitfield;
 import threads.thor.bt.event.EventSource;
@@ -27,22 +26,20 @@ public class CreateSessionStage extends TerminateOnErrorProcessingStage {
     private final ConnectionSource connectionSource;
     private final MessageDispatcher messageDispatcher;
     private final Set<IAgent> messagingAgents;
-    private final Config config;
+
 
     public CreateSessionStage(ProcessingStage next,
                               TorrentRegistry torrentRegistry,
                               EventSource eventSource,
                               ConnectionSource connectionSource,
                               MessageDispatcher messageDispatcher,
-                              Set<IAgent> messagingAgents,
-                              Config config) {
+                              Set<IAgent> messagingAgents) {
         super(next);
         this.torrentRegistry = torrentRegistry;
         this.eventSource = eventSource;
         this.connectionSource = connectionSource;
         this.messageDispatcher = messageDispatcher;
         this.messagingAgents = messagingAgents;
-        this.config = config;
     }
 
     @Override
@@ -60,7 +57,7 @@ public class CreateSessionStage extends TerminateOnErrorProcessingStage {
 
         new TorrentWorker(torrentId, messageDispatcher,
                 connectionSource, peerWorkerFactory,
-                bitfieldSupplier, assignmentsSupplier, statisticsSupplier, eventSource, config);
+                bitfieldSupplier, assignmentsSupplier, statisticsSupplier, eventSource);
 
         context.setState(new TorrentSessionState(descriptor));
         context.setRouter(router);

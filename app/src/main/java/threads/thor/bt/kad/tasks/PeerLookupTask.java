@@ -12,10 +12,10 @@ import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
 import threads.LogUtils;
+import threads.thor.Settings;
 import threads.thor.bt.kad.AnnounceNodeCache;
 import threads.thor.bt.kad.DBItem;
 import threads.thor.bt.kad.DHT.DHTtype;
-import threads.thor.bt.kad.DHTConstants;
 import threads.thor.bt.kad.KBucketEntry;
 import threads.thor.bt.kad.KClosestNodesSearch;
 import threads.thor.bt.kad.Key;
@@ -133,7 +133,7 @@ public class PeerLookupTask extends IteratingTask {
         // check if the cache has any closer nodes after the initial query
         if (useCache) {
             Collection<KBucketEntry> cacheResults = cache.get(targetKey,
-                    DHTConstants.MAX_CONCURRENT_REQUESTS);
+                    Settings.MAX_CONCURRENT_REQUESTS);
             todo.addCandidates(null, cacheResults);
         }
 
@@ -167,12 +167,12 @@ public class PeerLookupTask extends IteratingTask {
                     long rtt = e.getRTT();
                     long defaultTimeout = rpc.getTimeoutFilter().getStallTimeout();
 
-                    if (rtt < DHTConstants.RPC_CALL_TIMEOUT_MAX) {
+                    if (rtt < Settings.RPC_CALL_TIMEOUT_MAX) {
                         // the measured RTT is a mean and not the 90th percentile unlike the RPCServer's timeout filter
                         // -> add some safety margin to account for variance
                         rtt = (long) (rtt * (rtt < defaultTimeout ? 2 : 1.5));
 
-                        call.setExpectedRTT(min(rtt, DHTConstants.RPC_CALL_TIMEOUT_MAX));
+                        call.setExpectedRTT(min(rtt, Settings.RPC_CALL_TIMEOUT_MAX));
                     }
 
 
@@ -231,7 +231,7 @@ public class PeerLookupTask extends IteratingTask {
     @Override
     public void start() {
         //delay the filling of the todo list until we actually start the task
-        KClosestNodesSearch kns = new KClosestNodesSearch(targetKey, DHTConstants.MAX_ENTRIES_PER_BUCKET * 4, rpc.getDHT());
+        KClosestNodesSearch kns = new KClosestNodesSearch(targetKey, Settings.MAX_ENTRIES_PER_BUCKET * 4, rpc.getDHT());
         // unlike NodeLookups we do not use unverified nodes here. this avoids rewarding spoofers with useful lookup target IDs
         kns.fill();
         todo.addCandidates(null, kns.getEntries());
@@ -239,7 +239,7 @@ public class PeerLookupTask extends IteratingTask {
         if (useCache) {
             // re-register once we actually started
             cache.register(targetKey, false);
-            todo.addCandidates(null, cache.get(targetKey, DHTConstants.MAX_CONCURRENT_REQUESTS * 2));
+            todo.addCandidates(null, cache.get(targetKey, Settings.MAX_CONCURRENT_REQUESTS * 2));
         }
 
         addListener(unused -> logClosest());

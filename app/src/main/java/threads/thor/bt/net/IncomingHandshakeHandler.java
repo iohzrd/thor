@@ -1,10 +1,10 @@
 package threads.thor.bt.net;
 
 import java.io.IOException;
-import java.time.Duration;
 import java.util.Collection;
 import java.util.Optional;
 
+import threads.thor.Settings;
 import threads.thor.bt.metainfo.TorrentId;
 import threads.thor.bt.protocol.Handshake;
 import threads.thor.bt.protocol.HandshakeFactory;
@@ -17,14 +17,13 @@ class IncomingHandshakeHandler implements ConnectionHandler {
     private final HandshakeFactory handshakeFactory;
     private final TorrentRegistry torrentRegistry;
     private final Collection<HandshakeHandler> handshakeHandlers;
-    private final Duration handshakeTimeout;
+
 
     IncomingHandshakeHandler(HandshakeFactory handshakeFactory, TorrentRegistry torrentRegistry,
-                             Collection<HandshakeHandler> handshakeHandlers, Duration handshakeTimeout) {
+                             Collection<HandshakeHandler> handshakeHandlers) {
         this.handshakeFactory = handshakeFactory;
         this.torrentRegistry = torrentRegistry;
         this.handshakeHandlers = handshakeHandlers;
-        this.handshakeTimeout = handshakeTimeout;
     }
 
     @Override
@@ -32,7 +31,7 @@ class IncomingHandshakeHandler implements ConnectionHandler {
         Peer peer = connection.getRemotePeer();
         Message firstMessage = null;
         try {
-            firstMessage = connection.readMessage(handshakeTimeout.toMillis());
+            firstMessage = connection.readMessage(Settings.peerHandshakeTimeout.toMillis());
         } catch (Throwable ignored) {
             // ignore exception
         }

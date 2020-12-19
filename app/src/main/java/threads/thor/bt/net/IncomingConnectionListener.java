@@ -5,26 +5,24 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import threads.LogUtils;
-import threads.thor.bt.Config;
+import threads.thor.Settings;
 
 class IncomingConnectionListener {
     private static final String TAG = IncomingConnectionListener.class.getSimpleName();
     private final Set<SocketChannelConnectionAcceptor> connectionAcceptors;
     private final ExecutorService connectionExecutor;
     private final PeerConnectionPool connectionPool;
-    private final Config config;
+
 
     private final ExecutorService executor;
     private volatile boolean shutdown;
 
     IncomingConnectionListener(Set<SocketChannelConnectionAcceptor> connectionAcceptors,
                                ExecutorService connectionExecutor,
-                               PeerConnectionPool connectionPool,
-                               Config config) {
+                               PeerConnectionPool connectionPool) {
         this.connectionAcceptors = connectionAcceptors;
         this.connectionExecutor = connectionExecutor;
         this.connectionPool = connectionPool;
-        this.config = config;
 
         this.executor = Executors.newFixedThreadPool(connectionAcceptors.size());
     }
@@ -71,7 +69,7 @@ class IncomingConnectionListener {
     }
 
     private boolean mightAddConnection() {
-        return connectionPool.size() < config.getMaxPeerConnections();
+        return connectionPool.size() < Settings.maxPeerConnections;
     }
 
     public void shutdown() {

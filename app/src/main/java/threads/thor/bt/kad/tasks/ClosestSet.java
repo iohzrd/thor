@@ -6,6 +6,7 @@ import java.util.NavigableSet;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.stream.Stream;
 
+import threads.thor.Settings;
 import threads.thor.bt.kad.KBucketEntry;
 import threads.thor.bt.kad.Key;
 
@@ -26,7 +27,7 @@ class ClosestSet {
     ClosestSet(Key target) {
         this.target = target;
         closest = new ConcurrentSkipListSet<>(new KBucketEntry.DistanceOrder(target));
-        this.targetSize = threads.thor.bt.kad.DHTConstants.MAX_ENTRIES_PER_BUCKET;
+        this.targetSize = Settings.MAX_ENTRIES_PER_BUCKET;
     }
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")

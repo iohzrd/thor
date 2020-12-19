@@ -5,7 +5,7 @@ import java.util.NavigableMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import threads.thor.bt.kad.DHTConstants;
+import threads.thor.Settings;
 import threads.thor.bt.kad.KBucketEntry;
 import threads.thor.bt.kad.Key;
 import threads.thor.bt.kad.Node;
@@ -57,7 +57,7 @@ public class AnnounceTask extends TargetedTask {
     @Override
     void update() {
         for (; ; ) {
-            if (getRecvResponses() >= DHTConstants.MAX_ENTRIES_PER_BUCKET)
+            if (getRecvResponses() >= Settings.MAX_ENTRIES_PER_BUCKET)
                 return;
 
             RequestPermit p = checkFreeSlot();
@@ -93,12 +93,12 @@ public class AnnounceTask extends TargetedTask {
     @Override
     boolean canDoRequest() {
         // a) we only announce to K nodes, not N; b) wait out the full timeout, not he adaptive one
-        return getNumOutstandingRequests() < DHTConstants.MAX_ENTRIES_PER_BUCKET;
+        return getNumOutstandingRequests() < Settings.MAX_ENTRIES_PER_BUCKET;
     }
 
     @Override
     protected boolean isDone() {
-        if (accepted.get() >= DHTConstants.MAX_ENTRIES_PER_BUCKET)
+        if (accepted.get() >= Settings.MAX_ENTRIES_PER_BUCKET)
             return true;
         return todo.isEmpty() && getNumOutstandingRequests() == 0;
     }

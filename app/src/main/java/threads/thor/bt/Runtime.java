@@ -26,6 +26,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 import threads.LogUtils;
+import threads.thor.Settings;
 import threads.thor.bt.data.ChunkVerifier;
 import threads.thor.bt.data.DataDescriptorFactory;
 import threads.thor.bt.data.digest.JavaSecurityDigester;
@@ -43,6 +44,7 @@ import threads.thor.bt.net.HandshakeHandler;
 import threads.thor.bt.net.MessageDispatcher;
 import threads.thor.bt.net.PeerConnectionFactory;
 import threads.thor.bt.net.PeerConnectionPool;
+import threads.thor.bt.net.PeerId;
 import threads.thor.bt.net.SharedSelector;
 import threads.thor.bt.net.SocketChannelConnectionAcceptor;
 import threads.thor.bt.net.buffer.BufferManager;
@@ -87,7 +89,6 @@ public class Runtime {
     public final PeerConnectionPool mConnectionPool;
     public final BufferedPieceRegistry mBufferedPieceRegistry;
     private final Object lock;
-    private final Config mConfig;
     private final Context mContext;
     private final ExecutorService mExecutor;
     private final EventBus mEventBus;
@@ -97,8 +98,9 @@ public class Runtime {
 
 
     public Runtime(@NonNull Context context,
-                   @NonNull Config config,
-                   @NonNull EventBus eventBus) {
+                   @NonNull PeerId peerId,
+                   @NonNull EventBus eventBus,
+                   int acceptorPort) {
         java.lang.Runtime.getRuntime().addShutdownHook(new Thread("bt.runtime.shutdown-manager") {
             @Override
             public void run() {
@@ -111,7 +113,6 @@ public class Runtime {
                 mEventBus, mRuntimeLifecycleBinder, new PeerExchangeConfig());
 
 
-        this.mConfig = config;
         this.mContext = context;
         this.knownClients = ConcurrentHashMap.newKeySet();
 
@@ -120,26 +121,25 @@ public class Runtime {
         SharedSelector mSelector = provideSelector(mRuntimeLifecycleBinder);
 
         JavaSecurityDigester digester = provideDigester();
-        ChunkVerifier chunkVerifier = provideVerifier(eventBus, config, digester);
+        ChunkVerifier chunkVerifier = provideVerifier(eventBus, digester);
 
 
-        DataDescriptorFactory dataDescriptorFactory = provideDataDescriptorFactory(
-                config, chunkVerifier);
+        DataDescriptorFactory dataDescriptorFactory = provideDataDescriptorFactory(chunkVerifier);
 
         this.mTorrentRegistry = new TorrentRegistry(
                 dataDescriptorFactory, mRuntimeLifecycleBinder);
 
         this.mPeerRegistry = new PeerRegistry(mRuntimeLifecycleBinder,
-                mTorrentRegistry, mEventBus, config);
+                mTorrentRegistry, mEventBus, peerId, acceptorPort);
 
 
         Set<PortMapper> portMappers = new HashSet<>();
 
-        PortMappingInitializer.portMappingInitializer(portMappers, mRuntimeLifecycleBinder, mConfig);
+        PortMappingInitializer.portMappingInitializer(portMappers, mRuntimeLifecycleBinder, acceptorPort);
 
 
         DataReceiver dataReceiver = new DataReceiver(mSelector, mRuntimeLifecycleBinder);
-        BufferManager bufferManager = new BufferManager(config);
+        BufferManager bufferManager = new BufferManager();
         mBufferedPieceRegistry = new BufferedPieceRegistry();
         ChannelPipelineFactory channelPipelineFactory =
                 new ChannelPipelineFactory(bufferManager, mBufferedPieceRegistry);
@@ -164,11 +164,11 @@ public class Runtime {
         ExtendedHandshakeFactory extendedHandshakeFactory = new ExtendedHandshakeFactory(
                 mTorrentRegistry,
                 messageTypeMapping,
-                config);
+                acceptorPort);
 
         ConnectionHandlerFactory connectionHandlerFactory =
                 provideConnectionHandlerFactory(handshakeFactory, mTorrentRegistry,
-                        boundHandshakeHandlers, extendedHandshakeFactory, config);
+                        boundHandshakeHandlers, extendedHandshakeFactory);
 
 
         PeerConnectionFactory peerConnectionFactory = providePeerConnectionFactory(
@@ -179,22 +179,20 @@ public class Runtime {
                 channelPipelineFactory,
                 bufferManager,
                 dataReceiver,
-                mEventBus,
-                config
+                mEventBus
         );
 
-        mConnectionPool = new PeerConnectionPool(mEventBus,
-                mRuntimeLifecycleBinder, config);
+        mConnectionPool = new PeerConnectionPool(mEventBus, mRuntimeLifecycleBinder);
 
 
         Set<SocketChannelConnectionAcceptor> connectionAcceptors = new HashSet<>();
         connectionAcceptors.add(
                 provideSocketChannelConnectionAcceptor(mSelector,
-                        peerConnectionFactory, config));
+                        peerConnectionFactory, acceptorPort));
 
 
-        DHTService mDHTService = new DHTService(mRuntimeLifecycleBinder, mConfig,
-                portMappers, mTorrentRegistry, mEventBus);
+        DHTService mDHTService = new DHTService(mRuntimeLifecycleBinder, peerId,
+                portMappers, mTorrentRegistry, mEventBus, acceptorPort);
         DHTHandshakeHandler dHTHandshakeHandler = new DHTHandshakeHandler(mDHTService.getPort());
         boundHandshakeHandlers.add(dHTHandshakeHandler);
 
@@ -206,15 +204,14 @@ public class Runtime {
         mDataWorker = provideDataWorker(
                 mRuntimeLifecycleBinder, mTorrentRegistry,
                 chunkVerifier,
-                new BlockCache(mTorrentRegistry, mEventBus),
-                config);
+                new BlockCache(mTorrentRegistry, mEventBus));
 
 
         mConnectionSource = new ConnectionSource(connectionAcceptors,
-                peerConnectionFactory, mConnectionPool, mRuntimeLifecycleBinder, config);
+                peerConnectionFactory, mConnectionPool, mRuntimeLifecycleBinder);
 
         this.mMessageDispatcher = new MessageDispatcher(
-                mRuntimeLifecycleBinder, mConnectionPool, mTorrentRegistry, config);
+                mRuntimeLifecycleBinder, mConnectionPool, mTorrentRegistry);
 
 
         this.mMessagingAgents = new HashSet<>();
@@ -229,15 +226,14 @@ public class Runtime {
     private static ConnectionHandlerFactory provideConnectionHandlerFactory(
             HandshakeFactory handshakeFactory, TorrentRegistry torrentRegistry,
             Set<HandshakeHandler> boundHandshakeHandlers,
-            ExtendedHandshakeFactory extendedHandshakeFactory, Config config) {
+            ExtendedHandshakeFactory extendedHandshakeFactory) {
 
         List<HandshakeHandler> handshakeHandlers = new ArrayList<>(boundHandshakeHandlers);
         // add default handshake handlers to the beginning of the connection handling chain
         handshakeHandlers.add(new BitfieldConnectionHandler(torrentRegistry));
         handshakeHandlers.add(new ExtendedProtocolHandshakeHandler(extendedHandshakeFactory));
 
-        return new ConnectionHandlerFactory(handshakeFactory, torrentRegistry,
-                handshakeHandlers, config.getPeerHandshakeTimeout());
+        return new ConnectionHandlerFactory(handshakeFactory, torrentRegistry, handshakeHandlers);
     }
 
     private static ExtendedMessageTypeMapping provideExtendedMessageTypeMapping(
@@ -250,21 +246,20 @@ public class Runtime {
         return new JavaSecurityDigester("SHA-1", step);
     }
 
-    private static ChunkVerifier provideVerifier(EventBus eventBus, Config config, JavaSecurityDigester digester) {
-        return new ChunkVerifier(eventBus, digester, config.getNumOfHashingThreads());
+    private static ChunkVerifier provideVerifier(EventBus eventBus, JavaSecurityDigester digester) {
+        return new ChunkVerifier(eventBus, digester);
     }
 
-    private static DataDescriptorFactory provideDataDescriptorFactory(Config config, ChunkVerifier verifier) {
-        return new DataDescriptorFactory(verifier, config.getTransferBlockSize());
+    private static DataDescriptorFactory provideDataDescriptorFactory(ChunkVerifier verifier) {
+        return new DataDescriptorFactory(verifier);
     }
 
     private static DataWorker provideDataWorker(
             RuntimeLifecycleBinder lifecycleBinder,
             TorrentRegistry torrentRegistry,
             ChunkVerifier verifier,
-            BlockCache blockCache,
-            Config config) {
-        return new DefaultDataWorker(lifecycleBinder, torrentRegistry, verifier, blockCache, config.getMaxIOQueueSize());
+            BlockCache blockCache) {
+        return new DefaultDataWorker(lifecycleBinder, torrentRegistry, verifier, blockCache);
     }
 
     public static EventBus provideEventBus() {
@@ -300,17 +295,17 @@ public class Runtime {
             ChannelPipelineFactory channelPipelineFactory,
             IBufferManager bufferManager,
             DataReceiver dataReceiver,
-            EventSource eventSource,
-            Config config) {
+            EventSource eventSource) {
         return new PeerConnectionFactory(selector, connectionHandlerFactory, channelPipelineFactory,
-                bittorrentProtocol, torrentRegistry, bufferManager, dataReceiver, eventSource, config);
+                bittorrentProtocol, torrentRegistry, bufferManager, dataReceiver, eventSource);
     }
 
     private static SocketChannelConnectionAcceptor provideSocketChannelConnectionAcceptor(
             SharedSelector selector,
             PeerConnectionFactory connectionFactory,
-            Config config) {
-        InetSocketAddress localAddress = new InetSocketAddress(config.getAcceptorAddress(), config.getAcceptorPort());
+            int acceptorPort) {
+        InetSocketAddress localAddress = new InetSocketAddress(
+                Settings.acceptorAddress, acceptorPort);
         return new SocketChannelConnectionAcceptor(selector, connectionFactory, localAddress);
     }
 
@@ -323,14 +318,6 @@ public class Runtime {
         return mEventBus;
     }
 
-
-    /**
-     * @return Runtime configuration
-     * @since 1.0
-     */
-    public Config getConfig() {
-        return mConfig;
-    }
 
     public Context getContext() {
         return mContext;
@@ -423,7 +410,7 @@ public class Runtime {
             futures.forEach((binding, future) -> {
                 String errorMessage = createErrorMessage(event, binding);
                 try {
-                    future.get(mConfig.getShutdownHookTimeout().toMillis(), TimeUnit.MILLISECONDS);
+                    future.get(Settings.shutdownHookTimeout.toMillis(), TimeUnit.MILLISECONDS);
                 } catch (InterruptedException | ExecutionException | TimeoutException e) {
                     errorConsumer.accept(new RuntimeException(errorMessage, e));
                 }
@@ -452,7 +439,7 @@ public class Runtime {
     private void shutdownGracefully(ExecutorService executor) {
         executor.shutdown();
         try {
-            long timeout = mConfig.getShutdownHookTimeout().toMillis();
+            long timeout = Settings.shutdownHookTimeout.toMillis();
             boolean terminated = executor.awaitTermination(timeout, TimeUnit.MILLISECONDS);
             if (!terminated) {
                 LogUtils.warning(TAG, "Failed to shutdown executor in {} millis");

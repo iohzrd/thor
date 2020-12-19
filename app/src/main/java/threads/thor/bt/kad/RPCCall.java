@@ -11,6 +11,7 @@ import java.util.concurrent.TimeUnit;
 
 import threads.LogUtils;
 import threads.thor.BuildConfig;
+import threads.thor.Settings;
 import threads.thor.bt.kad.messages.MessageBase;
 import threads.thor.bt.kad.messages.MessageBase.Method;
 
@@ -139,7 +140,7 @@ public class RPCCall {
         if (BuildConfig.DEBUG && !(expectedRTT > 0)) {
             throw new AssertionError("Assertion failed");
         }
-        if (BuildConfig.DEBUG && !(expectedRTT <= DHTConstants.RPC_CALL_TIMEOUT_MAX)) {
+        if (BuildConfig.DEBUG && !(expectedRTT <= Settings.RPC_CALL_TIMEOUT_MAX)) {
             throw new AssertionError("Assertion failed");
         }
         sentTime = System.currentTimeMillis();
@@ -161,7 +162,7 @@ public class RPCCall {
                 return;
 
             long elapsed = System.currentTimeMillis() - sentTime;
-            long remaining = DHTConstants.RPC_CALL_TIMEOUT_MAX - elapsed;
+            long remaining = Settings.RPC_CALL_TIMEOUT_MAX - elapsed;
             if (remaining > 0) {
                 stateTransition(EnumSet.of(RPCState.SENT), RPCState.STALLED);
                 // re-schedule for failed

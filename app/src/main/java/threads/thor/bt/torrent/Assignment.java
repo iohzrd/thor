@@ -6,6 +6,7 @@ import java.util.Queue;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
+import threads.thor.Settings;
 import threads.thor.bt.data.Bitfield;
 import threads.thor.bt.net.ConnectionKey;
 
@@ -13,7 +14,7 @@ class Assignment {
 
     // TODO: change this to a configurable setting?
     private static final int MAX_SIMULTANEOUSLY_ASSIGNED_PIECES = 3;
-    private final Duration limit;
+    private final Duration limit = Settings.maxPieceReceivingTime;
     private final ConnectionKey connectionKey;
     private final PieceSelector selector;
     private final PieceStatistics pieceStatistics;
@@ -25,14 +26,13 @@ class Assignment {
     private long checked;
     private boolean aborted;
 
-    Assignment(ConnectionKey connectionKey, Duration limit, PieceSelector selector,
+    Assignment(ConnectionKey connectionKey, PieceSelector selector,
                PieceStatistics pieceStatistics, Assignments assignments) {
         this.connectionKey = connectionKey;
         this.selector = selector;
         this.pieceStatistics = pieceStatistics;
         this.assignments = assignments;
 
-        this.limit = limit;
         this.pieces = new ArrayDeque<>();
 
         claimPiecesIfNeeded();

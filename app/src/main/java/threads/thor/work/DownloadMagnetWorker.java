@@ -30,7 +30,6 @@ import threads.thor.MainActivity;
 import threads.thor.R;
 import threads.thor.bt.Client;
 import threads.thor.bt.ClientBuilder;
-import threads.thor.bt.Config;
 import threads.thor.bt.IdentityService;
 import threads.thor.bt.Runtime;
 import threads.thor.bt.event.EventBus;
@@ -145,18 +144,14 @@ public class DownloadMagnetWorker extends Worker {
 
             try {
                 Objects.requireNonNull(rootDoc);
-                Config config = new Config();
-                config.setNumOfHashingThreads(java.lang.Runtime.getRuntime().availableProcessors() * 2);
-                config.setAcceptorPort(IPFS.nextFreePort());
-                byte[] id = new IdentityService().getID();
-                config.setLocalPeerId(PeerId.fromBytes(id));
 
+                byte[] id = new IdentityService().getID();
 
                 EventBus eventBus = Runtime.provideEventBus();
                 ContentStorage storage = new ContentStorage(
                         getApplicationContext(), eventBus, rootDoc);
                 Runtime runtime = new Runtime(
-                        getApplicationContext(), config, eventBus);
+                        getApplicationContext(), PeerId.fromBytes(id), eventBus, IPFS.nextFreePort());
 
                 Client client = new ClientBuilder()
                         .runtime(runtime)

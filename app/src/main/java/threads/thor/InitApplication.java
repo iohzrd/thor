@@ -21,9 +21,7 @@ import threads.thor.ipfs.IPFS;
 import threads.thor.utils.AdBlocker;
 
 public class InitApplication extends Application {
-    public static final int SOCKSPort = 9050;
-    public static final String LOCALHOST = "localhost";
-    private static final String DIRECTORY_TOR_DATA = "data";
+
     private static final String TAG = InitApplication.class.getSimpleName();
 
     @Override
@@ -61,7 +59,7 @@ public class InitApplication extends Application {
                     "\n" +
                     "RunAsDaemon 0" +
                     "\n" +
-                    "SOCKSPort " + InitApplication.SOCKSPort +
+                    "SOCKSPort " + Settings.SOCKSPort +
                     "\n";
             success = updateTorConfigCustom(fileTorRcCustom, extraLines);
 
@@ -122,7 +120,7 @@ public class InitApplication extends Application {
     }
 
     private boolean runTorShellCmd(File fileTor, File fileTorr) throws Exception {
-        File appCacheHome = getDir(DIRECTORY_TOR_DATA, Application.MODE_PRIVATE);
+        File appCacheHome = getDir(Settings.DIRECTORY_TOR_DATA, Application.MODE_PRIVATE);
 
         if (!fileTorr.exists()) {
             logNotice("torr not installed: " + fileTorr.getCanonicalPath());

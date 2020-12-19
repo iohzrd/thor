@@ -12,6 +12,8 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+import threads.thor.Settings;
+
 /**
  * @author Damokles
  */
@@ -173,17 +175,17 @@ public class Database {
 
         int size = Math.max(entries.peers.size(), entries.seeds.size());
 
-        if (size < DHTConstants.MAX_DB_ENTRIES_PER_KEY / 5)
+        if (size < Settings.MAX_DB_ENTRIES_PER_KEY / 5)
             return true;
 
         // TODO: send a token if the node requesting it is already in the DB
 
-        if (size >= DHTConstants.MAX_DB_ENTRIES_PER_KEY)
+        if (size >= Settings.MAX_DB_ENTRIES_PER_KEY)
             return false;
 
 
         // implement RED to throttle write attempts
-        return size < ThreadLocalRandom.current().nextInt(DHTConstants.MAX_DB_ENTRIES_PER_KEY);
+        return size < ThreadLocalRandom.current().nextInt(Settings.MAX_DB_ENTRIES_PER_KEY);
     }
 
     /**
@@ -218,7 +220,7 @@ public class Database {
     private void updateTokenTimestamps() {
         long current = timestampCurrent.get();
         long now = System.nanoTime();
-        while (TimeUnit.NANOSECONDS.toMillis(now - current) > DHTConstants.TOKEN_TIMEOUT) {
+        while (TimeUnit.NANOSECONDS.toMillis(now - current) > Settings.TOKEN_TIMEOUT) {
             if (timestampCurrent.compareAndSet(current, now)) {
                 timestampPrevious = current;
                 break;
@@ -391,7 +393,7 @@ public class Database {
                 PeerAddressDBItem[] newItems = new PeerAddressDBItem[items.length];
 
                 // don't remove all at once -> smears out new registrations on popular keys over time
-                int toRemove = DHTConstants.MAX_DB_ENTRIES_PER_KEY / 5;
+                int toRemove = Settings.MAX_DB_ENTRIES_PER_KEY / 5;
 
                 int insertPoint = 0;
 

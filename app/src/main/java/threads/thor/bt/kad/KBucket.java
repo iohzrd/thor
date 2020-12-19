@@ -15,6 +15,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import threads.thor.BuildConfig;
+import threads.thor.Settings;
 import threads.thor.bt.kad.messages.MessageBase;
 import threads.thor.bt.kad.messages.MessageBase.Type;
 
@@ -31,7 +32,7 @@ public class KBucket {
     KBucket() {
         entries = new ArrayList<>(); // using arraylist here since reading/iterating is far more common than writing.
         currentReplacementPointer = new AtomicInteger(0);
-        replacementBucket = new AtomicReferenceArray<>(DHTConstants.MAX_ENTRIES_PER_BUCKET);
+        replacementBucket = new AtomicReferenceArray<>(Settings.MAX_ENTRIES_PER_BUCKET);
         // needed for bitmasking
         if (BuildConfig.DEBUG && !(Integer.bitCount(replacementBucket.length()) == 1)) {
             throw new AssertionError("Assertion failed");
@@ -62,7 +63,7 @@ public class KBucket {
         }
 
         if (newEntry.verifiedReachable()) {
-            if (entriesRef.size() < DHTConstants.MAX_ENTRIES_PER_BUCKET) {
+            if (entriesRef.size() < Settings.MAX_ENTRIES_PER_BUCKET) {
                 // insert if not already in the list and we still have room
                 modifyMainBucket(null, newEntry);
                 return;
@@ -116,7 +117,7 @@ public class KBucket {
 
             if (toInsert != null) {
                 int oldSize = newEntries.size();
-                boolean wasFull = oldSize >= DHTConstants.MAX_ENTRIES_PER_BUCKET;
+                boolean wasFull = oldSize >= Settings.MAX_ENTRIES_PER_BUCKET;
                 KBucketEntry youngest = oldSize > 0 ? newEntries.get(oldSize - 1) : null;
                 boolean unorderedInsert = youngest != null && toInsert.getCreationTime() < youngest.getCreationTime();
                 added = !wasFull || unorderedInsert;
@@ -131,7 +132,7 @@ public class KBucket {
                     newEntries.sort(KBucketEntry.AGE_ORDER);
 
                 if (wasFull && added)
-                    while (newEntries.size() > DHTConstants.MAX_ENTRIES_PER_BUCKET)
+                    while (newEntries.size() > Settings.MAX_ENTRIES_PER_BUCKET)
                         insertInReplacementBucket(newEntries.remove(newEntries.size() - 1));
             }
 
@@ -151,7 +152,7 @@ public class KBucket {
     }
 
     public boolean isFull() {
-        return entries.size() >= DHTConstants.MAX_ENTRIES_PER_BUCKET;
+        return entries.size() >= Settings.MAX_ENTRIES_PER_BUCKET;
     }
 
     int getNumReplacements() {
@@ -222,13 +223,13 @@ public class KBucket {
     boolean needsToBeRefreshed() {
         long now = System.currentTimeMillis();
         // TODO: timer may be somewhat redundant with needsPing logic
-        return now - lastRefresh > DHTConstants.BUCKET_REFRESH_INTERVAL && entries.stream().anyMatch(KBucketEntry::needsPing);
+        return now - lastRefresh > Settings.BUCKET_REFRESH_INTERVAL && entries.stream().anyMatch(KBucketEntry::needsPing);
     }
 
     boolean needsReplacementPing() {
         long now = System.currentTimeMillis();
 
-        return now - lastRefresh > REPLACEMENT_PING_MIN_INTERVAL && (entriesStream().anyMatch(KBucketEntry::needsReplacement) || entries.size() < DHTConstants.MAX_ENTRIES_PER_BUCKET) && replacementsStream().anyMatch(KBucketEntry::neverContacted);
+        return now - lastRefresh > REPLACEMENT_PING_MIN_INTERVAL && (entriesStream().anyMatch(KBucketEntry::needsReplacement) || entries.size() < Settings.MAX_ENTRIES_PER_BUCKET) && replacementsStream().anyMatch(KBucketEntry::neverContacted);
     }
 
 
@@ -366,7 +367,7 @@ public class KBucket {
         List<KBucketEntry> entriesRef = entries;
         KBucketEntry toRemove = entriesRef.stream().filter(KBucketEntry::needsReplacement).findAny().orElse(null);
 
-        if (toRemove == null && entriesRef.size() >= DHTConstants.MAX_ENTRIES_PER_BUCKET)
+        if (toRemove == null && entriesRef.size() >= Settings.MAX_ENTRIES_PER_BUCKET)
             return;
 
         KBucketEntry replacement = pollVerifiedReplacementEntry();

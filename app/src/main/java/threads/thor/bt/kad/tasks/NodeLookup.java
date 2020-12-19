@@ -8,9 +8,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import threads.LogUtils;
+import threads.thor.Settings;
 import threads.thor.bt.kad.AddressUtils;
 import threads.thor.bt.kad.DHT.DHTtype;
-import threads.thor.bt.kad.DHTConstants;
 import threads.thor.bt.kad.KBucketEntry;
 import threads.thor.bt.kad.KClosestNodesSearch;
 import threads.thor.bt.kad.Key;
@@ -62,7 +62,7 @@ public class NodeLookup extends IteratingTask {
             if (!rpcCall(fnr, e.getID(), (call) -> {
                 long rtt = e.getRTT();
                 rtt = rtt + rtt / 2; // *1.5 since this is the average and not the 90th percentile like the timeout filter
-                if (rtt < DHTConstants.RPC_CALL_TIMEOUT_MAX && rtt < rpc.getTimeoutFilter().getStallTimeout())
+                if (rtt < Settings.RPC_CALL_TIMEOUT_MAX && rtt < rpc.getTimeoutFilter().getStallTimeout())
                     call.setExpectedRTT(rtt); // only set a node-specific timeout if it's better than what the server would apply anyway
                 call.builtFromEntry(e);
                 todo.addCall(call, e);
@@ -147,7 +147,7 @@ public class NodeLookup extends IteratingTask {
         Key knsTargetKey = forBootstrap ? targetKey.distance(Key.MAX_KEY) : targetKey;
 
         // delay the filling of the todo list until we actually start the task
-        KClosestNodesSearch kns = new KClosestNodesSearch(knsTargetKey, 3 * DHTConstants.MAX_ENTRIES_PER_BUCKET, rpc.getDHT());
+        KClosestNodesSearch kns = new KClosestNodesSearch(knsTargetKey, 3 * Settings.MAX_ENTRIES_PER_BUCKET, rpc.getDHT());
         kns.filter = KBucketEntry::eligibleForLocalLookup;
         kns.fill();
         todo.addCandidates(null, kns.getEntries());

@@ -2,7 +2,6 @@ package threads.thor.bt.processor;
 
 import android.content.Context;
 
-import threads.thor.bt.Config;
 import threads.thor.bt.event.EventSink;
 import threads.thor.bt.metainfo.MetadataService;
 import threads.thor.bt.metainfo.Torrent;
@@ -21,27 +20,24 @@ public class FetchMetadataStage extends TerminateOnErrorProcessingStage {
     private final TorrentRegistry torrentRegistry;
     private final PeerRegistry peerRegistry;
     private final EventSink eventSink;
-    private final Config config;
 
     public FetchMetadataStage(ProcessingStage next,
                               TorrentRegistry torrentRegistry,
                               PeerRegistry peerRegistry,
                               EventSink eventSink,
-                              Config config,
                               Context context) {
         super(next);
         this.metadataService = new MetadataService(context);
         this.torrentRegistry = torrentRegistry;
         this.peerRegistry = peerRegistry;
         this.eventSink = eventSink;
-        this.config = config;
     }
 
     @Override
     protected void doExecute(MagnetContext context) {
         TorrentId torrentId = context.getMagnetUri().getTorrentId();
 
-        MetadataConsumer metadataConsumer = new MetadataConsumer(metadataService, torrentId, config);
+        MetadataConsumer metadataConsumer = new MetadataConsumer(metadataService, torrentId);
         context.getRouter().registerMessagingAgent(metadataConsumer);
 
         // need to also receive Bitfields and Haves (without validation for the number of pieces...)

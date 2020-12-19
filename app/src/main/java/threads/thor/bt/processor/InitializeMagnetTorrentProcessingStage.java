@@ -4,7 +4,6 @@ import java.util.Collection;
 import java.util.HashSet;
 
 import threads.LogUtils;
-import threads.thor.bt.Config;
 import threads.thor.bt.data.Bitfield;
 import threads.thor.bt.event.EventSink;
 import threads.thor.bt.metainfo.TorrentId;
@@ -25,9 +24,8 @@ public class InitializeMagnetTorrentProcessingStage extends InitializeTorrentPro
                                                   TorrentRegistry torrentRegistry,
                                                   DataWorker dataWorker,
                                                   BufferedPieceRegistry bufferedPieceRegistry,
-                                                  EventSink eventSink,
-                                                  Config config) {
-        super(next, connectionPool, torrentRegistry, dataWorker, bufferedPieceRegistry, eventSink, config);
+                                                  EventSink eventSink) {
+        super(next, connectionPool, torrentRegistry, dataWorker, bufferedPieceRegistry, eventSink);
         this.eventSink = eventSink;
     }
 

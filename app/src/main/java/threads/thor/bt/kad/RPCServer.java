@@ -33,6 +33,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import threads.LogUtils;
+import threads.thor.Settings;
 import threads.thor.bt.bencode.Tokenizer.BDecodingException;
 import threads.thor.bt.bencode.Utils;
 import threads.thor.bt.kad.DHT.DHTtype;
@@ -56,7 +57,7 @@ import static threads.thor.bt.utils.Functional.typedGet;
 public class RPCServer {
 
     private static final ThreadLocal<ByteBuffer> writeBuffer = ThreadLocal.withInitial(() -> ByteBuffer.allocateDirect(1500));
-    private static final ThreadLocal<ByteBuffer> readBuffer = ThreadLocal.withInitial(() -> ByteBuffer.allocateDirect(DHTConstants.RECEIVE_BUFFER_SIZE));
+    private static final ThreadLocal<ByteBuffer> readBuffer = ThreadLocal.withInitial(() -> ByteBuffer.allocateDirect(Settings.RECEIVE_BUFFER_SIZE));
     private static final int MTID_LENGTH = 6;
     private static final String TAG = RPCServer.class.getSimpleName();
     private final LinkedHashMap<InetAddress, InetSocketAddress> originPairs =
@@ -124,7 +125,7 @@ public class RPCServer {
         this.dh_table = dht;
         timeoutFilter = new ResponseTimeoutFilter();
         pipeline = new ConcurrentLinkedQueue<>();
-        calls = new ConcurrentHashMap<>(DHTConstants.MAX_ACTIVE_CALLS);
+        calls = new ConcurrentHashMap<>(Settings.MAX_ACTIVE_CALLS);
         call_queue = new ConcurrentLinkedQueue<>();
 
         this.addr = addr;
@@ -226,7 +227,7 @@ public class RPCServer {
 
     private void drainQueue() {
 
-        int capacity = DHTConstants.MAX_ACTIVE_CALLS - calls.size();
+        int capacity = Settings.MAX_ACTIVE_CALLS - calls.size();
 
         requestThrottle.decay();
 
@@ -304,7 +305,7 @@ public class RPCServer {
             isReachable = true;
             timeOfLastReceiveCountChange = now;
             numReceivesAtLastCheck = numReceived.get();
-        } else if (now - timeOfLastReceiveCountChange > DHTConstants.REACHABILITY_TIMEOUT) {
+        } else if (now - timeOfLastReceiveCountChange > Settings.REACHABILITY_TIMEOUT) {
             isReachable = false;
             timeoutFilter.reset();
         }

@@ -11,7 +11,7 @@ import java.time.Duration;
 import java.util.Objects;
 
 import threads.LogUtils;
-import threads.thor.bt.Config;
+import threads.thor.Settings;
 import threads.thor.bt.event.EventSource;
 import threads.thor.bt.metainfo.TorrentId;
 import threads.thor.bt.net.buffer.BorrowedBuffer;
@@ -50,18 +50,17 @@ public class PeerConnectionFactory {
                                  TorrentRegistry torrentRegistry,
                                  IBufferManager bufferManager,
                                  DataReceiver dataReceiver,
-                                 EventSource eventSource,
-                                 Config config) {
+                                 EventSource eventSource) {
 
         this.protocol = protocol;
         this.selector = selector;
         this.connectionHandlerFactory = connectionHandlerFactory;
         this.channelPipelineFactory = channelPipelineFactory;
         this.bufferManager = bufferManager;
-        this.cryptoHandshakeProcessor = new MSEHandshakeProcessor(torrentRegistry, protocol, config);
+        this.cryptoHandshakeProcessor = new MSEHandshakeProcessor(torrentRegistry, protocol);
         this.dataReceiver = dataReceiver;
         this.eventSource = eventSource;
-        this.localOutgoingSocketAddress = new InetSocketAddress(config.getAcceptorAddress(), 0);
+        this.localOutgoingSocketAddress = new InetSocketAddress(Settings.acceptorAddress, 0);
     }
 
 

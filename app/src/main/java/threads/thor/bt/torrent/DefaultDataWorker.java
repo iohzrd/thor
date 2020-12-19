@@ -9,6 +9,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import threads.LogUtils;
+import threads.thor.Settings;
 import threads.thor.bt.data.ChunkDescriptor;
 import threads.thor.bt.data.ChunkVerifier;
 import threads.thor.bt.data.DataDescriptor;
@@ -27,14 +28,13 @@ public class DefaultDataWorker implements DataWorker {
     private final BlockCache blockCache;
 
     private final ExecutorService executor;
-    private final int maxPendingTasks;
+
     private final AtomicInteger pendingTasksCount;
 
     public DefaultDataWorker(RuntimeLifecycleBinder lifecycleBinder,
                              TorrentRegistry torrentRegistry,
                              ChunkVerifier verifier,
-                             BlockCache blockCache,
-                             int maxQueueLength) {
+                             BlockCache blockCache) {
 
         this.torrentRegistry = torrentRegistry;
         this.verifier = verifier;
@@ -49,7 +49,7 @@ public class DefaultDataWorker implements DataWorker {
                 return new Thread(r, "bt.threads.torrent.data.worker-" + i.incrementAndGet());
             }
         });
-        this.maxPendingTasks = maxQueueLength;
+
         this.pendingTasksCount = new AtomicInteger();
 
         lifecycleBinder.onShutdown("Shutdown data worker", this.executor::shutdownNow);
@@ -130,13 +130,13 @@ public class DefaultDataWorker implements DataWorker {
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     private boolean tryIncrementTaskCount() {
         int newCount = pendingTasksCount.updateAndGet(oldCount -> {
-            if (oldCount == maxPendingTasks) {
+            if (oldCount == Settings.maxIOQueueSize) {
                 return oldCount;
             } else {
                 return oldCount + 1;
             }
         });
-        return newCount < maxPendingTasks;
+        return newCount < Settings.maxIOQueueSize;
     }
 
     private DataDescriptor getDataDescriptor(TorrentId torrentId) {

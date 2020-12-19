@@ -11,10 +11,10 @@ import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import threads.thor.Settings;
 import threads.thor.bt.bencode.BEncoder;
 import threads.thor.bt.kad.AddressUtils;
 import threads.thor.bt.kad.DHT;
-import threads.thor.bt.kad.DHTConstants;
 import threads.thor.bt.kad.Key;
 import threads.thor.bt.kad.RPCCall;
 import threads.thor.bt.kad.RPCServer;
@@ -75,7 +75,7 @@ public abstract class MessageBase {
         // transaction ID
         base.put(TRANSACTION_KEY, mtid);
         // version
-        base.put(VERSION_KEY, DHTConstants.getVersion());
+        base.put(VERSION_KEY, Settings.getDHTVersion());
 
 
         // message type

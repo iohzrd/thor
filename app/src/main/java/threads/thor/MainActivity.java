@@ -740,7 +740,7 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
 
         mWebView = findViewById(R.id.web_view);
 
-        ThorService.setWebSettings(mWebView);
+        Settings.setWebSettings(mWebView);
         CookieManager.getInstance().setAcceptThirdPartyCookies(mWebView, false);
 
 
@@ -754,13 +754,13 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
                 PROXY.set(!PROXY.get());
 
                 if (!PROXY.get()) {
-                    ThorService.setIncognitoMode(mWebView, false);
+                    Settings.setIncognitoMode(mWebView, false);
 
                     actionIncognito.setColorFilter(ContextCompat.getColor(getApplicationContext(),
                             android.R.color.white), android.graphics.PorterDuff.Mode.SRC_IN);
 
                 } else {
-                    ThorService.setIncognitoMode(mWebView, true);
+                    Settings.setIncognitoMode(mWebView, true);
 
                     actionIncognito.setColorFilter(ContextCompat.getColor(getApplicationContext(),
                             android.R.color.holo_green_light), android.graphics.PorterDuff.Mode.SRC_IN);
@@ -777,12 +777,12 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
 
 
         if (!PROXY.get()) {
-            ThorService.setIncognitoMode(mWebView, false);
+            Settings.setIncognitoMode(mWebView, false);
 
             actionIncognito.setColorFilter(ContextCompat.getColor(getApplicationContext(),
                     android.R.color.white), android.graphics.PorterDuff.Mode.SRC_IN);
         } else {
-            ThorService.setIncognitoMode(mWebView, true);
+            Settings.setIncognitoMode(mWebView, true);
 
             actionIncognito.setColorFilter(ContextCompat.getColor(getApplicationContext(),
                     android.R.color.holo_green_light), android.graphics.PorterDuff.Mode.SRC_IN);

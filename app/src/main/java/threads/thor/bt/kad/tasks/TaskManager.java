@@ -12,8 +12,8 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import threads.thor.Settings;
 import threads.thor.bt.kad.DHT;
-import threads.thor.bt.kad.DHTConstants;
 import threads.thor.bt.kad.RPCServer;
 import threads.thor.bt.kad.tasks.Task.TaskState;
 
@@ -165,19 +165,19 @@ public class TaskManager {
             // there are at least 16 RPC slots available
 
             int activeCalls = srv.getNumActiveRPCCalls();
-            if (activeCalls + 16 >= DHTConstants.MAX_ACTIVE_CALLS)
+            if (activeCalls + 16 >= Settings.MAX_ACTIVE_CALLS)
                 return false;
 
             int perServer = active.size();
 
-            if (perServer < DHTConstants.MAX_ACTIVE_TASKS)
+            if (perServer < Settings.MAX_ACTIVE_TASKS)
                 return true;
 
-            if (activeCalls >= (DHTConstants.MAX_ACTIVE_CALLS * 2) / 3)
+            if (activeCalls >= (Settings.MAX_ACTIVE_CALLS * 2) / 3)
                 return false;
             // if all their tasks have sent at least their initial volley and we still have enough head room we can allow more tasks.
             synchronized (active) {
-                return active.stream().allMatch(t -> DHTConstants.MAX_CONCURRENT_REQUESTS < t.getSentReqs());
+                return active.stream().allMatch(t -> Settings.MAX_CONCURRENT_REQUESTS < t.getSentReqs());
             }
         }
 

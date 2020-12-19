@@ -11,6 +11,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import threads.thor.Settings;
 import threads.thor.bt.data.digest.JavaSecurityDigester;
 import threads.thor.bt.event.EventBus;
 import threads.thor.bt.metainfo.TorrentId;
@@ -18,13 +19,12 @@ import threads.thor.bt.metainfo.TorrentId;
 public class ChunkVerifier {
 
     private final JavaSecurityDigester digester;
-    private final int numOfHashingThreads;
+
     private final EventBus eventBus;
 
-    public ChunkVerifier(EventBus eventBus, JavaSecurityDigester digester, int numOfHashingThreads) {
+    public ChunkVerifier(EventBus eventBus, JavaSecurityDigester digester) {
         this.eventBus = eventBus;
         this.digester = digester;
-        this.numOfHashingThreads = numOfHashingThreads;
     }
 
 
@@ -35,7 +35,7 @@ public class ChunkVerifier {
         }
 
         ChunkDescriptor[] arr = chunks.toArray(new ChunkDescriptor[chunks.size()]);
-        if (numOfHashingThreads > 1) {
+        if (Settings.numOfHashingThreads > 1) {
             collectParallel(torrentId, arr, bitfield);
         } else {
             createWorker(torrentId, arr, 0, arr.length, bitfield).run();
@@ -60,7 +60,7 @@ public class ChunkVerifier {
     }
 
     private void collectParallel(TorrentId torrentId, ChunkDescriptor[] chunks, Bitfield bitfield) {
-        int n = numOfHashingThreads;
+        int n = Settings.numOfHashingThreads;
         ExecutorService workers = Executors.newFixedThreadPool(n);
 
         List<Future<?>> futures = new ArrayList<>();

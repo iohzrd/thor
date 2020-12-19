@@ -25,6 +25,7 @@ import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import threads.LogUtils;
+import threads.thor.Settings;
 import threads.thor.bt.kad.GenericStorage.StorageItem;
 import threads.thor.bt.kad.GenericStorage.UpdateResult;
 import threads.thor.bt.kad.Node.RoutingTableEntry;
@@ -180,7 +181,7 @@ public final class DHT {
         else
             response = new UnknownTypeResponse(r.getMTID());
 
-        populateResponse(r.getTarget(), response, r.doesWant4() ? DHTConstants.MAX_ENTRIES_PER_BUCKET : 0, r.doesWant6() ? DHTConstants.MAX_ENTRIES_PER_BUCKET : 0);
+        populateResponse(r.getTarget(), response, r.doesWant4() ? Settings.MAX_ENTRIES_PER_BUCKET : 0, r.doesWant6() ? Settings.MAX_ENTRIES_PER_BUCKET : 0);
 
         response.setDestination(r.getOrigin());
         r.getServer().sendMessage(response);
@@ -218,8 +219,8 @@ public final class DHT {
         GetResponse rsp = new GetResponse(req.getMTID());
 
         populateResponse(req.getTarget(), rsp, req.doesWant4() ?
-                DHTConstants.MAX_ENTRIES_PER_BUCKET : 0, req.doesWant6() ?
-                DHTConstants.MAX_ENTRIES_PER_BUCKET : 0);
+                Settings.MAX_ENTRIES_PER_BUCKET : 0, req.doesWant6() ?
+                Settings.MAX_ENTRIES_PER_BUCKET : 0);
 
         Key k = req.getTarget();
 
@@ -318,8 +319,8 @@ public final class DHT {
         if (db.insertForKeyAllowed(r.getInfoHash()))
             token = db.genToken(r.getID(), r.getOrigin().getAddress(), r.getOrigin().getPort(), r.getInfoHash());
 
-        int want4 = r.doesWant4() ? DHTConstants.MAX_ENTRIES_PER_BUCKET : 0;
-        int want6 = r.doesWant6() ? DHTConstants.MAX_ENTRIES_PER_BUCKET : 0;
+        int want4 = r.doesWant4() ? Settings.MAX_ENTRIES_PER_BUCKET : 0;
+        int want6 = r.doesWant6() ? Settings.MAX_ENTRIES_PER_BUCKET : 0;
 
         if (v6 && peerFilter != null)
             want6 = Math.min(5, want6);
@@ -360,7 +361,7 @@ public final class DHT {
         // first check if the token is OK
         ByteWrapper token = new ByteWrapper(r.getToken());
         if (!db.checkToken(token, r.getID(), r.getOrigin().getAddress(), r.getOrigin().getPort(), r.getInfoHash())) {
-            sendError(r, ErrorCode.ProtocolError.code, "Invalid Token; tokens expire after " + DHTConstants.TOKEN_TIMEOUT + "ms; only valid for the IP/port to which it was issued; only valid for the infohash for which it was issued");
+            sendError(r, ErrorCode.ProtocolError.code, "Invalid Token; tokens expire after " + Settings.TOKEN_TIMEOUT + "ms; only valid for the IP/port to which it was issued; only valid for the infohash for which it was issued");
             return;
         }
 
@@ -384,8 +385,8 @@ public final class DHT {
         rsp.setSamples(db.samples());
         rsp.setDestination(r.getOrigin());
         rsp.setNum(db.getStats());
-        rsp.setInterval((int) TimeUnit.MILLISECONDS.toSeconds(DHTConstants.CHECK_FOR_EXPIRED_ENTRIES));
-        populateResponse(r.getTarget(), rsp, r.doesWant4() ? DHTConstants.MAX_ENTRIES_PER_BUCKET : 0, r.doesWant6() ? DHTConstants.MAX_ENTRIES_PER_BUCKET : 0);
+        rsp.setInterval((int) TimeUnit.MILLISECONDS.toSeconds(Settings.CHECK_FOR_EXPIRED_ENTRIES));
+        populateResponse(r.getTarget(), rsp, r.doesWant4() ? Settings.MAX_ENTRIES_PER_BUCKET : 0, r.doesWant6() ? Settings.MAX_ENTRIES_PER_BUCKET : 0);
 
         r.getServer().sendMessage(rsp);
 
@@ -416,7 +417,7 @@ public final class DHT {
 
         if (!addr.isUnresolved()) {
             if (!type.PREFERRED_ADDRESS_TYPE.isInstance(addr.getAddress()) ||
-                    node.getNumEntriesInRoutingTable() > DHTConstants.BOOTSTRAP_IF_LESS_THAN_X_PEERS)
+                    node.getNumEntriesInRoutingTable() > Settings.BOOTSTRAP_IF_LESS_THAN_X_PEERS)
                 return;
             RPCServer srv = serverManager.getRandomActiveServer(true);
             if (srv != null)
@@ -496,7 +497,7 @@ public final class DHT {
 
         // maintenance that should run all the time, before the first queries
         scheduledActions.add(scheduler.scheduleWithFixedDelay(tman::dequeue,
-                5000, DHTConstants.DHT_UPDATE_INTERVAL, TimeUnit.MILLISECONDS));
+                5000, Settings.DHT_UPDATE_INTERVAL, TimeUnit.MILLISECONDS));
 
         // initialize as many RPC servers as we need
         serverManager.refresh(System.currentTimeMillis(), port);
@@ -541,7 +542,7 @@ public final class DHT {
             } catch (RuntimeException e) {
                 LogUtils.error(TAG, e);
             }
-        }, 5000, DHTConstants.DHT_UPDATE_INTERVAL, TimeUnit.MILLISECONDS));
+        }, 5000, Settings.DHT_UPDATE_INTERVAL, TimeUnit.MILLISECONDS));
 
         scheduledActions.add(scheduler.scheduleWithFixedDelay(() -> {
             try {
@@ -555,7 +556,7 @@ public final class DHT {
                 LogUtils.error(TAG, e);
             }
 
-        }, 1000, DHTConstants.CHECK_FOR_EXPIRED_ENTRIES, TimeUnit.MILLISECONDS));
+        }, 1000, Settings.CHECK_FOR_EXPIRED_ENTRIES, TimeUnit.MILLISECONDS));
 
         scheduledActions.add(scheduler.scheduleWithFixedDelay(node::decayThrottle, 1, Node.throttleUpdateIntervalMinutes, TimeUnit.MINUTES));
 
@@ -587,7 +588,7 @@ public final class DHT {
             }
 
 
-        }, DHTConstants.RANDOM_LOOKUP_INTERVAL, DHTConstants.RANDOM_LOOKUP_INTERVAL, TimeUnit.MILLISECONDS));
+        }, Settings.RANDOM_LOOKUP_INTERVAL, Settings.RANDOM_LOOKUP_INTERVAL, TimeUnit.MILLISECONDS));
 
         scheduledActions.add(scheduler.scheduleWithFixedDelay(mismatchDetector::purge, 2, 3, TimeUnit.MINUTES));
         scheduledActions.add(scheduler.scheduleWithFixedDelay(unreachableCache::cleanStaleEntries, 2, 3, TimeUnit.MINUTES));
@@ -660,7 +661,7 @@ public final class DHT {
 
         node.doBucketChecks(now);
 
-        if (node.getNumEntriesInRoutingTable() < DHTConstants.BOOTSTRAP_IF_LESS_THAN_X_PEERS || now - lastBootstrap > DHTConstants.SELF_LOOKUP_INTERVAL) {
+        if (node.getNumEntriesInRoutingTable() < Settings.BOOTSTRAP_IF_LESS_THAN_X_PEERS || now - lastBootstrap > Settings.SELF_LOOKUP_INTERVAL) {
             //regualary search for our id to update routing table
             bootstrap();
         }
@@ -671,7 +672,7 @@ public final class DHT {
     private void resolveBootstrapAddresses() {
         List<InetSocketAddress> nodeAddresses = new ArrayList<>();
 
-        for (InetSocketAddress unres : DHTConstants.UNRESOLVED_BOOTSTRAP_NODES) {
+        for (InetSocketAddress unres : Settings.UNRESOLVED_BOOTSTRAP_NODES) {
             try {
                 for (InetAddress addr : InetAddress.getAllByName(unres.getHostString())) {
                     if (type.canUseAddress(addr))
@@ -702,7 +703,7 @@ public final class DHT {
      * to fill the Buckets.
      */
     private synchronized void bootstrap() {
-        if (System.currentTimeMillis() - lastBootstrap < DHTConstants.BOOTSTRAP_MIN_INTERVAL) {
+        if (System.currentTimeMillis() - lastBootstrap < Settings.BOOTSTRAP_MIN_INTERVAL) {
             return;
         }
 
@@ -733,7 +734,7 @@ public final class DHT {
             }
 
             // fill the remaining buckets once all bootstrap operations finished
-            if (count == 0 && node.getNumEntriesInRoutingTable() > DHTConstants.USE_BT_ROUTER_IF_LESS_THAN_X_PEERS) {
+            if (count == 0 && node.getNumEntriesInRoutingTable() > Settings.USE_BT_ROUTER_IF_LESS_THAN_X_PEERS) {
                 node.fillBuckets();
             }
         };

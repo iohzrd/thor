@@ -1,6 +1,5 @@
 package threads.thor.bt.net;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -16,28 +15,25 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
 import threads.LogUtils;
-import threads.thor.bt.Config;
+import threads.thor.Settings;
 import threads.thor.bt.event.EventSink;
 import threads.thor.bt.metainfo.TorrentId;
 import threads.thor.bt.service.RuntimeLifecycleBinder;
 
 public class PeerConnectionPool {
     private static final String TAG = PeerConnectionPool.class.getSimpleName();
-    private final Config config;
+
     private final EventSink eventSink;
     private final ScheduledExecutorService cleaner;
     private final Connections connections;
     private final ReentrantLock connectionLock;
-    private final Duration peerConnectionInactivityThreshold;
+
 
     public PeerConnectionPool(
             EventSink eventSink,
-            RuntimeLifecycleBinder lifecycleBinder,
-            Config config) {
+            RuntimeLifecycleBinder lifecycleBinder) {
 
-        this.config = config;
         this.eventSink = eventSink;
-        this.peerConnectionInactivityThreshold = config.getPeerConnectionInactivityThreshold();
         this.connections = new Connections();
         this.connectionLock = new ReentrantLock();
 
@@ -45,8 +41,7 @@ public class PeerConnectionPool {
         lifecycleBinder.onStartup("Schedule periodic cleanup of stale peer connections",
                 () -> cleaner.scheduleAtFixedRate(new Cleaner(), 1, 1, TimeUnit.SECONDS));
 
-        ExecutorService executor = Executors.newFixedThreadPool(
-                config.getMaxPendingConnectionRequests());
+        ExecutorService executor = Executors.newFixedThreadPool(Settings.maxPendingConnectionRequests);
 
         lifecycleBinder.onShutdown("Shutdown outgoing connection request processor", executor::shutdownNow);
         lifecycleBinder.onShutdown("Shutdown connection pool", this::shutdown);
@@ -71,7 +66,7 @@ public class PeerConnectionPool {
 
         connectionLock.lock();
         try {
-            if (connections.count() >= config.getMaxPeerConnections()) {
+            if (connections.count() >= Settings.maxPeerConnections) {
 
                 newConnection.closeQuietly();
             } else {
@@ -181,7 +176,7 @@ public class PeerConnectionPool {
                         purgeConnection(connection);
 
                     } else if (System.currentTimeMillis() - connection.getLastActive()
-                            >= peerConnectionInactivityThreshold.toMillis()) {
+                            >= Settings.peerConnectionInactivityThreshold.toMillis()) {
 
                         purgeConnection(connection);
                     }

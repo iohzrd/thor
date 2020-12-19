@@ -5,7 +5,6 @@ import java.util.Set;
 import java.util.function.IntPredicate;
 import java.util.stream.IntStream;
 
-import threads.thor.bt.Config;
 import threads.thor.bt.data.Bitfield;
 import threads.thor.bt.data.DataDescriptor;
 import threads.thor.bt.metainfo.Torrent;
@@ -20,14 +19,11 @@ import threads.thor.bt.torrent.ValidatingSelector;
 
 public class ChooseFilesStage extends TerminateOnErrorProcessingStage {
     private final TorrentRegistry torrentRegistry;
-    private final Config config;
 
-    public ChooseFilesStage(ProcessingStage next,
-                            TorrentRegistry torrentRegistry,
-                            Config config) {
+
+    public ChooseFilesStage(ProcessingStage next, TorrentRegistry torrentRegistry) {
         super(next);
         this.torrentRegistry = torrentRegistry;
-        this.config = config;
     }
 
     @Override
@@ -42,7 +38,7 @@ public class ChooseFilesStage extends TerminateOnErrorProcessingStage {
         Set<Integer> validPieces = getValidPieces(descriptor.getDataDescriptor(), selectedFiles);
         PieceSelector selector = createSelector(context.getPieceSelector(), bitfield, validPieces);
         PieceStatistics pieceStatistics = context.getPieceStatistics();
-        Assignments assignments = new Assignments(bitfield, selector, pieceStatistics, config);
+        Assignments assignments = new Assignments(bitfield, selector, pieceStatistics);
 
         updateSkippedPieces(bitfield, validPieces);
         context.setAssignments(assignments);

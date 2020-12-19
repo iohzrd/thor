@@ -5,6 +5,7 @@ import androidx.annotation.NonNull;
 import java.util.Arrays;
 import java.util.Formatter;
 
+import threads.thor.Settings;
 import threads.thor.bt.kad.messages.MessageBase;
 
 import static threads.thor.bt.utils.Functional.tap;
@@ -13,7 +14,7 @@ public class ResponseTimeoutFilter {
 
 
     private static final int MIN_BIN = 0;
-    private static final int MAX_BIN = DHTConstants.RPC_CALL_TIMEOUT_MAX;
+    private static final int MAX_BIN = Settings.RPC_CALL_TIMEOUT_MAX;
     private static final int BIN_SIZE = 50;
     private static final int NUM_BINS = (int) Math.ceil((MAX_BIN - MIN_BIN) * 1.0f / BIN_SIZE);
 
@@ -56,7 +57,7 @@ public class ResponseTimeoutFilter {
 
     public void reset() {
         updateCount = 0;
-        timeoutBaseline = timeoutCeiling = DHTConstants.RPC_CALL_TIMEOUT_MAX;
+        timeoutBaseline = timeoutCeiling = Settings.RPC_CALL_TIMEOUT_MAX;
         Arrays.fill(bins, 1.0f / bins.length);
     }
 
@@ -104,7 +105,7 @@ public class ResponseTimeoutFilter {
     public long getStallTimeout() {
         // either the 90th percentile or the 10th percentile + 100ms baseline, whichever is HIGHER (to prevent descent to zero and missing more than 10% of the packets in the worst case).
         // but At most RPC_CALL_TIMEOUT_MAX
-        return Math.min(Math.max(timeoutBaseline + DHTConstants.RPC_CALL_TIMEOUT_BASELINE_MIN, timeoutCeiling), DHTConstants.RPC_CALL_TIMEOUT_MAX);
+        return Math.min(Math.max(timeoutBaseline + Settings.RPC_CALL_TIMEOUT_BASELINE_MIN, timeoutCeiling), Settings.RPC_CALL_TIMEOUT_MAX);
     }
 
     public static class Snapshot {

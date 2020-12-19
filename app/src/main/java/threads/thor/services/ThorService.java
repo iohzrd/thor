@@ -1,14 +1,10 @@
 package threads.thor.services;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.net.Uri;
-import android.os.Build;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
-import android.webkit.WebSettings;
-import android.webkit.WebView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -27,7 +23,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import threads.LogUtils;
-import threads.thor.InitApplication;
+import threads.thor.Settings;
 import threads.thor.core.Content;
 import threads.thor.ipfs.IPFS;
 
@@ -61,7 +57,7 @@ public class ThorService {
     public static WebResourceResponse getProxyResponse(@NonNull WebResourceRequest request,
                                                        @NonNull String urlString) throws Throwable {
         Proxy proxy = new Proxy(Proxy.Type.SOCKS,
-                new InetSocketAddress(InitApplication.LOCALHOST, InitApplication.SOCKSPort));
+                new InetSocketAddress(Settings.LOCALHOST, Settings.SOCKSPort));
 
 
         HttpURLConnection connection = (HttpURLConnection)
@@ -115,46 +111,6 @@ public class ThorService {
                 response, responseHeaders, in);
     }
 
-
-    @SuppressLint("SetJavaScriptEnabled")
-    public static void setIncognitoMode(@NonNull WebView webView, boolean incognito) {
-        webView.getSettings().setJavaScriptEnabled(!incognito);
-    }
-
-
-    @SuppressLint("SetJavaScriptEnabled")
-    public static void setWebSettings(@NonNull WebView webView) {
-
-
-        WebSettings settings = webView.getSettings();
-        settings.setUserAgentString("Mozilla/5.0 (Linux; Android " + Build.VERSION.RELEASE + ")");
-
-        settings.setJavaScriptEnabled(true);
-        settings.setJavaScriptCanOpenWindowsAutomatically(false);
-
-        settings.setSafeBrowsingEnabled(true);
-        settings.setAllowFileAccessFromFileURLs(false);
-        settings.setAllowContentAccess(false);
-        settings.setAllowUniversalAccessFromFileURLs(false);
-        settings.setAllowFileAccess(false);
-        settings.setLoadsImagesAutomatically(true);
-        settings.setBlockNetworkLoads(false);
-        settings.setBlockNetworkImage(false);
-        settings.setDomStorageEnabled(true);
-        settings.setAppCacheEnabled(true);
-        settings.setCacheMode(WebSettings.LOAD_DEFAULT);
-        settings.setDatabaseEnabled(true);
-        settings.setSupportZoom(true);
-        settings.setBuiltInZoomControls(true);
-        settings.setDisplayZoomControls(false);
-        settings.setLayoutAlgorithm(WebSettings.LayoutAlgorithm.NORMAL);
-        settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
-        settings.setUseWideViewPort(true);
-        settings.setLoadWithOverviewMode(true);
-        settings.setMediaPlaybackRequiresUserGesture(true);
-        settings.setSupportMultipleWindows(false);
-        settings.setGeolocationEnabled(false);
-    }
 
     @Nullable
     public static Uri getContentUri(@NonNull Context context) {

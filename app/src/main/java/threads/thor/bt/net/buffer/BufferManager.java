@@ -10,17 +10,12 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.locks.ReentrantLock;
 
-import threads.thor.bt.Config;
+import threads.thor.Settings;
 
 public class BufferManager implements IBufferManager {
 
-    private final int bufferSize;
-    private final ConcurrentMap<Class<?>, Deque<SoftReference<?>>> releasedBuffers;
+    private final ConcurrentMap<Class<?>, Deque<SoftReference<?>>> releasedBuffers = new ConcurrentHashMap<>();
 
-    public BufferManager(Config config) {
-        this.bufferSize = config.getNetworkBufferSize();
-        this.releasedBuffers = new ConcurrentHashMap<>();
-    }
 
     @Override
     @SuppressWarnings("unchecked")
@@ -37,6 +32,7 @@ public class BufferManager implements IBufferManager {
         } while (ref != null && buffer == null);
 
         if (buffer == null) {
+            int bufferSize = Settings.networkBufferSize;
             buffer = ByteBuffer.allocateDirect(bufferSize);
         } else {
             // reset buffer before re-using

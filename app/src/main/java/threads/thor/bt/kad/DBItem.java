@@ -4,6 +4,7 @@ import androidx.annotation.NonNull;
 
 import java.util.Arrays;
 
+import threads.thor.Settings;
 import threads.thor.bt.bencode.Utils;
 
 import static threads.thor.bt.utils.Arrays.compareUnsigned;
@@ -24,7 +25,7 @@ public class DBItem implements Comparable<DBItem> {
     }
 
     boolean expired(final long now) {
-        return (now - time_stamp >= DHTConstants.MAX_ITEM_AGE);
+        return (now - time_stamp >= Settings.MAX_ITEM_AGE);
     }
 
     public byte[] getData() {

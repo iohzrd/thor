@@ -16,23 +16,20 @@ public class TorrentProcessorFactory {
         ProcessingStage stage4 = new ProcessMagnetTorrentStage(stage5,
                 runtime.mTorrentRegistry, runtime.getEventBus());
 
-        ProcessingStage stage3 = new ChooseFilesStage(stage4,
-                runtime.mTorrentRegistry, runtime.getConfig());
+        ProcessingStage stage3 = new ChooseFilesStage(stage4, runtime.mTorrentRegistry);
 
         ProcessingStage stage2 = new InitializeMagnetTorrentProcessingStage(stage3,
                 runtime.mConnectionPool,
                 runtime.mTorrentRegistry,
                 runtime.mDataWorker,
                 runtime.mBufferedPieceRegistry,
-                runtime.getEventBus(),
-                runtime.getConfig());
+                runtime.getEventBus());
 
 
         ProcessingStage stage1 = new FetchMetadataStage(stage2,
                 runtime.mTorrentRegistry,
                 runtime.mPeerRegistry,
                 runtime.getEventBus(),
-                runtime.getConfig(),
                 runtime.getContext());
 
 
@@ -41,8 +38,7 @@ public class TorrentProcessorFactory {
                 runtime.getEventBus(),
                 runtime.mConnectionSource,
                 runtime.mMessageDispatcher,
-                runtime.mMessagingAgents,
-                runtime.getConfig());
+                runtime.mMessagingAgents);
 
         return new ChainProcessor(stage0, runtime.getExecutor(),
                 new TorrentContextFinalizer(runtime.mTorrentRegistry, runtime.getEventBus()));

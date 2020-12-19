@@ -12,7 +12,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Supplier;
 
-import threads.thor.bt.Config;
+import threads.thor.Settings;
 import threads.thor.bt.data.Bitfield;
 import threads.thor.bt.event.EventSource;
 import threads.thor.bt.metainfo.TorrentId;
@@ -30,11 +30,9 @@ public class TorrentWorker {
     private static final Duration UPDATE_ASSIGNMENTS_OPTIONAL_INTERVAL = Duration.ofSeconds(1);
     private static final Duration UPDATE_ASSIGNMENTS_MANDATORY_INTERVAL = Duration.ofSeconds(5);
     private final ConnectionSource connectionSource;
-    private final int MAX_CONCURRENT_ACTIVE_CONNECTIONS;
-    private final int MAX_TOTAL_CONNECTIONS;
+
     private final TorrentId torrentId;
     private final MessageDispatcher dispatcher;
-    private final Config config;
     private final PeerWorkerFactory peerWorkerFactory;
     private final ConcurrentMap<ConnectionKey, PieceAnnouncingPeerWorker> peerMap;
     private final Map<ConnectionKey, Long> timeoutedPeers;
@@ -52,17 +50,14 @@ public class TorrentWorker {
                          Supplier<Bitfield> bitfieldSupplier,
                          Supplier<Assignments> assignmentsSupplier,
                          Supplier<PieceStatistics> statisticsSupplier,
-                         EventSource eventSource,
-                         Config config) {
+                         EventSource eventSource) {
         this.torrentId = torrentId;
         this.dispatcher = dispatcher;
-        this.config = config;
 
         this.connectionSource = connectionSource;
         this.peerWorkerFactory = peerWorkerFactory;
         this.peerMap = new ConcurrentHashMap<>();
-        this.MAX_CONCURRENT_ACTIVE_CONNECTIONS = config.getMaxConcurrentlyActivePeerConnectionsPerTorrent();
-        this.MAX_TOTAL_CONNECTIONS = config.getMaxPeerConnectionsPerTorrent();
+
         this.timeoutedPeers = new ConcurrentHashMap<>();
         this.disconnectedPeers = new LinkedBlockingQueue<>();
         this.interestUpdates = new ConcurrentHashMap<>();
@@ -177,11 +172,11 @@ public class TorrentWorker {
     }
 
     private boolean mightUseMoreAssignees(Assignments assignments) {
-        return assignments.count() < MAX_CONCURRENT_ACTIVE_CONNECTIONS;
+        return assignments.count() < Settings.maxConcurrentlyActivePeerConnectionsPerTorrent;
     }
 
     private boolean mightCreateMoreAssignments(Assignments assignments) {
-        return assignments.count() < MAX_CONCURRENT_ACTIVE_CONNECTIONS;
+        return assignments.count() < Settings.maxConcurrentlyActivePeerConnectionsPerTorrent;
     }
 
     private long timeSinceLastUpdated() {
@@ -208,7 +203,7 @@ public class TorrentWorker {
     private void processTimeoutedPeers() {
         timeoutedPeers.entrySet().removeIf(entry ->
                 System.currentTimeMillis() - entry.getValue() >=
-                        config.getTimeoutedAssignmentPeerBanDuration().toMillis());
+                        Settings.timeoutedAssignmentPeerBanDuration.toMillis());
     }
 
     private void updateAssignments(Assignments assignments) {
@@ -295,7 +290,7 @@ public class TorrentWorker {
     }
 
     private boolean mightAddPeer() {
-        return getPeers().size() < MAX_TOTAL_CONNECTIONS;
+        return getPeers().size() < Settings.maxPeerConnectionsPerTorrent;
     }
 
     private synchronized void onPeerDisconnected(ConnectionKey connectionKey) {

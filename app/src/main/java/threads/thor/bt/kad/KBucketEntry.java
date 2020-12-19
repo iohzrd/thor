@@ -12,6 +12,7 @@ import java.util.zip.CRC32;
 import java.util.zip.Checksum;
 
 import threads.LogUtils;
+import threads.thor.Settings;
 import threads.thor.bt.utils.ExponentialWeightendMovingAverage;
 
 import static threads.thor.bt.bencode.Utils.prettyPrint;
@@ -246,7 +247,7 @@ public class KBucketEntry {
     }
 
     public int getRTT() {
-        return (int) avgRTT.getAverage(DHTConstants.RPC_CALL_TIMEOUT_MAX);
+        return (int) avgRTT.getAverage(Settings.RPC_CALL_TIMEOUT_MAX);
     }
 
     /**

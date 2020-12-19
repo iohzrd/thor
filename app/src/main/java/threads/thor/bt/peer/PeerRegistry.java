@@ -2,7 +2,6 @@ package threads.thor.bt.peer;
 
 import androidx.annotation.NonNull;
 
-import java.time.Duration;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -13,12 +12,13 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import threads.LogUtils;
-import threads.thor.bt.Config;
+import threads.thor.Settings;
 import threads.thor.bt.event.EventSink;
 import threads.thor.bt.metainfo.Torrent;
 import threads.thor.bt.metainfo.TorrentId;
 import threads.thor.bt.net.InetPeer;
 import threads.thor.bt.net.Peer;
+import threads.thor.bt.net.PeerId;
 import threads.thor.bt.service.RuntimeLifecycleBinder;
 import threads.thor.bt.torrent.TorrentDescriptor;
 import threads.thor.bt.torrent.TorrentRegistry;
@@ -36,28 +36,29 @@ public final class PeerRegistry {
     public PeerRegistry(@NonNull RuntimeLifecycleBinder lifecycleBinder,
                         @NonNull TorrentRegistry torrentRegistry,
                         @NonNull EventSink eventSink,
-                        @NonNull Config config) {
+                        @NonNull PeerId peerId,
+                        int acceptorPort) {
 
-        this.localPeer = InetPeer.builder(config.getAcceptorAddress(), config.getAcceptorPort())
-                .peerId(config.getLocalPeerId())
+        this.localPeer = InetPeer.builder(Settings.acceptorAddress, acceptorPort)
+                .peerId(peerId)
                 .build();
 
         this.torrentRegistry = torrentRegistry;
         this.eventSink = eventSink;
 
 
-        createExecutor(lifecycleBinder, config.getPeerDiscoveryInterval());
+        createExecutor(lifecycleBinder);
     }
 
     public void addPeerSourceFactory(@NonNull PeerSourceFactory factory) {
         extraPeerSourceFactories.add(factory);
     }
 
-    private void createExecutor(RuntimeLifecycleBinder lifecycleBinder, Duration peerDiscoveryInterval) {
+    private void createExecutor(RuntimeLifecycleBinder lifecycleBinder) {
         ScheduledExecutorService executor =
                 Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "bt.peer.peer-collector"));
         lifecycleBinder.onStartup("Schedule periodic peer lookup", () -> executor.scheduleAtFixedRate(
-                this::collectAndVisitPeers, 1, peerDiscoveryInterval.toMillis(), TimeUnit.MILLISECONDS));
+                this::collectAndVisitPeers, 1, Settings.peerDiscoveryInterval.toMillis(), TimeUnit.MILLISECONDS));
         lifecycleBinder.onShutdown("Shutdown peer lookup scheduler", executor::shutdownNow);
     }
 

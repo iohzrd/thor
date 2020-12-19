@@ -7,7 +7,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import threads.LogUtils;
-import threads.thor.bt.Config;
+import threads.thor.Settings;
 import threads.thor.bt.bencoding.model.BEInteger;
 import threads.thor.bt.bencoding.model.BEString;
 import threads.thor.bt.metainfo.Torrent;
@@ -34,11 +34,11 @@ public final class ExtendedHandshakeFactory {
 
     public ExtendedHandshakeFactory(TorrentRegistry torrentRegistry,
                                     ExtendedMessageTypeMapping messageTypeMapping,
-                                    Config config) {
+                                    int acceptorPort) {
         this.torrentRegistry = torrentRegistry;
         this.messageTypeMapping = messageTypeMapping;
-        this.encryptionPolicy = config.getEncryptionPolicy();
-        this.tcpAcceptorPort = config.getAcceptorPort();
+        this.encryptionPolicy = Settings.encryptionPolicy;
+        this.tcpAcceptorPort = acceptorPort;
         this.extendedHandshakes = new ConcurrentHashMap<>();
     }
 

@@ -10,7 +10,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import threads.LogUtils;
-import threads.thor.bt.Config;
+import threads.thor.Settings;
 import threads.thor.bt.metainfo.TorrentId;
 import threads.thor.bt.protocol.Message;
 import threads.thor.bt.service.RuntimeLifecycleBinder;
@@ -27,22 +27,20 @@ public class MessageDispatcher {
 
     public MessageDispatcher(RuntimeLifecycleBinder lifecycleBinder,
                              PeerConnectionPool pool,
-                             TorrentRegistry torrentRegistry,
-                             Config config) {
+                             TorrentRegistry torrentRegistry) {
 
         this.consumers = new ConcurrentHashMap<>();
         this.suppliers = new ConcurrentHashMap<>();
         this.torrentRegistry = torrentRegistry;
         this.modificationLock = new Object();
 
-        initializeMessageLoop(lifecycleBinder, pool, config);
+        initializeMessageLoop(lifecycleBinder, pool);
     }
 
     private void initializeMessageLoop(RuntimeLifecycleBinder lifecycleBinder,
-                                       PeerConnectionPool pool,
-                                       Config config) {
+                                       PeerConnectionPool pool) {
         ExecutorService executor = Executors.newSingleThreadExecutor(r -> new Thread(r, "bt.net.message-dispatcher"));
-        LoopControl loopControl = new LoopControl(config.getMaxMessageProcessingInterval().toMillis());
+        LoopControl loopControl = new LoopControl(Settings.maxMessageProcessingInterval.toMillis());
         MessageDispatchingLoop loop = new MessageDispatchingLoop(pool, loopControl);
         lifecycleBinder.onStartup("Initialize message dispatcher", () -> executor.execute(loop));
         lifecycleBinder.onShutdown("Shutdown message dispatcher", () -> {

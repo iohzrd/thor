@@ -10,7 +10,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Consumer;
 
-import threads.thor.bt.Config;
+import threads.thor.Settings;
 import threads.thor.bt.IConsumers;
 import threads.thor.bt.IProduces;
 import threads.thor.bt.magnet.UtMetadata;
@@ -26,11 +26,10 @@ public class MetadataProducer implements IProduces, IConsumers {
     // initialized on the first metadata request if the threads.torrent is present
     private volatile ExchangedMetadata metadata;
 
-    public MetadataProducer(@Nullable Torrent torrentSupplier,
-                            Config config) {
+    public MetadataProducer(@Nullable Torrent torrentSupplier) {
         this.torrentSupplier = torrentSupplier;
         this.outboundMessages = new ConcurrentHashMap<>();
-        this.metadataExchangeBlockSize = config.getMetadataExchangeBlockSize();
+        this.metadataExchangeBlockSize = Settings.metadataExchangeBlockSize;
     }
 
     @Override

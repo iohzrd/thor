@@ -13,8 +13,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import threads.LogUtils;
+import threads.thor.Settings;
 import threads.thor.bt.kad.DHT;
-import threads.thor.bt.kad.DHTConstants;
 import threads.thor.bt.kad.Key;
 import threads.thor.bt.kad.Node;
 import threads.thor.bt.kad.RPCCall;
@@ -239,7 +239,7 @@ public abstract class Task implements Comparable<Task> {
         TaskStats stats = counts.get();
         int activeOnly = stats.activeOnly();
         int activeAndStalled = stats.unanswered();
-        int concurrency = DHTConstants.MAX_CONCURRENT_REQUESTS;
+        int concurrency = Settings.MAX_CONCURRENT_REQUESTS;
 
         // based on measurements the expected loss rate is ~50% on average (see RPCServer)
         // if we exceed that (+margin) don't let stalls trigger additional requests, wait for new responses/full timeouts

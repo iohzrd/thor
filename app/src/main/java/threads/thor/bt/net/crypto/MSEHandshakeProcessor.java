@@ -17,7 +17,7 @@ import java.util.Optional;
 import java.util.Random;
 
 import threads.LogUtils;
-import threads.thor.bt.Config;
+import threads.thor.Settings;
 import threads.thor.bt.metainfo.TorrentId;
 import threads.thor.bt.net.BigIntegers;
 import threads.thor.bt.net.ByteChannelReader;
@@ -52,12 +52,11 @@ public class MSEHandshakeProcessor {
 
     public MSEHandshakeProcessor(
             TorrentRegistry torrentRegistry,
-            MessageHandler<Message> protocol,
-            Config config) {
+            MessageHandler<Message> protocol) {
 
-        this.localEncryptionPolicy = config.getEncryptionPolicy();
+        this.localEncryptionPolicy = Settings.encryptionPolicy;
 
-        int msePrivateKeySize = config.getMsePrivateKeySize();
+        int msePrivateKeySize = Settings.msePrivateKeySize;
         boolean mseDisabled = !MSECipher.isKeySizeSupported(msePrivateKeySize);
         if (mseDisabled) {
             @SuppressLint("DefaultLocale") String message = String.format(

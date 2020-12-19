@@ -11,6 +11,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentSkipListMap;
 
+import threads.thor.Settings;
 import threads.thor.bt.kad.messages.MessageBase;
 
 public class AnnounceNodeCache {
@@ -56,7 +57,7 @@ public class AnnounceNodeCache {
 
     public void register(Key target, boolean isFastLookup) {
         CacheAnchorPoint anchor = new CacheAnchorPoint(target);
-        anchor.expirationTime = System.currentTimeMillis() + (isFastLookup ? DHTConstants.ANNOUNCE_CACHE_FAST_LOOKUP_AGE : DHTConstants.ANNOUNCE_CACHE_MAX_AGE);
+        anchor.expirationTime = System.currentTimeMillis() + (isFastLookup ? Settings.ANNOUNCE_CACHE_FAST_LOOKUP_AGE : Settings.ANNOUNCE_CACHE_MAX_AGE);
         anchors.put(target, anchor);
     }
 
@@ -92,7 +93,7 @@ public class AnnounceNodeCache {
                 }
             }
 
-            if (size >= DHTConstants.MAX_CONCURRENT_REQUESTS) {
+            if (size >= Settings.MAX_CONCURRENT_REQUESTS) {
                 // cache entry full, see if we this bucket prefix covers any anchor
                 Map.Entry<Key, CacheAnchorPoint> anchorEntry = anchors.ceilingEntry(targetBucket.prefix);
 
@@ -173,7 +174,7 @@ public class AnnounceNodeCache {
         for (CacheBucket b : cache.values()) {
             for (Iterator<KBucketEntry> it2 = b.entries.iterator(); it2.hasNext(); ) {
                 KBucketEntry kbe = it2.next();
-                if (now - kbe.getLastSeen() > DHTConstants.ANNOUNCE_CACHE_MAX_AGE || seenIDs.contains(kbe.getID()) || seenIPs.contains(kbe.getAddress().getAddress()))
+                if (now - kbe.getLastSeen() > Settings.ANNOUNCE_CACHE_MAX_AGE || seenIDs.contains(kbe.getID()) || seenIPs.contains(kbe.getAddress().getAddress()))
                     it2.remove();
                 seenIDs.add(kbe.getID());
                 seenIPs.add(kbe.getAddress().getAddress());
@@ -209,7 +210,7 @@ public class AnnounceNodeCache {
 
             Prefix parent = current.prefix.getParentPrefix();
             Map.Entry<Key, CacheAnchorPoint> anchor = anchors.ceilingEntry(parent);
-            if (anchor == null || !parent.isPrefixOf(anchor.getValue()) || current.entries.size() + next.entries.size() < DHTConstants.MAX_CONCURRENT_REQUESTS) {
+            if (anchor == null || !parent.isPrefixOf(anchor.getValue()) || current.entries.size() + next.entries.size() < Settings.MAX_CONCURRENT_REQUESTS) {
                 synchronized (current) {
                     synchronized (next) {
                         // check for concurrent split/merge

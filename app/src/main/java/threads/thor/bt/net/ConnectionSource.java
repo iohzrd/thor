@@ -9,7 +9,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import threads.LogUtils;
-import threads.thor.bt.Config;
+import threads.thor.Settings;
 import threads.thor.bt.metainfo.TorrentId;
 import threads.thor.bt.service.RuntimeLifecycleBinder;
 
@@ -19,7 +19,7 @@ public class ConnectionSource {
     private final PeerConnectionFactory connectionFactory;
     private final PeerConnectionPool connectionPool;
     private final ExecutorService connectionExecutor;
-    private final Config config;
+
 
     private final Map<ConnectionKey, CompletableFuture<ConnectionResult>> pendingConnections;
     // TODO: weak map
@@ -28,15 +28,12 @@ public class ConnectionSource {
     public ConnectionSource(Set<SocketChannelConnectionAcceptor> connectionAcceptors,
                             PeerConnectionFactory connectionFactory,
                             PeerConnectionPool connectionPool,
-                            RuntimeLifecycleBinder lifecycleBinder,
-                            Config config) {
+                            RuntimeLifecycleBinder lifecycleBinder) {
 
         this.connectionFactory = connectionFactory;
         this.connectionPool = connectionPool;
-        this.config = config;
 
-        this.connectionExecutor = Executors.newFixedThreadPool(
-                config.getMaxPendingConnectionRequests());
+        this.connectionExecutor = Executors.newFixedThreadPool(Settings.maxPendingConnectionRequests);
         lifecycleBinder.onShutdown("Shutdown connection workers", connectionExecutor::shutdownNow);
 
         this.pendingConnections = new ConcurrentHashMap<>();
@@ -44,7 +41,7 @@ public class ConnectionSource {
 
 
         IncomingConnectionListener incomingListener =
-                new IncomingConnectionListener(connectionAcceptors, connectionExecutor, connectionPool, config);
+                new IncomingConnectionListener(connectionAcceptors, connectionExecutor, connectionPool);
         lifecycleBinder.onStartup("Initialize incoming connection acceptors", incomingListener::startup);
         lifecycleBinder.onShutdown("Shutdown incoming connection acceptors", incomingListener::shutdown);
 
@@ -61,7 +58,7 @@ public class ConnectionSource {
 
         Long bannedAt = unreachablePeers.get(peer);
         if (bannedAt != null) {
-            if (System.currentTimeMillis() - bannedAt >= config.getUnreachablePeerBanDuration().toMillis()) {
+            if (System.currentTimeMillis() - bannedAt >= Settings.unreachablePeerBanDuration.toMillis()) {
                 LogUtils.debug(TAG, "Removing temporary ban for unreachable peer");
                 unreachablePeers.remove(peer);
             } else {
@@ -71,7 +68,7 @@ public class ConnectionSource {
             }
         }
 
-        if (connectionPool.size() >= config.getMaxPeerConnections()) {
+        if (connectionPool.size() >= Settings.maxPeerConnections) {
 
             CompletableFuture.completedFuture(ConnectionResult.failure("Connections limit exceeded"));
             return;

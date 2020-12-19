@@ -8,6 +8,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import threads.thor.Settings;
 import threads.thor.bt.IProduces;
 import threads.thor.bt.data.Bitfield;
 import threads.thor.bt.data.ChunkDescriptor;
@@ -23,10 +24,10 @@ public class RequestProducer implements IProduces {
     private final Bitfield bitfield;
     private final List<ChunkDescriptor> chunks;
 
-    public RequestProducer(DataDescriptor dataDescriptor, int maxOutstandingRequests) {
+    public RequestProducer(DataDescriptor dataDescriptor) {
         this.bitfield = dataDescriptor.getBitfield();
         this.chunks = dataDescriptor.getChunkDescriptors();
-        this.maxOutstandingRequests = maxOutstandingRequests;
+        this.maxOutstandingRequests = Settings.maxOutstandingRequests;
     }
 
     @Override

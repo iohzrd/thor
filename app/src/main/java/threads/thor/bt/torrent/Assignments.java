@@ -7,13 +7,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import threads.thor.bt.Config;
 import threads.thor.bt.data.Bitfield;
 import threads.thor.bt.net.ConnectionKey;
 
 public class Assignments {
 
-    private final Config config;
 
     private final Bitfield bitfield;
     private final PieceSelector selector;
@@ -22,11 +20,10 @@ public class Assignments {
     private final Set<Integer> assignedPieces;
     private final Map<ConnectionKey, Assignment> assignments;
 
-    public Assignments(Bitfield bitfield, PieceSelector selector, PieceStatistics pieceStatistics, Config config) {
+    public Assignments(Bitfield bitfield, PieceSelector selector, PieceStatistics pieceStatistics) {
         this.bitfield = bitfield;
         this.selector = selector;
         this.pieceStatistics = pieceStatistics;
-        this.config = config;
 
         this.assignedPieces = new HashSet<>();
         this.assignments = new HashMap<>();
@@ -52,7 +49,7 @@ public class Assignments {
             return Optional.empty();
         }
 
-        Assignment assignment = new Assignment(connectionKey, config.getMaxPieceReceivingTime(),
+        Assignment assignment = new Assignment(connectionKey,
                 selector, pieceStatistics, this);
         assignments.put(connectionKey, assignment);
         return Optional.of(assignment);

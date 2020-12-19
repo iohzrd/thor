@@ -11,7 +11,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
-import threads.thor.bt.Config;
+import threads.thor.Settings;
 import threads.thor.bt.IConsumers;
 import threads.thor.bt.IProduces;
 import threads.thor.bt.magnet.UtMetadata;
@@ -41,8 +41,7 @@ public class MetadataConsumer implements IProduces, IConsumers {
     private volatile ExchangedMetadata metadata;
 
     public MetadataConsumer(MetadataService metadataService,
-                            TorrentId torrentId,
-                            Config config) {
+                            TorrentId torrentId) {
 
         this.peersWithoutMetadata = new ConcurrentHashMap<>();
 
@@ -55,8 +54,8 @@ public class MetadataConsumer implements IProduces, IConsumers {
         this.torrentId = Objects.requireNonNull(torrentId);
         this.torrent = new AtomicReference<>();
 
-        this.metadataExchangeBlockSize = config.getMetadataExchangeBlockSize();
-        this.metadataExchangeMaxSize = config.getMetadataExchangeMaxSize();
+        this.metadataExchangeBlockSize = Settings.metadataExchangeBlockSize;
+        this.metadataExchangeMaxSize = Settings.metadataExchangeMaxSize;
     }
 
     @Override

@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
+import threads.thor.Settings;
 import threads.thor.bt.kad.DHT.DHTtype;
 import threads.thor.bt.kad.Node.RoutingTable;
 
@@ -28,7 +29,7 @@ public class KClosestNodesSearch {
         this.owner = owner;
         this.max_entries = max_entries;
         this.comp = new KBucketEntry.DistanceOrder(key);
-        entries = new ArrayList<>(max_entries + DHTConstants.MAX_ENTRIES_PER_BUCKET);
+        entries = new ArrayList<>(max_entries + Settings.MAX_ENTRIES_PER_BUCKET);
     }
 
     public void fill() {
@@ -68,7 +69,7 @@ public class KClosestNodesSearch {
         if (overshoot <= 0)
             return;
 
-        List<KBucketEntry> tail = entries.subList(Math.max(0, entries.size() - DHTConstants.MAX_ENTRIES_PER_BUCKET), entries.size());
+        List<KBucketEntry> tail = entries.subList(Math.max(0, entries.size() - Settings.MAX_ENTRIES_PER_BUCKET), entries.size());
         tail.sort(comp);
         entries.subList(entries.size() - overshoot, entries.size()).clear();
     }

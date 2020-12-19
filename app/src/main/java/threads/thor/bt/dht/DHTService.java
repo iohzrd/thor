@@ -6,14 +6,13 @@ import androidx.annotation.NonNull;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
-import java.util.Collection;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Stream;
 
 import threads.LogUtils;
-import threads.thor.bt.Config;
+import threads.thor.Settings;
 import threads.thor.bt.data.DataDescriptor;
 import threads.thor.bt.event.EventSource;
 import threads.thor.bt.kad.DHT;
@@ -42,24 +41,23 @@ public class DHTService {
     private final int port;
     private final int acceptorPort;
     private final PeerId peerId;
-    private final Collection<InetPeerAddress> publicBootstrapNodes;
     private final Set<PortMapper> portMappers;
     private final TorrentRegistry torrentRegistry;
 
     public DHTService(@NonNull RuntimeLifecycleBinder lifecycleBinder,
-                      @NonNull Config config,
+                      @NonNull PeerId peerId,
                       @NonNull Set<PortMapper> portMappers,
                       @NonNull TorrentRegistry torrentRegistry,
-                      @NonNull EventSource eventSource) {
+                      @NonNull EventSource eventSource,
+                      int acceptorPort) {
 
         this.dht = new DHT(NetworkUtil.hasIpv6() ? DHTtype.IPV6_DHT : DHTtype.IPV4_DHT);
-        this.acceptorPort = config.getAcceptorPort();
-        this.publicBootstrapNodes = config.getPublicBootstrapNodes();
+        this.acceptorPort = acceptorPort;
         this.portMappers = portMappers;
         this.torrentRegistry = torrentRegistry;
 
         eventSource.onTorrentStarted(e -> onTorrentStarted(e.getTorrentId()));
-        this.peerId = config.getLocalPeerId();
+        this.peerId = peerId;
         this.port = nextFreePort();
 
         lifecycleBinder.onStartup(LifecycleBinding.bind(this::start).description("Initialize DHT facilities").async().build());
@@ -94,7 +92,7 @@ public class DHTService {
 
         try {
             dht.start(peerId, port);
-            publicBootstrapNodes.forEach(this::addNode);
+            Settings.BOOTSTRAP_NODES.forEach(this::addNode);
             mapPorts();
         } catch (Throwable e) {
             throw new RuntimeException("Failed to start DHT", e);

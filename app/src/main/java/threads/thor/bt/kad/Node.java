@@ -26,6 +26,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import threads.thor.BuildConfig;
+import threads.thor.Settings;
 import threads.thor.bt.kad.messages.MessageBase;
 import threads.thor.bt.kad.messages.MessageBase.Type;
 import threads.thor.bt.kad.tasks.PingRefreshTask;
@@ -299,14 +300,14 @@ public class Node {
 
         Key closestLocalId = usedIDs.stream().min(comp).orElseThrow(() -> new IllegalStateException("expected to find a local ID"));
 
-        KClosestNodesSearch search = new KClosestNodesSearch(closestLocalId, DHTConstants.MAX_ENTRIES_PER_BUCKET, dht);
+        KClosestNodesSearch search = new KClosestNodesSearch(closestLocalId, Settings.MAX_ENTRIES_PER_BUCKET, dht);
 
         search.filter = x -> true;
 
         search.fill();
         List<KBucketEntry> found = search.getEntries();
 
-        if (found.size() < DHTConstants.MAX_ENTRIES_PER_BUCKET)
+        if (found.size() < Settings.MAX_ENTRIES_PER_BUCKET)
             return true;
 
         KBucketEntry max = found.get(found.size() - 1);
@@ -437,7 +438,7 @@ public class Node {
 
         // don't spam the checks if we're not receiving anything.
         // we don't want to cause too many stray packets somewhere in a network
-        if (survival && now - timeOfLastPingCheck < DHTConstants.BOOTSTRAP_MIN_INTERVAL)
+        if (survival && now - timeOfLastPingCheck < Settings.BOOTSTRAP_MIN_INTERVAL)
             return;
         timeOfLastPingCheck = now;
 
@@ -453,7 +454,7 @@ public class Node {
 
             Set<Key> localIds = usedIDs.snapshot();
 
-            boolean wasFull = b.getNumEntries() >= DHTConstants.MAX_ENTRIES_PER_BUCKET;
+            boolean wasFull = b.getNumEntries() >= Settings.MAX_ENTRIES_PER_BUCKET;
             for (KBucketEntry entry : entries) {
                 // remove really old entries, ourselves and bootstrap nodes if the bucket is full
                 if (localIds.contains(entry.getID()) || (wasFull && dht.getBootStrapNodes().contains(entry.getAddress()))) {
@@ -563,7 +564,7 @@ public class Node {
 
                     // check if the buckets can be merged without losing entries
 
-                    if (effectiveSize1 + effectiveSize2 <= DHTConstants.MAX_ENTRIES_PER_BUCKET) {
+                    if (effectiveSize1 + effectiveSize2 <= Settings.MAX_ENTRIES_PER_BUCKET) {
 
                         RoutingTable table = routingTableCOW;
                         routingTableCOW = table.modify(Arrays.asList(e1, e2),
@@ -643,7 +644,7 @@ public class Node {
 
             // just try to fill partially populated buckets
             // not empty ones, they may arise as artifacts from deep splitting
-            if (num > 0 && num < DHTConstants.MAX_ENTRIES_PER_BUCKET) {
+            if (num > 0 && num < Settings.MAX_ENTRIES_PER_BUCKET) {
 
                 dht.fillBucket(entry.prefix.createRandomKeyFromPrefix(), entry.bucket, t -> t.setInfo("Filling Bucket #" + entry.prefix));
             }

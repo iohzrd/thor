@@ -30,9 +30,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import threads.LogUtils;
-import threads.thor.InitApplication;
 import threads.thor.MainActivity;
 import threads.thor.R;
+import threads.thor.Settings;
 import threads.thor.core.Content;
 import threads.thor.ipfs.IPFS;
 import threads.thor.ipfs.ReaderProgress;
@@ -162,8 +162,8 @@ public class DownloadFileWorker extends Worker {
                     URL urlCon = new URL(uri.toString());
                     if (isOnion(uri)) {
                         Proxy proxy = new Proxy(Proxy.Type.SOCKS,
-                                new InetSocketAddress(InitApplication.LOCALHOST,
-                                        InitApplication.SOCKSPort));
+                                new InetSocketAddress(Settings.LOCALHOST,
+                                        Settings.SOCKSPort));
                         huc = (HttpURLConnection) urlCon.openConnection(proxy);
                     } else {
                         huc = (HttpURLConnection) urlCon.openConnection();
