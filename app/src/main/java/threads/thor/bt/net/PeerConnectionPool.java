@@ -17,7 +17,6 @@ import java.util.function.Consumer;
 
 import threads.LogUtils;
 import threads.thor.bt.Config;
-import threads.thor.bt.CountingThreadFactory;
 import threads.thor.bt.event.EventSink;
 import threads.thor.bt.metainfo.TorrentId;
 import threads.thor.bt.service.RuntimeLifecycleBinder;
@@ -47,8 +46,7 @@ public class PeerConnectionPool {
                 () -> cleaner.scheduleAtFixedRate(new Cleaner(), 1, 1, TimeUnit.SECONDS));
 
         ExecutorService executor = Executors.newFixedThreadPool(
-                config.getMaxPendingConnectionRequests(),
-                CountingThreadFactory.daemonFactory("bt.net.pool.connection-worker"));
+                config.getMaxPendingConnectionRequests());
 
         lifecycleBinder.onShutdown("Shutdown outgoing connection request processor", executor::shutdownNow);
         lifecycleBinder.onShutdown("Shutdown connection pool", this::shutdown);

@@ -11,9 +11,9 @@ import threads.thor.bt.processor.MagnetContext;
 import threads.thor.bt.processor.Processor;
 import threads.thor.bt.torrent.TorrentSessionState;
 
-public class BtClient {
+public class Client {
 
-    private final BtRuntime runtime;
+    private final Runtime runtime;
     private final Processor<MagnetContext> processor;
     private final ListenerSource<MagnetContext> listenerSource;
     private final MagnetContext context;
@@ -23,10 +23,10 @@ public class BtClient {
 
     private volatile ScheduledExecutorService listenerExecutor;
 
-    BtClient(BtRuntime runtime,
-             Processor<MagnetContext> processor,
-             MagnetContext context,
-             ListenerSource<MagnetContext> listenerSource) {
+    Client(Runtime runtime,
+           Processor<MagnetContext> processor,
+           MagnetContext context,
+           ListenerSource<MagnetContext> listenerSource) {
         this.runtime = runtime;
         this.processor = processor;
         this.context = context;
@@ -39,7 +39,7 @@ public class BtClient {
 
     public synchronized CompletableFuture<?> startAsync(Consumer<TorrentSessionState> listener, long period) {
         if (futureOptional != null) {
-            throw new BtException("Can't start -- already running");
+            throw new RuntimeException("Can't start -- already running");
         }
 
         this.listenerExecutor = Executors.newSingleThreadScheduledExecutor();

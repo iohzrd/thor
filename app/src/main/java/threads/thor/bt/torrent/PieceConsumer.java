@@ -124,9 +124,8 @@ public class PieceConsumer implements IProduces, IConsumers {
                 offset = piece.getOffset(),
                 blockLength = piece.getLength();
 
-
-        if (connectionState.getCurrentAssignment().isPresent()) {
-            Assignment assignment = connectionState.getCurrentAssignment().get();
+        Assignment assignment = connectionState.getCurrentAssignment();
+        if (assignment != null) {
             if (assignment.isAssigned(pieceIndex)) {
                 assignment.check();
             }

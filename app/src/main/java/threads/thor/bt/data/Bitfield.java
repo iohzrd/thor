@@ -3,7 +3,6 @@ package threads.thor.bt.data;
 import java.util.BitSet;
 import java.util.concurrent.locks.ReentrantLock;
 
-import threads.thor.bt.BtException;
 import threads.thor.bt.protocol.BitOrder;
 import threads.thor.bt.protocol.Protocols;
 
@@ -257,7 +256,7 @@ public class Bitfield {
 
     private void validatePieceIndex(Integer pieceIndex) {
         if (pieceIndex < 0 || pieceIndex >= getPiecesTotal()) {
-            throw new BtException("Illegal piece index: " + pieceIndex +
+            throw new RuntimeException("Illegal piece index: " + pieceIndex +
                     ", expected 0.." + (getPiecesTotal() - 1));
         }
     }

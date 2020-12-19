@@ -28,11 +28,11 @@ import java.util.concurrent.atomic.AtomicReference;
 import threads.LogUtils;
 import threads.thor.MainActivity;
 import threads.thor.R;
-import threads.thor.bt.BtClient;
-import threads.thor.bt.BtRuntime;
+import threads.thor.bt.Client;
+import threads.thor.bt.ClientBuilder;
 import threads.thor.bt.Config;
 import threads.thor.bt.IdentityService;
-import threads.thor.bt.StandaloneClientBuilder;
+import threads.thor.bt.Runtime;
 import threads.thor.bt.event.EventBus;
 import threads.thor.bt.magnet.MagnetUri;
 import threads.thor.bt.magnet.MagnetUriParser;
@@ -146,19 +146,19 @@ public class DownloadMagnetWorker extends Worker {
             try {
                 Objects.requireNonNull(rootDoc);
                 Config config = new Config();
-                config.setNumOfHashingThreads(Runtime.getRuntime().availableProcessors() * 2);
+                config.setNumOfHashingThreads(java.lang.Runtime.getRuntime().availableProcessors() * 2);
                 config.setAcceptorPort(IPFS.nextFreePort());
                 byte[] id = new IdentityService().getID();
                 config.setLocalPeerId(PeerId.fromBytes(id));
 
 
-                EventBus eventBus = BtRuntime.provideEventBus();
+                EventBus eventBus = Runtime.provideEventBus();
                 ContentStorage storage = new ContentStorage(
                         getApplicationContext(), eventBus, rootDoc);
-                BtRuntime runtime = new BtRuntime(
+                Runtime runtime = new Runtime(
                         getApplicationContext(), config, eventBus);
 
-                BtClient client = new StandaloneClientBuilder()
+                Client client = new ClientBuilder()
                         .runtime(runtime)
                         .storage(storage)
                         .magnet(magnet)

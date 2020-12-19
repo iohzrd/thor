@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 
-import threads.thor.bt.BtException;
 import threads.thor.bt.net.InetPeer;
 import threads.thor.bt.net.Peer;
 import threads.thor.bt.peer.PeerOptions;
@@ -82,7 +81,7 @@ public class CompactPeerInfo implements Iterable<Peer> {
                 try {
                     inetAddress = InetAddress.getByAddress(Arrays.copyOfRange(peers, from, to));
                 } catch (UnknownHostException e) {
-                    throw new BtException("Failed to get next peer", e);
+                    throw new RuntimeException("Failed to get next peer", e);
                 }
 
                 from = to;

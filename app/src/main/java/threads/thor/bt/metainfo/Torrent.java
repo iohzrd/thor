@@ -14,7 +14,6 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 
 import threads.LogUtils;
-import threads.thor.bt.BtException;
 
 
 public final class Torrent {
@@ -57,7 +56,7 @@ public final class Torrent {
                                         long chunkSize) {
 
         if (chunkHashes.length % CHUNK_HASH_LENGTH != 0) {
-            throw new BtException("Invalid chunk hashes string -- length (" + chunkHashes.length
+            throw new RuntimeException("Invalid chunk hashes string -- length (" + chunkHashes.length
                     + ") is not divisible by " + CHUNK_HASH_LENGTH);
         }
         if (torrentFiles.isEmpty()) {

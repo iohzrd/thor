@@ -8,7 +8,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-import threads.thor.bt.BtException;
 import threads.thor.bt.metainfo.TorrentId;
 import threads.thor.bt.net.PeerId;
 import threads.thor.bt.net.buffer.ByteBufferView;
@@ -124,7 +123,7 @@ public class StandardBittorrentProtocol implements MessageHandler<Message> {
 
         extraHandlers.forEach((messageId, handler) -> {
             if (handlers.containsKey(messageId)) {
-                throw new BtException("Duplicate handler for message ID: " + messageId);
+                throw new RuntimeException("Duplicate handler for message ID: " + messageId);
             }
             handlers.put(messageId, handler);
         });
@@ -136,14 +135,14 @@ public class StandardBittorrentProtocol implements MessageHandler<Message> {
         handlers.forEach((messageId, handler) -> {
 
             if (handler.getSupportedTypes().isEmpty()) {
-                throw new BtException("No supported types declared in handler: " + handler.getClass().getName());
+                throw new RuntimeException("No supported types declared in handler: " + handler.getClass().getName());
             } else {
                 uniqueTypes.put(messageId, handler.getSupportedTypes().iterator().next());
             }
 
             handler.getSupportedTypes().forEach(messageType -> {
                         if (idMap.containsKey(messageType)) {
-                            throw new BtException("Duplicate handler for message type: " + messageType.getSimpleName());
+                            throw new RuntimeException("Duplicate handler for message type: " + messageType.getSimpleName());
                         }
                         idMap.put(messageType, messageId);
                         handlersByType.put(messageType, handler);

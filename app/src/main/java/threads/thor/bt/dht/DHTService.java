@@ -4,8 +4,6 @@ package threads.thor.bt.dht;
 import androidx.annotation.NonNull;
 
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.util.Collection;
@@ -15,7 +13,6 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Stream;
 
 import threads.LogUtils;
-import threads.thor.bt.BtException;
 import threads.thor.bt.Config;
 import threads.thor.bt.data.DataDescriptor;
 import threads.thor.bt.event.EventSource;
@@ -100,7 +97,7 @@ public class DHTService {
             publicBootstrapNodes.forEach(this::addNode);
             mapPorts();
         } catch (Throwable e) {
-            throw new BtException("Failed to start DHT", e);
+            throw new RuntimeException("Failed to start DHT", e);
         }
 
     }
@@ -155,10 +152,7 @@ public class DHTService {
         } catch (Throwable e) {
             LogUtils.error(TAG, String.format("Unexpected error in peer lookup: %s. See DHT log file for diagnostic information.",
                     e.getMessage()), e);
-            BtException btex = new BtException(String.format("Unexpected error in peer lookup: %s. Diagnostics:\n%s",
-                    e.getMessage(), getDiagnostics()), e);
-            LogUtils.error(TAG, "" + btex.getLocalizedMessage(), btex);
-            throw btex;
+            throw new RuntimeException(e);
         }
     }
 
@@ -170,9 +164,4 @@ public class DHTService {
         dht.addDHTNode(hostname, port);
     }
 
-    private String getDiagnostics() {
-        StringWriter sw = new StringWriter();
-        dht.printDiagnostics(new PrintWriter(sw));
-        return sw.toString();
-    }
 }

@@ -12,7 +12,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import threads.thor.bt.BtException;
 import threads.thor.bt.bencoding.model.BEMap;
 import threads.thor.bt.bencoding.model.BEObject;
 import threads.thor.bt.bencoding.model.BEString;
@@ -109,7 +108,7 @@ class PeerExchange extends ExtendedMessage {
 
             } catch (IOException e) {
                 // won't happen
-                throw new BtException("Unexpected I/O exception", e);
+                throw new RuntimeException("Unexpected I/O exception", e);
             }
         }
         return new BEString(bos.toByteArray());

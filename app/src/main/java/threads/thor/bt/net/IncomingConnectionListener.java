@@ -6,7 +6,6 @@ import java.util.concurrent.Executors;
 
 import threads.LogUtils;
 import threads.thor.bt.Config;
-import threads.thor.bt.CountingThreadFactory;
 
 class IncomingConnectionListener {
     private static final String TAG = IncomingConnectionListener.class.getSimpleName();
@@ -27,9 +26,7 @@ class IncomingConnectionListener {
         this.connectionPool = connectionPool;
         this.config = config;
 
-        this.executor = Executors.newFixedThreadPool(
-                connectionAcceptors.size(),
-                CountingThreadFactory.factory("bt.net.pool.incoming-acceptor"));
+        this.executor = Executors.newFixedThreadPool(connectionAcceptors.size());
     }
 
     public void startup() {

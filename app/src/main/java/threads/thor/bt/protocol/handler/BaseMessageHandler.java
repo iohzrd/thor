@@ -4,7 +4,6 @@ import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.util.Objects;
 
-import threads.thor.bt.BtException;
 import threads.thor.bt.net.buffer.ByteBufferView;
 import threads.thor.bt.protocol.DecodingContext;
 import threads.thor.bt.protocol.EncodingContext;
@@ -30,7 +29,7 @@ public abstract class BaseMessageHandler<T extends Message> implements MessageHa
             int end = buffer.position();
             int payloadLength = end - begin - MESSAGE_PREFIX_SIZE;
             if (payloadLength < 0) {
-                throw new BtException("Unexpected payload length: " + payloadLength);
+                throw new RuntimeException("Unexpected payload length: " + payloadLength);
             }
             buffer.position(begin);
             buffer.putInt(payloadLength + MESSAGE_TYPE_SIZE);

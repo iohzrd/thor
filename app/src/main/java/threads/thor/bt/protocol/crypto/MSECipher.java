@@ -8,7 +8,6 @@ import java.security.NoSuchAlgorithmException;
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 
-import threads.thor.bt.BtException;
 import threads.thor.bt.metainfo.TorrentId;
 
 /**
@@ -37,12 +36,8 @@ public class MSECipher {
         this.outgoingCipher = createCipher(Cipher.ENCRYPT_MODE, outgoingKey);
     }
 
-    /**
-     * @throws BtException if the check can't be performed,
-     *                     e.g. when the MSE-specific cipher transformation is not supported in the current JDK.
-     * @since 1.6
-     */
-    public static boolean isKeySizeSupported(int keySize) throws BtException {
+
+    public static boolean isKeySizeSupported(int keySize) {
         if (keySize <= 0) {
             throw new IllegalArgumentException("Negative key size: " + keySize);
         }
@@ -51,7 +46,7 @@ public class MSECipher {
         try {
             maxAllowedKeySizeBits = Cipher.getMaxAllowedKeyLength(transformation);
         } catch (NoSuchAlgorithmException e) {
-            throw new BtException("Transformation is not supported: " + transformation);
+            throw new RuntimeException("Transformation is not supported: " + transformation);
         }
 
         return (keySize * 8) <= maxAllowedKeySizeBits;

@@ -8,7 +8,6 @@ import java.net.SocketException;
 import java.util.Enumeration;
 
 import threads.LogUtils;
-import threads.thor.bt.BtException;
 
 public class NetworkUtil {
     private static final String TAG = NetworkUtil.class.getSimpleName();
@@ -54,7 +53,7 @@ public class NetworkUtil {
             }
 
         } catch (SocketException e) {
-            throw new BtException("Failed to retrieve network address", e);
+            throw new RuntimeException("Failed to retrieve network address", e);
         }
         // explicitly returning a loopback address here instead of null;
         // otherwise we'll depend on how JDK classes handle this,

@@ -6,7 +6,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import threads.thor.bt.BtException;
 import threads.thor.bt.net.buffer.ByteBufferView;
 import threads.thor.bt.protocol.DecodingContext;
 import threads.thor.bt.protocol.EncodingContext;
@@ -50,14 +49,14 @@ public class ExtendedProtocol extends BaseMessageHandler<ExtendedMessage> {
         handlersByTypeName.forEach((typeName, handler) -> {
 
             if (handler.getSupportedTypes().isEmpty()) {
-                throw new BtException("No supported types declared in handler: " + handler.getClass().getName());
+                throw new RuntimeException("No supported types declared in handler: " + handler.getClass().getName());
             } else {
                 uniqueTypes.put(typeName, handler.getSupportedTypes().iterator().next());
             }
 
             handler.getSupportedTypes().forEach(messageType -> {
                 if (handlers.containsKey(messageType)) {
-                    throw new BtException("Encountered duplicate handler for message type: " + messageType.getSimpleName());
+                    throw new RuntimeException("Encountered duplicate handler for message type: " + messageType.getSimpleName());
                 }
                 handlers.put(messageType, handler);
             });
@@ -105,7 +104,7 @@ public class ExtendedProtocol extends BaseMessageHandler<ExtendedMessage> {
         } else {
             String extendedType = messageTypeMapping.getTypeNameForId(typeId);
             if (extendedType == null) {
-                throw new BtException("Received unsupported extended message id: " + typeId);
+                throw new RuntimeException("Received unsupported extended message id: " + typeId);
             }
             handler = handlersByTypeName.get(extendedType);
         }

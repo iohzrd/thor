@@ -1,6 +1,5 @@
 package threads.thor.bt.protocol;
 
-import threads.thor.bt.BtException;
 import threads.thor.bt.metainfo.TorrentId;
 import threads.thor.bt.peer.PeerRegistry;
 
@@ -19,9 +18,9 @@ public final class HandshakeFactory {
     public Handshake createHandshake(TorrentId torrentId) {
         try {
             return new Handshake(new byte[HANDSHAKE_RESERVED_LENGTH], torrentId,
-                    peerRegistry.getLocalPeer().getPeerId().orElseThrow(() -> new BtException("Local peer is missing ID")));
+                    peerRegistry.getLocalPeer().getPeerId().orElseThrow(() -> new RuntimeException("Local peer is missing ID")));
         } catch (InvalidMessageException e) {
-            throw new BtException("Failed to create handshake", e);
+            throw new RuntimeException("Failed to create handshake", e);
         }
     }
 }

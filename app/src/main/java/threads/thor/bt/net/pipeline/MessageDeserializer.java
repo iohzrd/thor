@@ -2,7 +2,6 @@ package threads.thor.bt.net.pipeline;
 
 import java.util.Objects;
 
-import threads.thor.bt.BtException;
 import threads.thor.bt.net.Peer;
 import threads.thor.bt.net.buffer.ByteBufferView;
 import threads.thor.bt.protocol.DecodingContext;
@@ -28,7 +27,7 @@ class MessageDeserializer {
         int consumed = protocol.decode(context, buffer);
         if (consumed > 0) {
             if (consumed > limit - position) {
-                throw new BtException("Unexpected amount of bytes consumed: " + consumed);
+                throw new RuntimeException("Unexpected amount of bytes consumed: " + consumed);
             }
             buffer.position(position + consumed);
             message = Objects.requireNonNull(context.getMessage());

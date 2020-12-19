@@ -1,7 +1,6 @@
 package threads.thor.bt.torrent;
 
 import java.time.Duration;
-import java.util.Optional;
 import java.util.function.Consumer;
 
 import threads.thor.bt.protocol.Choke;
@@ -32,23 +31,23 @@ class Choker {
      */
     public void handleConnection(ConnectionState connectionState, Consumer<Message> messageConsumer) {
 
-        Optional<Boolean> shouldChokeOptional = connectionState.getShouldChoke();
+        Boolean shouldChokeOptional = connectionState.getShouldChoke();
         boolean choking = connectionState.isChoking();
         boolean peerInterested = connectionState.isPeerInterested();
 
-        if (!shouldChokeOptional.isPresent()) {
+        if (shouldChokeOptional == null) {
             if (peerInterested && choking) {
                 if (mightUnchoke(connectionState)) {
-                    shouldChokeOptional = Optional.of(Boolean.FALSE); // should unchoke
+                    shouldChokeOptional = Boolean.FALSE; // should unchoke
                 }
             } else if (!peerInterested && !choking) {
-                shouldChokeOptional = Optional.of(Boolean.TRUE);
+                shouldChokeOptional = Boolean.TRUE;
             }
         }
 
-        shouldChokeOptional.ifPresent(shouldChoke -> {
-            if (shouldChoke != choking) {
-                if (shouldChoke) {
+        if (shouldChokeOptional != null) {
+            if (shouldChokeOptional != choking) {
+                if (shouldChokeOptional) {
                     // choke immediately
                     connectionState.setChoking(true);
                     messageConsumer.accept(Choke.instance());
@@ -58,7 +57,7 @@ class Choker {
                     messageConsumer.accept(Unchoke.instance());
                 }
             }
-        });
+        }
     }
 
     private boolean mightUnchoke(ConnectionState connectionState) {

@@ -6,8 +6,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import threads.thor.bt.BtException;
-
 public final class TorrentFile {
 
     private final long size;
@@ -17,7 +15,7 @@ public final class TorrentFile {
     public TorrentFile(long size) {
 
         if (size < 0) {
-            throw new BtException("Invalid torrent file size: " + size);
+            throw new RuntimeException("Invalid torrent file size: " + size);
         }
 
         this.size = size;
@@ -50,7 +48,7 @@ public final class TorrentFile {
 
     public void setPathElements(List<String> pathElements) {
         if (pathElements == null || pathElements.isEmpty()) {
-            throw new BtException("Can't create threads.torrent file without path");
+            throw new RuntimeException("Can't create threads.torrent file without path");
         }
         this.pathElements = pathElements;
     }

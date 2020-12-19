@@ -10,7 +10,6 @@ import java.util.concurrent.Executors;
 
 import threads.LogUtils;
 import threads.thor.bt.Config;
-import threads.thor.bt.CountingThreadFactory;
 import threads.thor.bt.metainfo.TorrentId;
 import threads.thor.bt.service.RuntimeLifecycleBinder;
 
@@ -37,8 +36,7 @@ public class ConnectionSource {
         this.config = config;
 
         this.connectionExecutor = Executors.newFixedThreadPool(
-                config.getMaxPendingConnectionRequests(),
-                CountingThreadFactory.daemonFactory("bt.net.pool.connection-worker"));
+                config.getMaxPendingConnectionRequests());
         lifecycleBinder.onShutdown("Shutdown connection workers", connectionExecutor::shutdownNow);
 
         this.pendingConnections = new ConcurrentHashMap<>();

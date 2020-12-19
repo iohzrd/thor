@@ -14,7 +14,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
 
-import threads.thor.bt.BtException;
 import threads.thor.bt.IConsumers;
 import threads.thor.bt.event.EventSource;
 import threads.thor.bt.metainfo.TorrentId;
@@ -217,7 +216,7 @@ public class PeerExchangePeerSourceFactory implements PeerSourceFactory, IConsum
                             break;
                         }
                         default: {
-                            throw new BtException("Unknown event type: " + event.getType().name());
+                            throw new RuntimeException("Unknown event type: " + event.getType().name());
                         }
                     }
                 });

@@ -1,6 +1,5 @@
 package threads.thor.bt.protocol;
 
-import threads.thor.bt.BtException;
 import threads.thor.bt.metainfo.TorrentId;
 import threads.thor.bt.net.PeerId;
 
@@ -53,7 +52,7 @@ public final class Handshake implements Message {
      */
     public void setReservedBit(int bitIndex) {
         if (bitIndex < 0 || bitIndex > UPPER_RESERVED_BOUND) {
-            throw new BtException("Illegal bit index: " + bitIndex +
+            throw new RuntimeException("Illegal bit index: " + bitIndex +
                     ". Expected index in range [0.." + UPPER_RESERVED_BOUND + "]");
         }
         Protocols.setBit(reserved, BitOrder.LITTLE_ENDIAN, bitIndex);

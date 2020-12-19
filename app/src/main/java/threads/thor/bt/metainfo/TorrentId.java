@@ -5,7 +5,6 @@ import androidx.annotation.NonNull;
 import java.util.Arrays;
 import java.util.Objects;
 
-import threads.thor.bt.BtException;
 import threads.thor.bt.protocol.Protocols;
 
 public class TorrentId {
@@ -16,7 +15,7 @@ public class TorrentId {
     private TorrentId(byte[] torrentId) {
         Objects.requireNonNull(torrentId);
         if (torrentId.length != TORRENT_ID_LENGTH) {
-            throw new BtException("Illegal threads.torrent ID length: " + torrentId.length);
+            throw new RuntimeException("Illegal threads.torrent ID length: " + torrentId.length);
         }
         this.torrentId = torrentId;
     }

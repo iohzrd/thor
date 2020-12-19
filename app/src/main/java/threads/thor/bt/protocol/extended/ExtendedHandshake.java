@@ -7,7 +7,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-import threads.thor.bt.BtException;
 import threads.thor.bt.bencoding.model.BEInteger;
 import threads.thor.bt.bencoding.model.BEMap;
 import threads.thor.bt.bencoding.model.BEObject;
@@ -125,7 +124,7 @@ public final class ExtendedHandshake extends ExtendedMessage {
             }
 
             if (messageTypeMap.containsKey(Objects.requireNonNull(typeName))) {
-                throw new BtException("Message type already defined: " + typeName);
+                throw new RuntimeException("Message type already defined: " + typeName);
             }
 
             messageTypeMap.put(typeName, new BEInteger(null, BigInteger.valueOf((long) typeId)));

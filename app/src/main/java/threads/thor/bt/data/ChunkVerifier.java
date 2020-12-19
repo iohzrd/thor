@@ -11,7 +11,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import threads.thor.bt.BtException;
 import threads.thor.bt.data.digest.JavaSecurityDigester;
 import threads.thor.bt.event.EventBus;
 import threads.thor.bt.metainfo.TorrentId;
@@ -93,12 +92,12 @@ public class ChunkVerifier {
             try {
                 Thread.sleep(100);
             } catch (InterruptedException e) {
-                throw new BtException("Unexpectedly interrupted");
+                throw new RuntimeException("Unexpectedly interrupted");
             }
         }
 
         if (!errors.isEmpty()) {
-            throw new BtException("Failed to verify threads.torrent data:" +
+            throw new RuntimeException("Failed to verify threads.torrent data:" +
                     errors.stream().map(this::errorToString).reduce(String::concat).get());
         }
 

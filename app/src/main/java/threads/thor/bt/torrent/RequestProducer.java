@@ -8,7 +8,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import threads.thor.bt.BtException;
 import threads.thor.bt.IProduces;
 import threads.thor.bt.data.Bitfield;
 import threads.thor.bt.data.ChunkDescriptor;
@@ -36,16 +35,15 @@ public class RequestProducer implements IProduces {
 
         ConnectionState connectionState = context.getConnectionState();
 
-        if (!connectionState.getCurrentAssignment().isPresent()) {
+        Assignment assignment = connectionState.getCurrentAssignment();
+        if (assignment == null) {
             resetConnection(connectionState, messageConsumer);
             return;
         }
 
-        Assignment assignment = connectionState.getCurrentAssignment().get();
         Queue<Integer> assignedPieces = assignment.getPieces();
         if (assignedPieces.isEmpty()) {
             resetConnection(connectionState, messageConsumer);
-
             return;
         } else {
             List<Integer> finishedPieces = null;
@@ -131,7 +129,7 @@ public class RequestProducer implements IProduces {
                     requests.add(new Request(pieceIndex, offset, length));
                 } catch (InvalidMessageException e) {
                     // shouldn't happen
-                    throw new BtException("Unexpected error", e);
+                    throw new RuntimeException("Unexpected error", e);
                 }
             }
         }

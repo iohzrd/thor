@@ -9,7 +9,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Consumer;
 
-import threads.thor.bt.BtException;
 import threads.thor.bt.IConsumers;
 import threads.thor.bt.IProduces;
 import threads.thor.bt.metainfo.TorrentId;
@@ -100,7 +99,7 @@ public class PeerRequestConsumer implements IProduces, IConsumers {
                 messageConsumer.accept(new Piece(block.getPieceIndex(), block.getOffset(),
                         block.getLength(), block.getReader().get()));
             } catch (InvalidMessageException e) {
-                throw new BtException("Failed to send PIECE", e);
+                throw new RuntimeException("Failed to send PIECE", e);
             }
         }
     }

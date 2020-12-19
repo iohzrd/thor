@@ -4,7 +4,6 @@ import java.nio.Buffer;
 import java.util.Arrays;
 import java.util.BitSet;
 
-import threads.thor.bt.BtException;
 import threads.thor.bt.net.buffer.ByteBufferView;
 
 public class Protocols {
@@ -118,7 +117,7 @@ public class Protocols {
     public static void setBit(byte[] bytes, BitOrder bitOrder, int i) {
         int byteIndex = (int) (i / 8d);
         if (byteIndex >= bytes.length) {
-            throw new BtException("bit index is too large: " + i);
+            throw new RuntimeException("bit index is too large: " + i);
         }
 
         int bitIndex = i % 8;
@@ -140,7 +139,7 @@ public class Protocols {
     public static int getBit(byte[] bytes, BitOrder bitOrder, int i) {
         int byteIndex = (int) (i / 8d);
         if (byteIndex >= bytes.length) {
-            throw new BtException("bit index is too large: " + i);
+            throw new RuntimeException("bit index is too large: " + i);
         }
 
         int bitIndex = i % 8;

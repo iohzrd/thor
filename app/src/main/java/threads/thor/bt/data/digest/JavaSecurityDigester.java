@@ -5,7 +5,6 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 
-import threads.thor.bt.BtException;
 import threads.thor.bt.data.DataRange;
 import threads.thor.bt.data.range.Range;
 
@@ -32,7 +31,7 @@ public class JavaSecurityDigester {
         data.visitUnits((unit, off, lim) -> {
             long remaining = lim - off;
             if (remaining > Integer.MAX_VALUE) {
-                throw new BtException("Too much data -- can't read to buffer");
+                throw new RuntimeException("Too much data -- can't read to buffer");
             }
             byte[] bytes = new byte[step];
             do {
@@ -66,7 +65,7 @@ public class JavaSecurityDigester {
         data.visitUnits((unit, off, lim) -> {
             long remaining = lim - off;
             if (remaining > Integer.MAX_VALUE) {
-                throw new BtException("Too much data -- can't read to buffer");
+                throw new RuntimeException("Too much data -- can't read to buffer");
             }
             byte[] bytes = new byte[step];
             ByteBuffer buffer = ByteBuffer.wrap(bytes);
@@ -110,7 +109,7 @@ public class JavaSecurityDigester {
             return MessageDigest.getInstance(algorithm);
         } catch (NoSuchAlgorithmException e) {
             // not going to happen
-            throw new BtException("Unexpected error", e);
+            throw new RuntimeException("Unexpected error", e);
         }
     }
 }

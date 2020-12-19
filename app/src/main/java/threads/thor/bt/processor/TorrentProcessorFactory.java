@@ -2,12 +2,12 @@ package threads.thor.bt.processor;
 
 import androidx.annotation.NonNull;
 
-import threads.thor.bt.BtRuntime;
+import threads.thor.bt.Runtime;
 
 public class TorrentProcessorFactory {
 
 
-    public static ChainProcessor<MagnetContext> createMagnetProcessor(@NonNull BtRuntime runtime) {
+    public static ChainProcessor<MagnetContext> createMagnetProcessor(@NonNull Runtime runtime) {
 
 
         ProcessingStage<MagnetContext> stage5 = new SeedStage<>(null,

@@ -1,10 +1,11 @@
 package threads.thor.bt.torrent;
 
+import androidx.annotation.Nullable;
+
 import java.util.ArrayDeque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -90,12 +91,10 @@ public class ConnectionState {
         this.shouldChoke = null;
     }
 
-    /**
-     * @return Optional boolean, if choking/unchoking has been proposed, null otherwise
-     * @since 1.0
-     */
-    Optional<Boolean> getShouldChoke() {
-        return Optional.of(shouldChoke);
+
+    @Nullable
+    Boolean getShouldChoke() {
+        return shouldChoke;
     }
 
     /**
@@ -188,8 +187,8 @@ public class ConnectionState {
         return requestQueue;
     }
 
-    Optional<Assignment> getCurrentAssignment() {
-        return Optional.of(assignment);
+    Assignment getCurrentAssignment() {
+        return assignment;
     }
 
     void setCurrentAssignment(Assignment assignment) {

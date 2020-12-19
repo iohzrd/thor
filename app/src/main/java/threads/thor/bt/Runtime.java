@@ -73,10 +73,10 @@ import threads.thor.bt.torrent.DataWorker;
 import threads.thor.bt.torrent.DefaultDataWorker;
 import threads.thor.bt.torrent.TorrentRegistry;
 
-public class BtRuntime {
+public class Runtime {
 
 
-    private static final String TAG = BtRuntime.class.getSimpleName();
+    private static final String TAG = Runtime.class.getSimpleName();
 
     public final MessageDispatcher mMessageDispatcher;
     public final ConnectionSource mConnectionSource;
@@ -92,14 +92,14 @@ public class BtRuntime {
     private final ExecutorService mExecutor;
     private final EventBus mEventBus;
     private final RuntimeLifecycleBinder mRuntimeLifecycleBinder;
-    private final Set<BtClient> knownClients;
+    private final Set<Client> knownClients;
     private final AtomicBoolean started;
 
 
-    public BtRuntime(@NonNull Context context,
-                     @NonNull Config config,
-                     @NonNull EventBus eventBus) {
-        Runtime.getRuntime().addShutdownHook(new Thread("bt.runtime.shutdown-manager") {
+    public Runtime(@NonNull Context context,
+                   @NonNull Config config,
+                   @NonNull EventBus eventBus) {
+        java.lang.Runtime.getRuntime().addShutdownHook(new Thread("bt.runtime.shutdown-manager") {
             @Override
             public void run() {
                 shutdown();
@@ -354,11 +354,11 @@ public class BtRuntime {
     }
 
 
-    public void attachClient(BtClient client) {
+    public void attachClient(Client client) {
         knownClients.add(client);
     }
 
-    public void detachClient(BtClient client) {
+    public void detachClient(Client client) {
         if (knownClients.remove(client)) {
             if (knownClients.isEmpty()) {
                 shutdown();
@@ -414,7 +414,7 @@ public class BtRuntime {
             try {
                 toRunnable(binding).run();
             } catch (Throwable e) {
-                errorConsumer.accept(new BtException(errorMessage, e));
+                errorConsumer.accept(new RuntimeException(errorMessage, e));
             }
         });
 
@@ -425,7 +425,7 @@ public class BtRuntime {
                 try {
                     future.get(mConfig.getShutdownHookTimeout().toMillis(), TimeUnit.MILLISECONDS);
                 } catch (InterruptedException | ExecutionException | TimeoutException e) {
-                    errorConsumer.accept(new BtException(errorMessage, e));
+                    errorConsumer.accept(new RuntimeException(errorMessage, e));
                 }
             });
         }

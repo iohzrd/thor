@@ -12,7 +12,6 @@ import java.util.Map;
 import java.util.Set;
 
 import threads.LogUtils;
-import threads.thor.bt.BtException;
 import threads.thor.bt.data.range.BlockRange;
 import threads.thor.bt.data.range.Ranges;
 import threads.thor.bt.data.range.SynchronizedBlockSet;
@@ -89,7 +88,7 @@ public class DataDescriptor implements Closeable {
                 DataRange subrange = data.getSubrange(off, lim);
 
                 if (!chunkHashes.hasNext()) {
-                    throw new BtException("Wrong number of chunk hashes in the torrent: too few");
+                    throw new RuntimeException("Wrong number of chunk hashes in the torrent: too few");
                 }
 
                 List<TorrentFile> chunkFiles = new ArrayList<>();
@@ -103,7 +102,7 @@ public class DataDescriptor implements Closeable {
         }
 
         if (chunkHashes.hasNext()) {
-            throw new BtException("Wrong number of chunk hashes in the threads.torrent: too many");
+            throw new RuntimeException("Wrong number of chunk hashes in the threads.torrent: too many");
         }
 
         this.bitfield = buildBitfield(chunks);

@@ -17,7 +17,6 @@ import java.util.stream.Collectors;
 
 import threads.LogUtils;
 import threads.thor.R;
-import threads.thor.bt.BtException;
 import threads.thor.bt.bencoding.BEParser;
 import threads.thor.bt.bencoding.BEType;
 import threads.thor.bt.bencoding.model.BEList;
@@ -60,7 +59,7 @@ public final class MetadataService {
                 this.infodictModel = new YamlBEObjectModelLoader().load(in);
             }
         } catch (IOException e) {
-            throw new BtException("Failed to create metadata service", e);
+            throw new RuntimeException("Failed to create metadata service", e);
         }
     }
 
@@ -73,7 +72,7 @@ public final class MetadataService {
     private Torrent buildTorrent(byte[] bs) {
         try (BEParser parser = new BEParser(bs)) {
             if (parser.readType() != BEType.MAP) {
-                throw new BtException("Invalid metainfo format -- expected a map, got: "
+                throw new RuntimeException("Invalid metainfo format -- expected a map, got: "
                         + parser.readType().name().toLowerCase());
             }
 
@@ -83,7 +82,7 @@ public final class MetadataService {
             if (!validationResult.isSuccess()) {
                 ValidationResult infodictValidationResult = infodictModel.validate(metadata);
                 if (!infodictValidationResult.isSuccess()) {
-                    throw new BtException("Validation failed for  metainfo:\n1. Standard model: "
+                    throw new RuntimeException("Validation failed for  metainfo:\n1. Standard model: "
                             + Arrays.toString(validationResult.getMessages().toArray())
                             + "\n2. Standalone info dictionary model: " + Arrays.toString(infodictValidationResult.getMessages().toArray()));
                 }
@@ -207,7 +206,7 @@ public final class MetadataService {
             return torrent;
 
         } catch (Exception e) {
-            throw new BtException("Invalid metainfo format", e);
+            throw new RuntimeException("Invalid metainfo format", e);
         }
     }
 }

@@ -3,8 +3,6 @@ package threads.thor.bt.service;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-import threads.thor.bt.BtException;
-
 public class CryptoUtil {
 
     /**
@@ -17,7 +15,7 @@ public class CryptoUtil {
         try {
             crypto = MessageDigest.getInstance("SHA-1");
         } catch (NoSuchAlgorithmException e) {
-            throw new BtException("Unexpected error", e);
+            throw new RuntimeException("Unexpected error", e);
         }
         return crypto.digest(bytes);
     }

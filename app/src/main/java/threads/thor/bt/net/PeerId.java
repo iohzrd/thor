@@ -5,7 +5,6 @@ import androidx.annotation.NonNull;
 import java.util.Arrays;
 import java.util.Objects;
 
-import threads.thor.bt.BtException;
 import threads.thor.bt.protocol.Protocols;
 
 public class PeerId {
@@ -16,7 +15,7 @@ public class PeerId {
     private PeerId(byte[] peerId) {
         Objects.requireNonNull(peerId);
         if (peerId.length != PEER_ID_LENGTH) {
-            throw new BtException("Illegal peer ID length: " + peerId.length);
+            throw new RuntimeException("Illegal peer ID length: " + peerId.length);
         }
         this.peerId = peerId;
     }

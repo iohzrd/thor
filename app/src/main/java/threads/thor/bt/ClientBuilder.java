@@ -13,48 +13,48 @@ import threads.thor.bt.torrent.PieceSelector;
 import threads.thor.bt.torrent.RarestFirstSelector;
 
 
-public class StandaloneClientBuilder {
+public class ClientBuilder {
 
     private final PieceSelector pieceSelector;
     private Storage storage;
     private MagnetUri magnetUri;
-    private BtRuntime runtime;
+    private Runtime runtime;
 
-    public StandaloneClientBuilder() {
+    public ClientBuilder() {
         this.pieceSelector = RarestFirstSelector.randomizedRarest();
     }
 
 
-    public StandaloneClientBuilder storage(Storage storage) {
+    public ClientBuilder storage(Storage storage) {
         this.storage = Objects.requireNonNull(storage, "Missing data storage");
         return this;
     }
 
 
-    public StandaloneClientBuilder magnet(String magnetUri) {
+    public ClientBuilder magnet(String magnetUri) {
         this.magnetUri = MagnetUriParser.lenientParser().parse(magnetUri);
         return this;
     }
 
 
-    public StandaloneClientBuilder magnet(MagnetUri magnetUri) {
+    public ClientBuilder magnet(MagnetUri magnetUri) {
         this.magnetUri = Objects.requireNonNull(magnetUri, "Missing magnet URI");
         return this;
     }
 
 
-    public StandaloneClientBuilder runtime(BtRuntime runtime) {
+    public ClientBuilder runtime(Runtime runtime) {
         this.runtime = Objects.requireNonNull(runtime, "Missing runtime");
         return this;
     }
 
 
-    public BtClient build() {
+    public Client build() {
         Objects.requireNonNull(runtime, "Missing runtime");
         ListenerSource<MagnetContext> listenerSource = new ListenerSource<>();
         listenerSource.addListener(ProcessingEvent.DOWNLOAD_COMPLETE, (context, next) -> null);
 
-        return new BtClient(runtime,
+        return new Client(runtime,
                 TorrentProcessorFactory.createMagnetProcessor(runtime),
                 new MagnetContext(magnetUri, pieceSelector, storage), listenerSource);
     }

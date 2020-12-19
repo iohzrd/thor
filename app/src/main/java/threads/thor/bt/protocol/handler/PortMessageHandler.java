@@ -2,7 +2,6 @@ package threads.thor.bt.protocol.handler;
 
 import java.nio.ByteBuffer;
 
-import threads.thor.bt.BtException;
 import threads.thor.bt.net.buffer.ByteBufferView;
 import threads.thor.bt.protocol.DecodingContext;
 import threads.thor.bt.protocol.EncodingContext;
@@ -27,7 +26,7 @@ public final class PortMessageHandler extends UniqueMessageHandler<Port> {
     // port: <len=0003><id=9><listen-port>
     private static boolean writePort(int port, ByteBuffer buffer) {
         if (port < 0 || port > Short.MAX_VALUE * 2 + 1) {
-            throw new BtException("Invalid port: " + port);
+            throw new RuntimeException("Invalid port: " + port);
         }
         if (buffer.remaining() < Short.BYTES) {
             return false;

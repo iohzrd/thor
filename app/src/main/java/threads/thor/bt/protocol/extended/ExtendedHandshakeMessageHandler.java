@@ -11,7 +11,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import threads.thor.bt.BtException;
 import threads.thor.bt.bencoding.BEParser;
 import threads.thor.bt.bencoding.BEType;
 import threads.thor.bt.bencoding.model.BEInteger;
@@ -112,7 +111,7 @@ class ExtendedHandshakeMessageHandler implements MessageHandler<ExtendedHandshak
             // TODO: parser should be configurable to return null instead of throwing an exception;
             // otherwise need to treat exceptions differently depending on their type
             // (i.e. incorrect message vs incomplete message)
-            throw new BtException("Failed to decode extended handshake", e);
+            throw new RuntimeException("Failed to decode extended handshake", e);
         }
     }
 
