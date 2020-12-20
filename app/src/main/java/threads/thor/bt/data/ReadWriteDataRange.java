@@ -72,14 +72,9 @@ class ReadWriteDataRange implements DataRange {
         if (units.isEmpty()) {
             throw new IllegalArgumentException("Empty list of units");
         }
-        if (0 > units.size() - 1) {
-            throw new IllegalArgumentException("Invalid first unit index: " + 0 + ", expected 0.." + (units.size() - 1));
-        }
+
         if (lastUnit < 0 || lastUnit > units.size() - 1) {
             throw new IllegalArgumentException("Invalid last unit index: " + lastUnit + ", expected 0.." + (units.size() - 1));
-        }
-        if (0 > lastUnit) {
-            throw new IllegalArgumentException("First unit index is greater than last unit index: " + 0 + " > " + lastUnit);
         }
         if (offsetInFirstUnit < 0 || offsetInFirstUnit > units.get(0).capacity() - 1) {
             throw new IllegalArgumentException("Invalid offset in first unit: " + offsetInFirstUnit +

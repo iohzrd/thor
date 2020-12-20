@@ -4,9 +4,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * @since 1.0
- */
 public class ValidationResult {
 
     private boolean success;
