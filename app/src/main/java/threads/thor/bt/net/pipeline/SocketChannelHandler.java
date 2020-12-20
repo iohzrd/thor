@@ -44,9 +44,9 @@ public class SocketChannelHandler {
 
 
     public void send(Message message) {
-        if (!context.pipeline().encode(message)) {
+        if (context.pipeline().notEncoded(message)) {
             flush();
-            if (!context.pipeline().encode(message)) {
+            if (context.pipeline().notEncoded(message)) {
                 throw new IllegalStateException("Failed to send message: " + message);
             }
         }

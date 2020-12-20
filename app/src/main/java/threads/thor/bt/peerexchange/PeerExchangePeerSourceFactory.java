@@ -12,13 +12,11 @@ import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.function.Consumer;
 
 import threads.thor.bt.IConsumers;
 import threads.thor.bt.event.EventSource;
 import threads.thor.bt.metainfo.TorrentId;
 import threads.thor.bt.net.ConnectionKey;
-import threads.thor.bt.net.Peer;
 import threads.thor.bt.peer.PeerSource;
 import threads.thor.bt.peer.PeerSourceFactory;
 import threads.thor.bt.protocol.Message;
@@ -39,11 +37,6 @@ public class PeerExchangePeerSourceFactory implements PeerSourceFactory, IConsum
     private final Set<ConnectionKey> peers;
     private final Map<ConnectionKey, Long> lastSentPEXMessage;
 
-    private final Duration minMessageInterval;
-    private final Duration maxMessageInterval;
-    private final int minEventsPerMessage;
-    private final int maxEventsPerMessage;
-
 
     public PeerExchangePeerSourceFactory(EventSource eventSource,
                                          RuntimeLifecycleBinder lifecycleBinder,
@@ -56,10 +49,6 @@ public class PeerExchangePeerSourceFactory implements PeerSourceFactory, IConsum
         if (config.getMaxMessageInterval().compareTo(config.getMinMessageInterval()) < 0) {
             throw new IllegalArgumentException("Max message interval is greater than min interval");
         }
-        this.minMessageInterval = config.getMinMessageInterval();
-        this.maxMessageInterval = config.getMaxMessageInterval();
-        this.minEventsPerMessage = config.getMinEventsPerMessage();
-        this.maxEventsPerMessage = config.getMaxEventsPerMessage();
 
         eventSource.onPeerConnected(e -> onPeerConnected(e.getConnectionKey()))
                 .onPeerDisconnected(e -> onPeerDisconnected(e.getConnectionKey()));
@@ -165,65 +154,6 @@ public class PeerExchangePeerSourceFactory implements PeerSourceFactory, IConsum
         getOrCreatePeerSource(messageContext.getTorrentId()).addMessage(message);
     }
 
-
-    public void produce(Consumer<Message> messageConsumer, MessageContext messageContext) {
-        ConnectionKey connectionKey = messageContext.getConnectionKey();
-        long currentTime = System.currentTimeMillis();
-        long lastSentPEXMessageToPeer = lastSentPEXMessage.getOrDefault(connectionKey, 0L);
-
-        if (peers.contains(connectionKey) && (currentTime - lastSentPEXMessageToPeer) >= minMessageInterval.toMillis()) {
-            List<PeerEvent> events = new ArrayList<>();
-
-            rwLock.readLock().lock();
-            try {
-                Queue<PeerEvent> torrentPeerEvents = getPeerEvents(messageContext.getTorrentId());
-                for (PeerEvent event : torrentPeerEvents) {
-                    if (event.getInstant() - lastSentPEXMessageToPeer >= 0) {
-                        Peer exchangedPeer = event.getPeer();
-                        // don't send PEX message if anything of the above is true:
-                        // - we don't know the listening port of the event's peer yet
-                        // - we don't know the listening port of the current connection's peer yet
-                        // - event's peer and connection's peer are the same
-                        if (!exchangedPeer.isPortUnknown()
-                                && !connectionKey.getPeer().isPortUnknown()
-                                && !exchangedPeer.getInetAddress().equals(connectionKey.getPeer().getInetAddress())
-                                && exchangedPeer.getPort() != connectionKey.getRemotePort()) {
-                            events.add(event);
-                        }
-                    } else {
-                        break;
-                    }
-                    if (events.size() >= maxEventsPerMessage) {
-                        break;
-                    }
-                }
-            } finally {
-                rwLock.readLock().unlock();
-            }
-
-            if (events.size() >= minEventsPerMessage ||
-                    (!events.isEmpty() && (currentTime - lastSentPEXMessageToPeer >= maxMessageInterval.toMillis()))) {
-                lastSentPEXMessage.put(connectionKey, currentTime);
-                PeerExchange.Builder messageBuilder = PeerExchange.builder();
-                events.forEach(event -> {
-                    switch (event.getType()) {
-                        case ADDED: {
-                            messageBuilder.added(event.getPeer());
-                            break;
-                        }
-                        case DROPPED: {
-                            messageBuilder.dropped(event.getPeer());
-                            break;
-                        }
-                        default: {
-                            throw new RuntimeException("Unknown event type: " + event.getType().name());
-                        }
-                    }
-                });
-                messageConsumer.accept(messageBuilder.build());
-            }
-        }
-    }
 
     private class Cleaner implements Runnable {
 

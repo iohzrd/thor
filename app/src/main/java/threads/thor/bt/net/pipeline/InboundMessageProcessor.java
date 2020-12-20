@@ -323,7 +323,7 @@ class InboundMessageProcessor {
             if (bufferQueue.isEmpty()) {
                 undisposedDataOffset = globalOffset;
             }
-            bufferQueue.add(new BufferedDataWithOffset(bufferedData, globalOffset, buffer.remaining()));
+            bufferQueue.add(new BufferedDataWithOffset(bufferedData, globalOffset));
         }
     }
 
@@ -336,20 +336,12 @@ class InboundMessageProcessor {
             this.limit = 0;
         }
 
-        public int getOffset() {
-            return offset;
-        }
-
         void setOffset(int offset) {
             if (offset > limit) {
                 throw new IllegalArgumentException("offset greater than limit: "
                         + offset + " > " + limit);
             }
             this.offset = offset;
-        }
-
-        public int getLimit() {
-            return limit;
         }
 
         void setLimit(int limit) {
@@ -389,12 +381,12 @@ class InboundMessageProcessor {
     private static class BufferedDataWithOffset {
         final BufferedData buffer;
         final int offset;
-        final int length;
 
-        private BufferedDataWithOffset(BufferedData buffer, int offset, int length) {
+
+        private BufferedDataWithOffset(BufferedData buffer, int offset) {
             this.buffer = buffer;
             this.offset = offset;
-            this.length = length;
+
         }
 
 

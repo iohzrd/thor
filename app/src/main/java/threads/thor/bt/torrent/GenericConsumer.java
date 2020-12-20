@@ -3,6 +3,7 @@ package threads.thor.bt.torrent;
 import java.util.ArrayList;
 import java.util.List;
 
+import threads.LogUtils;
 import threads.thor.bt.IConsumers;
 import threads.thor.bt.protocol.Cancel;
 import threads.thor.bt.protocol.Choke;
@@ -14,6 +15,7 @@ import threads.thor.bt.protocol.Unchoke;
 
 public class GenericConsumer implements IConsumers {
 
+    private static final String TAG = GenericConsumer.class.getSimpleName();
     private static final GenericConsumer instance = new GenericConsumer();
 
     public static GenericConsumer consumer() {
@@ -115,21 +117,25 @@ public class GenericConsumer implements IConsumers {
 
 
     private void consume(Choke choke, MessageContext context) {
+        LogUtils.info(TAG, choke.toString());
         context.getConnectionState().setPeerChoking(true);
     }
 
 
     private void consume(Unchoke unchoke, MessageContext context) {
+        LogUtils.info(TAG, unchoke.toString());
         context.getConnectionState().setPeerChoking(false);
     }
 
 
     private void consume(Interested interested, MessageContext context) {
+        LogUtils.info(TAG, interested.toString());
         context.getConnectionState().setPeerInterested(true);
     }
 
 
     private void consume(NotInterested notInterested, MessageContext context) {
+        LogUtils.info(TAG, notInterested.toString());
         context.getConnectionState().setPeerInterested(false);
     }
 

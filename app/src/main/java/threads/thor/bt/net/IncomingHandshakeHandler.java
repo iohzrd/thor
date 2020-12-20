@@ -28,7 +28,7 @@ class IncomingHandshakeHandler implements ConnectionHandler {
 
     @Override
     public boolean handleConnection(PeerConnection connection) {
-        Peer peer = connection.getRemotePeer();
+
         Message firstMessage = null;
         try {
             firstMessage = connection.readMessage(Settings.peerHandshakeTimeout.toMillis());

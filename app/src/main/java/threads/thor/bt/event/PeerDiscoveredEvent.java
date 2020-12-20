@@ -7,7 +7,7 @@ import java.util.Objects;
 import threads.thor.bt.metainfo.TorrentId;
 import threads.thor.bt.net.Peer;
 
-public class PeerDiscoveredEvent extends BaseEvent implements TorrentEvent {
+public class PeerDiscoveredEvent extends BaseEvent {
 
     private final TorrentId torrentId;
     private final Peer peer;
@@ -18,7 +18,7 @@ public class PeerDiscoveredEvent extends BaseEvent implements TorrentEvent {
         this.peer = Objects.requireNonNull(peer);
     }
 
-    @Override
+
     public TorrentId getTorrentId() {
         return torrentId;
     }

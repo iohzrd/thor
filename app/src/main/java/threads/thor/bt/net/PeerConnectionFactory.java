@@ -75,8 +75,7 @@ public class PeerConnectionFactory {
         try {
             channel = getChannel(inetAddress, port);
         } catch (IOException e) {
-
-            return ConnectionResult.failure("I/O error", e);
+            return ConnectionResult.failure();
         }
 
         return createConnection(peer, torrentId, channel, false);
@@ -107,7 +106,7 @@ public class PeerConnectionFactory {
             closeQuietly(channel);
             releaseBuffer(in);
             releaseBuffer(out);
-            return ConnectionResult.failure("Unexpected error", e);
+            return ConnectionResult.failure();
         }
     }
 
@@ -159,7 +158,7 @@ public class PeerConnectionFactory {
             return ConnectionResult.success(connection);
         } else {
             connection.closeQuietly();
-            return ConnectionResult.failure("Handshake failed");
+            return ConnectionResult.failure();
         }
     }
 

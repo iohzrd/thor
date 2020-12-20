@@ -1,6 +1,7 @@
 package threads.thor.bt.processor;
 
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.IntPredicate;
 import java.util.stream.IntStream;
@@ -29,6 +30,8 @@ public class ChooseFilesStage extends TerminateOnErrorProcessingStage {
     @Override
     protected void doExecute(MagnetContext context) {
         Torrent torrent = context.getTorrent();
+        Objects.requireNonNull(torrent);
+
         TorrentDescriptor descriptor = torrentRegistry.getDescriptor(torrent.getTorrentId()).get();
 
         Set<TorrentFile> selectedFiles = new HashSet<>(torrent.getFiles());

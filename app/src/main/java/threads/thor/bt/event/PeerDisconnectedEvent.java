@@ -7,7 +7,7 @@ import java.util.Objects;
 import threads.thor.bt.metainfo.TorrentId;
 import threads.thor.bt.net.ConnectionKey;
 
-public class PeerDisconnectedEvent extends BaseEvent implements TorrentEvent {
+public class PeerDisconnectedEvent extends BaseEvent {
 
     private final ConnectionKey connectionKey;
 
@@ -16,7 +16,7 @@ public class PeerDisconnectedEvent extends BaseEvent implements TorrentEvent {
         this.connectionKey = Objects.requireNonNull(connectionKey);
     }
 
-    @Override
+
     public TorrentId getTorrentId() {
         return connectionKey.getTorrentId();
     }

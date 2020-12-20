@@ -88,7 +88,7 @@ public class NIOConnectionManager {
         lastConnectionCheck = now;
 
         for (Selectable conn : new ArrayList<>(connections)) {
-            conn.doStateChecks(now);
+            conn.doStateChecks();
             SelectableChannel ch = conn.getChannel();
             SelectionKey k;
             if (ch == null || (k = ch.keyFor(selector)) == null || !k.isValid())

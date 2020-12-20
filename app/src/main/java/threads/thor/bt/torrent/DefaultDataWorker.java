@@ -82,7 +82,7 @@ public class DefaultDataWorker implements DataWorker {
     }
 
     @Override
-    public CompletableFuture<BlockWrite> addBlock(TorrentId torrentId, Peer peer, int pieceIndex, int offset, BufferedData buffer) {
+    public CompletableFuture<BlockWrite> addBlock(TorrentId torrentId, int pieceIndex, int offset, BufferedData buffer) {
         if (!tryIncrementTaskCount()) {
 
             buffer.dispose();

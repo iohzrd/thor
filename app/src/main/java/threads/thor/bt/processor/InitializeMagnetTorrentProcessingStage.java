@@ -6,7 +6,6 @@ import java.util.HashSet;
 import threads.LogUtils;
 import threads.thor.bt.data.Bitfield;
 import threads.thor.bt.event.EventSink;
-import threads.thor.bt.metainfo.TorrentId;
 import threads.thor.bt.net.ConnectionKey;
 import threads.thor.bt.net.PeerConnectionPool;
 import threads.thor.bt.net.pipeline.BufferedPieceRegistry;
@@ -32,8 +31,6 @@ public class InitializeMagnetTorrentProcessingStage extends InitializeTorrentPro
     @Override
     protected void doExecute(MagnetContext context) {
         super.doExecute(context);
-
-        TorrentId torrentId = context.getTorrentId();
 
         PieceStatistics statistics = context.getPieceStatistics();
         // process bitfields and haves that we received while fetching metadata
@@ -61,7 +58,7 @@ public class InitializeMagnetTorrentProcessingStage extends InitializeTorrentPro
         peersUpdated.forEach(peer -> {
             // racing against possible disconnection of peers, so must check if bitfield is still present
             statistics.getPeerBitfield(peer).ifPresent(
-                    bitfield -> eventSink.firePeerBitfieldUpdated(torrentId, peer, bitfield));
+                    bitfield -> eventSink.firePeerBitfieldUpdated(peer));
         });
         // unregistering only now, so that there were no gaps in bitfield receiving
 

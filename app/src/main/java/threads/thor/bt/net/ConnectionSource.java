@@ -63,14 +63,14 @@ public class ConnectionSource {
                 unreachablePeers.remove(peer);
             } else {
 
-                CompletableFuture.completedFuture(ConnectionResult.failure("Peer is unreachable"));
+                CompletableFuture.completedFuture(ConnectionResult.failure());
                 return;
             }
         }
 
         if (connectionPool.size() >= Settings.maxPeerConnections) {
 
-            CompletableFuture.completedFuture(ConnectionResult.failure("Connections limit exceeded"));
+            CompletableFuture.completedFuture(ConnectionResult.failure());
             return;
         }
 

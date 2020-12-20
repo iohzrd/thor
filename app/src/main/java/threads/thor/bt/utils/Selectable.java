@@ -11,7 +11,7 @@ public interface Selectable {
 
     void selectionEvent(SelectionKey key) throws IOException;
 
-    void doStateChecks(long now) throws IOException;
+    void doStateChecks() throws IOException;
 
     int calcInterestOps();
 }

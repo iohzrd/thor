@@ -26,14 +26,6 @@ class PeerEvent implements Comparable<PeerEvent> {
         return new PeerEvent(Type.DROPPED, peer);
     }
 
-    Type getType() {
-        return type;
-    }
-
-    Peer getPeer() {
-        return peer;
-    }
-
     long getInstant() {
         return instant;
     }

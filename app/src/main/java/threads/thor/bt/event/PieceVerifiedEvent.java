@@ -4,7 +4,7 @@ import androidx.annotation.NonNull;
 
 import threads.thor.bt.metainfo.TorrentId;
 
-public class PieceVerifiedEvent extends BaseEvent implements TorrentEvent {
+public class PieceVerifiedEvent extends BaseEvent {
 
     private final TorrentId torrentId;
     private final int pieceIndex;
@@ -15,10 +15,6 @@ public class PieceVerifiedEvent extends BaseEvent implements TorrentEvent {
         this.pieceIndex = pieceIndex;
     }
 
-    @Override
-    public TorrentId getTorrentId() {
-        return torrentId;
-    }
 
     public int getPieceIndex() {
         return pieceIndex;

@@ -26,25 +26,11 @@ public interface EventSource {
     void onPeerDisconnected(Consumer<PeerDisconnectedEvent> listener);
 
     /**
-     * Fired, when local information about some peer's data has been updated.
-     *
-     * @since 1.5
-     */
-    EventSource onPeerBitfieldUpdated(Consumer<PeerBitfieldUpdatedEvent> listener);
-
-    /**
      * Fired, when processing of some threads.torrent has begun.
      *
      * @since 1.5
      */
     void onTorrentStarted(Consumer<TorrentStartedEvent> listener);
-
-    /**
-     * Fired, when threads.torrent's metadata has been fetched.
-     *
-     * @since 1.9
-     */
-    EventSource onMetadataAvailable(Consumer<MetadataAvailableEvent> listener);
 
     /**
      * Fired, when processing of some threads.torrent has finished.
@@ -53,10 +39,5 @@ public interface EventSource {
      */
     void onTorrentStopped(Consumer<TorrentStoppedEvent> listener);
 
-    /**
-     * Fired, when downloading and verification of one of threads.torrent's pieces has been finished.
-     *
-     * @since 1.8
-     */
-    EventSource onPieceVerified(Consumer<PieceVerifiedEvent> listener);
+
 }

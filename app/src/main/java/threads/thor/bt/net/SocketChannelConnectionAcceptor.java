@@ -86,10 +86,6 @@ public class SocketChannelConnectionAcceptor {
 
     private ConnectionRoutine getConnectionRoutine(SocketChannel incomingChannel, SocketAddress remoteAddress) {
         return new ConnectionRoutine() {
-            @Override
-            public SocketAddress getRemoteAddress() {
-                return remoteAddress;
-            }
 
             @Override
             public ConnectionResult establish() {
@@ -119,7 +115,7 @@ public class SocketChannelConnectionAcceptor {
             } catch (IOException e1) {
                 LogUtils.error(TAG, e1);
             }
-            return ConnectionResult.failure("Unexpected error", e);
+            return ConnectionResult.failure();
         }
     }
 }

@@ -10,6 +10,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import threads.thor.bt.bencoding.model.BEMap;
@@ -45,9 +46,6 @@ class PeerExchange extends ExtendedMessage {
         this.dropped = Collections.unmodifiableCollection(dropped);
     }
 
-    public static Builder builder() {
-        return new Builder();
-    }
 
     public static PeerExchange parse(BEMap message) {
         Map<String, BEObject<?>> m = message.getValue();
@@ -69,9 +67,9 @@ class PeerExchange extends ExtendedMessage {
                                      AddressType addressType,
                                      Collection<Peer> destination) {
         if (m.containsKey(peersKey)) {
-            byte[] peers = ((BEString) m.get(peersKey)).getValue();
+            byte[] peers = ((BEString) Objects.requireNonNull(m.get(peersKey))).getValue();
             if (flagsKey != null && m.containsKey(flagsKey)) {
-                byte[] flags = ((BEString) m.get(flagsKey)).getValue();
+                byte[] flags = ((BEString) Objects.requireNonNull(m.get(flagsKey))).getValue();
                 extractPeers(peers, flags, addressType, destination);
             } else {
                 extractPeers(peers, addressType, destination);
@@ -161,28 +159,4 @@ class PeerExchange extends ExtendedMessage {
         return "[" + this.getClass().getSimpleName() + "] added peers {" + added + "}, dropped peers {" + dropped + "}";
     }
 
-    public static class Builder {
-
-        private final Collection<Peer> added;
-        private final Collection<Peer> dropped;
-
-        private Builder() {
-            added = new HashSet<>();
-            dropped = new HashSet<>();
-        }
-
-        public void added(Peer peer) {
-            added.add(peer);
-            dropped.remove(peer);
-        }
-
-        public void dropped(Peer peer) {
-            dropped.add(peer);
-            added.remove(peer);
-        }
-
-        public PeerExchange build() {
-            return new PeerExchange(added, dropped);
-        }
-    }
 }

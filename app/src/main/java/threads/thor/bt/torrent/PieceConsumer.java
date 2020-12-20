@@ -13,7 +13,6 @@ import threads.thor.bt.IProduces;
 import threads.thor.bt.data.Bitfield;
 import threads.thor.bt.event.EventSink;
 import threads.thor.bt.metainfo.TorrentId;
-import threads.thor.bt.net.Peer;
 import threads.thor.bt.net.buffer.BufferedData;
 import threads.thor.bt.net.pipeline.BufferedPieceRegistry;
 import threads.thor.bt.protocol.Have;
@@ -71,7 +70,7 @@ public class PieceConsumer implements IProduces, IConsumers {
 
 
     private void consume(Piece piece, MessageContext context) {
-        Peer peer = context.getPeer();
+
         ConnectionState connectionState = context.getConnectionState();
 
         // check that this block was requested in the first place
@@ -88,7 +87,7 @@ public class PieceConsumer implements IProduces, IConsumers {
             return;
         }
 
-        CompletableFuture<BlockWrite> future = addBlock(peer, connectionState, piece);
+        CompletableFuture<BlockWrite> future = addBlock(connectionState, piece);
         if (future == null) {
             disposeOfBlock(piece);
         } else {
@@ -119,7 +118,7 @@ public class PieceConsumer implements IProduces, IConsumers {
         return connectionState.getPendingRequests().remove(key);
     }
 
-    private CompletableFuture<BlockWrite> addBlock(Peer peer, ConnectionState connectionState, Piece piece) {
+    private CompletableFuture<BlockWrite> addBlock(ConnectionState connectionState, Piece piece) {
         int pieceIndex = piece.getPieceIndex(),
                 offset = piece.getOffset(),
                 blockLength = piece.getLength();
@@ -136,7 +135,7 @@ public class PieceConsumer implements IProduces, IConsumers {
 
             return null;
         }
-        CompletableFuture<BlockWrite> future = dataWorker.addBlock(torrentId, peer, pieceIndex, offset, buffer);
+        CompletableFuture<BlockWrite> future = dataWorker.addBlock(torrentId, pieceIndex, offset, buffer);
         connectionState.getPendingWrites().put(
                 Mapper.mapper().buildKey(pieceIndex, offset, blockLength), future);
         return future;

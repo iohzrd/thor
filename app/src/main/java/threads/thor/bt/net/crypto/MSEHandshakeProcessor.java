@@ -425,7 +425,7 @@ public class MSEHandshakeProcessor {
 
         in.position(position + theirPadding); // discard padding
         // Initial Payload length (0..65535 bytes)
-        int initialPayloadLength = in.getShort() & 0xFFFF; // currently we ignore IA, it will be processed by the upper layer
+        in.getShort(); // currently we ignore IA, it will be processed by the upper layer
         in.compact();
 
         // 4. B->A:

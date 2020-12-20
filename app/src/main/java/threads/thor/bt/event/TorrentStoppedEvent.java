@@ -4,7 +4,7 @@ import androidx.annotation.NonNull;
 
 import threads.thor.bt.metainfo.TorrentId;
 
-public class TorrentStoppedEvent extends BaseEvent implements TorrentEvent {
+public class TorrentStoppedEvent extends BaseEvent {
 
     private final TorrentId torrentId;
 
@@ -13,7 +13,7 @@ public class TorrentStoppedEvent extends BaseEvent implements TorrentEvent {
         this.torrentId = torrentId;
     }
 
-    @Override
+
     public TorrentId getTorrentId() {
         return torrentId;
     }

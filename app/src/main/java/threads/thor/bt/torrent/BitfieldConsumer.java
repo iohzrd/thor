@@ -69,13 +69,13 @@ public class BitfieldConsumer implements IConsumers {
         threads.thor.bt.data.Bitfield peerBitfield = new threads.thor.bt.data.Bitfield(
                 bitfieldMessage.getBitfield(), BitOrder.LITTLE_ENDIAN, bitfield.getPiecesTotal());
         pieceStatistics.addBitfield(peer, peerBitfield);
-        eventSink.firePeerBitfieldUpdated(context.getTorrentId(), peer, peerBitfield);
+        eventSink.firePeerBitfieldUpdated(peer);
     }
 
     private void consume(Have have, MessageContext context) {
         ConnectionKey peer = context.getConnectionKey();
         pieceStatistics.addPiece(peer, have.getPieceIndex());
         pieceStatistics.getPeerBitfield(peer).ifPresent(
-                bitfield -> eventSink.firePeerBitfieldUpdated(context.getTorrentId(), peer, bitfield));
+                bitfield -> eventSink.firePeerBitfieldUpdated(peer));
     }
 }

@@ -36,13 +36,6 @@ public class ClientBuilder {
         return this;
     }
 
-
-    public ClientBuilder magnet(MagnetUri magnetUri) {
-        this.magnetUri = Objects.requireNonNull(magnetUri, "Missing magnet URI");
-        return this;
-    }
-
-
     public ClientBuilder runtime(Runtime runtime) {
         this.runtime = Objects.requireNonNull(runtime, "Missing runtime");
         return this;

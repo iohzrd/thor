@@ -3,9 +3,6 @@ package threads.thor.bt.bencode;
 import androidx.annotation.NonNull;
 
 import java.nio.ByteBuffer;
-import java.nio.charset.CharacterCodingException;
-import java.nio.charset.CharsetDecoder;
-import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.List;
@@ -16,12 +13,6 @@ public class PrettyPrinter {
 
     private final StringBuilder builder;
 
-    private int nesting;
-    private boolean guessHuman;
-    private boolean truncate;
-    private CharSequence indent;
-    private LinebreakOmit previousState = LinebreakOmit.NONE;
-
 
     public PrettyPrinter(StringBuilder b) {
         builder = b;
@@ -29,19 +20,6 @@ public class PrettyPrinter {
 
     private static boolean containsControls(String st) {
         return st.codePoints().anyMatch(i -> i < 32 && i != '\r' && i != '\n');
-    }
-
-    private void linebreak(LinebreakOmit state) {
-        if (indent == null)
-            return;
-        if (state == LinebreakOmit.TRY && previousState == LinebreakOmit.NEXT) {
-            previousState = LinebreakOmit.NONE;
-            return;
-        }
-        builder.append('\n');
-        for (int i = 0; i < nesting; i++)
-            builder.append(indent);
-        previousState = state;
     }
 
 
@@ -56,9 +34,8 @@ public class PrettyPrinter {
             Map<Object, Object> m = (Map<Object, Object>) o;
 
             builder.append("{");
-            nesting++;
-            if (m.size() > 0)
-                linebreak(LinebreakOmit.NONE);
+
+
             Iterator<Entry<Object, Object>> it = m.entrySet().iterator();
             while (it.hasNext()) {
                 Map.Entry<?, ?> e = it.next();
@@ -67,12 +44,9 @@ public class PrettyPrinter {
                 prettyPrintInternal(e.getValue());
                 if (it.hasNext()) {
                     builder.append(", ");
-                    linebreak(LinebreakOmit.NONE);
                 }
             }
-            nesting--;
-            if (m.size() > 0)
-                linebreak(LinebreakOmit.NEXT);
+
             builder.append("}");
             return;
         }
@@ -80,9 +54,7 @@ public class PrettyPrinter {
         if (o instanceof List) {
             List<?> l = (List<?>) o;
             builder.append("[");
-            nesting++;
-            if (l.size() > 1)
-                linebreak(LinebreakOmit.NONE);
+
             Iterator<?> it = l.iterator();
 
             Object prev = null;
@@ -91,15 +63,11 @@ public class PrettyPrinter {
                 Object e = it.next();
                 if (prev != null) {
                     builder.append(", ");
-                    boolean omit = (prev instanceof List || prev instanceof Map) && (e instanceof List || e instanceof Map);
-                    linebreak(omit ? LinebreakOmit.TRY : LinebreakOmit.NONE);
                 }
                 prettyPrintInternal(e);
                 prev = e;
             }
-            nesting--;
-            if (l.size() > 1)
-                linebreak(LinebreakOmit.NEXT);
+
             builder.append("]");
             return;
         }
@@ -141,36 +109,10 @@ public class PrettyPrinter {
                 return;
             }
 
-            if (guessHuman) {
-                CharsetDecoder dec = StandardCharsets.UTF_8.newDecoder();
-                dec.onMalformedInput(CodingErrorAction.REPORT);
-                dec.onUnmappableCharacter(CodingErrorAction.REPORT);
-                try {
-                    String asString = dec.decode(ByteBuffer.wrap(bytes)).toString();
-                    if (!containsControls(asString)) {
-                        builder.append('"').append(asString).append('"');
-                        return;
-                    }
-                } catch (CharacterCodingException ignored) {
-                    // do nothing
-                }
-
-            }
 
             builder.append("0x");
-            if (truncate) {
-                // btv2 uses 256bit hashes, so only truncate truncate > 32 bytes
-                Utils.toHex(bytes, builder, 32);
 
-                if (bytes.length > 32) {
-                    builder.append('…');
-                    builder.append('(');
-                    builder.append(bytes.length);
-                    builder.append(')');
-                }
-            } else {
-                Utils.toHex(bytes, builder, Integer.MAX_VALUE);
-            }
+            Utils.toHex(bytes, builder, Integer.MAX_VALUE);
 
 
             if (bytes.length < 10) {
@@ -182,11 +124,6 @@ public class PrettyPrinter {
         }
 
         builder.append("unhandled type(").append(o).append(')');
-    }
-
-
-    enum LinebreakOmit {
-        NONE, NEXT, TRY
     }
 
 }

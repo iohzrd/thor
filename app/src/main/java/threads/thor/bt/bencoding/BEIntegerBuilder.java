@@ -1,4 +1,3 @@
-
 package threads.thor.bt.bencoding;
 
 import java.math.BigInteger;

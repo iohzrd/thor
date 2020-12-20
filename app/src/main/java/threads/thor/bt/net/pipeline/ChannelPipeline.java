@@ -64,18 +64,18 @@ public class ChannelPipeline {
     }
 
 
-    public boolean encode(Message message) {
+    public boolean notEncoded(Message message) {
         checkHandlerIsBound();
 
         ByteBuffer buffer = outboundBuffer.lockAndGet();
         if (buffer == null) {
             // buffer has been released
             // TODO: So what? Maybe throw an exception then?
-            return false;
+            return true;
         }
 
         try {
-            return writeMessageToBuffer(message, buffer);
+            return !writeMessageToBuffer(message, buffer);
         } finally {
             outboundBuffer.unlock();
         }

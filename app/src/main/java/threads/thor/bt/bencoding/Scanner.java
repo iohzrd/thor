@@ -1,4 +1,3 @@
-
 package threads.thor.bt.bencoding;
 
 import java.io.ByteArrayInputStream;
@@ -33,10 +32,6 @@ class Scanner {
 
     int peek() {
         return source.peek();
-    }
-
-    byte[] getScannedContents() {
-        return source.getContents();
     }
 
     void close() {
@@ -78,9 +73,6 @@ class Scanner {
             buf = new ByteArrayOutputStream();
         }
 
-        byte[] getContents() {
-            return buf.toByteArray();
-        }
 
         @Override
         public void close() throws IOException {

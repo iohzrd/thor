@@ -1,5 +1,7 @@
 package threads.thor.bt.processor;
 
+import java.util.Objects;
+
 import threads.thor.bt.data.Bitfield;
 import threads.thor.bt.event.EventSink;
 import threads.thor.bt.metainfo.Torrent;
@@ -44,6 +46,7 @@ public class InitializeTorrentProcessingStage extends TerminateOnErrorProcessing
     @Override
     protected void doExecute(MagnetContext context) {
         Torrent torrent = context.getTorrent();
+        Objects.requireNonNull(torrent);
         TorrentDescriptor descriptor = torrentRegistry.register(torrent, context.getStorage());
 
         TorrentId torrentId = torrent.getTorrentId();

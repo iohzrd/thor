@@ -21,10 +21,6 @@ public class ConnectionKey {
         return peer;
     }
 
-    public int getRemotePort() {
-        return remotePort;
-    }
-
     public TorrentId getTorrentId() {
         return torrentId;
     }

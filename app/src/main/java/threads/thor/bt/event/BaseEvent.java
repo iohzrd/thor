@@ -2,11 +2,13 @@ package threads.thor.bt.event;
 
 import androidx.annotation.NonNull;
 
+
 public abstract class BaseEvent implements Comparable<BaseEvent> {
 
     private final long id;
     private final Object objectId;
     private final long timestamp;
+
 
     /**
      * @param id        Unique event ID

@@ -1,26 +1,7 @@
-/*
- * Copyright (c) 2016—2017 Andrei Tomashpolskiy and individual contributors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package threads.thor.bt.bencoding;
 
-import threads.thor.bt.bencoding.model.BEInteger;
-import threads.thor.bt.bencoding.model.BEList;
 import threads.thor.bt.bencoding.model.BEMap;
 import threads.thor.bt.bencoding.model.BEObject;
-import threads.thor.bt.bencoding.model.BEString;
 
 /**
  * BEncoding parser. Should be closed when the source is processed.
@@ -118,36 +99,6 @@ public class BEParser implements AutoCloseable {
      */
     public BEType readType() {
         return type;
-    }
-
-    /**
-     * Try to read the document's root object as a bencoded string.
-     *
-     * @see #readType()
-     * @since 1.0
-     */
-    public BEString readString() {
-        return readObject(BEType.STRING, BEStringBuilder.class);
-    }
-
-    /**
-     * Try to read the document's root object as a bencoded integer.
-     *
-     * @see #readType()
-     * @since 1.0
-     */
-    public BEInteger readInteger() {
-        return readObject(BEType.INTEGER, BEIntegerBuilder.class);
-    }
-
-    /**
-     * Try to read the document's root object as a bencoded list.
-     *
-     * @see #readType()
-     * @since 1.0
-     */
-    public BEList readList() {
-        return readObject(BEType.LIST, BEListBuilder.class);
     }
 
     /**

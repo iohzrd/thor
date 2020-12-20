@@ -1,13 +1,6 @@
 package threads.thor.bt.net;
 
-import java.net.SocketAddress;
-
 public interface ConnectionRoutine {
-
-    /**
-     * @since 1.6
-     */
-    SocketAddress getRemoteAddress();
 
     /**
      * Try to establish the connection.

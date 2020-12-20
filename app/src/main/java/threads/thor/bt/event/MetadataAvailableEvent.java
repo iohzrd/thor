@@ -4,18 +4,13 @@ import androidx.annotation.NonNull;
 
 import threads.thor.bt.metainfo.TorrentId;
 
-public class MetadataAvailableEvent extends BaseEvent implements TorrentEvent {
+public class MetadataAvailableEvent extends BaseEvent {
 
     private final TorrentId torrentId;
 
     MetadataAvailableEvent(long id, long timestamp, TorrentId torrentId) {
         super(id, timestamp);
         this.torrentId = torrentId;
-    }
-
-    @Override
-    public TorrentId getTorrentId() {
-        return torrentId;
     }
 
     @NonNull

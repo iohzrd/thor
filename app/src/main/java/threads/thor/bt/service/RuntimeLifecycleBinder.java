@@ -31,20 +31,9 @@ public final class RuntimeLifecycleBinder {
     }
 
 
-    public void onShutdown(@NonNull Runnable r) {
-        Objects.requireNonNull(bindings.get(LifecycleEvent.SHUTDOWN)).
-                add(LifecycleBinding.bind(r).async().build());
-    }
-
-
     public void onShutdown(@NonNull String description, @NonNull Runnable r) {
         Objects.requireNonNull(bindings.get(LifecycleEvent.SHUTDOWN)).add(
                 LifecycleBinding.bind(r).description(description).async().build());
-    }
-
-
-    public void onShutdown(@NonNull LifecycleBinding binding) {
-        Objects.requireNonNull(bindings.get(LifecycleEvent.SHUTDOWN)).add(binding);
     }
 
 

@@ -9,7 +9,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
 
 import threads.LogUtils;
-import threads.thor.bt.data.Bitfield;
 import threads.thor.bt.metainfo.TorrentId;
 import threads.thor.bt.net.ConnectionKey;
 import threads.thor.bt.net.Peer;
@@ -56,11 +55,11 @@ public class EventBus implements EventSink, EventSource {
     }
 
     @Override
-    public void firePeerBitfieldUpdated(TorrentId torrentId, ConnectionKey connectionKey, Bitfield bitfield) {
+    public void firePeerBitfieldUpdated(ConnectionKey connectionKey) {
         long timestamp = System.currentTimeMillis();
         if (hasListeners(PeerBitfieldUpdatedEvent.class)) {
             long id = nextId();
-            fireEvent(new PeerBitfieldUpdatedEvent(id, timestamp, connectionKey, bitfield));
+            fireEvent(new PeerBitfieldUpdatedEvent(id, timestamp, connectionKey));
         }
     }
 
@@ -143,20 +142,8 @@ public class EventBus implements EventSink, EventSource {
     }
 
     @Override
-    public EventSource onPeerBitfieldUpdated(Consumer<PeerBitfieldUpdatedEvent> listener) {
-        addListener(PeerBitfieldUpdatedEvent.class, listener);
-        return this;
-    }
-
-    @Override
     public void onTorrentStarted(Consumer<TorrentStartedEvent> listener) {
         addListener(TorrentStartedEvent.class, listener);
-    }
-
-    @Override
-    public EventSource onMetadataAvailable(Consumer<MetadataAvailableEvent> listener) {
-        addListener(MetadataAvailableEvent.class, listener);
-        return this;
     }
 
     @Override
@@ -164,10 +151,8 @@ public class EventBus implements EventSink, EventSource {
         addListener(TorrentStoppedEvent.class, listener);
     }
 
-    @Override
-    public EventSource onPieceVerified(Consumer<PieceVerifiedEvent> listener) {
+    public void onPieceVerified(Consumer<PieceVerifiedEvent> listener) {
         addListener(PieceVerifiedEvent.class, listener);
-        return this;
     }
 
 

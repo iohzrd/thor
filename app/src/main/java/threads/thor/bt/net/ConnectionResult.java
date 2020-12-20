@@ -1,42 +1,30 @@
 package threads.thor.bt.net;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 import java.util.Objects;
 
 public class ConnectionResult {
 
+    @Nullable
     private final PeerConnection connection;
-    private final Throwable error;
-    private final String message;
 
-    private ConnectionResult(PeerConnection connection,
-                             Throwable error,
-                             String message) {
+
+    private ConnectionResult(@Nullable PeerConnection connection) {
         this.connection = connection;
-        this.error = error;
-        this.message = message;
+
     }
 
 
-    public static ConnectionResult success(PeerConnection connection) {
+    public static ConnectionResult success(@NonNull PeerConnection connection) {
         Objects.requireNonNull(connection);
-        return new ConnectionResult(connection, null, null);
+        return new ConnectionResult(connection);
     }
 
-    /**
-     * @since 1.6
-     */
-    public static ConnectionResult failure(String message, Throwable error) {
-        Objects.requireNonNull(message);
-        Objects.requireNonNull(error);
-        return new ConnectionResult(null, error, message);
-    }
 
-    /**
-     * @since 1.6
-     */
-    public static ConnectionResult failure(String message) {
-        Objects.requireNonNull(message);
-        return new ConnectionResult(null, null, message);
+    public static ConnectionResult failure() {
+        return new ConnectionResult(null);
     }
 
     /**
