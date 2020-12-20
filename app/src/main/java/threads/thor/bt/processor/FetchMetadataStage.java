@@ -27,7 +27,7 @@ public class FetchMetadataStage extends TerminateOnErrorProcessingStage {
                               EventSink eventSink,
                               Context context) {
         super(next);
-        this.metadataService = new MetadataService(context);
+        this.metadataService = new MetadataService();
         this.torrentRegistry = torrentRegistry;
         this.peerRegistry = peerRegistry;
         this.eventSink = eventSink;

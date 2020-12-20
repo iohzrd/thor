@@ -1,31 +1,21 @@
 package threads.thor.bt.metainfo;
 
-import android.content.Context;
-
-import androidx.annotation.NonNull;
-
-import java.io.IOException;
-import java.io.InputStream;
 import java.math.BigInteger;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import threads.LogUtils;
-import threads.thor.R;
 import threads.thor.bt.bencoding.BEParser;
 import threads.thor.bt.bencoding.BEType;
 import threads.thor.bt.bencoding.model.BEList;
 import threads.thor.bt.bencoding.model.BEMap;
 import threads.thor.bt.bencoding.model.BEObject;
-import threads.thor.bt.bencoding.model.BEObjectModel;
 import threads.thor.bt.bencoding.model.BEString;
-import threads.thor.bt.bencoding.model.ValidationResult;
-import threads.thor.bt.bencoding.model.YamlBEObjectModelLoader;
 import threads.thor.bt.service.CryptoUtil;
 
 
@@ -45,22 +35,9 @@ public final class MetadataService {
     private static final String CREATION_DATE_KEY = "creation date";
     private static final String CREATED_BY_KEY = "created by";
     private final Charset defaultCharset;
-    private final BEObjectModel torrentModel;
-    private final BEObjectModel infodictModel;
 
-    public MetadataService(@NonNull Context context) {
+    public MetadataService() {
         this.defaultCharset = StandardCharsets.UTF_8;
-
-        try {
-            try (InputStream in = context.getResources().openRawResource(R.raw.metainfo)) {
-                this.torrentModel = new YamlBEObjectModelLoader().load(in);
-            }
-            try (InputStream in = context.getResources().openRawResource(R.raw.infodict)) {
-                this.infodictModel = new YamlBEObjectModelLoader().load(in);
-            }
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to create metadata service", e);
-        }
     }
 
 
@@ -77,20 +54,7 @@ public final class MetadataService {
             }
 
             BEMap metadata = parser.readMap();
-
-            ValidationResult validationResult = torrentModel.validate(metadata);
-            if (!validationResult.isSuccess()) {
-                ValidationResult infodictValidationResult = infodictModel.validate(metadata);
-                if (!infodictValidationResult.isSuccess()) {
-                    throw new RuntimeException("Validation failed for  metainfo:\n1. Standard model: "
-                            + Arrays.toString(validationResult.getMessages().toArray())
-                            + "\n2. Standalone info dictionary model: " + Arrays.toString(infodictValidationResult.getMessages().toArray()));
-                }
-            }
-
             BEMap infoDictionary;
-            TorrentSource source;
-
             Map<String, BEObject<?>> root = metadata.getValue();
             if (root.containsKey(INFOMAP_KEY)) {
                 // standard BEP-3 format
@@ -99,7 +63,8 @@ public final class MetadataService {
                 // BEP-9 exchanged metadata (just the info dictionary)
                 infoDictionary = metadata;
             }
-            source = infoDictionary::getContent;
+            Objects.requireNonNull(infoDictionary);
+            TorrentSource source = infoDictionary::getContent;
 
 
             TorrentId torrentId = TorrentId.fromBytes(CryptoUtil.getSha1Digest(
