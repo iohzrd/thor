@@ -16,10 +16,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import threads.LogUtils;
+import threads.thor.Settings;
 
 public class DnsAddrResolver {
-    private static final String LIB2P = "_dnsaddr.bootstrap.libp2p.io";
-    private static final String DNS_ADDR = "dnsaddr=/dnsaddr/";
+
     private static final String IPv4 = "/ip4/";
     private static final String IPv6 = "/ip6/";
     private static final String TAG = DnsAddrResolver.class.getSimpleName();
@@ -30,8 +30,8 @@ public class DnsAddrResolver {
         List<String> txtRecords = getTxtRecords();
         for (String txtRecord : txtRecords) {
             try {
-                if (txtRecord.startsWith(DNS_ADDR)) {
-                    String multiAddress = txtRecord.replaceFirst(DNS_ADDR, "");
+                if (txtRecord.startsWith(Settings.DNS_ADDR)) {
+                    String multiAddress = txtRecord.replaceFirst(Settings.DNS_ADDR, "");
                     // now get IP of multiAddress
                     String host = multiAddress.substring(0, multiAddress.indexOf("/"));
                     if (!host.isEmpty()) {
@@ -62,7 +62,7 @@ public class DnsAddrResolver {
         List<String> txtRecords = new ArrayList<>();
         try {
             DnsClient client = new DnsClient(new LruCache(0));
-            DnsQueryResult result = client.query(LIB2P, Record.TYPE.TXT);
+            DnsQueryResult result = client.query(Settings.LIB2P_DNS, Record.TYPE.TXT);
             DnsMessage response = result.response;
             List<Record<? extends Data>> records = response.answerSection;
             for (Record<? extends Data> record : records) {

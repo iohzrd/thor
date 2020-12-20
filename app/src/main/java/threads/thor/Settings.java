@@ -11,8 +11,10 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 
 import threads.thor.bt.net.InetPeerAddress;
 import threads.thor.bt.protocol.crypto.EncryptionPolicy;
@@ -76,17 +78,38 @@ public class Settings {
     public static final EncryptionPolicy encryptionPolicy = EncryptionPolicy.PREFER_PLAINTEXT;
     public static final int numOfHashingThreads = java.lang.Runtime.getRuntime().availableProcessors() * 2;
 
+
+    // DHT BOOTSTRAP
     public static final Collection<InetPeerAddress> BOOTSTRAP_NODES = Arrays.asList(
             new InetPeerAddress("router.bittorrent.com", 6881),
             new InetPeerAddress("dht.transmissionbt.com", 6881),
             new InetPeerAddress("router.utorrent.com", 6881)
     );
 
+    // DHT BOOTSTRAP
     public static final InetSocketAddress[] UNRESOLVED_BOOTSTRAP_NODES = new InetSocketAddress[]{
             InetSocketAddress.createUnresolved("dht.transmissionbt.com", 6881),
             InetSocketAddress.createUnresolved("router.bittorrent.com", 6881),
             InetSocketAddress.createUnresolved("router.utorrent.com", 6881)
     };
+
+
+    // IPFS BOOTSTRAP
+    @NonNull
+    public static final List<String> IPFS_BOOTSTRAP_NODES = new ArrayList<>(Arrays.asList(
+            "/ip4/147.75.80.110/tcp/4001/p2p/QmbFgm5zan8P6eWWmeyfncR5feYEMPbht5b1FW1C37aQ7y", // default relay  libp2p
+            "/ip4/147.75.195.153/tcp/4001/p2p/QmW9m57aiBDHAkKj9nmFSEn7ZqrcF1fZS4bipsTCHburei",// default relay  libp2p
+            "/ip4/147.75.70.221/tcp/4001/p2p/Qme8g49gm3q4Acp7xWBKg3nAa9fxZ1YmyDJdyGgoG6LsXh",// default relay  libp2p
+
+            "/ip4/104.131.131.82/tcp/4001/p2p/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ"// mars.i.ipfs.io
+
+    ));
+    // IPFS BOOTSTRAP DNS
+    public static final String LIB2P_DNS = "_dnsaddr.bootstrap.libp2p.io";
+    public static final String DNS_ADDR = "dnsaddr=/dnsaddr/";
+
+
+    // TOR CONFIGURATION
     public static final int SOCKSPort = 9050;
     public static final String LOCALHOST = "localhost";
     public static final String DIRECTORY_TOR_DATA = "data";

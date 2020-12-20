@@ -12,7 +12,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.Callable;
@@ -32,19 +31,12 @@ import thor.LsInfoClose;
 import thor.Node;
 import thor.ResolveInfo;
 import threads.LogUtils;
+import threads.thor.Settings;
 
 public class IPFS implements Listener {
     @NonNull
     private static final List<String> DNS_ADDRS = new ArrayList<>();
-    @NonNull
-    private static final List<String> Bootstrap = new ArrayList<>(Arrays.asList(
-            "/ip4/147.75.80.110/tcp/4001/p2p/QmbFgm5zan8P6eWWmeyfncR5feYEMPbht5b1FW1C37aQ7y", // default relay  libp2p
-            "/ip4/147.75.195.153/tcp/4001/p2p/QmW9m57aiBDHAkKj9nmFSEn7ZqrcF1fZS4bipsTCHburei",// default relay  libp2p
-            "/ip4/147.75.70.221/tcp/4001/p2p/Qme8g49gm3q4Acp7xWBKg3nAa9fxZ1YmyDJdyGgoG6LsXh",// default relay  libp2p
 
-            "/ip4/104.131.131.82/tcp/4001/p2p/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ"// mars.i.ipfs.io
-
-    ));
     private static final String BADGERS = "badgers";
     private static final String EMPTY_DIR_58 = "QmUNLLsPACCz1vLxQVkXqqLX5R1X345qqfHbsf67hvA3Nn";
     private static final String EMPTY_DIR_32 = "bafybeiczsscdsbs7ffqz55asqdf3smv6klcw3gofszvwlyarci47bgf354";
@@ -111,7 +103,8 @@ public class IPFS implements Listener {
     private static CopyOnWriteArrayList<String> getBootstrap() {
 
 
-        CopyOnWriteArrayList<String> bootstrap = new CopyOnWriteArrayList<>(IPFS.Bootstrap);
+        CopyOnWriteArrayList<String> bootstrap = new CopyOnWriteArrayList<>(
+                Settings.IPFS_BOOTSTRAP_NODES);
 
         if (IPFS.DNS_ADDRS.isEmpty()) {
             IPFS.DNS_ADDRS.addAll(DnsAddrResolver.getMultiAddresses());

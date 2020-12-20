@@ -98,10 +98,7 @@ disabled. The purpose of the changed settings is, to protect your privacy at lea
 
 ```
 public static void setIncognitoMode(@NonNull WebView webView, boolean incognito) {
-     if (!incognito) {
-        webView.getSettings().setJavaScriptEnabled(true);
-     } else {
-        webView.getSettings().setJavaScriptEnabled(false);
-     }
+        webView.getSettings().setJavaScriptEnabled(!incognito);
 }
+
 ```
