@@ -11,12 +11,6 @@ import java.util.Objects;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
-import threads.thor.bt.bencoding.model.BEInteger;
-import threads.thor.bt.bencoding.model.BEList;
-import threads.thor.bt.bencoding.model.BEMap;
-import threads.thor.bt.bencoding.model.BEObject;
-import threads.thor.bt.bencoding.model.BEString;
-
 /**
  * BEncoding encoder.
  *

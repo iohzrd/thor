@@ -1,42 +1,37 @@
-package threads.thor.bt.bencoding.model;
+package threads.thor.bt.bencoding;
 
 import androidx.annotation.NonNull;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.math.BigInteger;
-
-import threads.thor.bt.bencoding.BEEncoder;
-import threads.thor.bt.bencoding.BEType;
+import java.util.Collections;
+import java.util.Map;
 
 /**
- * BEncoded integer.
- *
- * <p>«BEP-3: The BitTorrent Protocol Specification» defines integers
- * as unsigned numeric values with an arbitrary number of digits.
+ * BEncoded dictionary.
  *
  * @since 1.0
  */
-public class BEInteger implements BEObject<BigInteger> {
+public class BEMap implements BEObject<Map<String, BEObject<?>>> {
 
     private final byte[] content;
-    private final BigInteger value;
+    private final Map<String, BEObject<?>> value;
     private final BEEncoder encoder;
 
     /**
-     * @param content Binary representation of this integer, as read from source.
+     * @param content Binary representation of this dictionary, as read from source.
      * @param value   Parsed value
      * @since 1.0
      */
-    public BEInteger(byte[] content, BigInteger value) {
+    public BEMap(byte[] content, Map<String, BEObject<?>> value) {
         this.content = content;
-        this.value = value;
+        this.value = Collections.unmodifiableMap(value);
         encoder = BEEncoder.encoder();
     }
 
     @Override
     public BEType getType() {
-        return BEType.INTEGER;
+        return BEType.MAP;
     }
 
     @Override
@@ -45,7 +40,7 @@ public class BEInteger implements BEObject<BigInteger> {
     }
 
     @Override
-    public BigInteger getValue() {
+    public Map<String, BEObject<?>> getValue() {
         return value;
     }
 
@@ -62,7 +57,7 @@ public class BEInteger implements BEObject<BigInteger> {
     @Override
     public boolean equals(Object obj) {
 
-        if (!(obj instanceof BEInteger)) {
+        if (!(obj instanceof BEMap)) {
             return false;
         }
 
@@ -70,12 +65,12 @@ public class BEInteger implements BEObject<BigInteger> {
             return true;
         }
 
-        return value.equals(((BEInteger) obj).getValue());
+        return value.equals(((BEMap) obj).getValue());
     }
 
     @NonNull
     @Override
     public String toString() {
-        return value.toString(10);
+        return value.toString();
     }
 }

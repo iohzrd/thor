@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import threads.thor.bt.IConsumers;
-import threads.thor.bt.bencoding.model.BEInteger;
+import threads.thor.bt.bencoding.BEInteger;
 import threads.thor.bt.net.InetPeer;
 import threads.thor.bt.net.PeerConnectionPool;
 import threads.thor.bt.protocol.Message;

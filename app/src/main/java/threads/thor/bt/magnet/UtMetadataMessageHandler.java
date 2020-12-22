@@ -10,10 +10,10 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 
+import threads.thor.bt.bencoding.BEInteger;
+import threads.thor.bt.bencoding.BEMap;
+import threads.thor.bt.bencoding.BEObject;
 import threads.thor.bt.bencoding.BEParser;
-import threads.thor.bt.bencoding.model.BEInteger;
-import threads.thor.bt.bencoding.model.BEMap;
-import threads.thor.bt.bencoding.model.BEObject;
 import threads.thor.bt.net.buffer.ByteBufferView;
 import threads.thor.bt.protocol.DecodingContext;
 import threads.thor.bt.protocol.EncodingContext;

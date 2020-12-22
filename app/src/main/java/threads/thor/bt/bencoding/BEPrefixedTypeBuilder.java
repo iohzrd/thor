@@ -2,8 +2,6 @@ package threads.thor.bt.bencoding;
 
 import java.io.ByteArrayOutputStream;
 
-import threads.thor.bt.bencoding.model.BEObject;
-
 abstract class BEPrefixedTypeBuilder<T extends BEObject> implements BEObjectBuilder<T> {
 
     private final ByteArrayOutputStream buf;

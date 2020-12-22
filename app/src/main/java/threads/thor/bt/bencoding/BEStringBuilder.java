@@ -2,8 +2,6 @@ package threads.thor.bt.bencoding;
 
 import java.io.ByteArrayOutputStream;
 
-import threads.thor.bt.bencoding.model.BEString;
-
 class BEStringBuilder implements BEObjectBuilder<BEString> {
 
     private static final char DELIMITER = ':';

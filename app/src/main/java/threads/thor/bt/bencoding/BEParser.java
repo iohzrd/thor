@@ -1,8 +1,5 @@
 package threads.thor.bt.bencoding;
 
-import threads.thor.bt.bencoding.model.BEMap;
-import threads.thor.bt.bencoding.model.BEObject;
-
 /**
  * BEncoding parser. Should be closed when the source is processed.
  *

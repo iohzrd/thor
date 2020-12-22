@@ -7,9 +7,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-import threads.thor.bt.bencoding.model.BEInteger;
-import threads.thor.bt.bencoding.model.BEMap;
-import threads.thor.bt.bencoding.model.BEObject;
+import threads.thor.bt.bencoding.BEInteger;
+import threads.thor.bt.bencoding.BEMap;
+import threads.thor.bt.bencoding.BEObject;
 
 /**
  * Extended handshake is sent during connection initialization procedure

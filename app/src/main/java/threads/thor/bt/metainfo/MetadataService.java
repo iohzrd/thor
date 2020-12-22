@@ -10,12 +10,12 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import threads.LogUtils;
+import threads.thor.bt.bencoding.BEList;
+import threads.thor.bt.bencoding.BEMap;
+import threads.thor.bt.bencoding.BEObject;
 import threads.thor.bt.bencoding.BEParser;
+import threads.thor.bt.bencoding.BEString;
 import threads.thor.bt.bencoding.BEType;
-import threads.thor.bt.bencoding.model.BEList;
-import threads.thor.bt.bencoding.model.BEMap;
-import threads.thor.bt.bencoding.model.BEObject;
-import threads.thor.bt.bencoding.model.BEString;
 import threads.thor.bt.service.CryptoUtil;
 
 

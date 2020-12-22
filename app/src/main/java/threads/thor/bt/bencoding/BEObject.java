@@ -1,9 +1,7 @@
-package threads.thor.bt.bencoding.model;
+package threads.thor.bt.bencoding;
 
 import java.io.IOException;
 import java.io.OutputStream;
-
-import threads.thor.bt.bencoding.BEType;
 
 /**
  * Generic bencoded object.

@@ -1,4 +1,4 @@
-package threads.thor.bt.bencoding.model;
+package threads.thor.bt.bencoding;
 
 import androidx.annotation.NonNull;
 
@@ -7,9 +7,6 @@ import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-
-import threads.thor.bt.bencoding.BEEncoder;
-import threads.thor.bt.bencoding.BEType;
 
 /**
  * BEncoded string.

@@ -13,9 +13,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import threads.thor.bt.bencoding.model.BEMap;
-import threads.thor.bt.bencoding.model.BEObject;
-import threads.thor.bt.bencoding.model.BEString;
+import threads.thor.bt.bencoding.BEMap;
+import threads.thor.bt.bencoding.BEObject;
+import threads.thor.bt.bencoding.BEString;
 import threads.thor.bt.net.Peer;
 import threads.thor.bt.protocol.InvalidMessageException;
 import threads.thor.bt.protocol.crypto.EncryptionPolicy;

@@ -5,9 +5,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
-import threads.thor.bt.bencoding.model.BEMap;
-import threads.thor.bt.bencoding.model.BEObject;
-
 class BEMapBuilder extends BEPrefixedTypeBuilder<BEMap> {
 
     private final Map<String, BEObject<?>> map;

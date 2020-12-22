@@ -3,9 +3,6 @@ package threads.thor.bt.bencoding;
 import java.util.ArrayList;
 import java.util.List;
 
-import threads.thor.bt.bencoding.model.BEList;
-import threads.thor.bt.bencoding.model.BEObject;
-
 class BEListBuilder extends BEPrefixedTypeBuilder<BEList> {
 
     private final List<BEObject<?>> objects;

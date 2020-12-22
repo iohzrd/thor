@@ -1,40 +1,38 @@
-package threads.thor.bt.bencoding.model;
+package threads.thor.bt.bencoding;
 
 import androidx.annotation.NonNull;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Arrays;
 import java.util.Collections;
-import java.util.Map;
-
-import threads.thor.bt.bencoding.BEEncoder;
-import threads.thor.bt.bencoding.BEType;
+import java.util.List;
 
 /**
- * BEncoded dictionary.
+ * BEncoded list. May contain objects of different types.
  *
  * @since 1.0
  */
-public class BEMap implements BEObject<Map<String, BEObject<?>>> {
+public class BEList implements BEObject<List<? extends BEObject<?>>> {
 
     private final byte[] content;
-    private final Map<String, BEObject<?>> value;
+    private final List<? extends BEObject<?>> value;
     private final BEEncoder encoder;
 
     /**
-     * @param content Binary representation of this dictionary, as read from source.
+     * @param content Binary representation of this list, as read from source.
      * @param value   Parsed value
      * @since 1.0
      */
-    public BEMap(byte[] content, Map<String, BEObject<?>> value) {
+    public BEList(byte[] content, List<? extends BEObject<?>> value) {
         this.content = content;
-        this.value = Collections.unmodifiableMap(value);
+        this.value = Collections.unmodifiableList(value);
         encoder = BEEncoder.encoder();
     }
 
     @Override
     public BEType getType() {
-        return BEType.MAP;
+        return BEType.LIST;
     }
 
     @Override
@@ -43,7 +41,7 @@ public class BEMap implements BEObject<Map<String, BEObject<?>>> {
     }
 
     @Override
-    public Map<String, BEObject<?>> getValue() {
+    public List<? extends BEObject<?>> getValue() {
         return value;
     }
 
@@ -60,7 +58,7 @@ public class BEMap implements BEObject<Map<String, BEObject<?>>> {
     @Override
     public boolean equals(Object obj) {
 
-        if (!(obj instanceof BEMap)) {
+        if (!(obj instanceof BEList)) {
             return false;
         }
 
@@ -68,12 +66,12 @@ public class BEMap implements BEObject<Map<String, BEObject<?>>> {
             return true;
         }
 
-        return value.equals(((BEMap) obj).getValue());
+        return value.equals(((BEList) obj).getValue());
     }
 
     @NonNull
     @Override
     public String toString() {
-        return value.toString();
+        return Arrays.toString(value.toArray());
     }
 }

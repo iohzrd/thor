@@ -6,8 +6,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PushbackInputStream;
 
-import threads.thor.bt.bencoding.model.BEObject;
-
 class Scanner {
 
     private final MemoizingPushbackInputStream source;

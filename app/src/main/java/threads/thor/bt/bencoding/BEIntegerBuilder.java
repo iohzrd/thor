@@ -2,8 +2,6 @@ package threads.thor.bt.bencoding;
 
 import java.math.BigInteger;
 
-import threads.thor.bt.bencoding.model.BEInteger;
-
 class BEIntegerBuilder extends BEPrefixedTypeBuilder<BEInteger> {
 
     private final StringBuilder buf;

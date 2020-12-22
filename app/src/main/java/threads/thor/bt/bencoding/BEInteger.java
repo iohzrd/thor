@@ -1,41 +1,39 @@
-package threads.thor.bt.bencoding.model;
+package threads.thor.bt.bencoding;
 
 import androidx.annotation.NonNull;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-
-import threads.thor.bt.bencoding.BEEncoder;
-import threads.thor.bt.bencoding.BEType;
+import java.math.BigInteger;
 
 /**
- * BEncoded list. May contain objects of different types.
+ * BEncoded integer.
+ *
+ * <p>«BEP-3: The BitTorrent Protocol Specification» defines integers
+ * as unsigned numeric values with an arbitrary number of digits.
  *
  * @since 1.0
  */
-public class BEList implements BEObject<List<? extends BEObject<?>>> {
+public class BEInteger implements BEObject<BigInteger> {
 
     private final byte[] content;
-    private final List<? extends BEObject<?>> value;
+    private final BigInteger value;
     private final BEEncoder encoder;
 
     /**
-     * @param content Binary representation of this list, as read from source.
+     * @param content Binary representation of this integer, as read from source.
      * @param value   Parsed value
      * @since 1.0
      */
-    public BEList(byte[] content, List<? extends BEObject<?>> value) {
+    public BEInteger(byte[] content, BigInteger value) {
         this.content = content;
-        this.value = Collections.unmodifiableList(value);
+        this.value = value;
         encoder = BEEncoder.encoder();
     }
 
     @Override
     public BEType getType() {
-        return BEType.LIST;
+        return BEType.INTEGER;
     }
 
     @Override
@@ -44,7 +42,7 @@ public class BEList implements BEObject<List<? extends BEObject<?>>> {
     }
 
     @Override
-    public List<? extends BEObject<?>> getValue() {
+    public BigInteger getValue() {
         return value;
     }
 
@@ -61,7 +59,7 @@ public class BEList implements BEObject<List<? extends BEObject<?>>> {
     @Override
     public boolean equals(Object obj) {
 
-        if (!(obj instanceof BEList)) {
+        if (!(obj instanceof BEInteger)) {
             return false;
         }
 
@@ -69,12 +67,12 @@ public class BEList implements BEObject<List<? extends BEObject<?>>> {
             return true;
         }
 
-        return value.equals(((BEList) obj).getValue());
+        return value.equals(((BEInteger) obj).getValue());
     }
 
     @NonNull
     @Override
     public String toString() {
-        return Arrays.toString(value.toArray());
+        return value.toString(10);
     }
 }

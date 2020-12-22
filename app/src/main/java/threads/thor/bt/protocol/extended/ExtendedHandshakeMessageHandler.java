@@ -11,11 +11,11 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import threads.thor.bt.bencoding.BEInteger;
+import threads.thor.bt.bencoding.BEMap;
+import threads.thor.bt.bencoding.BEObject;
 import threads.thor.bt.bencoding.BEParser;
 import threads.thor.bt.bencoding.BEType;
-import threads.thor.bt.bencoding.model.BEInteger;
-import threads.thor.bt.bencoding.model.BEMap;
-import threads.thor.bt.bencoding.model.BEObject;
 import threads.thor.bt.net.Peer;
 import threads.thor.bt.net.buffer.ByteBufferView;
 import threads.thor.bt.protocol.DecodingContext;

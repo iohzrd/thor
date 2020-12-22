@@ -8,8 +8,8 @@ import java.util.concurrent.ConcurrentMap;
 
 import threads.LogUtils;
 import threads.thor.Settings;
-import threads.thor.bt.bencoding.model.BEInteger;
-import threads.thor.bt.bencoding.model.BEString;
+import threads.thor.bt.bencoding.BEInteger;
+import threads.thor.bt.bencoding.BEString;
 import threads.thor.bt.metainfo.Torrent;
 import threads.thor.bt.metainfo.TorrentId;
 import threads.thor.bt.protocol.crypto.EncryptionPolicy;
