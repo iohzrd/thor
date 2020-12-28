@@ -150,8 +150,7 @@ public class DownloadMagnetWorker extends Worker {
                 EventBus eventBus = Runtime.provideEventBus();
                 ContentStorage storage = new ContentStorage(
                         getApplicationContext(), eventBus, rootDoc);
-                Runtime runtime = new Runtime(
-                        getApplicationContext(), PeerId.fromBytes(id), eventBus, IPFS.nextFreePort());
+                Runtime runtime = new Runtime(PeerId.fromBytes(id), eventBus, IPFS.nextFreePort());
 
                 Client client = new ClientBuilder()
                         .runtime(runtime)

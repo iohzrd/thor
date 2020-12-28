@@ -1,7 +1,5 @@
 package threads.thor.bt;
 
-import android.content.Context;
-
 import androidx.annotation.NonNull;
 
 import java.io.IOException;
@@ -89,7 +87,6 @@ public class Runtime {
     public final PeerConnectionPool mConnectionPool;
     public final BufferedPieceRegistry mBufferedPieceRegistry;
     private final Object lock;
-    private final Context mContext;
     private final ExecutorService mExecutor;
     private final EventBus mEventBus;
     private final RuntimeLifecycleBinder mRuntimeLifecycleBinder;
@@ -97,10 +94,7 @@ public class Runtime {
     private final AtomicBoolean started;
 
 
-    public Runtime(@NonNull Context context,
-                   @NonNull PeerId peerId,
-                   @NonNull EventBus eventBus,
-                   int acceptorPort) {
+    public Runtime(@NonNull PeerId peerId, @NonNull EventBus eventBus, int acceptorPort) {
         java.lang.Runtime.getRuntime().addShutdownHook(new Thread("bt.runtime.shutdown-manager") {
             @Override
             public void run() {
@@ -113,7 +107,6 @@ public class Runtime {
                 mEventBus, mRuntimeLifecycleBinder, new PeerExchangeConfig());
 
 
-        this.mContext = context;
         this.knownClients = ConcurrentHashMap.newKeySet();
 
         this.mExecutor = Executors.newSingleThreadExecutor();
@@ -316,11 +309,6 @@ public class Runtime {
 
     public EventBus getEventBus() {
         return mEventBus;
-    }
-
-
-    public Context getContext() {
-        return mContext;
     }
 
 

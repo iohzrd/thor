@@ -1,7 +1,5 @@
 package threads.thor.bt.processor;
 
-import android.content.Context;
-
 import threads.thor.bt.event.EventSink;
 import threads.thor.bt.metainfo.MetadataService;
 import threads.thor.bt.metainfo.Torrent;
@@ -24,8 +22,7 @@ public class FetchMetadataStage extends TerminateOnErrorProcessingStage {
     public FetchMetadataStage(ProcessingStage next,
                               TorrentRegistry torrentRegistry,
                               PeerRegistry peerRegistry,
-                              EventSink eventSink,
-                              Context context) {
+                              EventSink eventSink) {
         super(next);
         this.metadataService = new MetadataService();
         this.torrentRegistry = torrentRegistry;

@@ -29,8 +29,7 @@ public class TorrentProcessorFactory {
         ProcessingStage stage1 = new FetchMetadataStage(stage2,
                 runtime.mTorrentRegistry,
                 runtime.mPeerRegistry,
-                runtime.getEventBus(),
-                runtime.getContext());
+                runtime.getEventBus());
 
 
         ProcessingStage stage0 = new CreateSessionStage(stage1,

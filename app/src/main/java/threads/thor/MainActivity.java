@@ -743,7 +743,6 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
         Settings.setWebSettings(mWebView);
         CookieManager.getInstance().setAcceptThirdPartyCookies(mWebView, false);
 
-
         actionIncognito.setOnClickListener(v -> {
             try {
                 if (SystemClock.elapsedRealtime() - mLastClickTime < CLICK_OFFSET) {
