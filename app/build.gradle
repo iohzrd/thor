@@ -48,7 +48,7 @@ android {
     packagingOptions {
         exclude 'META-INF/DEPENDENCIES'
     }
-    
+    buildToolsVersion '30.0.3'
 }
 
 dependencies {
@@ -83,7 +83,7 @@ dependencies {
     implementation 'com.jrummyapps:android-shell:1.0.1'
 
     // API (IPFS thor)
-    implementation 'thor.ipfs:thor:1.0.0'
+    implementation 'thor.ipfs:thor:1.0.1'
 
     
     annotationProcessor 'androidx.room:room-compiler:2.2.6'
