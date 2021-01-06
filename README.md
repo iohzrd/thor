@@ -34,7 +34,7 @@ The service is only active during download of the **magnet** URL. In this phase 
 the data also to others users.
 
 ## TOR
-The TOR service is running from the moment you are starting the application. So this enables
+The TOR service is running from the moment you are starting the application. This enables
 the user to visit **onion** sites, even when they are not in **incognito** mode.
 
 In **incognito** mode, all **http** and **https** requests will be routed via the **Tor** network.
