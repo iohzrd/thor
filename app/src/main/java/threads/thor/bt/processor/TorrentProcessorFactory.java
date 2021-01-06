@@ -10,10 +10,7 @@ public class TorrentProcessorFactory {
     public static ChainProcessor createMagnetProcessor(@NonNull Runtime runtime) {
 
 
-        ProcessingStage stage5 = new SeedStage(null,
-                runtime.mTorrentRegistry);
-
-        ProcessingStage stage4 = new ProcessMagnetTorrentStage(stage5,
+        ProcessingStage stage4 = new ProcessMagnetTorrentStage(null,
                 runtime.mTorrentRegistry, runtime.getEventBus());
 
         ProcessingStage stage3 = new ChooseFilesStage(stage4, runtime.mTorrentRegistry);

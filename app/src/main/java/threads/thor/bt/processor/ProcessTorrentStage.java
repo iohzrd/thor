@@ -29,13 +29,8 @@ public class ProcessTorrentStage extends TerminateOnErrorProcessingStage {
         eventSink.fireTorrentStarted(torrentId);
 
         while (descriptor.isActive()) {
-            try {
-                Thread.sleep(1000);
-                if (context.getState().getPiecesRemaining() == 0) {
-                    break;
-                }
-            } catch (InterruptedException e) {
-                throw new RuntimeException("Unexpectedly interrupted", e);
+            if (context.getState().getPiecesRemaining() == 0) {
+                break;
             }
         }
     }

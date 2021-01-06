@@ -1213,7 +1213,7 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
 
                         docs.connectUri(uri);
 
-                        return docs.getResponse(uri, 30000);
+                        return docs.getResponse(uri, Settings.IPFS_TIMEOUT);
 
                     } catch (Throwable throwable) {
                         return createErrorMessage(throwable);

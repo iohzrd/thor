@@ -36,6 +36,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import threads.LogUtils;
 import threads.thor.MainActivity;
 import threads.thor.R;
+import threads.thor.Settings;
 import threads.thor.core.Content;
 import threads.thor.core.DOCS;
 import threads.thor.ipfs.IPFS;
@@ -197,12 +198,10 @@ public class DownloadContentWorker extends Worker {
 
                 for (Future<Boolean> future : futures) {
                     if (future.isDone() || future.isCancelled()) {
-
                         futures.remove(future);
                     }
                 }
 
-                Thread.sleep(1000);
 
                 if (isStopped()) {
                     executor.shutdown();
@@ -221,7 +220,7 @@ public class DownloadContentWorker extends Worker {
 
         LogUtils.info(TAG, " start [" + (System.currentTimeMillis() - start) + "]...");
 
-        long timeout = 120000; // 120 seconds (read timeout)
+
 
         String cid = docContent.content;
         DocumentFile doc = docContent.file;
@@ -239,7 +238,7 @@ public class DownloadContentWorker extends Worker {
                 public boolean isClosed() {
 
                     long diff = System.currentTimeMillis() - started.get();
-                    boolean abort = (diff > (timeout));
+                    boolean abort = (diff > (Settings.IPFS_TIMEOUT));
                     return isStopped() || abort;
                 }
 

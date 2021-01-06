@@ -20,6 +20,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 
 import threads.LogUtils;
+import threads.thor.Settings;
 import threads.thor.core.events.EVENTS;
 import threads.thor.core.page.Bookmark;
 import threads.thor.core.page.PAGES;
@@ -84,7 +85,7 @@ public class DOCS {
 
         String mimeType = MimeType.OCTET_MIME_TYPE;
         if (!closeable.isClosed()) {
-            try (InputStream in = ipfs.getLoaderStream(doc, closeable, 5000)) {
+            try (InputStream in = ipfs.getLoaderStream(doc, closeable, Settings.IPFS_READ_TIMEOUT)) {
 
                 ContentInfo info = util.findMatch(in);
 
@@ -396,7 +397,7 @@ public class DOCS {
 
         try {
 
-            InputStream in = ipfs.getLoaderStream(content, closeable, 5000);
+            InputStream in = ipfs.getLoaderStream(content, closeable, Settings.IPFS_READ_TIMEOUT);
 
 
             Map<String, String> responseHeaders = new HashMap<>();

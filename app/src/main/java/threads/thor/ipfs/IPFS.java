@@ -48,7 +48,6 @@ public class IPFS implements Listener {
     private static final String AGENT_KEY = "agentKey";
     private static final String CLEAN_KEY = "cleanKey";
     private static final String PRIVATE_KEY = "privateKey";
-    private static final long TIMEOUT = 30000L;
     private static final String TAG = IPFS.class.getSimpleName();
     private static IPFS INSTANCE = null;
 
@@ -398,13 +397,9 @@ public class IPFS implements Listener {
                             LogUtils.error(TAG, e);
                         }
                     });
-                    long time = 0L;
-                    while (!node.getRunning() && time <= TIMEOUT && !failure.get()) {
-                        time = time + 100L;
-                        try {
-                            Thread.sleep(100);
-                        } catch (Throwable e) {
-                            throw new RuntimeException(exception.get());
+                    while (!node.getRunning()) {
+                        if (failure.get()) {
+                            break;
                         }
                     }
                     if (failure.get()) {
