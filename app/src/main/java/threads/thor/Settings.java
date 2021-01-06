@@ -23,8 +23,8 @@ import threads.thor.bt.service.NetworkUtil;
 public class Settings {
 
     // IPFS TIMEOUT
-    public static final int IPFS_TIMEOUT = 60000;
-    public static final int IPFS_READ_TIMEOUT = 5000;
+    public static final int IPFS_TIMEOUT = 60000; // ms
+    public static final int IPFS_READ_TIMEOUT = 5000; // ms
 
     // DHT
     public static final int MAX_ENTRIES_PER_BUCKET = 8;
