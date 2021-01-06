@@ -11,7 +11,7 @@ protect your privacy in a way.
 
 **Warning** 
 The **incognito** mode is not active when using the decentralized protocols
-**ipns**, **ipfs** and **magnet**. Simply because it is not possible. It only applies to
+**ipns**, **ipfs** and **magnet**. It only applies to
 to the normal protocols like **https** and **http**.
 
 The second enhancement of the browser is the usage of a an **adblocker**.
@@ -23,7 +23,7 @@ The browser runs an IPFS service in the background, which will be started automa
 the browser detects the first access to. 
 
 Note, the service itself is configured in **CLIENT** mode, that means that you are only be able
-to download data, but not providing data by yourself.
+to download data, but not providing the data to others.
 
 Additional information about **ipns** and **ipfs** can be found here **https://ipfs.io/**
 
