@@ -33,7 +33,7 @@ The browser runs the bittorrent service only when a **magnet** URL should be dow
 The service is only active during download of the **magnet** URL. In this phase you are **seeding** 
 the data also to others users.
 
-## Tor
+## TOR
 The TOR service is running from the moment you are starting the application. So this enables
 the user to visit **onion** sites, even when they are not in **incognito** mode.
 
