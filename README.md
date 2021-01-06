@@ -7,12 +7,11 @@ on privacy and usability.
 
 The first enhancement is the integration of a **Tor** service which can be used to visit **onion** 
 sites and in case of using the application in **incognito** mode, the service will be used to 
-protect your privacy in a way.
+protect your privacy.
 
-**Warning** 
+**Warning:** 
 The **incognito** mode is not active when using the decentralized protocols
-**ipns**, **ipfs** and **magnet**. It only applies to
-to the normal protocols like **https** and **http**.
+**ipns**, **ipfs** and **magnet**. It only applies to to the normal protocols like **https** and **http**.
 
 The second enhancement of the browser is the usage of a an **adblocker**.
 It based on the data which are coming from **https://pgl.yoyo.org/adservers/**
@@ -39,7 +38,7 @@ the user to visit **onion** sites, even when they are not in **incognito** mode.
 
 In **incognito** mode, all **http** and **https** requests will be routed via the **Tor** network.
 
-**Warning** 
+**Warning:** 
 When you main goal is to focus on privacy, it might be better to use the 
 **Tor** browser (https://www.torproject.org/) directly.
 
