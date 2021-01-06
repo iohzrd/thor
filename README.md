@@ -14,7 +14,7 @@ The **incognito** mode is not active when using the decentralized protocols
 **ipns**, **ipfs** and **magnet**. Simply because it is not possible. It only applies to
 to the normal protocols like **https** and **http**.
 
-The second enhancement of the browser is the usage of a an **AdBlocker**.
+The second enhancement of the browser is the usage of a an **adblocker**.
 It based on the data which are coming from **https://pgl.yoyo.org/adservers/**
 
 
