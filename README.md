@@ -21,7 +21,8 @@ It based on the data which are coming from **https://pgl.yoyo.org/adservers/**
 The browser runs an IPFS service in the background, which will be started automatically when
 the browser detects the first access to. 
 
-Note, the service itself is configured in **CLIENT** mode, that means that you are only be able
+**Note:** 
+The service itself is configured in **CLIENT** mode, that means that you are only be able
 to download data, but not providing the data to others.
 
 Additional information about **ipns** and **ipfs** can be found here **https://ipfs.io/**
