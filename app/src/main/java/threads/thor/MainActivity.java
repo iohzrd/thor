@@ -1354,7 +1354,6 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
                         Objects.equals(scheme, Content.HTTP) ||
                         Objects.equals(scheme, Content.HTTPS)) {
                     openUri(uri);
-                    return true;
                 } else {
 
                     IPFS ipfs = IPFS.getInstance(getApplicationContext());
@@ -1365,8 +1364,8 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
                     }
 
                     openUri(Uri.parse(search));
-                    return true;
                 }
+                return true;
             }
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);

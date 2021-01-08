@@ -1,29 +1,38 @@
 # Thor
-The **Thor** browser is a mobile browser with the focus on decentralized techniques.
+The **Thor** browser is a web browser with the focus on decentralized technologies.
 It supports the **ipns**, **ipfs** and the **magnet** protocol.
 
-In addition to the enhancement of the protocols is has two more enhancements which focus
-on privacy and usability.
+In addition to the protocols enhancements it focus on privacy and usability.
 
-The first enhancement is the integration of a **Tor** service which can be used to visit **onion** 
+**Privacy:**
+The **Tor** service is integrated which can be used to visit **onion** 
 sites and in case of using the application in **incognito** mode, the service will be used to 
-protect your privacy.
+route all connections via the **Tor** network.
 
 **Warning:** 
 The **incognito** mode is not active when using the decentralized protocols
 **ipns**, **ipfs** and **magnet**. It only applies to to the normal protocols like **https** and **http**.
 
-The second enhancement of the browser is the usage of a an **adblocker**.
-It based on the data which are coming from **https://pgl.yoyo.org/adservers/**
+**Usability:**
+To improve the usability of the browser a **adblocker** is integrated.
+It based on the information which are coming from **https://pgl.yoyo.org/adservers/**
 
+
+## General
+The basic characteristics of the app are decentralized, respect of personal data,
+open source, free of charge, transparent, free of advertising and legally impeccable.
+
+[<img src="https://play.google.com/intl/en_us/badges/images/generic/en-play-badge.png"
+     alt="Get it on Google Play"
+     height="80">](https://play.google.com/store/apps/details?id=threads.thor)
 
 ## IPFS, IPNS
 The browser runs an IPFS service in the background, which will be started automatically when
 the browser detects the first access to. 
 
 **Note:** 
-The service itself is configured in **CLIENT** mode, that means that you are only be able
-to download data, but not providing the data to others.
+The service itself is configured in client mode, that means that you are only be able
+to download data, but not providing data to others.
 
 Additional information about **ipns** and **ipfs** can be found here **https://ipfs.io/**
 
@@ -35,7 +44,7 @@ the data also to others users.
 
 ## TOR
 The TOR service is running from the moment you are starting the application. This enables
-the user to visit **onion** sites, even when they are not in **incognito** mode.
+the user to visit **onion** sites, even when you are not in **incognito** mode.
 
 In **incognito** mode, all **http** and **https** requests will be routed via the **Tor** network.
 
