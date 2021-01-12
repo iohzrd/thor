@@ -83,7 +83,7 @@ dependencies {
     implementation 'com.jrummyapps:android-shell:1.0.1'
 
     // API (IPFS thor)
-    implementation 'thor.ipfs:thor:1.0.1'
+    implementation 'thor.ipfs:thor:1.0.5'
 
     
     annotationProcessor 'androidx.room:room-compiler:2.2.6'

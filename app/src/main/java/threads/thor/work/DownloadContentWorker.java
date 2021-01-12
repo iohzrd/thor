@@ -178,8 +178,7 @@ public class DownloadContentWorker extends Worker {
 
 
     private void downloadContent(int idx, @NonNull DocumentFile doc, @NonNull String root,
-                                 @NonNull String mimeType, @NonNull String name)
-            throws InterruptedException {
+                                 @NonNull String mimeType, @NonNull String name) {
         ExecutorService executor = Executors.newFixedThreadPool(1);
 
         List<DocumentFileContent> works = new ArrayList<>();
