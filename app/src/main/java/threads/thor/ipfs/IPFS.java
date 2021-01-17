@@ -2,6 +2,7 @@ package threads.thor.ipfs;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.util.Pair;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -15,7 +16,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -31,11 +31,8 @@ import thor.LsInfoClose;
 import thor.Node;
 import thor.ResolveInfo;
 import threads.LogUtils;
-import threads.thor.Settings;
 
 public class IPFS implements Listener {
-    @NonNull
-    private static final List<String> DNS_ADDRS = new ArrayList<>();
 
     private static final String BADGERS = "badgers";
     private static final String EMPTY_DIR_58 = "QmUNLLsPACCz1vLxQVkXqqLX5R1X345qqfHbsf67hvA3Nn";
@@ -99,20 +96,6 @@ public class IPFS implements Listener {
         node.openDatabase();
     }
 
-    private static CopyOnWriteArrayList<String> getBootstrap() {
-
-
-        CopyOnWriteArrayList<String> bootstrap = new CopyOnWriteArrayList<>(
-                Settings.IPFS_BOOTSTRAP_NODES);
-
-        if (IPFS.DNS_ADDRS.isEmpty()) {
-            IPFS.DNS_ADDRS.addAll(DnsAddrResolver.getMultiAddresses());
-        }
-
-        CopyOnWriteArrayList<String> dnsAddrs = new CopyOnWriteArrayList<>(IPFS.DNS_ADDRS);
-        bootstrap.addAll(dnsAddrs);
-        return bootstrap;
-    }
 
     public static int getSwarmPort(@NonNull Context context) {
 
@@ -358,16 +341,31 @@ public class IPFS implements Listener {
         checkDaemon();
         if (swarmPeers() < minPeers) {
             try {
-                CopyOnWriteArrayList<String> bootstrap = IPFS.getBootstrap();
+                Pair<List<String>, List<String>> result = DnsAddrResolver.getBootstrap();
+
+                List<String> bootstrap = result.first;
                 List<Callable<Boolean>> tasks = new ArrayList<>();
                 ExecutorService executor = Executors.newFixedThreadPool(bootstrap.size());
                 for (String address : bootstrap) {
                     tasks.add(() -> swarmConnect(address, timeout));
                 }
 
-                List<Future<Boolean>> result = executor.invokeAll(tasks, timeout, TimeUnit.SECONDS);
-                for (Future<Boolean> future : result) {
-                    LogUtils.debug(TAG, "Bootstrap done " + future.isDone());
+                List<Future<Boolean>> futures = executor.invokeAll(tasks, timeout, TimeUnit.SECONDS);
+                for (Future<Boolean> future : futures) {
+                    LogUtils.info(TAG, "\nBootstrap done " + future.isDone());
+                }
+
+
+                List<String> second = result.second;
+                tasks.clear();
+                executor = Executors.newFixedThreadPool(second.size());
+                for (String address : second) {
+                    tasks.add(() -> swarmConnect(address, timeout));
+                }
+                futures.clear();
+                futures = executor.invokeAll(tasks, timeout, TimeUnit.SECONDS);
+                for (Future<Boolean> future : futures) {
+                    LogUtils.info(TAG, "\nConnect done " + future.isDone());
                 }
             } catch (Throwable throwable) {
                 LogUtils.error(TAG, throwable);
