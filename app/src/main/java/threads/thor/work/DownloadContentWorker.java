@@ -220,7 +220,6 @@ public class DownloadContentWorker extends Worker {
         LogUtils.info(TAG, " start [" + (System.currentTimeMillis() - start) + "]...");
 
 
-
         String cid = docContent.content;
         DocumentFile doc = docContent.file;
 

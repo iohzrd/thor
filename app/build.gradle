@@ -40,7 +40,6 @@ android {
     }
 
 
-
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
@@ -87,7 +86,7 @@ dependencies {
     // API (IPFS thor)
     implementation 'thor.ipfs:thor:1.0.5'
 
-    
+
     annotationProcessor 'androidx.room:room-compiler:2.2.6'
 
 
