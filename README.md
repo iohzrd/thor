@@ -116,8 +116,7 @@ public static void setIncognitoMode(@NonNull WebView webView, boolean incognito)
 ## Privacy Policy
 
 ### Data Protection
-<p>As an application provider, we take the protection of all personal data very
-                seriously.
+<p>As an application provider, we take the protection of all personal data very seriously.
                 All personal information is treated confidentially and in accordance with the legal
                 requirements,
                 regulations, as explained in this privacy policy.
@@ -127,6 +126,7 @@ public static void setIncognitoMode(@NonNull WebView webView, boolean incognito)
                 The users behaviour is also not analyzed by this application.
             </p>
 <p>No information and data is tracked by this application.</p>
+
 ### Android Permissions
 <p>This section describes briefly why special Android permissions are required.
             </p>
