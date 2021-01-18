@@ -407,20 +407,7 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
             }
 
             return true;
-        } else if (itemId == R.id.action_privacy_policy) {
-
-            try {
-
-                String data = ThorService.loadRawData(getApplicationContext(),
-                        R.raw.privacy_policy);
-                mWebView.loadData(data, MimeType.HTML_MIME_TYPE, Content.UTF8);
-
-            } catch (Throwable throwable) {
-                LogUtils.error(TAG, throwable);
-            }
-            return true;
         }
-
         return super.onOptionsItemSelected(item);
     }
 

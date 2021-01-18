@@ -154,23 +154,6 @@ public class ThorService {
 
     }
 
-    @NonNull
-    public static String loadRawData(@NonNull Context context, @RawRes int id) {
-        Objects.requireNonNull(context);
-
-        try (InputStream inputStream = context.getResources().openRawResource(id)) {
-            try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
-
-                IPFS.copy(inputStream, outputStream);
-                return new String(outputStream.toByteArray());
-
-            }
-        } catch (Throwable throwable) {
-            LogUtils.error(TAG, throwable);
-            return "";
-        }
-    }
-
 
     public static void setFileInfo(@NonNull Context context, @NonNull Uri uri,
                                    @NonNull String filename, @NonNull String mimeType,
