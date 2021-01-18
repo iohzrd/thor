@@ -111,3 +111,31 @@ public static void setIncognitoMode(@NonNull WebView webView, boolean incognito)
 }
 
 ```
+
+
+## Privacy Policy
+
+### Data Protection
+            <p>As an application provider, we take the protection of all personal data very
+                seriously.
+                All personal information is treated confidentially and in accordance with the legal
+                requirements,
+                regulations, as explained in this privacy policy.
+            </p>
+            <p>This app is designed so that the user do not have to enter any personal data.
+                Never will data collected by us, and especially not passed to third parties.
+                The users behaviour is also not analyzed by this application.
+            </p>
+            <p>No information and data is tracked by this application.
+            </p>
+### Android Permissions
+            <p>This section describes briefly why special Android permissions are required.
+            </p>
+            <ul>
+                <li>
+                    <h4>Foreground Service</h4>
+                    <p>The foreground service permission is required to download content over a
+                        longer period of time.
+                    </p>
+                </li>
+            </ul>
