@@ -393,20 +393,6 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
                 LogUtils.error(TAG, throwable);
             }
             return true;
-        } else if (itemId == R.id.action_issues) {
-
-
-            try {
-                String uri = "https://gitlab.com/remmer.wilts/thor/issues";
-
-                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(uri),
-                        getApplicationContext(), MainActivity.class);
-                startActivity(intent);
-            } catch (Throwable e) {
-                LogUtils.error(TAG, e);
-            }
-
-            return true;
         }
         return super.onOptionsItemSelected(item);
     }

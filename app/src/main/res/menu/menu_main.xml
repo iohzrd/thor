@@ -77,12 +77,6 @@
             android:orderInCategory="40"
             android:title="@string/documentation"
             app:showAsAction="never" />
-
-        <item
-            android:id="@+id/action_issues"
-            android:orderInCategory="45"
-            android:title="@string/issues"
-            app:showAsAction="never" />
     </group>
 
 </menu>
