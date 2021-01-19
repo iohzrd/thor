@@ -17,10 +17,7 @@
     <string name="find_page">Find in page</string>
     <string name="history">History</string>
 
-
-    <string name="privacy_policy">Privacy Policy</string>
     <string name="documentation">Documentation</string>
-    <string name="issues">Issues</string>
     <string name="clear_cache_and_cookies">Clear cache, cookies, history…</string>
     <string name="password">Password</string>
     <string name="user_name">Username</string>

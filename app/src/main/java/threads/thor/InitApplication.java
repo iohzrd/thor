@@ -2,6 +2,8 @@ package threads.thor;
 
 import android.app.Application;
 
+import androidx.annotation.NonNull;
+
 import com.jrummyapps.android.shell.CommandResult;
 import com.jrummyapps.android.shell.Shell;
 
@@ -61,12 +63,9 @@ public class InitApplication extends Application {
                     "\n" +
                     "SOCKSPort " + Settings.SOCKSPort +
                     "\n";
-            success = updateTorConfigCustom(fileTorRcCustom, extraLines);
 
-            if (!success) {
-                EVENTS.getInstance(getApplicationContext()).tor();
-                return;
-            }
+
+            updateTorConfigCustom(fileTorRcCustom, extraLines);
 
 
             Executors.newSingleThreadExecutor().submit(() -> {
@@ -101,13 +100,13 @@ public class InitApplication extends Application {
         }
     }
 
-    public boolean updateTorConfigCustom(File fileTorRcCustom, String extraLines) throws IOException {
+    private void updateTorConfigCustom(@NonNull File fileTorRcCustom,
+                                       @NonNull String extraLines) throws IOException {
         FileWriter fos = new FileWriter(fileTorRcCustom, false);
         PrintWriter ps = new PrintWriter(fos);
         ps.print(extraLines);
         ps.flush();
         ps.close();
-        return true;
     }
 
     private void logNotice(String notice) {

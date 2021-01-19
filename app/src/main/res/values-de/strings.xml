@@ -20,10 +20,7 @@
     <string name="find_page">Auf Seite suchen</string>
     <string name="history">Verlauf</string>
 
-
-    <string name="privacy_policy">Datenschutzerklärung</string>
     <string name="documentation">Dokumentation</string>
-    <string name="issues">Issues</string>
     <string name="clear_cache_and_cookies">Lösche Cache, Cookies, Verlauf…</string>
     <string name="password">Password</string>
     <string name="user_name">Username</string>

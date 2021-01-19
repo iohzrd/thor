@@ -8,10 +8,8 @@ import android.webkit.WebResourceResponse;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.RawRes;
 
 import java.io.BufferedInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
@@ -25,7 +23,6 @@ import java.util.Objects;
 import threads.LogUtils;
 import threads.thor.Settings;
 import threads.thor.core.Content;
-import threads.thor.ipfs.IPFS;
 
 
 public class ThorService {
