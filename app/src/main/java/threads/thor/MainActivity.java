@@ -1178,10 +1178,7 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
                     try {
                         DOCS docs = DOCS.getInstance(getApplicationContext());
                         {
-                            Uri newUri = docs.invalidUri(uri);
-                            if (!Objects.equals(uri, newUri)) {
-                                return createEmptyResource();
-                            }
+                            uri = docs.redirectUri(uri);
                         }
 
                         docs.connectUri(uri);

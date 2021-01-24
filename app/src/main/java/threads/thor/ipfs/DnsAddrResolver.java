@@ -3,6 +3,7 @@ package threads.thor.ipfs;
 import android.util.Pair;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import org.minidns.DnsClient;
 import org.minidns.cache.LruCache;
@@ -75,6 +76,40 @@ public class DnsAddrResolver {
         return result;
     }
 
+
+    @Nullable
+    public static String getDNSLink(@NonNull String host) {
+
+        List<String> txtRecords = getTxtRecords("_dnslink.".concat(host));
+        for (String txtRecord : txtRecords) {
+            try {
+                if (txtRecord.startsWith(Settings.DNS_LINK)) {
+                    return txtRecord.replaceFirst(Settings.DNS_LINK, "");
+                }
+            } catch (Throwable e) {
+                LogUtils.error(TAG, "" + e.getLocalizedMessage(), e);
+            }
+        }
+        return null;
+    }
+
+    @NonNull
+    private static List<String> getTxtRecords(@NonNull String host) {
+        List<String> txtRecords = new ArrayList<>();
+        try {
+            DnsClient client = new DnsClient(new LruCache(0));
+            DnsQueryResult result = client.query(host, Record.TYPE.TXT);
+            DnsMessage response = result.response;
+            List<Record<? extends Data>> records = response.answerSection;
+            for (Record<? extends Data> record : records) {
+                TXT text = (TXT) record.getPayload();
+                txtRecords.add(text.getText());
+            }
+        } catch (Throwable e) {
+            LogUtils.error(TAG, "" + e.getLocalizedMessage(), e);
+        }
+        return txtRecords;
+    }
 
     @NonNull
     private static List<String> getTxtRecords() {

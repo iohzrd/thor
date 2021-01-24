@@ -26,6 +26,7 @@ import threads.thor.core.page.Bookmark;
 import threads.thor.core.page.PAGES;
 import threads.thor.core.page.Resolver;
 import threads.thor.ipfs.Closeable;
+import threads.thor.ipfs.DnsAddrResolver;
 import threads.thor.ipfs.IPFS;
 import threads.thor.ipfs.LinkInfo;
 import threads.thor.magic.ContentInfo;
@@ -123,8 +124,10 @@ public class DOCS {
                     try {
                         String host = getHost(uri);
                         if (host != null) {
-                            if (!ipfs.isConnected(host)) {
-                                ipfs.swarmConnect("/p2p/" + host, 10);
+                            if(ipfs.isValidCID(host)) {
+                                if (!ipfs.isConnected(host)) {
+                                    ipfs.swarmConnect("/p2p/" + host, 10);
+                                }
                             }
                         }
                     } catch (Throwable throwable) {
@@ -418,7 +421,7 @@ public class DOCS {
 
 
     @NonNull
-    public Uri invalidUri(@NonNull Uri uri) {
+    public Uri redirectUri(@NonNull Uri uri) {
 
 
         if (Objects.equals(uri.getScheme(), Content.IPNS) ||
@@ -427,14 +430,26 @@ public class DOCS {
             String host = uri.getHost();
             Objects.requireNonNull(host);
             if (!ipfs.isValidCID(host)) {
-                Uri.Builder builder = new Uri.Builder();
-                builder.scheme(Content.HTTPS)
-                        .appendPath(host);
-                for (String path : paths) {
-                    builder.appendPath(path);
+                String cid = DnsAddrResolver.getDNSLink(host);
+                if(cid == null) {
+                    Uri.Builder builder = new Uri.Builder();
+                    builder.scheme(Content.HTTPS)
+                            .authority(host);
+                    for (String path : paths) {
+                        builder.appendPath(path);
+                    }
+
+                    return builder.build();
+                } else {
+                    Uri.Builder builder = new Uri.Builder();
+                    builder.scheme(Content.IPFS)
+                            .authority(cid);
+                    for (String path : paths) {
+                        builder.appendPath(path);
+                    }
+                    return builder.build();
                 }
 
-                return builder.build();
             }
         }
         return uri;
