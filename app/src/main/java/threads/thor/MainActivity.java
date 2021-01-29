@@ -367,14 +367,8 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
                 mWebView.clearCache(true);
                 mWebView.clearFormData();
 
-                // Clear all the cookies
-                CookieManager.getInstance().removeAllCookies(null);
-                CookieManager.getInstance().flush();
 
-                // Clear ipfs data
-                BLOCKS.getInstance(getApplicationContext()).clear();
-
-                // Clear browser data
+                // Clear data and cokies
                 ClearCacheWorker.clearCache(getApplicationContext());
 
                 EVENTS.getInstance(getApplicationContext()).warning(

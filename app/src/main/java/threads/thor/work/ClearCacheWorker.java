@@ -1,6 +1,7 @@
 package threads.thor.work;
 
 import android.content.Context;
+import android.webkit.CookieManager;
 
 import androidx.annotation.NonNull;
 import androidx.work.ExistingWorkPolicy;
@@ -13,6 +14,7 @@ import java.util.concurrent.TimeUnit;
 
 import threads.LogUtils;
 import threads.thor.FileProvider;
+import threads.thor.core.blocks.BLOCKS;
 import threads.thor.ipfs.IPFS;
 
 public class ClearCacheWorker extends Worker {
@@ -50,10 +52,17 @@ public class ClearCacheWorker extends Worker {
 
         try {
 
+            // Clear all the cookies
+            CookieManager.getInstance().removeAllCookies(null);
+            CookieManager.getInstance().flush();
 
+            // Clear local data
             FileProvider fileProvider = FileProvider.getInstance(getApplicationContext());
             fileProvider.cleanImageDir();
             fileProvider.cleanDataDir();
+
+            // Clear ipfs data
+            BLOCKS.getInstance(getApplicationContext()).clear();
 
             IPFS.logCacheDir(getApplicationContext());
 
