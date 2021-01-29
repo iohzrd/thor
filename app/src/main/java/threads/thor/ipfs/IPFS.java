@@ -31,10 +31,11 @@ import thor.LsInfoClose;
 import thor.Node;
 import thor.ResolveInfo;
 import threads.LogUtils;
+import threads.thor.core.blocks.BLOCKS;
+import threads.thor.core.blocks.Block;
 
 public class IPFS implements Listener {
 
-    private static final String BADGERS = "badgers";
     private static final String EMPTY_DIR_58 = "QmUNLLsPACCz1vLxQVkXqqLX5R1X345qqfHbsf67hvA3Nn";
     private static final String EMPTY_DIR_32 = "bafybeiczsscdsbs7ffqz55asqdf3smv6klcw3gofszvwlyarci47bgf354";
     private static final String PREF_KEY = "prefKey";
@@ -43,33 +44,23 @@ public class IPFS implements Listener {
     private static final String SWARM_PORT_KEY = "swarmPortKey";
     private static final String PUBLIC_KEY = "publicKey";
     private static final String AGENT_KEY = "agentKey";
-    private static final String CLEAN_KEY = "cleanKey";
     private static final String PRIVATE_KEY = "privateKey";
     private static final String TAG = IPFS.class.getSimpleName();
     private static IPFS INSTANCE = null;
-
+    private final BLOCKS blocks;
     private final Node node;
     private final Object locker = new Object();
 
 
     private IPFS(@NonNull Context context) throws Exception {
-        File baseDir = context.getFilesDir();
-
-
-        if (IPFS.getCleanFlag(context)) {
-            IPFS.setCleanFlag(context, false);
-            File badger = new File(baseDir, BADGERS);
-            if (badger.exists()) {
-                deleteFile(badger);
-            }
-        }
+        this.blocks = BLOCKS.getInstance(context);
 
 
         String host = getPID(context);
 
         boolean init = host == null;
 
-        node = new Node(this, baseDir.getAbsolutePath());
+        node = new Node(this);
 
         if (init) {
             node.identity();
@@ -93,7 +84,6 @@ public class IPFS implements Listener {
         node.setHighWater(200);
         node.setLowWater(50);
 
-        node.openDatabase();
     }
 
 
@@ -134,19 +124,6 @@ public class IPFS implements Listener {
                 }
             }
         }
-    }
-
-    private static boolean getCleanFlag(@NonNull Context context) {
-
-        SharedPreferences sharedPref = context.getSharedPreferences(PREF_KEY, Context.MODE_PRIVATE);
-        return sharedPref.getBoolean(CLEAN_KEY, false);
-    }
-
-    public static void setCleanFlag(@NonNull Context context, boolean clean) {
-        SharedPreferences sharedPref = context.getSharedPreferences(PREF_KEY, Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPref.edit();
-        editor.putBoolean(CLEAN_KEY, clean);
-        editor.apply();
     }
 
     private static void setPublicKey(@NonNull Context context, @NonNull String key) {
@@ -299,41 +276,6 @@ public class IPFS implements Listener {
                     logDir(child);
                 }
             }
-        }
-    }
-
-    private static void deleteFile(@NonNull File root) {
-        try {
-            if (root.isDirectory()) {
-                File[] files = root.listFiles();
-                if (files != null) {
-                    for (File file : files) {
-                        if (file.isDirectory()) {
-                            deleteFile(file);
-                            boolean result = file.delete();
-                            if (!result) {
-                                LogUtils.error(TAG, "File " + file.getName() + " not deleted");
-                            }
-                        } else {
-                            boolean result = file.delete();
-                            if (!result) {
-                                LogUtils.error(TAG, "File " + file.getName() + " not deleted");
-                            }
-                        }
-                    }
-                }
-                boolean result = root.delete();
-                if (!result) {
-                    LogUtils.error(TAG, "File " + root.getName() + " not deleted");
-                }
-            } else {
-                boolean result = root.delete();
-                if (!result) {
-                    LogUtils.error(TAG, "File " + root.getName() + " not deleted");
-                }
-            }
-        } catch (Throwable e) {
-            LogUtils.error(TAG, e);
         }
     }
 
@@ -645,6 +587,47 @@ public class IPFS implements Listener {
         }
     }
 
+    @Override
+    public void blockDelete(String key) {
+        LogUtils.error(TAG, "del " + key);
+
+        blocks.deleteBlock(key);
+    }
+
+    @Override
+    public byte[] blockGet(String key) {
+        LogUtils.error(TAG, "get " + key);
+
+        Block block = blocks.getBlock(key);
+        if (block != null) {
+            return block.getData();
+        }
+        return null;
+    }
+
+    @Override
+    public boolean blockHas(String key) {
+        boolean has = blocks.hasBlock(key);
+
+        LogUtils.error(TAG, "has " + has + " " + key);
+        return has;
+    }
+
+    @Override
+    public void blockPut(String key, byte[] bytes) {
+        LogUtils.error(TAG, "put " + key);
+
+        blocks.insertBlock(key, bytes);
+    }
+
+    @Override
+    public long blockSize(String key) {
+
+        long size = blocks.getBlockSize(key);
+
+        LogUtils.error(TAG, "size " + size + " " + key);
+        return size;
+    }
     @Override
     public void verbose(String s) {
         LogUtils.verbose(TAG, "" + s);

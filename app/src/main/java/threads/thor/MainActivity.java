@@ -67,6 +67,7 @@ import threads.thor.bt.magnet.MagnetUri;
 import threads.thor.bt.magnet.MagnetUriParser;
 import threads.thor.core.Content;
 import threads.thor.core.DOCS;
+import threads.thor.core.blocks.BLOCKS;
 import threads.thor.core.events.EVENTS;
 import threads.thor.core.events.EventViewModel;
 import threads.thor.core.page.Bookmark;
@@ -370,7 +371,10 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
                 CookieManager.getInstance().removeAllCookies(null);
                 CookieManager.getInstance().flush();
 
-                IPFS.setCleanFlag(getApplicationContext(), true);
+                // Clear ipfs data
+                BLOCKS.getInstance(getApplicationContext()).clear();
+
+                // Clear browser data
                 ClearCacheWorker.clearCache(getApplicationContext());
 
                 EVENTS.getInstance(getApplicationContext()).warning(
