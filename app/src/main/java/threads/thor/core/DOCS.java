@@ -129,6 +129,7 @@ public class DOCS {
                         if (host != null) {
                             String pid = ipfs.decodeName(host);
                             if(pid != null) {
+                                LogUtils.error(TAG, "connect ... " + pid);
                                 if (!ipfs.isConnected(pid)) {
                                     ipfs.swarmConnect("/p2p/" + pid, 10);
                                 }
