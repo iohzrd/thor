@@ -32,12 +32,16 @@ public class InitApplication extends Application {
 
         AdBlocker.init(getApplicationContext());
 
-        IPFS.getInstance(getApplicationContext());
+        IPFS ipfs = IPFS.getInstance(getApplicationContext());
+        Executors.newSingleThreadExecutor().submit(() -> {
+           ipfs.bootstrap(10,10);
+        });
 
         if (LogUtils.isDebug()) {
             IPFS.logCacheDir(getApplicationContext());
             IPFS.logBaseDir(getApplicationContext());
         }
+
 
         try {
             TorResourceInstaller torResourceInstaller = new TorResourceInstaller(
