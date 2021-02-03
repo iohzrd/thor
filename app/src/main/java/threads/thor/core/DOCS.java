@@ -2,7 +2,6 @@ package threads.thor.core;
 
 import android.content.Context;
 import android.net.Uri;
-import android.webkit.MimeTypeMap;
 import android.webkit.WebResourceResponse;
 
 import androidx.annotation.NonNull;
