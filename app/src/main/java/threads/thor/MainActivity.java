@@ -17,6 +17,7 @@ import android.os.SystemClock;
 import android.provider.DocumentsContract;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Pair;
 import android.view.GestureDetector;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -61,6 +62,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 import threads.LogUtils;
 import threads.thor.bt.magnet.MagnetUri;
@@ -75,6 +77,7 @@ import threads.thor.core.page.Resolver;
 import threads.thor.fragments.ActionListener;
 import threads.thor.fragments.BookmarksDialogFragment;
 import threads.thor.fragments.HistoryDialogFragment;
+import threads.thor.ipfs.Closeable;
 import threads.thor.ipfs.IPFS;
 import threads.thor.services.ThorService;
 import threads.thor.utils.AdBlocker;
@@ -1080,7 +1083,6 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
                     } else if (Objects.equals(uri.getScheme(), Content.IPNS) ||
                             Objects.equals(uri.getScheme(), Content.IPFS)) {
 
-
                         String res = uri.getQueryParameter("download");
                         if (Objects.equals(res, "1")) {
                             contentDownloader(uri, ThorService.getFileName(uri));
@@ -1176,14 +1178,28 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
                         Objects.equals(uri.getScheme(), Content.IPFS)) {
 
                     try {
-                        DOCS docs = DOCS.getInstance(getApplicationContext());
-                        {
-                            uri = docs.redirectUri(uri);
-                        }
+                        final AtomicLong time = new AtomicLong(System.currentTimeMillis());
+                        long timeout = Settings.IPFS_TIMEOUT;
 
+                        DOCS docs = DOCS.getInstance(getApplicationContext());
+                        Closeable closeable = () -> System.currentTimeMillis() - time.get() > timeout;
+                        {
+                            Pair<Uri, Boolean> result = docs.redirectUri(uri, closeable);
+                            if (result.second) {
+                                MainActivity.this.runOnUiThread(() -> {
+                                    mWebView.stopLoading();
+                                    mWebView.loadUrl(result.first.toString());
+                                });
+                                return null;
+                            }
+                            uri = result.first;
+                        }
+                        if (closeable.isClosed()) {
+                            throw new DOCS.TimeoutException(uri.toString());
+                        }
                         docs.connectUri(uri);
 
-                        return docs.getResponse(uri, Settings.IPFS_TIMEOUT);
+                        return docs.getResponse(uri, closeable);
 
                     } catch (Throwable throwable) {
                         return createErrorMessage(throwable);

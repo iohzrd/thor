@@ -2,6 +2,7 @@ package threads.thor.core;
 
 import android.content.Context;
 import android.net.Uri;
+import android.util.Pair;
 import android.webkit.WebResourceResponse;
 
 import androidx.annotation.NonNull;
@@ -17,7 +18,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicLong;
 
 import threads.LogUtils;
 import threads.thor.Settings;
@@ -330,20 +330,12 @@ public class DOCS {
                     }
                     return getContentResponse(uri, root, mimeType, size, closeable);
                 } else {
-                    Link link = ipfs.link(root, INDEX_HTML, closeable);
-                    if(link != null) {
-                        long size = ipfs.getSize(link.getContent(), closeable);
-                        if (closeable.isClosed()) {
-                            throw new TimeoutException(uri.toString());
-                        }
-                        return getContentResponse(uri, link.getContent(),
-                                MimeType.HTML_MIME_TYPE, size, closeable);
-                    } else {
-                        List<LinkInfo> infos = ipfs.getLinks(root, closeable);
-                        String answer = generateDirectoryHtml(uri, root, paths, infos);
-                        return new WebResourceResponse(MimeType.HTML_MIME_TYPE,
-                                "UTF-8", new ByteArrayInputStream(answer.getBytes()));
-                    }
+
+                    List<LinkInfo> infos = ipfs.getLinks(root, closeable);
+                    String answer = generateDirectoryHtml(uri, root, paths, infos);
+                    return new WebResourceResponse(MimeType.HTML_MIME_TYPE,
+                            "UTF-8", new ByteArrayInputStream(answer.getBytes()));
+
                 }
             } else {
                 String mimeType = getMimeType(root, closeable);
@@ -365,28 +357,19 @@ public class DOCS {
             Objects.requireNonNull(link);
 
             if (ipfs.isEmptyDir(link.getContent())) {
-                List<LinkInfo> links = ipfs.getLinks(link.getContent(), closeable);
-                String answer = generateDirectoryHtml(uri, root, paths, links);
+                String answer = generateDirectoryHtml(uri, root, paths, new ArrayList<>());
 
                 return new WebResourceResponse(MimeType.HTML_MIME_TYPE,
                         "UTF-8", new ByteArrayInputStream(answer.getBytes()));
             } else if (ipfs.isDir(link.getContent(), closeable)) {
 
-                Link index = ipfs.link(link.getContent(), INDEX_HTML, closeable);
-                if(index != null) {
-                    long size = ipfs.getSize(index.getContent(), closeable);
-                    if (closeable.isClosed()) {
-                        throw new TimeoutException(uri.toString());
-                    }
-                    return getContentResponse(uri, index.getContent(),
-                            MimeType.HTML_MIME_TYPE, size, closeable);
-                } else {
-                    List<LinkInfo> links = ipfs.getLinks(link.getContent(), closeable);
-                    String answer = generateDirectoryHtml(uri, root, paths, links);
 
-                    return new WebResourceResponse(MimeType.HTML_MIME_TYPE,
-                            "UTF-8", new ByteArrayInputStream(answer.getBytes()));
-                }
+                List<LinkInfo> links = ipfs.getLinks(link.getContent(), closeable);
+                String answer = generateDirectoryHtml(uri, root, paths, links);
+
+                return new WebResourceResponse(MimeType.HTML_MIME_TYPE,
+                        "UTF-8", new ByteArrayInputStream(answer.getBytes()));
+
 
             } else {
                 String mimeType = getMimeType(uri, link.getContent(), closeable);
@@ -449,43 +432,6 @@ public class DOCS {
 
     }
 
-
-    @NonNull
-    public Uri redirectUri(@NonNull Uri uri) {
-
-
-        if (Objects.equals(uri.getScheme(), Content.IPNS) ||
-                Objects.equals(uri.getScheme(), Content.IPFS)) {
-            List<String> paths = uri.getPathSegments();
-            String host = uri.getHost();
-            Objects.requireNonNull(host);
-            if (!ipfs.isValidCID(host)) {
-                String cid = DnsAddrResolver.getDNSLink(host);
-                if(cid == null) {
-                    Uri.Builder builder = new Uri.Builder();
-                    builder.scheme(Content.HTTPS)
-                            .authority(host);
-                    for (String path : paths) {
-                        builder.appendPath(path);
-                    }
-
-                    return builder.build();
-                } else {
-                    Uri.Builder builder = new Uri.Builder();
-                    builder.scheme(Content.IPFS)
-                            .authority(cid);
-                    for (String path : paths) {
-                        builder.appendPath(path);
-                    }
-                    return builder.build();
-                }
-
-            }
-        }
-        return uri;
-    }
-
-
     @NonNull
     private String getMimeType(@NonNull Uri uri,
                                @NonNull String element,
@@ -534,7 +480,7 @@ public class DOCS {
     }
 
     @NonNull
-    public WebResourceResponse getResponse(@NonNull Uri uri, long timeout) throws Exception {
+    public WebResourceResponse getResponse(@NonNull Uri uri, @NonNull Closeable closeable) throws Exception {
 
         String host = uri.getHost();
         Objects.requireNonNull(host);
@@ -543,10 +489,6 @@ public class DOCS {
         if (!ipfs.isValidCID(host)) {
             throw new InvalidNameException(uri.toString());
         }
-
-        final AtomicLong time = new AtomicLong(System.currentTimeMillis());
-
-        Closeable closeable = () -> ((System.currentTimeMillis() - time.get()) > timeout);
 
         String root;
         if (Objects.equals(uri.getScheme(), Content.IPNS)) {
@@ -613,6 +555,100 @@ public class DOCS {
         }
 
 
+    }
+
+    @NonNull
+    public Pair<Uri, Boolean> redirectUri(@NonNull Uri uri, @NonNull Closeable closeable) {
+
+
+        if (Objects.equals(uri.getScheme(), Content.IPNS) ||
+                Objects.equals(uri.getScheme(), Content.IPFS)) {
+            List<String> paths = uri.getPathSegments();
+            String host = uri.getHost();
+            Objects.requireNonNull(host);
+            if (!ipfs.isValidCID(host)) {
+                String cid = DnsAddrResolver.getDNSLink(host);
+                if (cid == null) {
+                    Uri.Builder builder = new Uri.Builder();
+                    builder.scheme(Content.HTTPS)
+                            .authority(host);
+                    for (String path : paths) {
+                        builder.appendPath(path);
+                    }
+
+                    return Pair.create(builder.build(), false);
+                } else {
+                    Uri.Builder builder = new Uri.Builder();
+                    builder.scheme(Content.IPFS)
+                            .authority(cid);
+                    for (String path : paths) {
+                        builder.appendPath(path);
+                    }
+                    return redirect(builder.build(), cid, paths, closeable);
+                }
+
+            } else {
+                String root;
+                try {
+                    if (Objects.equals(uri.getScheme(), Content.IPNS)) {
+                        root = resolveName(uri, host, closeable);
+                    } else {
+                        root = host;
+                    }
+                    Objects.requireNonNull(root);
+                    return redirect(uri, root, paths, closeable);
+                } catch (Throwable throwable) {
+                    LogUtils.error(TAG, throwable);
+                }
+            }
+        }
+        return Pair.create(uri, false);
+    }
+
+    @NonNull
+    public Pair<Uri, Boolean> redirect(@NonNull Uri uri, @NonNull String root,
+                                       @NonNull List<String> paths, @NonNull Closeable closeable) {
+
+        if (paths.isEmpty()) {
+
+            List<Link> links = ipfs.links(root, closeable);
+            if (links != null) {
+                if (!ipfs.isEmptyDir(root) && !links.isEmpty()) {
+                    Link link = ipfs.link(root, INDEX_HTML, closeable);
+                    if (link != null) {
+                        Uri.Builder builder = new Uri.Builder();
+                        builder.scheme(uri.getScheme())
+                                .authority(uri.getAuthority());
+                        for (String path : paths) {
+                            builder.appendPath(path);
+                        }
+                        builder.appendPath(INDEX_HTML);
+                        return Pair.create(builder.build(), true);
+                    }
+                }
+            }
+
+        } else {
+            Link link = ipfs.link(root, paths, closeable);
+
+            if (link != null) {
+                if (!ipfs.isEmptyDir(link.getContent()) && ipfs.isDir(link.getContent(), closeable)) {
+
+                    Link index = ipfs.link(link.getContent(), INDEX_HTML, closeable);
+                    if (index != null) {
+                        Uri.Builder builder = new Uri.Builder();
+                        builder.scheme(uri.getScheme())
+                                .authority(uri.getAuthority());
+                        for (String path : paths) {
+                            builder.appendPath(path);
+                        }
+                        builder.appendPath(INDEX_HTML);
+                        return Pair.create(builder.build(), true);
+                    }
+                }
+            }
+        }
+        return Pair.create(uri, false);
     }
 
     public static class InvalidNameException extends Exception {
