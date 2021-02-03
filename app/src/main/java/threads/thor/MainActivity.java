@@ -67,7 +67,6 @@ import threads.thor.bt.magnet.MagnetUri;
 import threads.thor.bt.magnet.MagnetUriParser;
 import threads.thor.core.Content;
 import threads.thor.core.DOCS;
-import threads.thor.core.blocks.BLOCKS;
 import threads.thor.core.events.EVENTS;
 import threads.thor.core.events.EventViewModel;
 import threads.thor.core.page.Bookmark;
@@ -641,18 +640,19 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
                     mBrowserText.setCompoundDrawablesRelativeWithIntrinsicBounds(
                             R.drawable.lock, 0, 0, 0
                     );
+                    mBrowserText.setText(uri.getHost());
                 } else if (Objects.equals(uri.getScheme(), Content.HTTP)) {
                     mBrowserText.setCompoundDrawablesRelativeWithIntrinsicBounds(
                             R.drawable.lock_open, 0, 0, 0
                     );
+                    mBrowserText.setText(uri.getHost());
                 } else {
                     mBrowserText.setCompoundDrawablesRelativeWithIntrinsicBounds(
-                            R.drawable.battlenet, 0, 0, 0
+                            R.drawable.lock, 0, 0, 0
                     );
+                    mBrowserText.setText(uri.toString());
                 }
                 mBrowserText.setCompoundDrawablePadding(8);
-
-                mBrowserText.setText(uri.getHost());
             }
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
@@ -1072,7 +1072,9 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
                     Uri uri = request.getUrl();
                     LogUtils.info(TAG, "shouldOverrideUrlLoading : " + uri);
 
-                    if (Objects.equals(uri.getScheme(), Content.HTTP) ||
+                    if (Objects.equals(uri.getScheme(), Content.ABOUT)) {
+                        return true;
+                    } else if (Objects.equals(uri.getScheme(), Content.HTTP) ||
                             Objects.equals(uri.getScheme(), Content.HTTPS)) {
                         return false;
                     } else if (Objects.equals(uri.getScheme(), Content.IPNS) ||

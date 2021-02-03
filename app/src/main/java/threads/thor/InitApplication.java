@@ -32,6 +32,8 @@ public class InitApplication extends Application {
 
         AdBlocker.init(getApplicationContext());
 
+        IPFS.getInstance(getApplicationContext());
+
         if (LogUtils.isDebug()) {
             IPFS.logCacheDir(getApplicationContext());
             IPFS.logBaseDir(getApplicationContext());

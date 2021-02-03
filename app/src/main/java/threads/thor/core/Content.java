@@ -10,6 +10,7 @@ public class Content {
     public static final String SIZE = "size";
     public static final String TYPE = "type";
     public static final String HTTPS = "https";
+    public static final String ABOUT = "about";
     public static final String HTTP = "http";
     public static final String MAGNET = "magnet";
     public static final String UTF8 = "UTF-8";

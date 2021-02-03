@@ -13,6 +13,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.Callable;
@@ -377,8 +378,7 @@ public class IPFS implements Listener {
         try {
             return node.swarmConnect(multiAddress, timeout);
         } catch (Throwable throwable) {
-            LogUtils.error(TAG, multiAddress);
-            LogUtils.error(TAG, throwable);
+            LogUtils.error(TAG, multiAddress + " connection failed");
         }
         return false;
     }
@@ -389,6 +389,11 @@ public class IPFS implements Listener {
         return swarm_peers();
     }
 
+
+    @Nullable
+    public String decodeName(@NonNull String name) {
+        return node.decodeName(name);
+    }
 
     private int swarm_peers() {
 
@@ -457,37 +462,6 @@ public class IPFS implements Listener {
     }
 
     @Nullable
-    public LinkInfo getLinkInfo(@NonNull String dir, @NonNull List<String> path, @NonNull Closeable closeable) {
-
-        LinkInfo linkInfo = null;
-        String root = dir;
-
-        for (String name : path) {
-            linkInfo = getLinkInfo(root, name, closeable);
-            if (linkInfo != null) {
-                root = linkInfo.getContent();
-            } else {
-                break;
-            }
-        }
-
-        return linkInfo;
-    }
-
-    @Nullable
-    public LinkInfo getLinkInfo(@NonNull String dir, @NonNull String name, @NonNull Closeable closeable) {
-        List<LinkInfo> links = ls(dir, closeable);
-        if (links != null) {
-            for (LinkInfo info : links) {
-                if (Objects.equals(info.getName(), name)) {
-                    return info;
-                }
-            }
-        }
-        return null;
-    }
-
-    @Nullable
     public List<LinkInfo> getLinks(@NonNull String cid, @NonNull Closeable closeable) {
 
         LogUtils.info(TAG, "Lookup CID : " + cid);
@@ -508,6 +482,110 @@ public class IPFS implements Listener {
         return result;
     }
 
+
+    @Nullable
+    public Link link(@NonNull String dir, @NonNull List<String> path, @NonNull Closeable closeable) {
+
+        Link linkInfo = null;
+        String root = dir;
+
+        for (String name : path) {
+            linkInfo = link(root, name, closeable);
+            if (linkInfo != null) {
+                root = linkInfo.getContent();
+            } else {
+                break;
+            }
+        }
+
+        return linkInfo;
+    }
+
+
+    @Nullable
+    public Link link(@NonNull String dir, @NonNull String name, @NonNull Closeable closeable) {
+        List<Link> links = lss(dir, closeable);
+        if (links != null) {
+            for (Link info : links) {
+                if (Objects.equals(info.getName(), name)) {
+                    return info;
+                }
+            }
+        }
+        return null;
+    }
+
+
+    @Nullable
+    public List<Link> links(@NonNull String cid, @NonNull Closeable closeable) {
+
+        LogUtils.info(TAG, "Lookup CID : " + cid);
+
+        List<Link> links = lss(cid, closeable);
+        if (links == null) {
+            LogUtils.info(TAG, "no links or stopped");
+            return null;
+        }
+
+        List<Link> result = new ArrayList<>();
+        for (Link link : links) {
+            LogUtils.info(TAG, "Link : " + link.toString());
+            if (!link.getName().isEmpty()) {
+                result.add(link);
+            }
+        }
+        return result;
+    }
+
+    @Nullable
+    public List<Link> lss(@NonNull String cid, @NonNull Closeable closeable) {
+        if (!isDaemonRunning()) {
+            return Collections.emptyList();
+        }
+        List<Link> links = new ArrayList<>();
+        try {
+
+            node.ls(cid, new LsInfoClose() {
+                @Override
+                public boolean close() {
+                    return closeable.isClosed();
+                }
+
+                @Override
+                public void lsInfo(String name, String hash, long size, int type) {
+                    Link info = Link.create(name, hash);
+                    links.add(info);
+                }
+            }, false);
+
+        } catch (Throwable e) {
+            LogUtils.error(TAG, e);
+            return null;
+        }
+        if (closeable.isClosed()) {
+            return null;
+        }
+        return links;
+    }
+
+
+    public boolean isDir(@NonNull String doc, @NonNull Closeable closeable) {
+        List<Link> links = links(doc, closeable);
+        return links != null && !links.isEmpty();
+    }
+
+    public long getSize(@NonNull String cid, @NonNull Closeable closeable) {
+        List<LinkInfo> links = ls(cid, closeable);
+        int size = -1;
+        if (links != null) {
+            for (LinkInfo info : links) {
+                size += info.getSize();
+            }
+        }
+        return size;
+    }
+
+
     @Nullable
     public List<LinkInfo> ls(@NonNull String cid, @NonNull Closeable closeable) {
         checkDaemon();
@@ -526,7 +604,7 @@ public class IPFS implements Listener {
                     infoList.add(info);
                 }
 
-            });
+            }, true);
 
         } catch (Throwable e) {
             LogUtils.error(TAG, e);
@@ -562,16 +640,6 @@ public class IPFS implements Listener {
 
     }
 
-    public long getSize(@NonNull String cid, @NonNull Closeable closeable) {
-        List<LinkInfo> links = ls(cid, closeable);
-        int size = -1;
-        if (links != null) {
-            for (LinkInfo info : links) {
-                size += info.getSize();
-            }
-        }
-        return size;
-    }
 
     @Override
     public void error(String message) {
@@ -589,14 +657,11 @@ public class IPFS implements Listener {
 
     @Override
     public void blockDelete(String key) {
-        LogUtils.error(TAG, "del " + key);
-
         blocks.deleteBlock(key);
     }
 
     @Override
     public byte[] blockGet(String key) {
-        LogUtils.error(TAG, "get " + key);
 
         Block block = blocks.getBlock(key);
         if (block != null) {
@@ -607,15 +672,11 @@ public class IPFS implements Listener {
 
     @Override
     public boolean blockHas(String key) {
-        boolean has = blocks.hasBlock(key);
-
-        LogUtils.error(TAG, "has " + has + " " + key);
-        return has;
+        return blocks.hasBlock(key);
     }
 
     @Override
     public void blockPut(String key, byte[] bytes) {
-        LogUtils.error(TAG, "put " + key);
 
         blocks.insertBlock(key, bytes);
     }
@@ -623,10 +684,7 @@ public class IPFS implements Listener {
     @Override
     public long blockSize(String key) {
 
-        long size = blocks.getBlockSize(key);
-
-        LogUtils.error(TAG, "size " + size + " " + key);
-        return size;
+        return blocks.getBlockSize(key);
     }
     @Override
     public void verbose(String s) {
@@ -650,10 +708,6 @@ public class IPFS implements Listener {
         return Objects.equals(cid, EMPTY_DIR_32) || Objects.equals(cid, EMPTY_DIR_58);
     }
 
-    public boolean isDir(@NonNull String doc, @NonNull Closeable closeable) {
-        List<LinkInfo> links = getLinks(doc, closeable);
-        return links != null && !links.isEmpty();
-    }
 
     public static class ResolvedName {
         private final long sequence;

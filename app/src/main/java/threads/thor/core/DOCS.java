@@ -11,6 +11,7 @@ import androidx.annotation.Nullable;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +29,7 @@ import threads.thor.core.page.Resolver;
 import threads.thor.ipfs.Closeable;
 import threads.thor.ipfs.DnsAddrResolver;
 import threads.thor.ipfs.IPFS;
+import threads.thor.ipfs.Link;
 import threads.thor.ipfs.LinkInfo;
 import threads.thor.magic.ContentInfo;
 import threads.thor.magic.ContentInfoUtil;
@@ -36,6 +38,7 @@ import threads.thor.utils.MimeType;
 
 public class DOCS {
 
+    private static final String INDEX_HTML = "index.html";
     private static final String TAG = DOCS.class.getSimpleName();
     private static DOCS INSTANCE = null;
     private final IPFS ipfs;
@@ -124,9 +127,10 @@ public class DOCS {
                     try {
                         String host = getHost(uri);
                         if (host != null) {
-                            if(ipfs.isValidCID(host)) {
-                                if (!ipfs.isConnected(host)) {
-                                    ipfs.swarmConnect("/p2p/" + host, 10);
+                            String pid = ipfs.decodeName(host);
+                            if(pid != null) {
+                                if (!ipfs.isConnected(pid)) {
+                                    ipfs.swarmConnect("/p2p/" + pid, 10);
                                 }
                             }
                         }
@@ -261,13 +265,15 @@ public class DOCS {
         }
     }
 
+
     @Nullable
-    public LinkInfo getLinkInfo(@NonNull Uri uri, @NonNull String root, @NonNull Closeable progress) {
+    public Link getLink(@NonNull Uri uri, @NonNull String root, @NonNull Closeable progress) {
         List<String> paths = uri.getPathSegments();
         String host = uri.getHost();
         Objects.requireNonNull(host);
-        return ipfs.getLinkInfo(root, paths, progress);
+        return ipfs.link(root, paths, progress);
     }
+
 
     @Nullable
     public String getRoot(@NonNull Uri uri, @NonNull Closeable closeable)
@@ -294,22 +300,22 @@ public class DOCS {
 
     }
 
+
     @NonNull
     public WebResourceResponse getResponse(@NonNull Uri uri, @NonNull String root,
                                            @NonNull List<String> paths,
                                            @NonNull Closeable closeable) throws Exception {
 
-
         if (paths.isEmpty()) {
 
-            List<LinkInfo> links = ipfs.getLinks(root, closeable);
+            List<Link> links = ipfs.links(root, closeable);
             if (closeable.isClosed()) {
                 throw new TimeoutException(uri.toString());
             }
 
             if (links != null) {
                 if (ipfs.isEmptyDir(root)) {
-                    String answer = generateDirectoryHtml(uri, root, paths, links);
+                    String answer = generateDirectoryHtml(uri, root, paths, new ArrayList<>());
                     return new WebResourceResponse(MimeType.HTML_MIME_TYPE,
                             "UTF-8", new ByteArrayInputStream(answer.getBytes()));
                 } else if (links.isEmpty()) {
@@ -324,9 +330,20 @@ public class DOCS {
                     }
                     return getContentResponse(uri, root, mimeType, size, closeable);
                 } else {
-                    String answer = generateDirectoryHtml(uri, root, paths, links);
-                    return new WebResourceResponse(MimeType.HTML_MIME_TYPE,
-                            "UTF-8", new ByteArrayInputStream(answer.getBytes()));
+                    Link link = ipfs.link(root, INDEX_HTML, closeable);
+                    if(link != null) {
+                        long size = ipfs.getSize(link.getContent(), closeable);
+                        if (closeable.isClosed()) {
+                            throw new TimeoutException(uri.toString());
+                        }
+                        return getContentResponse(uri, link.getContent(),
+                                MimeType.HTML_MIME_TYPE, size, closeable);
+                    } else {
+                        List<LinkInfo> infos = ipfs.getLinks(root, closeable);
+                        String answer = generateDirectoryHtml(uri, root, paths, infos);
+                        return new WebResourceResponse(MimeType.HTML_MIME_TYPE,
+                                "UTF-8", new ByteArrayInputStream(answer.getBytes()));
+                    }
                 }
             } else {
                 String mimeType = getMimeType(root, closeable);
@@ -341,39 +358,52 @@ public class DOCS {
             }
 
         } else {
-            LinkInfo linkInfo = ipfs.getLinkInfo(root, paths, closeable);
+            Link link = ipfs.link(root, paths, closeable);
             if (closeable.isClosed()) {
                 throw new TimeoutException(uri.toString());
             }
-            Objects.requireNonNull(linkInfo);
+            Objects.requireNonNull(link);
 
-            if (ipfs.isEmptyDir(linkInfo.getContent())) {
-                List<LinkInfo> links = ipfs.getLinks(linkInfo.getContent(), closeable);
+            if (ipfs.isEmptyDir(link.getContent())) {
+                List<LinkInfo> links = ipfs.getLinks(link.getContent(), closeable);
                 String answer = generateDirectoryHtml(uri, root, paths, links);
 
                 return new WebResourceResponse(MimeType.HTML_MIME_TYPE,
                         "UTF-8", new ByteArrayInputStream(answer.getBytes()));
-            } else if (linkInfo.isDirectory()) {
-                List<LinkInfo> links = ipfs.getLinks(linkInfo.getContent(), closeable);
-                String answer = generateDirectoryHtml(uri, root, paths, links);
+            } else if (ipfs.isDir(link.getContent(), closeable)) {
 
-                return new WebResourceResponse(MimeType.HTML_MIME_TYPE,
-                        "UTF-8", new ByteArrayInputStream(answer.getBytes()));
+                Link index = ipfs.link(link.getContent(), INDEX_HTML, closeable);
+                if(index != null) {
+                    long size = ipfs.getSize(index.getContent(), closeable);
+                    if (closeable.isClosed()) {
+                        throw new TimeoutException(uri.toString());
+                    }
+                    return getContentResponse(uri, index.getContent(),
+                            MimeType.HTML_MIME_TYPE, size, closeable);
+                } else {
+                    List<LinkInfo> links = ipfs.getLinks(link.getContent(), closeable);
+                    String answer = generateDirectoryHtml(uri, root, paths, links);
+
+                    return new WebResourceResponse(MimeType.HTML_MIME_TYPE,
+                            "UTF-8", new ByteArrayInputStream(answer.getBytes()));
+                }
 
             } else {
-                String mimeType = getMimeType(uri, linkInfo.getContent(), closeable);
+                String mimeType = getMimeType(uri, link.getContent(), closeable);
                 if (closeable.isClosed()) {
                     throw new TimeoutException(uri.toString());
                 }
-                return getContentResponse(uri, linkInfo.getContent(), mimeType,
-                        linkInfo.getSize(), closeable);
+                long size = ipfs.getSize(link.getContent(), closeable);
+                if (closeable.isClosed()) {
+                    throw new TimeoutException(uri.toString());
+                }
+                return getContentResponse(uri, link.getContent(), mimeType,
+                        size, closeable);
             }
 
 
         }
-
     }
-
 
     @NonNull
     private FileInfo getDataInfo(@NonNull Uri uri, @NonNull String root, @NonNull Closeable closeable) throws TimeoutException {
@@ -504,10 +534,10 @@ public class DOCS {
         Objects.requireNonNull(root);
 
 
-        LinkInfo linkInfo = getLinkInfo(uri, root, closeable);
+        Link linkInfo = getLink(uri, root, closeable);
         if (linkInfo != null) {
             String filename = linkInfo.getName();
-            if (linkInfo.isDirectory()) {
+            if (ipfs.isDir(linkInfo.getContent(), closeable)) {
                 return new FileInfo(filename, MimeType.DIR_MIME_TYPE,
                         linkInfo.getContent());
             } else {
