@@ -21,13 +21,8 @@ import androidx.work.WorkerParameters;
 
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -89,10 +84,10 @@ public class DownloadContentWorker extends Worker {
     }
 
     @NonNull
-    private ForegroundInfo createForegroundInfo(int idx, @NonNull String title) {
+    private ForegroundInfo createForegroundInfo(@NonNull String title) {
         Notification notification = createNotification(title, 0);
         mLastNotification.set(notification);
-        return new ForegroundInfo(idx, notification);
+        return new ForegroundInfo(getId().hashCode(), notification);
     }
 
 
@@ -110,7 +105,7 @@ public class DownloadContentWorker extends Worker {
             DocumentFile doc = DocumentFile.fromTreeUri(getApplicationContext(), uriDest);
             Objects.requireNonNull(doc);
 
-            int idx = getId().hashCode();
+
             String url = getInputData().getString(Content.ADDR);
             Objects.requireNonNull(url);
             Uri uri = Uri.parse(url);
@@ -118,7 +113,7 @@ public class DownloadContentWorker extends Worker {
 
             if (Objects.equals(uri.getScheme(), Content.IPFS) ||
                     Objects.equals(uri.getScheme(), Content.IPNS)) {
-                ForegroundInfo foregroundInfo = createForegroundInfo(idx, name);
+                ForegroundInfo foregroundInfo = createForegroundInfo(name);
                 setForegroundAsync(foregroundInfo);
             }
 
@@ -147,7 +142,7 @@ public class DownloadContentWorker extends Worker {
                         Objects.requireNonNull(doc);
                     }
 
-                    downloadContent(idx, doc, root, mimeType, fileName);
+                    downloadContent(doc, root, mimeType, fileName);
 
 
                     if (!isStopped()) {
@@ -177,51 +172,18 @@ public class DownloadContentWorker extends Worker {
     }
 
 
-    private void downloadContent(int idx, @NonNull DocumentFile doc, @NonNull String root,
+    private void downloadContent(@NonNull DocumentFile doc, @NonNull String root,
                                  @NonNull String mimeType, @NonNull String name) {
-        ExecutorService executor = Executors.newFixedThreadPool(1);
-
-        List<DocumentFileContent> works = new ArrayList<>();
-
-        if (!isStopped()) {
-            downloadLinks(doc, works, root, mimeType, name);
-
-
-            ConcurrentLinkedQueue<Future<Boolean>> futures = new ConcurrentLinkedQueue<>();
-            for (DocumentFileContent work : works) {
-                futures.add(executor.submit(() -> download(idx, work)));
-            }
-
-
-            do {
-
-                for (Future<Boolean> future : futures) {
-                    if (future.isDone() || future.isCancelled()) {
-                        futures.remove(future);
-                    }
-                }
-
-
-                if (isStopped()) {
-                    executor.shutdown();
-                    executor.shutdownNow();
-                    break;
-                }
-
-            } while (!futures.isEmpty());
-        }
+        downloadLinks(doc, root, mimeType, name);
     }
 
 
-    private boolean download(int idx, @NonNull DocumentFileContent docContent) {
+    private void download(@NonNull DocumentFile doc, @NonNull String cid) {
 
         long start = System.currentTimeMillis();
 
         LogUtils.info(TAG, " start [" + (System.currentTimeMillis() - start) + "]...");
 
-
-        String cid = docContent.content;
-        DocumentFile doc = docContent.file;
 
         String name = doc.getName();
         Objects.requireNonNull(name);
@@ -243,7 +205,7 @@ public class DownloadContentWorker extends Worker {
                 @Override
                 public void setProgress(int percent) {
 
-                    reportProgress(idx, name, percent);
+                    reportProgress(name, percent);
                     started.set(System.currentTimeMillis());
                 }
 
@@ -278,7 +240,7 @@ public class DownloadContentWorker extends Worker {
                 LogUtils.info(TAG, " finish onStart [" + (System.currentTimeMillis() - start) + "]...");
             }
         }
-        return success.get();
+
     }
 
     private void closeNotification() {
@@ -330,14 +292,14 @@ public class DownloadContentWorker extends Worker {
     }
 
 
-    private void reportProgress(int idx, @NonNull String info, int percent) {
+    private void reportProgress(@NonNull String info, int percent) {
 
         if (!isStopped()) {
 
             Notification notification = createNotification(info, percent);
 
             if (mNotificationManager != null) {
-                mNotificationManager.notify(idx, notification);
+                mNotificationManager.notify(getId().hashCode(), notification);
             }
 
         }
@@ -388,21 +350,19 @@ public class DownloadContentWorker extends Worker {
     }
 
 
-    private void evalLinks(@NonNull DocumentFile doc,
-                           @NonNull List<DocumentFileContent> works,
-                           @NonNull List<LinkInfo> links) {
+    private void evalLinks(@NonNull DocumentFile doc, @NonNull List<LinkInfo> links) {
 
         for (LinkInfo link : links) {
-            if (link.isDirectory()) {
-                DocumentFile dir = doc.createDirectory(link.getName());
-                Objects.requireNonNull(dir);
-                downloadLinks(dir, works, link.getContent(), MimeType.DIR_MIME_TYPE, link.getName());
-                works.add(new DocumentFileContent(dir, link.getContent()));
-            } else {
-
-                String mimeType = MimeTypeService.getMimeType(link.getName());
-                works.add(new DocumentFileContent(
-                        doc.createFile(mimeType, link.getName()), link.getContent()));
+            if (!isStopped()) {
+                if (link.isDirectory()) {
+                    DocumentFile dir = doc.createDirectory(link.getName());
+                    Objects.requireNonNull(dir);
+                    downloadLinks(dir, link.getContent(), MimeType.DIR_MIME_TYPE, link.getName());
+                } else {
+                    String mimeType = MimeTypeService.getMimeType(link.getName());
+                    download(Objects.requireNonNull(doc.createFile(mimeType, link.getName())),
+                            link.getContent());
+                }
             }
         }
 
@@ -410,7 +370,6 @@ public class DownloadContentWorker extends Worker {
 
 
     private void downloadLinks(@NonNull DocumentFile doc,
-                               @NonNull List<DocumentFileContent> works,
                                @NonNull String cid,
                                @NonNull String mimeType,
                                @NonNull String name) {
@@ -423,10 +382,10 @@ public class DownloadContentWorker extends Worker {
                 if (!isStopped()) {
                     DocumentFile child = doc.createFile(mimeType, name);
                     Objects.requireNonNull(child);
-                    works.add(new DocumentFileContent(child, cid));
+                    download(child, cid);
                 }
             } else {
-                evalLinks(doc, works, links);
+                evalLinks(doc, links);
             }
         }
 
@@ -457,13 +416,4 @@ public class DownloadContentWorker extends Worker {
         }
     }
 
-    public static class DocumentFileContent {
-        private final DocumentFile file;
-        private final String content;
-
-        public DocumentFileContent(DocumentFile file, String cid) {
-            this.file = file;
-            this.content = cid;
-        }
-    }
 }
