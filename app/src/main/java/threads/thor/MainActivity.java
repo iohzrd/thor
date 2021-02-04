@@ -781,20 +781,19 @@ public class MainActivity extends AppCompatActivity implements
 
         mSwipeRefreshLayout = findViewById(R.id.swipe_container);
 
-            mSwipeRefreshLayout.setOnRefreshListener(() -> {
-                try {
-                    mSwipeRefreshLayout.setRefreshing(true);
+        mSwipeRefreshLayout.setOnRefreshListener(() -> {
+            try {
+                mSwipeRefreshLayout.setRefreshing(true);
 
-                    reload();
-                } catch (Throwable throwable) {
-                    LogUtils.error(TAG, throwable);
-                } finally {
-                    mSwipeRefreshLayout.setRefreshing(false);
-                }
-            });
-            mSwipeRefreshLayout.setColorSchemeResources(android.R.color.holo_blue_dark);
-            mSwipeRefreshLayout.setProgressViewOffset(false, 100, 500);
-
+                reload();
+            } catch (Throwable throwable) {
+                LogUtils.error(TAG, throwable);
+            } finally {
+                mSwipeRefreshLayout.setRefreshing(false);
+            }
+        });
+        mSwipeRefreshLayout.setColorSchemeResources(android.R.color.holo_blue_dark);
+        mSwipeRefreshLayout.setProgressViewOffset(false, 100, 500);
 
 
         mBrowserText = findViewById(R.id.action_browser);
@@ -1139,9 +1138,7 @@ public class MainActivity extends AppCompatActivity implements
                 } else if (Objects.equals(uri.getScheme(), Content.IPNS) ||
                         Objects.equals(uri.getScheme(), Content.IPFS)) {
 
-                    MainActivity.this.runOnUiThread(() -> {
-                        mProgressBar.setVisibility(View.VISIBLE);
-                    });
+                    MainActivity.this.runOnUiThread(() -> mProgressBar.setVisibility(View.VISIBLE));
                     try {
                         final AtomicLong time = new AtomicLong(System.currentTimeMillis());
                         long timeout = Settings.IPFS_TIMEOUT;

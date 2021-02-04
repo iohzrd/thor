@@ -17,6 +17,7 @@ public class Block {
     private final byte[] data;
     @ColumnInfo(name = "size")
     private final long size;
+
     Block(@NonNull String id, @NonNull byte[] data, long size) {
 
         this.id = id;

@@ -128,7 +128,7 @@ public class DOCS {
                         String host = getHost(uri);
                         if (host != null) {
                             String pid = ipfs.decodeName(host);
-                            if(pid != null) {
+                            if (pid != null) {
                                 LogUtils.error(TAG, "connect ... " + pid);
                                 PageConnectWorker.connect(context, pid);
                             }
@@ -505,57 +505,6 @@ public class DOCS {
 
     }
 
-
-    public static class FileInfo {
-        @NonNull
-        private final String filename;
-        @NonNull
-        private final String mimeType;
-        @NonNull
-        private final String content;
-
-
-        public FileInfo(@NonNull String filename, @NonNull String mimeType,
-                        @NonNull String content) {
-            this.filename = filename;
-            this.mimeType = mimeType;
-            this.content = content;
-
-        }
-
-        @NonNull
-        public String getFilename() {
-            return filename;
-        }
-
-        @NonNull
-        public String getMimeType() {
-            return mimeType;
-        }
-
-        @NonNull
-        public String getContent() {
-            return content;
-        }
-
-    }
-
-    public static class TimeoutException extends Exception {
-
-        public TimeoutException(@NonNull String name) {
-            super("Timeout for " + name);
-        }
-    }
-
-    public static class ResolveNameException extends Exception {
-
-        public ResolveNameException(@NonNull String name) {
-            super("Resolve name failed for " + name);
-        }
-
-
-    }
-
     @NonNull
     public Pair<Uri, Boolean> redirectUri(@NonNull Uri uri, @NonNull Closeable closeable) {
 
@@ -648,6 +597,56 @@ public class DOCS {
             }
         }
         return Pair.create(uri, false);
+    }
+
+    public static class FileInfo {
+        @NonNull
+        private final String filename;
+        @NonNull
+        private final String mimeType;
+        @NonNull
+        private final String content;
+
+
+        public FileInfo(@NonNull String filename, @NonNull String mimeType,
+                        @NonNull String content) {
+            this.filename = filename;
+            this.mimeType = mimeType;
+            this.content = content;
+
+        }
+
+        @NonNull
+        public String getFilename() {
+            return filename;
+        }
+
+        @NonNull
+        public String getMimeType() {
+            return mimeType;
+        }
+
+        @NonNull
+        public String getContent() {
+            return content;
+        }
+
+    }
+
+    public static class TimeoutException extends Exception {
+
+        public TimeoutException(@NonNull String name) {
+            super("Timeout for " + name);
+        }
+    }
+
+    public static class ResolveNameException extends Exception {
+
+        public ResolveNameException(@NonNull String name) {
+            super("Resolve name failed for " + name);
+        }
+
+
     }
 
     public static class InvalidNameException extends Exception {

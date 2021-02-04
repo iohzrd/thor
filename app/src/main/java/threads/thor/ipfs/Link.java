@@ -51,7 +51,6 @@ public class Link {
     }
 
 
-
     @NonNull
     @Override
     public String toString() {

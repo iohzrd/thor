@@ -13,7 +13,6 @@ import androidx.core.content.FileProvider;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
@@ -49,7 +48,7 @@ public class SearchSuggestionsProvider
 
             List<Bookmark> searches = pages.getBookmarksByQuery(search);
 
-            Collections.sort(searches, Comparator.comparing(Bookmark::getTimestamp).reversed());
+            searches.sort(Comparator.comparing(Bookmark::getTimestamp).reversed());
 
 
             return createCursorFromResult(context, searches);

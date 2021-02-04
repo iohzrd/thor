@@ -686,6 +686,7 @@ public class IPFS implements Listener {
 
         return blocks.getBlockSize(key);
     }
+
     @Override
     public void verbose(String s) {
         LogUtils.verbose(TAG, "" + s);
