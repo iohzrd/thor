@@ -59,9 +59,11 @@ public class PageConnectWorker extends Worker {
 
         try {
             IPFS ipfs = IPFS.getInstance(getApplicationContext());
-            if (!ipfs.isConnected(pid)) {
-                ipfs.swarmConnect("/p2p/" + pid, 10);
+            boolean connected = ipfs.isConnected(pid);
+            if (!connected) {
+                connected = ipfs.swarmConnect("/p2p/" + pid, 10);
             }
+            LogUtils.error(TAG, "Connect " + pid + " " + connected);
         } catch (Throwable e) {
             LogUtils.error(TAG, e);
             return Result.failure();
