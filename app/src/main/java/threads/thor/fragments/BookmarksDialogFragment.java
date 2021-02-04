@@ -2,6 +2,7 @@ package threads.thor.fragments;
 
 import android.app.Dialog;
 import android.content.Context;
+import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.SystemClock;
@@ -19,6 +20,7 @@ import java.util.Comparator;
 import java.util.Objects;
 
 import threads.LogUtils;
+import threads.thor.MainActivity;
 import threads.thor.R;
 import threads.thor.core.page.Bookmark;
 import threads.thor.core.page.BookmarkViewModel;
@@ -32,20 +34,19 @@ public class BookmarksDialogFragment extends DialogFragment implements Bookmarks
     private long mLastClickTime = 0;
     private BookmarksViewAdapter mBookmarksViewAdapter;
     private Context mContext;
-    private ActionListener mListener;
+
 
     @Override
     public void onDetach() {
         super.onDetach();
         mContext = null;
-        mListener = null;
+
     }
 
     @Override
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
         mContext = context;
-        mListener = (ActionListener) getActivity();
     }
 
 
@@ -112,7 +113,10 @@ public class BookmarksDialogFragment extends DialogFragment implements Bookmarks
         mLastClickTime = SystemClock.elapsedRealtime();
 
         try {
-            mListener.openUri(Uri.parse(bookmark.getUri()));
+
+            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(bookmark.getUri()),
+                    mContext, MainActivity.class);
+            startActivity(intent);
 
             dismiss();
         } catch (Throwable throwable) {

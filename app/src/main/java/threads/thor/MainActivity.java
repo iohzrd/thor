@@ -18,11 +18,9 @@ import android.provider.DocumentsContract;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Pair;
-import android.view.GestureDetector;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.MotionEvent;
 import android.view.View;
 import android.webkit.CookieManager;
 import android.webkit.HttpAuthHandler;
@@ -36,7 +34,7 @@ import android.webkit.WebViewClient;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -90,7 +88,7 @@ import threads.thor.work.DownloadFileWorker;
 import threads.thor.work.DownloadMagnetWorker;
 
 
-public class MainActivity extends AppCompatActivity implements GestureDetector.OnGestureListener,
+public class MainActivity extends AppCompatActivity implements
         ActionListener {
 
     public static final String SHOW_DOWNLOADS = "SHOW_DOWNLOADS";
@@ -205,17 +203,14 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
                     }
                 }
             });
-    private final AtomicBoolean showing = new AtomicBoolean(false);
-    private final AtomicBoolean activeHide = new AtomicBoolean(false);
 
-    private GestureDetector mGestureScanner;
     private WebView mWebView;
     private long mLastClickTime = 0;
     private TextView mBrowserText;
     private ActionMode mActionMode;
     private CustomWebChromeClient mCustomWebChromeClient;
     private SwipeRefreshLayout mSwipeRefreshLayout;
-    private LinearLayout mProgressBar;
+    private ProgressBar mProgressBar;
     private boolean isTablet;
     private ImageButton mActionNextPage;
     private ImageButton mActionPreviousPage;
@@ -414,11 +409,14 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
             intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
             mMagnetForResult.launch(intent);
 
-
+            mProgressBar.setVisibility(View.GONE);
             EVENTS.getInstance(getApplicationContext()).warning(name);
         });
         builder.setNeutralButton(getString(android.R.string.cancel),
-                (dialog, which) -> dialog.cancel());
+                (dialog, which) -> {
+                    mProgressBar.setVisibility(View.GONE);
+                    dialog.cancel();
+                });
         builder.show();
 
 
@@ -439,11 +437,14 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
             intent.putExtra(DocumentsContract.EXTRA_INITIAL_URI, Uri.parse(DOWNLOADS));
             intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
             mContentForResult.launch(intent);
-
+            mProgressBar.setVisibility(View.GONE);
             EVENTS.getInstance(getApplicationContext()).warning(name);
         });
         builder.setNeutralButton(getString(android.R.string.cancel),
-                (dialog, which) -> dialog.cancel());
+                (dialog, which) -> {
+                    mProgressBar.setVisibility(View.GONE);
+                    dialog.cancel();
+                });
         builder.show();
 
 
@@ -465,12 +466,15 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
             intent.putExtra(DocumentsContract.EXTRA_INITIAL_URI, Uri.parse(DOWNLOADS));
             intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
             mFileForResult.launch(intent);
-
+            mProgressBar.setVisibility(View.GONE);
             EVENTS.getInstance(getApplicationContext()).warning(filename);
 
         });
         builder.setNeutralButton(getString(android.R.string.cancel),
-                (dialog, which) -> dialog.cancel());
+                (dialog, which) -> {
+                    mProgressBar.setVisibility(View.GONE);
+                    dialog.cancel();
+                });
         builder.show();
 
     }
@@ -704,13 +708,12 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
         isTablet = getResources().getBoolean(R.bool.isTablet);
 
         setSupportActionBar(mToolbar);
-        mGestureScanner = new GestureDetector(getApplicationContext(), this);
 
 
         ImageButton actionIncognito = findViewById(R.id.action_incognito);
 
         mProgressBar = findViewById(R.id.progress_bar);
-        mProgressBar.setVisibility(View.VISIBLE);
+        mProgressBar.setVisibility(View.GONE);
 
         mWebView = findViewById(R.id.web_view);
 
@@ -777,20 +780,21 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
         }
 
         mSwipeRefreshLayout = findViewById(R.id.swipe_container);
-        if (!isTablet) {
+
             mSwipeRefreshLayout.setOnRefreshListener(() -> {
                 try {
                     mSwipeRefreshLayout.setRefreshing(true);
+
                     reload();
                 } catch (Throwable throwable) {
                     LogUtils.error(TAG, throwable);
+                } finally {
+                    mSwipeRefreshLayout.setRefreshing(false);
                 }
             });
             mSwipeRefreshLayout.setColorSchemeResources(android.R.color.holo_blue_dark);
             mSwipeRefreshLayout.setProgressViewOffset(false, 100, 500);
-        }
 
-        mSwipeRefreshLayout.setEnabled(false);
 
 
         mBrowserText = findViewById(R.id.action_browser);
@@ -873,24 +877,6 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
 
         });
 
-
-        if (!isTablet) {
-            mWebView.setOnScrollChangeListener((v, scrollX, scrollY, oldScrollX, oldScrollY) -> {
-                if (scrollY == 0 && oldScrollY > 0 && showing.get()) {
-                    ActionBar bar = getSupportActionBar();
-                    if (bar != null) {
-                        if (bar.isShowing()) {
-                            mSwipeRefreshLayout.setEnabled(false);
-                            bar.hide();
-                        }
-                    }
-                }
-            });
-        }
-        if (!isTablet) {
-            mWebView.setOnTouchListener((v, event) -> mGestureScanner.onTouchEvent(event));
-        }
-
         mCustomWebChromeClient = new CustomWebChromeClient(this);
         mWebView.setWebChromeClient(mCustomWebChromeClient);
 
@@ -943,9 +929,7 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
 
                 mProgressBar.setVisibility(View.GONE);
 
-                if (!isTablet) {
-                    mSwipeRefreshLayout.setRefreshing(false);
-                }
+
             }
 
             @Override
@@ -1026,10 +1010,7 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
             public void onPageStarted(WebView view, String uri, Bitmap favicon) {
                 LogUtils.info(TAG, "onPageStarted : " + uri);
 
-                if (!isTablet) {
-                    activeHide.set(true);
-                }
-
+                mProgressBar.setVisibility(View.VISIBLE);
                 invalidateMenu(Uri.parse(uri));
             }
 
@@ -1039,21 +1020,6 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
                 LogUtils.info(TAG, "onPageFinished : " + url);
 
                 mProgressBar.setVisibility(View.GONE);
-
-                if (!isTablet) {
-                    mSwipeRefreshLayout.setRefreshing(false);
-
-                    ActionBar bar = getSupportActionBar();
-                    if (bar != null) {
-                        if (bar.isShowing()) {
-                            mSwipeRefreshLayout.setEnabled(false);
-                            if (activeHide.get()) {
-                                bar.hide();
-                            }
-                        }
-                    }
-                }
-
             }
 
             @Override
@@ -1061,10 +1027,6 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
                 LogUtils.info(TAG, "onReceivedError " + view.getUrl() + " " + error.getDescription());
 
                 mProgressBar.setVisibility(View.GONE);
-
-                if (!isTablet) {
-                    mSwipeRefreshLayout.setRefreshing(false);
-                }
             }
 
 
@@ -1125,13 +1087,13 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
 
 
             public WebResourceResponse createEmptyResource() {
-                return new WebResourceResponse("text/plain", Content.UTF8,
+                return new WebResourceResponse(MimeType.PLAIN_MIME_TYPE, Content.UTF8,
                         new ByteArrayInputStream("".getBytes()));
             }
 
             public WebResourceResponse createErrorMessage(@NonNull Throwable exception) {
                 String message = generateErrorHtml(exception);
-                return new WebResourceResponse("text/html", Content.UTF8,
+                return new WebResourceResponse(MimeType.HTML_MIME_TYPE, Content.UTF8,
                         new ByteArrayInputStream(message.getBytes()));
             }
 
@@ -1177,6 +1139,9 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
                 } else if (Objects.equals(uri.getScheme(), Content.IPNS) ||
                         Objects.equals(uri.getScheme(), Content.IPFS)) {
 
+                    MainActivity.this.runOnUiThread(() -> {
+                        mProgressBar.setVisibility(View.VISIBLE);
+                    });
                     try {
                         final AtomicLong time = new AtomicLong(System.currentTimeMillis());
                         long timeout = Settings.IPFS_TIMEOUT;
@@ -1186,18 +1151,18 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
                         {
                             Pair<Uri, Boolean> result = docs.redirectUri(uri, closeable);
                             if (result.second) {
-                                MainActivity.this.runOnUiThread(() -> {
-                                    mWebView.stopLoading();
-                                    mWebView.loadUrl(result.first.toString());
-                                });
-                                return null;
+
+                                Intent intent = new Intent(Intent.ACTION_VIEW, result.first,
+                                        getApplicationContext(), MainActivity.class);
+                                startActivity(intent);
+                                return createEmptyResource();
                             }
                             uri = result.first;
                         }
                         if (closeable.isClosed()) {
                             throw new DOCS.TimeoutException(uri.toString());
                         }
-                        docs.connectUri(uri);
+                        docs.connectUri(getApplicationContext(), uri);
 
                         return docs.getResponse(uri, closeable);
 
@@ -1359,10 +1324,8 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
         return false;
     }
 
-    @Override
     public void openUri(@NonNull Uri uri) {
 
-        mProgressBar.setVisibility(View.VISIBLE);
 
         ActionBar bar = getSupportActionBar();
         if (bar != null) {
@@ -1376,6 +1339,9 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
         preload(uri);
 
         mWebView.stopLoading();
+
+        mProgressBar.setVisibility(View.VISIBLE);
+
         mWebView.loadUrl(uri.toString());
 
 
@@ -1507,61 +1473,5 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
         }
         return null;
     }
-
-
-    @Override
-    public boolean onDown(MotionEvent e) {
-        return false;
-    }
-
-    @Override
-    public void onShowPress(MotionEvent e) {
-
-    }
-
-    @Override
-    public boolean onSingleTapUp(MotionEvent e) {
-        return false;
-    }
-
-    @Override
-    public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
-
-        if (distanceY > 20) {
-            activeHide.set(false);
-            showing.set(false);
-            ActionBar bar = getSupportActionBar();
-            if (bar != null) {
-                if (bar.isShowing()) {
-                    mSwipeRefreshLayout.setEnabled(false);
-                    mProgressBar.setVisibility(View.GONE);
-                    bar.hide();
-                }
-            }
-        } else if (distanceY < -20) {
-            activeHide.set(false);
-            ActionBar bar = getSupportActionBar();
-            if (bar != null) {
-                if (!bar.isShowing()) {
-                    mSwipeRefreshLayout.setEnabled(mWebView.getScrollY() == 0);
-                    bar.show();
-                } else {
-                    showing.set(true);
-                }
-            }
-        }
-
-        return false;
-    }
-
-    @Override
-    public void onLongPress(MotionEvent e) {
-    }
-
-    @Override
-    public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
-        return false;
-    }
-
 
 }

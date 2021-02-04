@@ -2,6 +2,7 @@ package threads.thor.fragments;
 
 import android.app.Dialog;
 import android.content.Context;
+import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.SystemClock;
@@ -16,6 +17,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.Objects;
 
 import threads.LogUtils;
+import threads.thor.MainActivity;
 import threads.thor.R;
 import threads.thor.utils.HistoryViewAdapter;
 
@@ -90,7 +92,10 @@ public class HistoryDialogFragment extends DialogFragment implements HistoryView
 
         try {
 
-            mListener.openUri(Uri.parse(url));
+            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url),
+                    mContext, MainActivity.class);
+            startActivity(intent);
+
             dismiss();
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);

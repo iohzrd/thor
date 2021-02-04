@@ -34,6 +34,7 @@ import threads.thor.magic.ContentInfo;
 import threads.thor.magic.ContentInfoUtil;
 import threads.thor.services.MimeTypeService;
 import threads.thor.utils.MimeType;
+import threads.thor.work.PageConnectWorker;
 
 public class DOCS {
 
@@ -115,7 +116,7 @@ public class DOCS {
         return null;
     }
 
-    public void connectUri(@NonNull Uri uri) {
+    public void connectUri(@NonNull Context context, @NonNull Uri uri) {
         try {
             int peers = bootstrap();
 
@@ -129,9 +130,7 @@ public class DOCS {
                             String pid = ipfs.decodeName(host);
                             if(pid != null) {
                                 LogUtils.error(TAG, "connect ... " + pid);
-                                if (!ipfs.isConnected(pid)) {
-                                    ipfs.swarmConnect("/p2p/" + pid, 10);
-                                }
+                                PageConnectWorker.connect(context, pid);
                             }
                         }
                     } catch (Throwable throwable) {

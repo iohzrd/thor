@@ -17,4 +17,5 @@ public class Content {
     public static final String INFO = "info";
     public static final String FILE = "file";
     public static final String ONION = ".onion";
+    public static final String PID = "pid";
 }

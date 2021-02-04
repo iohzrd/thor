@@ -37,6 +37,15 @@
     </style>
 
 
+    <style name="CustomProgressBarHorizontal" parent="android:Widget.Material.ProgressBar.Horizontal">
+        <item name="android:progressBackgroundTint">@android:color/transparent</item>
+        <item name="android:progressTint">@android:color/holo_blue_dark</item>
+        <item name="android:indeterminateTint">@android:color/holo_blue_dark</item>
+        <item name="android:progressDrawable">@android:drawable/progress_horizontal</item>
+        <item name="android:minHeight">6dip</item>
+        <item name="android:maxHeight">6dip</item>
+    </style>
+
     <style name="ThorAutoCompleteTextViewStyle" parent="Widget.AppCompat.AutoCompleteTextView">
         <item name="android:popupBackground">@android:color/white</item>
     </style>
