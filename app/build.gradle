@@ -8,8 +8,8 @@ android {
         applicationId "threads.thor"
         minSdkVersion 26
         targetSdkVersion 30
-        versionCode 44
-        versionName "0.4.4"
+        versionCode 45
+        versionName "0.4.5"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -84,7 +84,7 @@ dependencies {
     implementation 'com.jrummyapps:android-shell:1.0.1'
 
     // API (IPFS thor)
-    implementation 'thor.ipfs:thor:1.0.7'
+    implementation 'thor.ipfs:thor:1.0.8'
 
 
     annotationProcessor 'androidx.room:room-compiler:2.2.6'

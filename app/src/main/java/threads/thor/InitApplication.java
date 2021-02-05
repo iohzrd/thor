@@ -40,7 +40,6 @@ public class InitApplication extends Application {
             IPFS.logBaseDir(getApplicationContext());
         }
 
-
         try {
             TorResourceInstaller torResourceInstaller = new TorResourceInstaller(
                     getApplicationContext(), getFilesDir());

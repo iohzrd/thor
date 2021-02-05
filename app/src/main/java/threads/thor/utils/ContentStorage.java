@@ -13,11 +13,11 @@ import java.util.StringTokenizer;
 
 import threads.LogUtils;
 import threads.thor.FileProvider;
-import threads.thor.bt.data.Storage;
-import threads.thor.bt.data.StorageUnit;
-import threads.thor.bt.event.EventBus;
-import threads.thor.bt.metainfo.Torrent;
-import threads.thor.bt.metainfo.TorrentFile;
+import threads.thor.magnet.data.Storage;
+import threads.thor.magnet.data.StorageUnit;
+import threads.thor.magnet.event.EventBus;
+import threads.thor.magnet.metainfo.Torrent;
+import threads.thor.magnet.metainfo.TorrentFile;
 import threads.thor.services.MimeTypeService;
 
 public class ContentStorage implements Storage {

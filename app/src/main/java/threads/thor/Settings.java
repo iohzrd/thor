@@ -16,9 +16,9 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
-import threads.thor.bt.net.InetPeerAddress;
-import threads.thor.bt.protocol.crypto.EncryptionPolicy;
-import threads.thor.bt.service.NetworkUtil;
+import threads.thor.magnet.net.InetPeerAddress;
+import threads.thor.magnet.protocol.crypto.EncryptionPolicy;
+import threads.thor.magnet.service.NetworkUtil;
 
 public class Settings {
 
@@ -136,8 +136,10 @@ public class Settings {
         WebSettings settings = webView.getSettings();
         settings.setUserAgentString("Mozilla/5.0 (Linux; Android " + Build.VERSION.RELEASE + ")");
 
+
         settings.setJavaScriptEnabled(true);
         settings.setJavaScriptCanOpenWindowsAutomatically(false);
+
 
         settings.setSafeBrowsingEnabled(true);
         settings.setAllowFileAccessFromFileURLs(false);
@@ -151,8 +153,8 @@ public class Settings {
         settings.setAppCacheEnabled(true);
         settings.setCacheMode(WebSettings.LOAD_DEFAULT);
         settings.setDatabaseEnabled(true);
-        settings.setSupportZoom(true);
-        settings.setBuiltInZoomControls(true);
+        settings.setSupportZoom(false);
+        settings.setBuiltInZoomControls(false);
         settings.setDisplayZoomControls(false);
         settings.setLayoutAlgorithm(WebSettings.LayoutAlgorithm.NORMAL);
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);

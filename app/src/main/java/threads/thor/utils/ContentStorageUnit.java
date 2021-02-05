@@ -21,11 +21,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 import threads.LogUtils;
-import threads.thor.bt.data.StorageUnit;
-import threads.thor.bt.event.PieceVerifiedEvent;
-import threads.thor.bt.metainfo.TorrentFile;
-import threads.thor.bt.net.buffer.ByteBufferView;
 import threads.thor.ipfs.IPFS;
+import threads.thor.magnet.data.StorageUnit;
+import threads.thor.magnet.event.PieceVerifiedEvent;
+import threads.thor.magnet.metainfo.TorrentFile;
+import threads.thor.magnet.net.buffer.ByteBufferView;
 
 
 class ContentStorageUnit implements StorageUnit, Consumer<PieceVerifiedEvent> {

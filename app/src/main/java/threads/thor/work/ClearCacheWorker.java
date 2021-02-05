@@ -66,16 +66,14 @@ public class ClearCacheWorker extends Worker {
 
             IPFS.logCacheDir(getApplicationContext());
 
-            return Result.success();
-
         } catch (Throwable e) {
             LogUtils.error(TAG, e);
-
-            return Result.failure();
 
         } finally {
             LogUtils.info(TAG, " finish onStart [" + (System.currentTimeMillis() - start) + "]...");
         }
+
+        return Result.success();
     }
 
 }

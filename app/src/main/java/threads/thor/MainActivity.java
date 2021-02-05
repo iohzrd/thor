@@ -42,7 +42,6 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.view.ActionMode;
@@ -63,8 +62,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import threads.LogUtils;
-import threads.thor.bt.magnet.MagnetUri;
-import threads.thor.bt.magnet.MagnetUriParser;
 import threads.thor.core.Content;
 import threads.thor.core.DOCS;
 import threads.thor.core.events.EVENTS;
@@ -77,6 +74,8 @@ import threads.thor.fragments.BookmarksDialogFragment;
 import threads.thor.fragments.HistoryDialogFragment;
 import threads.thor.ipfs.Closeable;
 import threads.thor.ipfs.IPFS;
+import threads.thor.magnet.magnet.MagnetUri;
+import threads.thor.magnet.magnet.MagnetUriParser;
 import threads.thor.services.ThorService;
 import threads.thor.utils.AdBlocker;
 import threads.thor.utils.CustomWebChromeClient;
@@ -793,9 +792,11 @@ public class MainActivity extends AppCompatActivity implements
             }
         });
         mSwipeRefreshLayout.setColorSchemeResources(android.R.color.holo_blue_dark);
-        mSwipeRefreshLayout.setProgressViewOffset(false, 100, 500);
+        mSwipeRefreshLayout.setEnabled(true);
 
-
+        mWebView.setOnScrollChangeListener((v, scrollX, scrollY, oldScrollX, oldScrollY) -> {
+            mSwipeRefreshLayout.setEnabled(scrollY > 0 && oldScrollY == 0);
+        });
         mBrowserText = findViewById(R.id.action_browser);
 
 
@@ -1019,6 +1020,7 @@ public class MainActivity extends AppCompatActivity implements
                 LogUtils.info(TAG, "onPageFinished : " + url);
 
                 mProgressBar.setVisibility(View.GONE);
+
             }
 
             @Override
@@ -1148,7 +1150,6 @@ public class MainActivity extends AppCompatActivity implements
                         {
                             Pair<Uri, Boolean> result = docs.redirectUri(uri, closeable);
                             if (result.second) {
-
                                 Intent intent = new Intent(Intent.ACTION_VIEW, result.first,
                                         getApplicationContext(), MainActivity.class);
                                 startActivity(intent);
@@ -1323,13 +1324,6 @@ public class MainActivity extends AppCompatActivity implements
 
     public void openUri(@NonNull Uri uri) {
 
-
-        ActionBar bar = getSupportActionBar();
-        if (bar != null) {
-            if (!bar.isShowing()) {
-                bar.show();
-            }
-        }
 
         invalidateMenu(uri);
 

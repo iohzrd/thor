@@ -32,6 +32,7 @@ import thor.LsInfoClose;
 import thor.Node;
 import thor.ResolveInfo;
 import threads.LogUtils;
+import threads.thor.core.Content;
 import threads.thor.core.blocks.BLOCKS;
 import threads.thor.core.blocks.Block;
 
@@ -464,7 +465,7 @@ public class IPFS implements Listener {
     @Nullable
     public List<LinkInfo> getLinks(@NonNull String cid, @NonNull Closeable closeable) {
 
-        LogUtils.info(TAG, "Lookup CID : " + cid);
+        LogUtils.info(TAG, "getLinks : " + cid);
 
         List<LinkInfo> links = ls(cid, closeable);
         if (links == null) {
@@ -474,7 +475,6 @@ public class IPFS implements Listener {
 
         List<LinkInfo> result = new ArrayList<>();
         for (LinkInfo link : links) {
-            LogUtils.info(TAG, "Link : " + link.toString());
             if (!link.getName().isEmpty()) {
                 result.add(link);
             }
@@ -482,6 +482,41 @@ public class IPFS implements Listener {
         return result;
     }
 
+
+    @Nullable
+    public String resolve(@NonNull String dir, @NonNull List<String> path, @NonNull Closeable closeable) {
+
+        String cid = dir;
+        String root = dir;
+
+        for (String name : path) {
+            cid = resolve("/" + Content.IPFS + "/" + root + "/" + name, closeable);
+            if (!cid.isEmpty()) {
+                root = cid;
+            } else {
+                return null;
+            }
+        }
+
+        return cid;
+    }
+
+    @NonNull
+    public String resolve(@NonNull String path, @NonNull Closeable closeable) {
+        AtomicBoolean abort = new AtomicBoolean(false);
+        try {
+            return node.resolve(path, () -> abort.get() || closeable.isClosed());
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable);
+            abort.set(true);
+        }
+        return "";
+    }
+
+    public boolean resolve(@NonNull String cid, @NonNull String name, @NonNull Closeable closeable) {
+        String res = resolve("/" + Content.IPFS + "/" + cid + "/" + name, closeable);
+        return !res.isEmpty();
+    }
 
     @Nullable
     public Link link(@NonNull String dir, @NonNull List<String> path, @NonNull Closeable closeable) {
@@ -494,7 +529,7 @@ public class IPFS implements Listener {
             if (linkInfo != null) {
                 root = linkInfo.getContent();
             } else {
-                break;
+                return null;
             }
         }
 
@@ -503,23 +538,37 @@ public class IPFS implements Listener {
 
 
     @Nullable
-    public Link link(@NonNull String dir, @NonNull String name, @NonNull Closeable closeable) {
-        List<Link> links = lss(dir, closeable);
-        if (links != null) {
-            for (Link info : links) {
-                if (Objects.equals(info.getName(), name)) {
-                    return info;
+    public Link link(@NonNull String cid, @NonNull String name, @NonNull Closeable closeable) {
+        AtomicReference<Link> result = new AtomicReference<>(null);
+        try {
+            AtomicBoolean abort = new AtomicBoolean(false);
+
+            node.ls(cid, new LsInfoClose() {
+                @Override
+                public boolean close() {
+                    return abort.get() || closeable.isClosed();
                 }
-            }
+
+                @Override
+                public void lsInfo(String test, String hash, long size, int type) {
+                    if (Objects.equals(name, test)) {
+                        result.set(Link.create(name, hash));
+                        abort.set(true);
+                    }
+
+                }
+            }, false);
+
+        } catch (Throwable e) {
+            LogUtils.error(TAG, e);
         }
-        return null;
+
+        return result.get();
     }
 
 
     @Nullable
     public List<Link> links(@NonNull String cid, @NonNull Closeable closeable) {
-
-        LogUtils.info(TAG, "Lookup CID : " + cid);
 
         List<Link> links = lss(cid, closeable);
         if (links == null) {
@@ -529,7 +578,6 @@ public class IPFS implements Listener {
 
         List<Link> result = new ArrayList<>();
         for (Link link : links) {
-            LogUtils.info(TAG, "Link : " + link.toString());
             if (!link.getName().isEmpty()) {
                 result.add(link);
             }
@@ -544,7 +592,7 @@ public class IPFS implements Listener {
         }
         List<Link> links = new ArrayList<>();
         try {
-
+            LogUtils.info(TAG, "lss : " + cid);
             node.ls(cid, new LsInfoClose() {
                 @Override
                 public boolean close() {
@@ -569,10 +617,58 @@ public class IPFS implements Listener {
     }
 
 
-    public boolean isDir(@NonNull String doc, @NonNull Closeable closeable) {
-        List<Link> links = links(doc, closeable);
-        return links != null && !links.isEmpty();
+    public void ls(@NonNull String cid, @NonNull LinkListener linkListener, boolean recursive) {
+
+        LogUtils.info(TAG, "ls : " + cid);
+
+        AtomicBoolean abort = new AtomicBoolean(false);
+        try {
+
+            node.ls(cid, new LsInfoClose() {
+                @Override
+                public boolean close() {
+                    return abort.get() || linkListener.isClosed();
+                }
+
+                @Override
+                public void lsInfo(String name, String hash, long size, int type) {
+                    linkListener.link(name, hash, size, type);
+                }
+            }, recursive);
+
+        } catch (Throwable e) {
+            abort.set(true);
+        }
+
     }
+
+    public boolean isDir(@NonNull String cid, @NonNull Closeable closeable) {
+
+        AtomicBoolean abort = new AtomicBoolean(false);
+        if (!isDaemonRunning()) {
+            return abort.get();
+        }
+        try {
+            node.ls(cid, new LsInfoClose() {
+                @Override
+                public boolean close() {
+                    return abort.get() || closeable.isClosed();
+                }
+
+                @Override
+                public void lsInfo(String name, String hash, long size, int type) {
+                    if (!name.isEmpty()) {
+                        abort.set(true);
+                    }
+                }
+            }, false);
+
+        } catch (Throwable e) {
+            LogUtils.error(TAG, e);
+        }
+        return abort.get();
+    }
+
 
     public long getSize(@NonNull String cid, @NonNull Closeable closeable) {
         List<LinkInfo> links = ls(cid, closeable);
@@ -591,7 +687,7 @@ public class IPFS implements Listener {
         checkDaemon();
         List<LinkInfo> infoList = new ArrayList<>();
         try {
-
+            LogUtils.info(TAG, "ls : " + cid);
             node.ls(cid, new LsInfoClose() {
                 @Override
                 public boolean close() {

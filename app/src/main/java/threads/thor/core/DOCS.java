@@ -9,9 +9,10 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,7 +30,7 @@ import threads.thor.ipfs.Closeable;
 import threads.thor.ipfs.DnsAddrResolver;
 import threads.thor.ipfs.IPFS;
 import threads.thor.ipfs.Link;
-import threads.thor.ipfs.LinkInfo;
+import threads.thor.ipfs.LinkListener;
 import threads.thor.magic.ContentInfo;
 import threads.thor.magic.ContentInfoUtil;
 import threads.thor.services.MimeTypeService;
@@ -181,71 +182,112 @@ public class DOCS {
         return resolvedName.getHash();
     }
 
-    public String generateDirectoryHtml(@NonNull Uri uri, @NonNull String root, List<String> paths, @Nullable List<LinkInfo> links) {
-        String title = root;
-
-        if (!paths.isEmpty()) {
-            title = paths.get(paths.size() - 1);
-        }
+    public PipedInputStream generateDirectoryHtml(@NonNull Uri uri,
+                                                  @NonNull String root,
+                                                  @NonNull List<String> paths,
+                                                  @Nullable String cid) throws IOException {
 
 
-        StringBuilder answer = new StringBuilder("<html>" +
-                "<head>" +
-                "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, maximum-scale=2, user-scalable=yes\">" +
-                "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">" +
-                "<title>" + title + "</title>");
-
-        answer.append("</head><body>");
+        final PipedOutputStream output = new PipedOutputStream();
+        final PipedInputStream input = new PipedInputStream(output);
 
 
-        answer.append("<div style=\"padding: 16px; word-break:break-word; background-color: #696969; color: white;\">Index of ").append(uri.toString()).append("</div>");
+        Thread thread = new Thread(() -> {
+            try {
 
-        if (links != null) {
-            if (!links.isEmpty()) {
-                answer.append("<form><table  width=\"100%\" style=\"border-spacing: 4px;\">");
-                for (LinkInfo linkInfo : links) {
+                String title = root;
 
-                    String mimeType = MimeType.DIR_MIME_TYPE;
-                    if (!linkInfo.isDirectory()) {
-                        mimeType = MimeTypeService.getMimeType(linkInfo.getName());
-                    }
-                    String linkUri = uri + "/" + linkInfo.getName();
-
-                    answer.append("<tr>");
-
-                    answer.append("<td>");
-                    answer.append(MimeTypeService.getSvgResource(mimeType));
-                    answer.append("</td>");
-
-                    answer.append("<td width=\"100%\" style=\"word-break:break-word\">");
-                    answer.append("<a href=\"");
-                    answer.append(linkUri);
-                    answer.append("\">");
-                    answer.append(linkInfo.getName());
-                    answer.append("</a>");
-                    answer.append("</td>");
-
-                    answer.append("<td>");
-                    if (!linkInfo.isDirectory()) {
-                        answer.append(getFileSize(linkInfo.getSize()));
-                    }
-                    answer.append("</td>");
-                    answer.append("<td align=\"center\">");
-                    String text = "<button style=\"float:none!important;display:inline;\" name=\"download\" value=\"1\" formenctype=\"text/plain\" formmethod=\"get\" type=\"submit\" formaction=\"" +
-                            linkUri + "\">" + MimeTypeService.getSvgDownload() + "</button>";
-                    answer.append(text);
-                    answer.append("</td>");
-                    answer.append("</tr>");
+                if (!paths.isEmpty()) {
+                    title = paths.get(paths.size() - 1);
                 }
-                answer.append("</table></form>");
+
+
+                StringBuilder answer = new StringBuilder("<html>" +
+                        "<head>" +
+                        "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, maximum-scale=2, user-scalable=yes\">" +
+                        "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">" +
+                        "<title>" + title + "</title>");
+
+                answer.append("</head><body>");
+
+
+                answer.append("<div style=\"padding: 16px; word-break:break-word; background-color: #696969; color: white;\">Index of ").
+                        append(uri.toString()).append("</div>");
+
+                output.write(answer.toString().getBytes());
+
+
+                output.write("<form><table  width=\"100%\" style=\"border-spacing: 4px;\">".getBytes());
+                if (!ipfs.isEmptyDir(cid)) {
+                    ipfs.ls(cid, new LinkListener() {
+
+                        private boolean close = false;
+
+                        @Override
+                        public boolean isClosed() {
+                            return close;
+                        }
+
+                        @Override
+                        public void link(String name, String hash, long size, int type) {
+
+                            try {
+
+                                LogUtils.error(TAG, name);
+
+                                String mimeType = MimeType.DIR_MIME_TYPE;
+                                if (type != 1) { // not dir
+                                    mimeType = MimeTypeService.getMimeType(name);
+                                }
+                                String linkUri = uri + "/" + name;
+
+                                output.write("<tr>".getBytes());
+
+                                output.write("<td>".getBytes());
+                                output.write(MimeTypeService.getSvgResource(mimeType).getBytes());
+                                output.write("</td>".getBytes());
+
+                                output.write("<td width=\"100%\" style=\"word-break:break-word\">".getBytes());
+                                output.write("<a href=\"".getBytes());
+                                output.write(linkUri.getBytes());
+                                output.write("\">".getBytes());
+                                output.write(name.getBytes());
+                                output.write("</a>".getBytes());
+                                output.write("</td>".getBytes());
+
+                                output.write("<td>".getBytes());
+                                if (type != 1) { // not dir
+                                    answer.append(getFileSize(size));
+                                }
+
+                                output.write("</td>".getBytes());
+                                output.write("<td align=\"center\">".getBytes());
+                                String text = "<button style=\"float:none!important;display:inline;\" name=\"download\" value=\"1\" formenctype=\"text/plain\" formmethod=\"get\" type=\"submit\" formaction=\"" +
+                                        linkUri + "\">" + MimeTypeService.getSvgDownload() + "</button>";
+                                output.write(text.getBytes());
+                                output.write("</td>".getBytes());
+                                output.write("</tr>".getBytes());
+                            } catch (Throwable throwable) {
+                                LogUtils.error(TAG, throwable);
+                                close = true;
+                            }
+                        }
+                    }, true);
+                }
+                output.write("</table></form>".getBytes());
+
+
+                output.write("</body></html>".getBytes());
+            } catch (Throwable e) {
+                LogUtils.error(TAG, e);
             }
-
-        }
-
-        answer.append("</body></html>");
+        });
 
 
-        return answer.toString();
+        thread.start();
+
+
+        return input;
     }
 
     private String getFileSize(long size) {
@@ -306,41 +348,18 @@ public class DOCS {
                                            @NonNull Closeable closeable) throws Exception {
 
         if (paths.isEmpty()) {
-
-            List<Link> links = ipfs.links(root, closeable);
-            if (closeable.isClosed()) {
-                throw new TimeoutException(uri.toString());
-            }
-
-            if (links != null) {
-                if (ipfs.isEmptyDir(root)) {
-                    String answer = generateDirectoryHtml(uri, root, paths, new ArrayList<>());
-                    return new WebResourceResponse(MimeType.HTML_MIME_TYPE,
-                            "UTF-8", new ByteArrayInputStream(answer.getBytes()));
-                } else if (links.isEmpty()) {
-                    String mimeType = getMimeType(root, closeable);
-                    if (closeable.isClosed()) {
-                        throw new TimeoutException(uri.toString());
-                    }
-
-                    long size = ipfs.getSize(root, closeable);
-                    if (closeable.isClosed()) {
-                        throw new TimeoutException(uri.toString());
-                    }
-                    return getContentResponse(uri, root, mimeType, size, closeable);
-                } else {
-
-                    List<LinkInfo> infos = ipfs.getLinks(root, closeable);
-                    String answer = generateDirectoryHtml(uri, root, paths, infos);
-                    return new WebResourceResponse(MimeType.HTML_MIME_TYPE,
-                            "UTF-8", new ByteArrayInputStream(answer.getBytes()));
-
-                }
+            if (ipfs.isEmptyDir(root)) {
+                PipedInputStream answer = generateDirectoryHtml(uri, root, paths, root);
+                return new WebResourceResponse(MimeType.HTML_MIME_TYPE, Content.UTF8, answer);
+            } else if (ipfs.isDir(root, closeable)) {
+                PipedInputStream answer = generateDirectoryHtml(uri, root, paths, root);
+                return new WebResourceResponse(MimeType.HTML_MIME_TYPE, Content.UTF8, answer);
             } else {
                 String mimeType = getMimeType(root, closeable);
                 if (closeable.isClosed()) {
                     throw new TimeoutException(uri.toString());
                 }
+
                 long size = ipfs.getSize(root, closeable);
                 if (closeable.isClosed()) {
                     throw new TimeoutException(uri.toString());
@@ -348,38 +367,31 @@ public class DOCS {
                 return getContentResponse(uri, root, mimeType, size, closeable);
             }
 
+
         } else {
-            Link link = ipfs.link(root, paths, closeable);
+            String cid = ipfs.resolve(root, paths, closeable);
             if (closeable.isClosed()) {
                 throw new TimeoutException(uri.toString());
             }
-            Objects.requireNonNull(link);
+            Objects.requireNonNull(cid);
 
-            if (ipfs.isEmptyDir(link.getContent())) {
-                String answer = generateDirectoryHtml(uri, root, paths, new ArrayList<>());
-
-                return new WebResourceResponse(MimeType.HTML_MIME_TYPE,
-                        "UTF-8", new ByteArrayInputStream(answer.getBytes()));
-            } else if (ipfs.isDir(link.getContent(), closeable)) {
-
-
-                List<LinkInfo> links = ipfs.getLinks(link.getContent(), closeable);
-                String answer = generateDirectoryHtml(uri, root, paths, links);
-
-                return new WebResourceResponse(MimeType.HTML_MIME_TYPE,
-                        "UTF-8", new ByteArrayInputStream(answer.getBytes()));
-
+            if (ipfs.isEmptyDir(cid)) {
+                PipedInputStream answer = generateDirectoryHtml(uri, root, paths, cid);
+                return new WebResourceResponse(MimeType.HTML_MIME_TYPE, Content.UTF8, answer);
+            } else if (ipfs.isDir(cid, closeable)) {
+                PipedInputStream answer = generateDirectoryHtml(uri, root, paths, cid);
+                return new WebResourceResponse(MimeType.HTML_MIME_TYPE, Content.UTF8, answer);
 
             } else {
-                String mimeType = getMimeType(uri, link.getContent(), closeable);
+                String mimeType = getMimeType(uri, cid, closeable);
                 if (closeable.isClosed()) {
                     throw new TimeoutException(uri.toString());
                 }
-                long size = ipfs.getSize(link.getContent(), closeable);
+                long size = ipfs.getSize(cid, closeable);
                 if (closeable.isClosed()) {
                     throw new TimeoutException(uri.toString());
                 }
-                return getContentResponse(uri, link.getContent(), mimeType,
+                return getContentResponse(uri, cid, mimeType,
                         size, closeable);
             }
 
@@ -416,7 +428,9 @@ public class DOCS {
 
 
             Map<String, String> responseHeaders = new HashMap<>();
-            responseHeaders.put("Content-Length", "" + size);
+            if (size > 0) {
+                responseHeaders.put("Content-Length", "" + size);
+            }
             responseHeaders.put("Content-Type", mimeType);
 
             return new WebResourceResponse(mimeType, Content.UTF8, 200,
@@ -559,31 +573,29 @@ public class DOCS {
 
         if (paths.isEmpty()) {
 
-            List<Link> links = ipfs.links(root, closeable);
-            if (links != null) {
-                if (!ipfs.isEmptyDir(root) && !links.isEmpty()) {
-                    Link link = ipfs.link(root, INDEX_HTML, closeable);
-                    if (link != null) {
-                        Uri.Builder builder = new Uri.Builder();
-                        builder.scheme(uri.getScheme())
-                                .authority(uri.getAuthority());
-                        for (String path : paths) {
-                            builder.appendPath(path);
-                        }
-                        builder.appendPath(INDEX_HTML);
-                        return Pair.create(builder.build(), true);
+            if (!ipfs.isEmptyDir(root)) {
+                boolean exists = ipfs.resolve(root, INDEX_HTML, closeable);
+                if (exists) {
+                    Uri.Builder builder = new Uri.Builder();
+                    builder.scheme(uri.getScheme())
+                            .authority(uri.getAuthority());
+                    for (String path : paths) {
+                        builder.appendPath(path);
                     }
+                    builder.appendPath(INDEX_HTML);
+                    return Pair.create(builder.build(), true);
                 }
             }
+
 
         } else {
-            Link link = ipfs.link(root, paths, closeable);
 
-            if (link != null) {
-                if (!ipfs.isEmptyDir(link.getContent()) && ipfs.isDir(link.getContent(), closeable)) {
+            String cid = ipfs.resolve(root, paths, closeable);
 
-                    Link index = ipfs.link(link.getContent(), INDEX_HTML, closeable);
-                    if (index != null) {
+            if (cid != null) {
+                if (!ipfs.isEmptyDir(cid)) {
+                    boolean exists = ipfs.resolve(cid, INDEX_HTML, closeable);
+                    if (exists) {
                         Uri.Builder builder = new Uri.Builder();
                         builder.scheme(uri.getScheme())
                                 .authority(uri.getAuthority());
@@ -595,6 +607,7 @@ public class DOCS {
                     }
                 }
             }
+
         }
         return Pair.create(uri, false);
     }
