@@ -9,10 +9,9 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import java.io.BufferedInputStream;
-import java.io.IOException;
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,7 +29,7 @@ import threads.thor.ipfs.Closeable;
 import threads.thor.ipfs.DnsAddrResolver;
 import threads.thor.ipfs.IPFS;
 import threads.thor.ipfs.Link;
-import threads.thor.ipfs.LinkListener;
+import threads.thor.ipfs.LinkInfo;
 import threads.thor.magic.ContentInfo;
 import threads.thor.magic.ContentInfoUtil;
 import threads.thor.services.MimeTypeService;
@@ -182,114 +181,72 @@ public class DOCS {
         return resolvedName.getHash();
     }
 
-    public PipedInputStream generateDirectoryHtml(@NonNull Uri uri,
-                                                  @NonNull String root,
-                                                  @NonNull List<String> paths,
-                                                  @Nullable String cid) throws IOException {
+
+    public String generateDirectoryHtml(@NonNull Uri uri, @NonNull String root, List<String> paths, @Nullable List<LinkInfo> links) {
+        String title = root;
+
+        if (!paths.isEmpty()) {
+            title = paths.get(paths.size() - 1);
+        }
 
 
-        final PipedOutputStream output = new PipedOutputStream();
-        final PipedInputStream input = new PipedInputStream(output);
+        StringBuilder answer = new StringBuilder("<html>" +
+                "<head>" +
+                "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, maximum-scale=2, user-scalable=yes\">" +
+                "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">" +
+                "<title>" + title + "</title>");
+
+        answer.append("</head><body>");
 
 
-        Thread thread = new Thread(() -> {
-            try {
+        answer.append("<div style=\"padding: 16px; word-break:break-word; background-color: #696969; color: white;\">Index of ").append(uri.toString()).append("</div>");
 
-                String title = root;
+        if (links != null) {
+            if (!links.isEmpty()) {
+                answer.append("<form><table  width=\"100%\" style=\"border-spacing: 4px;\">");
+                for (LinkInfo linkInfo : links) {
 
-                if (!paths.isEmpty()) {
-                    title = paths.get(paths.size() - 1);
+                    String mimeType = MimeType.DIR_MIME_TYPE;
+                    if (!linkInfo.isDirectory()) {
+                        mimeType = MimeTypeService.getMimeType(linkInfo.getName());
+                    }
+                    String linkUri = uri + "/" + linkInfo.getName();
+
+                    answer.append("<tr>");
+
+                    answer.append("<td>");
+                    answer.append(MimeTypeService.getSvgResource(mimeType));
+                    answer.append("</td>");
+
+                    answer.append("<td width=\"100%\" style=\"word-break:break-word\">");
+                    answer.append("<a href=\"");
+                    answer.append(linkUri);
+                    answer.append("\">");
+                    answer.append(linkInfo.getName());
+                    answer.append("</a>");
+                    answer.append("</td>");
+
+                    answer.append("<td>");
+                    if (!linkInfo.isDirectory()) {
+                        answer.append(getFileSize(linkInfo.getSize()));
+                    }
+                    answer.append("</td>");
+                    answer.append("<td align=\"center\">");
+                    String text = "<button style=\"float:none!important;display:inline;\" name=\"download\" value=\"1\" formenctype=\"text/plain\" formmethod=\"get\" type=\"submit\" formaction=\"" +
+                            linkUri + "\">" + MimeTypeService.getSvgDownload() + "</button>";
+                    answer.append(text);
+                    answer.append("</td>");
+                    answer.append("</tr>");
                 }
-
-
-                StringBuilder answer = new StringBuilder("<html>" +
-                        "<head>" +
-                        "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, maximum-scale=2, user-scalable=yes\">" +
-                        "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">" +
-                        "<title>" + title + "</title>");
-
-                answer.append("</head><body>");
-
-
-                answer.append("<div style=\"padding: 16px; word-break:break-word; background-color: #696969; color: white;\">Index of ").
-                        append(uri.toString()).append("</div>");
-
-                output.write(answer.toString().getBytes());
-
-
-                output.write("<form><table  width=\"100%\" style=\"border-spacing: 4px;\">".getBytes());
-                if (!ipfs.isEmptyDir(cid)) {
-                    ipfs.ls(cid, new LinkListener() {
-
-                        private boolean close = false;
-
-                        @Override
-                        public boolean isClosed() {
-                            return close;
-                        }
-
-                        @Override
-                        public void link(String name, String hash, long size, int type) {
-
-                            try {
-
-                                LogUtils.error(TAG, name);
-
-                                String mimeType = MimeType.DIR_MIME_TYPE;
-                                if (type != 1) { // not dir
-                                    mimeType = MimeTypeService.getMimeType(name);
-                                }
-                                String linkUri = uri + "/" + name;
-
-                                output.write("<tr>".getBytes());
-
-                                output.write("<td>".getBytes());
-                                output.write(MimeTypeService.getSvgResource(mimeType).getBytes());
-                                output.write("</td>".getBytes());
-
-                                output.write("<td width=\"100%\" style=\"word-break:break-word\">".getBytes());
-                                output.write("<a href=\"".getBytes());
-                                output.write(linkUri.getBytes());
-                                output.write("\">".getBytes());
-                                output.write(name.getBytes());
-                                output.write("</a>".getBytes());
-                                output.write("</td>".getBytes());
-
-                                output.write("<td>".getBytes());
-                                if (type != 1) { // not dir
-                                    answer.append(getFileSize(size));
-                                }
-
-                                output.write("</td>".getBytes());
-                                output.write("<td align=\"center\">".getBytes());
-                                String text = "<button style=\"float:none!important;display:inline;\" name=\"download\" value=\"1\" formenctype=\"text/plain\" formmethod=\"get\" type=\"submit\" formaction=\"" +
-                                        linkUri + "\">" + MimeTypeService.getSvgDownload() + "</button>";
-                                output.write(text.getBytes());
-                                output.write("</td>".getBytes());
-                                output.write("</tr>".getBytes());
-                            } catch (Throwable throwable) {
-                                LogUtils.error(TAG, throwable);
-                                close = true;
-                            }
-                        }
-                    }, true);
-                }
-                output.write("</table></form>".getBytes());
-
-
-                output.write("</body></html>".getBytes());
-            } catch (Throwable e) {
-                LogUtils.error(TAG, e);
+                answer.append("</table></form>");
             }
-        });
+
+        }
+        answer.append("</body></html>");
 
 
-        thread.start();
-
-
-        return input;
+        return answer.toString();
     }
-
     private String getFileSize(long size) {
 
         String fileSize;
@@ -342,6 +299,7 @@ public class DOCS {
     }
 
 
+
     @NonNull
     public WebResourceResponse getResponse(@NonNull Uri uri, @NonNull String root,
                                            @NonNull List<String> paths,
@@ -349,11 +307,14 @@ public class DOCS {
 
         if (paths.isEmpty()) {
             if (ipfs.isEmptyDir(root)) {
-                PipedInputStream answer = generateDirectoryHtml(uri, root, paths, root);
-                return new WebResourceResponse(MimeType.HTML_MIME_TYPE, Content.UTF8, answer);
+                String answer = generateDirectoryHtml(uri, root, paths, new ArrayList<>());
+                return new WebResourceResponse(MimeType.HTML_MIME_TYPE, Content.UTF8,
+                        new ByteArrayInputStream(answer.getBytes()));
             } else if (ipfs.isDir(root, closeable)) {
-                PipedInputStream answer = generateDirectoryHtml(uri, root, paths, root);
-                return new WebResourceResponse(MimeType.HTML_MIME_TYPE, Content.UTF8, answer);
+                List<LinkInfo> links = ipfs.getLinks(root, closeable);
+                String answer = generateDirectoryHtml(uri, root, paths, links);
+                return new WebResourceResponse(MimeType.HTML_MIME_TYPE, Content.UTF8,
+                        new ByteArrayInputStream(answer.getBytes()));
             } else {
                 String mimeType = getMimeType(root, closeable);
                 if (closeable.isClosed()) {
@@ -376,11 +337,14 @@ public class DOCS {
             Objects.requireNonNull(cid);
 
             if (ipfs.isEmptyDir(cid)) {
-                PipedInputStream answer = generateDirectoryHtml(uri, root, paths, cid);
-                return new WebResourceResponse(MimeType.HTML_MIME_TYPE, Content.UTF8, answer);
+                String answer = generateDirectoryHtml(uri, root, paths, new ArrayList<>());
+                return new WebResourceResponse(MimeType.HTML_MIME_TYPE, Content.UTF8,
+                        new ByteArrayInputStream(answer.getBytes()));
             } else if (ipfs.isDir(cid, closeable)) {
-                PipedInputStream answer = generateDirectoryHtml(uri, root, paths, cid);
-                return new WebResourceResponse(MimeType.HTML_MIME_TYPE, Content.UTF8, answer);
+                List<LinkInfo> links = ipfs.getLinks(cid, closeable);
+                String answer = generateDirectoryHtml(uri, root, paths, links);
+                return new WebResourceResponse(MimeType.HTML_MIME_TYPE, Content.UTF8,
+                        new ByteArrayInputStream(answer.getBytes()));
 
             } else {
                 String mimeType = getMimeType(uri, cid, closeable);
