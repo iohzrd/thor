@@ -510,7 +510,7 @@ public class DOCS {
                     for (String path : paths) {
                         builder.appendPath(path);
                     }
-                    return redirect(builder.build(), cid, paths, closeable);
+                    return redirect(builder.build(), cid, paths, closeable, true);
                 }
 
             } else {
@@ -522,7 +522,7 @@ public class DOCS {
                         root = host;
                     }
                     Objects.requireNonNull(root);
-                    return redirect(uri, root, paths, closeable);
+                    return redirect(uri, root, paths, closeable, false);
                 } catch (Throwable throwable) {
                     LogUtils.error(TAG, throwable);
                 }
@@ -533,7 +533,8 @@ public class DOCS {
 
     @NonNull
     public Pair<Uri, Boolean> redirect(@NonNull Uri uri, @NonNull String root,
-                                       @NonNull List<String> paths, @NonNull Closeable closeable) {
+                                       @NonNull List<String> paths, @NonNull Closeable closeable,
+                                       boolean redirect) {
 
         if (paths.isEmpty()) {
 
@@ -573,7 +574,7 @@ public class DOCS {
             }
 
         }
-        return Pair.create(uri, false);
+        return Pair.create(uri, redirect);
     }
 
     public static class FileInfo {

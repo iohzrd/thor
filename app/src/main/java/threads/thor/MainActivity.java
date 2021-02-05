@@ -794,9 +794,9 @@ public class MainActivity extends AppCompatActivity implements
         mSwipeRefreshLayout.setColorSchemeResources(android.R.color.holo_blue_dark);
         mSwipeRefreshLayout.setEnabled(true);
 
-        mWebView.setOnScrollChangeListener((v, scrollX, scrollY, oldScrollX, oldScrollY) -> {
-            mSwipeRefreshLayout.setEnabled(scrollY > 0 && oldScrollY == 0);
-        });
+        mWebView.setOnScrollChangeListener((v, scrollX, scrollY, oldScrollX, oldScrollY) ->
+                mSwipeRefreshLayout.setEnabled(scrollY > 0 && oldScrollY == 0));
+
         mBrowserText = findViewById(R.id.action_browser);
 
 
@@ -1087,6 +1087,25 @@ public class MainActivity extends AppCompatActivity implements
             }
 
 
+            public WebResourceResponse createRedirectMessage(@NonNull Uri uri) {
+                return new WebResourceResponse(MimeType.HTML_MIME_TYPE, Content.UTF8,
+                        new ByteArrayInputStream(("<!DOCTYPE HTML>\n" +
+                                "<html lang=\"en-US\">\n" +
+                                "    <head>\n" +
+                                "        <meta charset=\"UTF-8\">\n" +
+                                "        <meta http-equiv=\"refresh\" content=\"0; url="+uri.toString()+"\">\n" +
+                                "        <script type=\"text/javascript\">\n" +
+                                "            window.location.href = \""+uri.toString()+"\"\n" +
+                                "        </script>\n" +
+                                "        <title>Page Redirection</title>\n" +
+                                "    </head>\n" +
+                                "    <body>\n" +
+                                "        <!-- Note: don't tell people to `click` the link, just tell them that it is a link. -->\n" +
+                                "        If you are not redirected automatically, follow this <a href='"+uri.toString()+"'>link to example</a>.\n" +
+                                "    </body>\n" +
+                                "</html>").getBytes()));
+            }
+
             public WebResourceResponse createEmptyResource() {
                 return new WebResourceResponse(MimeType.PLAIN_MIME_TYPE, Content.UTF8,
                         new ByteArrayInputStream("".getBytes()));
@@ -1150,10 +1169,7 @@ public class MainActivity extends AppCompatActivity implements
                         {
                             Pair<Uri, Boolean> result = docs.redirectUri(uri, closeable);
                             if (result.second) {
-                                Intent intent = new Intent(Intent.ACTION_VIEW, result.first,
-                                        getApplicationContext(), MainActivity.class);
-                                startActivity(intent);
-                                return createEmptyResource();
+                                return createRedirectMessage(result.first);
                             }
                             uri = result.first;
                         }
