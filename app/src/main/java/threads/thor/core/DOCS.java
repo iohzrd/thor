@@ -493,24 +493,44 @@ public class DOCS {
             String host = uri.getHost();
             Objects.requireNonNull(host);
             if (!ipfs.isValidCID(host)) {
-                String cid = DnsAddrResolver.getDNSLink(host);
-                if (cid == null) {
+                String link = DnsAddrResolver.getDNSLink(host);
+                if (link == null) {
                     Uri.Builder builder = new Uri.Builder();
                     builder.scheme(Content.HTTPS)
                             .authority(host);
                     for (String path : paths) {
                         builder.appendPath(path);
                     }
-
                     return Pair.create(builder.build(), false);
                 } else {
-                    Uri.Builder builder = new Uri.Builder();
-                    builder.scheme(Content.IPFS)
-                            .authority(cid);
-                    for (String path : paths) {
-                        builder.appendPath(path);
+                    if(link.startsWith(Content.IPFS_PATH)) {
+                        String cid =  link.replaceFirst(Content.IPFS_PATH, "");
+                        Uri.Builder builder = new Uri.Builder();
+                        builder.scheme(Content.IPFS)
+                                .authority(cid);
+                        for (String path : paths) {
+                            builder.appendPath(path);
+                        }
+                        return redirect(builder.build(), cid, paths, closeable, true);
+                    } else if(link.startsWith(Content.IPNS_PATH)) {
+                        String cid =  link.replaceFirst(Content.IPNS_PATH, "");
+                        Uri.Builder builder = new Uri.Builder();
+                        builder.scheme(Content.IPNS)
+                                .authority(cid);
+                        for (String path : paths) {
+                            builder.appendPath(path);
+                        }
+                        return redirect(builder.build(), cid, paths, closeable, true);
+                    } else {
+                        try {
+                            Uri dnsUri = Uri.parse(link);
+                            if(dnsUri != null){
+                                return Pair.create(dnsUri, true);
+                            }
+                        } catch (Throwable throwable){
+                            LogUtils.error(TAG, throwable);
+                        }
                     }
-                    return redirect(builder.build(), cid, paths, closeable, true);
                 }
 
             } else {

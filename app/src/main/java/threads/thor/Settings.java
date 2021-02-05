@@ -111,7 +111,7 @@ public class Settings {
     // IPFS BOOTSTRAP DNS
     public static final String LIB2P_DNS = "_dnsaddr.bootstrap.libp2p.io";
     public static final String DNS_ADDR = "dnsaddr=/dnsaddr/";
-    public static final String DNS_LINK = "dnslink=/ipfs/";
+    public static final String DNS_LINK = "dnslink=";
 
     // TOR CONFIGURATION
     public static final int SOCKSPort = 9050;

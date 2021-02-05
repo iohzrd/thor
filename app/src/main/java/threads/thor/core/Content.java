@@ -6,7 +6,9 @@ public class Content {
     public static final String ADDR = "addr";
     public static final String NAME = "name";
     public static final String IPFS = "ipfs";
+    public static final String IPFS_PATH = "/ipfs/";
     public static final String IPNS = "ipns";
+    public static final String IPNS_PATH = "/ipns/";
     public static final String SIZE = "size";
     public static final String TYPE = "type";
     public static final String HTTPS = "https";
