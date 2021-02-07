@@ -17,8 +17,8 @@ import java.util.List;
 import threads.LogUtils;
 import threads.thor.R;
 import threads.thor.core.events.EVENTS;
-import threads.thor.core.page.Bookmark;
-import threads.thor.core.page.PAGES;
+import threads.thor.core.pages.Bookmark;
+import threads.thor.core.pages.PAGES;
 
 
 public class BookmarksViewAdapter extends RecyclerView.Adapter<BookmarksViewAdapter.ViewHolder> {

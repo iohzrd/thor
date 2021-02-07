@@ -1,4 +1,4 @@
-package threads.thor.core.page;
+package threads.thor.core.pages;
 
 import android.content.Context;
 
@@ -22,20 +22,17 @@ public class PAGES {
     };
     private static PAGES INSTANCE = null;
     private final BookmarkDatabase pageDatabase;
-    private final ResolverDatabase resolverDatabase;
+
 
     private PAGES(final PAGES.Builder builder) {
         pageDatabase = builder.pageDatabase;
-        resolverDatabase = builder.resolverDatabase;
     }
 
     @NonNull
-    private static PAGES createPages(@NonNull BookmarkDatabase threadsDatabase,
-                                     @NonNull ResolverDatabase resolverDatabase) {
+    private static PAGES createPages(@NonNull BookmarkDatabase threadsDatabase) {
 
         return new PAGES.Builder()
                 .pageDatabase(threadsDatabase)
-                .resolverDatabase(resolverDatabase)
                 .build();
     }
 
@@ -52,34 +49,13 @@ public class PAGES {
                             fallbackToDestructiveMigration().
                             build();
 
-                    ResolverDatabase resolverDatabase = Room.inMemoryDatabaseBuilder(context,
-                            ResolverDatabase.class).allowMainThreadQueries().
-                            fallbackToDestructiveMigration().build();
-                    INSTANCE = PAGES.createPages(pageDatabase, resolverDatabase);
+                    INSTANCE = PAGES.createPages(pageDatabase);
                 }
             }
         }
         return INSTANCE;
     }
 
-    @NonNull
-    private Resolver createResolver(@NonNull String name, @NonNull String content) {
-        return new Resolver(name, content);
-    }
-
-    private void storeResolver(@NonNull Resolver resolver) {
-        resolverDatabase.resolverDao().insertResolver(resolver);
-    }
-
-
-    @Nullable
-    public Resolver getResolver(@NonNull String name) {
-        return resolverDatabase.resolverDao().getResolver(name);
-    }
-
-    public void removeResolver(@NonNull String name) {
-        resolverDatabase.resolverDao().removeResolver(name);
-    }
 
 
     @NonNull
@@ -129,20 +105,10 @@ public class PAGES {
         return pageDatabase.bookmarkDao().getBookmarksByQuery(searchQuery);
     }
 
-    public void storeResolver(@NonNull String name, @NonNull String content) {
-        storeResolver(createResolver(name, content));
-    }
-
-    @Nullable
-    public String getBookmarkContent(@NonNull String uri) {
-        return pageDatabase.bookmarkDao().getContent(uri);
-    }
-
 
     static class Builder {
 
         BookmarkDatabase pageDatabase = null;
-        ResolverDatabase resolverDatabase = null;
 
         PAGES build() {
 
@@ -152,11 +118,6 @@ public class PAGES {
         PAGES.Builder pageDatabase(@NonNull BookmarkDatabase pageDatabase) {
 
             this.pageDatabase = pageDatabase;
-            return this;
-        }
-
-        public Builder resolverDatabase(ResolverDatabase resolverDatabase) {
-            this.resolverDatabase = resolverDatabase;
             return this;
         }
     }

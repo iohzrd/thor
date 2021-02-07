@@ -1,4 +1,4 @@
-package threads.thor.core.page;
+package threads.thor.core.pages;
 
 
 import android.graphics.Bitmap;

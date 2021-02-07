@@ -13,7 +13,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.Callable;
@@ -391,9 +390,14 @@ public class IPFS implements Listener {
     }
 
 
-    @Nullable
+    @NonNull
     public String decodeName(@NonNull String name) {
-        return node.decodeName(name);
+        try {
+            return node.decodeName(name);
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable);
+        }
+        return "";
     }
 
     private int swarm_peers() {
@@ -447,7 +451,7 @@ public class IPFS implements Listener {
                             counter.incrementAndGet();
                         }
                         resolvedName.set(new ResolvedName(
-                                seq, hash.replaceFirst("/ipfs/", "")));
+                                seq, hash.replaceFirst(Content.IPFS_PATH, "")));
                     }
 
                 }
@@ -564,82 +568,6 @@ public class IPFS implements Listener {
         }
 
         return result.get();
-    }
-
-
-    @Nullable
-    public List<Link> links(@NonNull String cid, @NonNull Closeable closeable) {
-
-        List<Link> links = lss(cid, closeable);
-        if (links == null) {
-            LogUtils.info(TAG, "no links or stopped");
-            return null;
-        }
-
-        List<Link> result = new ArrayList<>();
-        for (Link link : links) {
-            if (!link.getName().isEmpty()) {
-                result.add(link);
-            }
-        }
-        return result;
-    }
-
-    @Nullable
-    public List<Link> lss(@NonNull String cid, @NonNull Closeable closeable) {
-        if (!isDaemonRunning()) {
-            return Collections.emptyList();
-        }
-        List<Link> links = new ArrayList<>();
-        try {
-            LogUtils.info(TAG, "lss : " + cid);
-            node.ls(cid, new LsInfoClose() {
-                @Override
-                public boolean close() {
-                    return closeable.isClosed();
-                }
-
-                @Override
-                public void lsInfo(String name, String hash, long size, int type) {
-                    Link info = Link.create(name, hash);
-                    links.add(info);
-                }
-            }, false);
-
-        } catch (Throwable e) {
-            LogUtils.error(TAG, e);
-            return null;
-        }
-        if (closeable.isClosed()) {
-            return null;
-        }
-        return links;
-    }
-
-
-    public void ls(@NonNull String cid, @NonNull LinkListener linkListener, boolean recursive) {
-
-        LogUtils.info(TAG, "ls : " + cid);
-
-        AtomicBoolean abort = new AtomicBoolean(false);
-        try {
-
-            node.ls(cid, new LsInfoClose() {
-                @Override
-                public boolean close() {
-                    return abort.get() || linkListener.isClosed();
-                }
-
-                @Override
-                public void lsInfo(String name, String hash, long size, int type) {
-                    linkListener.link(name, hash, size, type);
-                }
-            }, recursive);
-
-        } catch (Throwable e) {
-            abort.set(true);
-        }
-
     }
 
     public boolean isDir(@NonNull String cid, @NonNull Closeable closeable) {
@@ -792,9 +720,9 @@ public class IPFS implements Listener {
         return node.getRunning();
     }
 
-    public boolean isValidCID(String multihash) {
+    public boolean isValidCID(@NonNull String cid) {
         try {
-            this.node.cidCheck(multihash);
+            this.node.cidCheck(cid);
             return true;
         } catch (Throwable e) {
             return false;

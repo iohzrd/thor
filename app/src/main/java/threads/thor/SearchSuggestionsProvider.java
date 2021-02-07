@@ -17,8 +17,8 @@ import java.util.Comparator;
 import java.util.List;
 
 import threads.LogUtils;
-import threads.thor.core.page.Bookmark;
-import threads.thor.core.page.PAGES;
+import threads.thor.core.pages.Bookmark;
+import threads.thor.core.pages.PAGES;
 
 public class SearchSuggestionsProvider
         extends SearchRecentSuggestionsProvider {

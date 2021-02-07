@@ -1,4 +1,4 @@
-package threads.thor.core.page;
+package threads.thor.core.pages;
 
 
 import androidx.lifecycle.LiveData;
@@ -31,8 +31,6 @@ public interface BookmarkDao {
     @Query("UPDATE Bookmark SET content =:content WHERE uri = :uri")
     void setContent(String uri, String content);
 
-    @Query("SELECT content FROM Bookmark WHERE uri = :uri")
-    String getContent(String uri);
 
     @Query("UPDATE Bookmark SET sequence = :sequence WHERE uri = :uri")
     void setSequence(String uri, long sequence);

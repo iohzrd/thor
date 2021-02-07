@@ -17,6 +17,7 @@ import android.os.SystemClock;
 import android.provider.DocumentsContract;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.DisplayMetrics;
 import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -66,9 +67,8 @@ import threads.thor.core.Content;
 import threads.thor.core.DOCS;
 import threads.thor.core.events.EVENTS;
 import threads.thor.core.events.EventViewModel;
-import threads.thor.core.page.Bookmark;
-import threads.thor.core.page.PAGES;
-import threads.thor.core.page.Resolver;
+import threads.thor.core.pages.Bookmark;
+import threads.thor.core.pages.PAGES;
 import threads.thor.fragments.ActionListener;
 import threads.thor.fragments.BookmarksDialogFragment;
 import threads.thor.fragments.HistoryDialogFragment;
@@ -213,6 +213,7 @@ public class MainActivity extends AppCompatActivity implements
     private boolean isTablet;
     private ImageButton mActionNextPage;
     private ImageButton mActionPreviousPage;
+    private DOCS docs;
 
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
 
@@ -226,14 +227,14 @@ public class MainActivity extends AppCompatActivity implements
         if (itemId == R.id.action_share) {
 
             try {
-                String uri = mWebView.getUrl();
-
+                String url = mWebView.getUrl();
+                Uri uri = docs.getOriginalUri(Uri.parse(url));
 
                 ComponentName[] names = {new ComponentName(getApplicationContext(), MainActivity.class)};
 
                 Intent intent = new Intent(Intent.ACTION_SEND);
                 intent.putExtra(Intent.EXTRA_SUBJECT, getString(R.string.share_link));
-                intent.putExtra(Intent.EXTRA_TEXT, uri);
+                intent.putExtra(Intent.EXTRA_TEXT, uri.toString());
                 intent.setType(MimeType.PLAIN_MIME_TYPE);
                 intent.putExtra(DocumentsContract.EXTRA_EXCLUDE_SELF, true);
                 intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
@@ -253,37 +254,42 @@ public class MainActivity extends AppCompatActivity implements
 
 
             try {
-                String uri = mWebView.getUrl();
-
-                Objects.requireNonNull(uri);
+                String url = mWebView.getUrl();
+                Uri uri = docs.getOriginalUri(Uri.parse(url));
 
                 PAGES pages = PAGES.getInstance(getApplicationContext());
 
-                Bookmark bookmark = pages.getBookmark(uri);
+                Bookmark bookmark = pages.getBookmark(uri.toString());
                 if (bookmark != null) {
                     String name = bookmark.getTitle();
                     pages.removeBookmark(bookmark);
                     EVENTS.getInstance(getApplicationContext()).warning(
                             getString(R.string.bookmark_removed, name));
                 } else {
-                    Bitmap bitmap = mCustomWebChromeClient.getFavicon(uri);
+                    Bitmap bitmap = mCustomWebChromeClient.getFavicon(url);
 
-                    String title = mCustomWebChromeClient.getTitle(uri);
+                    String title = mCustomWebChromeClient.getTitle(url);
 
                     if (title == null) {
                         title = "" + mWebView.getTitle();
                     }
 
-                    bookmark = pages.createBookmark(uri, title);
+                    bookmark = pages.createBookmark(uri.toString(), title);
                     if (bitmap != null) {
                         bookmark.setBitmapIcon(bitmap);
                     }
 
-                    String host = getHost(uri);
+
+                    String host = docs.getHost(Uri.parse(url));
                     if (host != null) {
-                        Resolver resolver = pages.getResolver(host);
-                        if (resolver != null) {
-                            bookmark.setContent(resolver.getContent());
+                        if (host != null) {
+                            String pid = docs.decodeName(host);
+                            if (!pid.isEmpty()) {
+                                String content = docs.getResolvedContent(pid);
+                                if (content != null) {
+                                    bookmark.setContent(content);
+                                }
+                            }
                         }
                     }
 
@@ -487,7 +493,7 @@ public class MainActivity extends AppCompatActivity implements
         }
 
         try {
-            preload(Uri.parse(mWebView.getUrl()));
+            docs.cleanupResolver(Uri.parse(mWebView.getUrl()));
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         }
@@ -626,12 +632,16 @@ public class MainActivity extends AppCompatActivity implements
                 menu.findItem(R.id.action_next_page).setEnabled(mWebView.canGoForward());
             }
 
-            PAGES pages = PAGES.getInstance(getApplicationContext());
-            String uri = mWebView.getUrl();
-            if (pages.hasBookmark(uri)) {
-                mActionBookmark.setIcon(R.drawable.star);
-            } else {
-                mActionBookmark.setIcon(R.drawable.star_outline);
+            try {
+                PAGES pages = PAGES.getInstance(getApplicationContext());
+                Uri uri = docs.getOriginalUri(Uri.parse(mWebView.getUrl()));
+                if (pages.hasBookmark(uri.toString())) {
+                    mActionBookmark.setIcon(R.drawable.star);
+                } else {
+                    mActionBookmark.setIcon(R.drawable.star_outline);
+                }
+            } catch (Throwable throwable) {
+                LogUtils.error(TAG, throwable);
             }
         }
         return super.onCreateOptionsMenu(menu);
@@ -641,6 +651,7 @@ public class MainActivity extends AppCompatActivity implements
     private void invalidateMenu(@Nullable Uri uri) {
         try {
             if (uri != null) {
+
                 mBrowserText.setClickable(true);
                 if (Objects.equals(uri.getScheme(), Content.HTTPS)) {
                     mBrowserText.setCompoundDrawablesRelativeWithIntrinsicBounds(
@@ -704,6 +715,7 @@ public class MainActivity extends AppCompatActivity implements
         mToolbar.setContentInsetsAbsolute(0, 0);
         setTitle(null);
 
+        docs = DOCS.getInstance(getApplicationContext());
         isTablet = getResources().getBoolean(R.bool.isTablet);
 
         setSupportActionBar(mToolbar);
@@ -783,7 +795,6 @@ public class MainActivity extends AppCompatActivity implements
         mSwipeRefreshLayout.setOnRefreshListener(() -> {
             try {
                 mSwipeRefreshLayout.setRefreshing(true);
-
                 reload();
             } catch (Throwable throwable) {
                 LogUtils.error(TAG, throwable);
@@ -792,10 +803,9 @@ public class MainActivity extends AppCompatActivity implements
             }
         });
         mSwipeRefreshLayout.setColorSchemeResources(android.R.color.holo_blue_dark);
-        mSwipeRefreshLayout.setEnabled(true);
+        final DisplayMetrics metrics = getResources().getDisplayMetrics();
+        mSwipeRefreshLayout.setDistanceToTriggerSync((int) metrics.density * 128);
 
-        mWebView.setOnScrollChangeListener((v, scrollX, scrollY, oldScrollX, oldScrollY) ->
-                mSwipeRefreshLayout.setEnabled(scrollY > 0 && oldScrollY == 0));
 
         mBrowserText = findViewById(R.id.action_browser);
 
@@ -1011,7 +1021,7 @@ public class MainActivity extends AppCompatActivity implements
                 LogUtils.info(TAG, "onPageStarted : " + uri);
 
                 mProgressBar.setVisibility(View.VISIBLE);
-                invalidateMenu(Uri.parse(uri));
+                invalidateMenu(docs.getOriginalUri(Uri.parse(uri)));
             }
 
 
@@ -1164,14 +1174,19 @@ public class MainActivity extends AppCompatActivity implements
                         final AtomicLong time = new AtomicLong(System.currentTimeMillis());
                         long timeout = Settings.IPFS_TIMEOUT;
 
-                        DOCS docs = DOCS.getInstance(getApplicationContext());
+
                         Closeable closeable = () -> System.currentTimeMillis() - time.get() > timeout;
                         {
                             Pair<Uri, Boolean> result = docs.redirectUri(uri, closeable);
-                            if (result.second) {
-                                return createRedirectMessage(result.first);
+                            Uri redirectUri = result.first;
+                            if (!Objects.equals(uri, redirectUri)) {
+                                docs.storeRedirect(redirectUri, uri);
                             }
-                            uri = result.first;
+                            if (result.second) {
+                                return createRedirectMessage(redirectUri);
+                            }
+
+                            uri = redirectUri;
                         }
                         if (closeable.isClosed()) {
                             throw new DOCS.TimeoutException(uri.toString());
@@ -1343,7 +1358,7 @@ public class MainActivity extends AppCompatActivity implements
 
         invalidateMenu(uri);
 
-        preload(uri);
+        docs.cleanupResolver(uri);
 
         mWebView.stopLoading();
 
@@ -1352,27 +1367,6 @@ public class MainActivity extends AppCompatActivity implements
         mWebView.loadUrl(uri.toString());
 
 
-    }
-
-    private void preload(@NonNull Uri uri) {
-
-        if (Objects.equals(uri.getScheme(), Content.IPFS) ||
-                Objects.equals(uri.getScheme(), Content.IPNS)) {
-            try {
-
-                if (Objects.equals(uri.getScheme(), Content.IPNS)) {
-                    PAGES pages = PAGES.getInstance(getApplicationContext());
-                    String name = uri.getHost();
-                    if (name != null) {
-                        pages.removeResolver(name);
-                    }
-                }
-
-
-            } catch (Throwable throwable) {
-                LogUtils.error(TAG, throwable);
-            }
-        }
     }
 
     @Override
@@ -1468,17 +1462,5 @@ public class MainActivity extends AppCompatActivity implements
         return false;
     }
 
-    @Nullable
-    private String getHost(@NonNull String url) {
-        try {
-            Uri uri = Uri.parse(url);
-            if (Objects.equals(uri.getScheme(), Content.IPNS)) {
-                return uri.getHost();
-            }
-        } catch (Throwable throwable) {
-            LogUtils.error(TAG, throwable);
-        }
-        return null;
-    }
 
 }
