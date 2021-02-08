@@ -104,23 +104,18 @@ public class DOCS {
         return null;
     }
 
-    @Nullable
-    public String getResolvedContent(@NonNull String pid) {
-        return resolves.get(pid);
-    }
 
     @NonNull
     public String resolveName(@NonNull Uri uri, @NonNull String name,
                               @NonNull Closeable closeable) throws ResolveNameException {
         String pid = ipfs.decodeName(name);
-        String resolved = getResolvedContent(pid);
+        String resolved = resolves.get(pid);
         if (resolved != null) {
             return resolved;
         }
 
         long sequence = 0L;
         String cid = null;
-        String bookmarkID = getOriginalUri(uri).toString();
         Page page = pages.getPage(pid);
         if (page != null) {
             sequence = page.getSequence();
