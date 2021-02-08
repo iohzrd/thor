@@ -21,18 +21,18 @@ public class BOOKS {
         }
     };
     private static BOOKS INSTANCE = null;
-    private final BookmarkDatabase pageDatabase;
+    private final BookmarkDatabase bookmarkDatabase;
 
 
     private BOOKS(final BOOKS.Builder builder) {
-        pageDatabase = builder.pageDatabase;
+        bookmarkDatabase = builder.bookmarkDatabase;
     }
 
     @NonNull
-    private static BOOKS createPages(@NonNull BookmarkDatabase threadsDatabase) {
+    private static BOOKS createPages(@NonNull BookmarkDatabase bookmarkDatabase) {
 
         return new BOOKS.Builder()
-                .pageDatabase(threadsDatabase)
+                .bookmarkDatabase(bookmarkDatabase)
                 .build();
     }
 
@@ -64,25 +64,25 @@ public class BOOKS {
     }
 
     public void storeBookmark(@NonNull Bookmark bookmark) {
-        pageDatabase.bookmarkDao().insertBookmark(bookmark);
+        bookmarkDatabase.bookmarkDao().insertBookmark(bookmark);
     }
 
     public void setBookmarkContent(@NonNull String uri, @NonNull String content) {
-        pageDatabase.bookmarkDao().setContent(uri, content);
+        bookmarkDatabase.bookmarkDao().setContent(uri, content);
     }
 
     public void setBookmarkSequence(@NonNull String uri, long sequence) {
-        pageDatabase.bookmarkDao().setSequence(uri, sequence);
+        bookmarkDatabase.bookmarkDao().setSequence(uri, sequence);
     }
 
     @NonNull
-    public BookmarkDatabase getPageDatabase() {
-        return pageDatabase;
+    public BookmarkDatabase getBookmarkDatabase() {
+        return bookmarkDatabase;
     }
 
     @Nullable
     public Bookmark getBookmark(@NonNull String uri) {
-        return pageDatabase.bookmarkDao().getBookmark(uri);
+        return bookmarkDatabase.bookmarkDao().getBookmark(uri);
     }
 
     public boolean hasBookmark(@NonNull String uri) {
@@ -90,7 +90,7 @@ public class BOOKS {
     }
 
     public void removeBookmark(@NonNull Bookmark bookmark) {
-        pageDatabase.bookmarkDao().removeBookmark(bookmark);
+        bookmarkDatabase.bookmarkDao().removeBookmark(bookmark);
     }
 
     public List<Bookmark> getBookmarksByQuery(@NonNull String query) {
@@ -102,22 +102,22 @@ public class BOOKS {
         if (!searchQuery.endsWith("%")) {
             searchQuery = searchQuery + "%";
         }
-        return pageDatabase.bookmarkDao().getBookmarksByQuery(searchQuery);
+        return bookmarkDatabase.bookmarkDao().getBookmarksByQuery(searchQuery);
     }
 
 
     static class Builder {
 
-        BookmarkDatabase pageDatabase = null;
+        BookmarkDatabase bookmarkDatabase = null;
 
         BOOKS build() {
 
             return new BOOKS(this);
         }
 
-        BOOKS.Builder pageDatabase(@NonNull BookmarkDatabase pageDatabase) {
+        BOOKS.Builder bookmarkDatabase(@NonNull BookmarkDatabase bookmarkDatabase) {
 
-            this.pageDatabase = pageDatabase;
+            this.bookmarkDatabase = bookmarkDatabase;
             return this;
         }
     }

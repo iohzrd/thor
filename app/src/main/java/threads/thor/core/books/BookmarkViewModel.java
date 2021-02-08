@@ -9,15 +9,15 @@ import androidx.lifecycle.LiveData;
 import java.util.List;
 
 public class BookmarkViewModel extends AndroidViewModel {
-    private final BookmarkDatabase pageDatabase;
+    private final BookmarkDatabase bookmarkDatabase;
 
     public BookmarkViewModel(@NonNull Application application) {
         super(application);
-        pageDatabase = BOOKS.getInstance(
-                application.getApplicationContext()).getPageDatabase();
+        bookmarkDatabase = BOOKS.getInstance(
+                application.getApplicationContext()).getBookmarkDatabase();
     }
 
     public LiveData<List<Bookmark>> getBookmarks() {
-        return pageDatabase.bookmarkDao().getLiveDataBookmarks();
+        return bookmarkDatabase.bookmarkDao().getLiveDataBookmarks();
     }
 }
