@@ -6,6 +6,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.room.Room;
 
+import java.util.List;
+
 
 public class PAGES {
 
@@ -43,6 +45,11 @@ public class PAGES {
             }
         }
         return INSTANCE;
+    }
+
+    @NonNull
+    public List<Page> getBootstraps(int limit) {
+        return pageDatabase.pageDao().getBootstraps(limit);
     }
 
     @NonNull

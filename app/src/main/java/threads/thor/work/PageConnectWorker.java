@@ -3,8 +3,10 @@ package threads.thor.work;
 import android.content.Context;
 
 import androidx.annotation.NonNull;
+import androidx.work.Constraints;
 import androidx.work.Data;
 import androidx.work.ExistingWorkPolicy;
+import androidx.work.NetworkType;
 import androidx.work.OneTimeWorkRequest;
 import androidx.work.WorkManager;
 import androidx.work.Worker;
@@ -36,12 +38,15 @@ public class PageConnectWorker extends Worker {
     }
 
     private static OneTimeWorkRequest getWork(@NonNull String pid) {
+        Constraints.Builder builder = new Constraints.Builder()
+                .setRequiredNetworkType(NetworkType.CONNECTED);
 
         Data.Builder data = new Data.Builder();
         data.putString(Content.PID, pid);
 
         return new OneTimeWorkRequest.Builder(PageConnectWorker.class)
                 .setInputData(data.build())
+                .setConstraints(builder.build())
                 .addTag(TAG)
                 .build();
     }

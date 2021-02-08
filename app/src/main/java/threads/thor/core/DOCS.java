@@ -17,10 +17,14 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import threads.LogUtils;
 import threads.thor.Settings;
-import threads.thor.core.books.BOOKS;
 import threads.thor.core.pages.PAGES;
 import threads.thor.core.pages.Page;
 import threads.thor.ipfs.Closeable;
@@ -40,7 +44,6 @@ public class DOCS {
     private static final String TAG = DOCS.class.getSimpleName();
     private static DOCS INSTANCE = null;
     private final IPFS ipfs;
-    private final BOOKS books;
     private final PAGES pages;
     private final ContentInfoUtil util;
     private final Hashtable<Uri, Uri> redirects = new Hashtable<>();
@@ -49,7 +52,6 @@ public class DOCS {
     private DOCS(@NonNull Context context) {
         long timestamp = System.currentTimeMillis();
         ipfs = IPFS.getInstance(context);
-        books = BOOKS.getInstance(context);
         pages = PAGES.getInstance(context);
         util = ContentInfoUtil.getInstance(context);
         LogUtils.error(TAG, "Time : " + (System.currentTimeMillis() - timestamp));
@@ -607,14 +609,36 @@ public class DOCS {
         return null;
     }
 
-    public String decodeName(@NonNull String name) {
-        return ipfs.decodeName(name);
-    }
-
     public void bootstrap() {
         if (ipfs.swarmPeers() < 10) {
             ipfs.bootstrap(10, 10);
         }
+
+        try {
+            if (ipfs.swarmPeers() < 5) {
+                List<Page> bootstraps = pages.getBootstraps(5);
+                List<String> addresses = new ArrayList<>();
+                for (Page bootstrap : bootstraps) {
+                    String address = bootstrap.getAddress();
+                    if (!address.isEmpty()) {
+                        addresses.add(address);
+                    }
+                }
+
+                List<Callable<Boolean>> tasks = new ArrayList<>();
+                ExecutorService executor = Executors.newFixedThreadPool(addresses.size());
+                for (String address : addresses) {
+                    tasks.add(() -> ipfs.swarmConnect(address, 5));
+                }
+                List<Future<Boolean>> result = executor.invokeAll(tasks, 5, TimeUnit.SECONDS);
+                for (Future<Boolean> future : result) {
+                    LogUtils.error(TAG, "Bootstrap done " + future.isDone());
+                }
+            }
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable);
+        }
+
     }
 
     public static class FileInfo {

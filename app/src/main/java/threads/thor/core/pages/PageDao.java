@@ -6,6 +6,8 @@ import androidx.room.Insert;
 import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
 
+import java.util.List;
+
 
 @Dao
 public interface PageDao {
@@ -35,4 +37,7 @@ public interface PageDao {
 
     @Query("UPDATE Page SET rating = rating + 1  WHERE pid = :pid")
     void incrementRating(String pid);
+
+    @Query("SELECT * FROM Page WHERE bootstrap = 1 ORDER BY rating DESC LIMIT :limit")
+    List<Page> getBootstraps(int limit);
 }
