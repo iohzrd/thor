@@ -417,7 +417,6 @@ public class IPFS implements Listener {
 
     private int swarm_peers() {
 
-        int counter = 0;
         if (isDaemonRunning()) {
             try {
                 return (int) node.swarmPeers();
@@ -425,7 +424,7 @@ public class IPFS implements Listener {
                 LogUtils.error(TAG, e);
             }
         }
-        return counter;
+        return 0;
     }
 
 
