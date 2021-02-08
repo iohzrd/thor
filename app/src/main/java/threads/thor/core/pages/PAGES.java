@@ -80,6 +80,27 @@ public class PAGES {
         pageDatabase.pageDao().setSequence(pid, sequence);
     }
 
+    public void setPageAddress(@NonNull String pid, @NonNull String address) {
+        pageDatabase.pageDao().setAddress(pid, address);
+    }
+
+
+    public void incrementRating(String pid) {
+        pageDatabase.pageDao().incrementRating(pid);
+    }
+
+    public void resetBootstrap(String pid) {
+        pageDatabase.pageDao().resetBootstrap(pid);
+    }
+
+    public void setBootstrap(String pid) {
+        pageDatabase.pageDao().setBootstrap(pid);
+    }
+
+
+    public void clear() {
+        getPageDatabase().clearAllTables();
+    }
 
     static class Builder {
 

@@ -22,15 +22,26 @@ public class Page {
     private long sequence;
     @ColumnInfo(name = "rating")
     private long rating;
-    @Nullable
+    @NonNull
     @ColumnInfo(name = "address")
     private String address;
-
+    @ColumnInfo(name = "bootstrap")
+    private boolean bootstrap;
 
     public Page(@NonNull String pid) {
         this.pid = pid;
         this.sequence = 0L;
         this.rating = 0L;
+        this.bootstrap = false;
+        this.address = "";
+    }
+
+    public boolean isBootstrap() {
+        return bootstrap;
+    }
+
+    public void setBootstrap(boolean bootstrap) {
+        this.bootstrap = bootstrap;
     }
 
     public long getSequence() {
@@ -49,12 +60,12 @@ public class Page {
         this.rating = rating;
     }
 
-    @Nullable
+    @NonNull
     public String getAddress() {
         return address;
     }
 
-    public void setAddress(@Nullable String address) {
+    public void setAddress(@NonNull String address) {
         this.address = address;
     }
 

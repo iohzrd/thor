@@ -20,4 +20,5 @@ public class Content {
     public static final String FILE = "file";
     public static final String ONION = ".onion";
     public static final String PID = "pid";
+    public static final String CIRCUIT = "p2p-circuit";
 }

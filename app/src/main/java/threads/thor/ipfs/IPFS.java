@@ -29,6 +29,7 @@ import thor.Listener;
 import thor.Loader;
 import thor.LsInfoClose;
 import thor.Node;
+import thor.Peer;
 import thor.ResolveInfo;
 import threads.LogUtils;
 import threads.thor.core.Content;
@@ -315,6 +316,20 @@ public class IPFS implements Listener {
             }
         }
 
+    }
+
+
+    @Nullable
+    public Peer swarmPeer(@NonNull String pid) {
+        if (!isDaemonRunning()) {
+            return null;
+        }
+        try {
+            return node.swarmPeer(pid);
+        } catch (Throwable e) {
+            LogUtils.error(TAG, e);
+        }
+        return null;
     }
 
     private synchronized void startDaemon() {
