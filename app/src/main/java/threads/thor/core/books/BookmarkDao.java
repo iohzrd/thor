@@ -28,10 +28,4 @@ public interface BookmarkDao {
     @Delete
     void removeBookmark(Bookmark bookmark);
 
-    @Query("UPDATE Bookmark SET content =:content WHERE uri = :uri")
-    void setContent(String uri, String content);
-
-
-    @Query("UPDATE Bookmark SET sequence = :sequence WHERE uri = :uri")
-    void setSequence(String uri, long sequence);
 }

@@ -20,8 +20,10 @@ public class Bookmark {
     @NonNull
     @ColumnInfo(name = "title")
     private final String title;
+    @Deprecated
     @ColumnInfo(name = "sequence")
     private long sequence;
+    @Deprecated
     @Nullable
     @ColumnInfo(name = "content")
     private String content;
@@ -46,20 +48,20 @@ public class Bookmark {
         return byteArray;
     }
 
-    public long getSequence() {
+    long getSequence() {
         return sequence;
     }
 
-    public void setSequence(long sequence) {
+    void setSequence(long sequence) {
         this.sequence = sequence;
     }
 
     @Nullable
-    public String getContent() {
+    String getContent() {
         return content;
     }
 
-    public void setContent(@Nullable String content) {
+    void setContent(@Nullable String content) {
         this.content = content;
     }
 

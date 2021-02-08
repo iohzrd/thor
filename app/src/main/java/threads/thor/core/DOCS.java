@@ -21,7 +21,8 @@ import java.util.Objects;
 import threads.LogUtils;
 import threads.thor.Settings;
 import threads.thor.core.books.BOOKS;
-import threads.thor.core.books.Bookmark;
+import threads.thor.core.pages.PAGES;
+import threads.thor.core.pages.Page;
 import threads.thor.ipfs.Closeable;
 import threads.thor.ipfs.DnsAddrResolver;
 import threads.thor.ipfs.IPFS;
@@ -40,6 +41,7 @@ public class DOCS {
     private static DOCS INSTANCE = null;
     private final IPFS ipfs;
     private final BOOKS books;
+    private final PAGES pages;
     private final ContentInfoUtil util;
     private final Hashtable<Uri, Uri> redirects = new Hashtable<>();
     private final Hashtable<String, String> resolves = new Hashtable<>();
@@ -48,6 +50,7 @@ public class DOCS {
         long timestamp = System.currentTimeMillis();
         ipfs = IPFS.getInstance(context);
         books = BOOKS.getInstance(context);
+        pages = PAGES.getInstance(context);
         util = ContentInfoUtil.getInstance(context);
         LogUtils.error(TAG, "Time : " + (System.currentTimeMillis() - timestamp));
     }
@@ -118,10 +121,13 @@ public class DOCS {
         long sequence = 0L;
         String cid = null;
         String bookmarkID = getOriginalUri(uri).toString();
-        Bookmark bookmark = books.getBookmark(bookmarkID);
-        if (bookmark != null) {
-            sequence = bookmark.getSequence();
-            cid = bookmark.getContent();
+        Page page = pages.getPage(pid);
+        if (page != null) {
+            sequence = page.getSequence();
+            cid = page.getContent();
+        } else {
+            page = pages.createPage(pid);
+            pages.storePage(page);
         }
 
 
@@ -136,8 +142,8 @@ public class DOCS {
             throw new ResolveNameException(uri.toString());
         }
         resolves.put(pid, resolvedName.getHash());
-        books.setBookmarkContent(bookmarkID, resolvedName.getHash());
-        books.setBookmarkSequence(bookmarkID, resolvedName.getSequence());
+        pages.setPageContent(pid, resolvedName.getHash());
+        pages.setPageSequence(pid, resolvedName.getSequence());
         return resolvedName.getHash();
     }
 

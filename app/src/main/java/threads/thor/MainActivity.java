@@ -279,18 +279,6 @@ public class MainActivity extends AppCompatActivity implements
                         bookmark.setBitmapIcon(bitmap);
                     }
 
-
-                    String host = docs.getHost(Uri.parse(url));
-                    if (host != null) {
-                        String pid = docs.decodeName(host);
-                        if (!pid.isEmpty()) {
-                            String content = docs.getResolvedContent(pid);
-                            if (content != null) {
-                                bookmark.setContent(content);
-                            }
-                        }
-                    }
-
                     books.storeBookmark(bookmark);
 
 

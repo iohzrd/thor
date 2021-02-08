@@ -56,8 +56,8 @@ public class PAGES {
     }
 
     @Nullable
-    public Page getPage(@NonNull String hash) {
-        return pageDatabase.pageDao().getPage(hash);
+    public Page getPage(@NonNull String pid) {
+        return pageDatabase.pageDao().getPage(pid);
     }
 
     @NonNull
@@ -67,8 +67,17 @@ public class PAGES {
 
 
     @Nullable
-    public String getPageContent(@NonNull String hash) {
-        return pageDatabase.pageDao().getPageContent(hash);
+    public String getPageContent(@NonNull String pid) {
+        return pageDatabase.pageDao().getPageContent(pid);
+    }
+
+
+    public void setPageContent(@NonNull String pid, @NonNull String content) {
+        pageDatabase.pageDao().setContent(pid, content);
+    }
+
+    public void setPageSequence(@NonNull String pid, long sequence) {
+        pageDatabase.pageDao().setSequence(pid, sequence);
     }
 
 

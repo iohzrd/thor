@@ -67,14 +67,6 @@ public class BOOKS {
         bookmarkDatabase.bookmarkDao().insertBookmark(bookmark);
     }
 
-    public void setBookmarkContent(@NonNull String uri, @NonNull String content) {
-        bookmarkDatabase.bookmarkDao().setContent(uri, content);
-    }
-
-    public void setBookmarkSequence(@NonNull String uri, long sequence) {
-        bookmarkDatabase.bookmarkDao().setSequence(uri, sequence);
-    }
-
     @NonNull
     public BookmarkDatabase getBookmarkDatabase() {
         return bookmarkDatabase;

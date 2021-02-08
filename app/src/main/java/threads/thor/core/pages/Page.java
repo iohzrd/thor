@@ -18,11 +18,45 @@ public class Page {
     @ColumnInfo(name = "content")
     private String content;
 
+    @ColumnInfo(name = "sequence")
+    private long sequence;
+    @ColumnInfo(name = "rating")
+    private long rating;
+    @Nullable
+    @ColumnInfo(name = "address")
+    private String address;
+
 
     public Page(@NonNull String pid) {
         this.pid = pid;
+        this.sequence = 0L;
+        this.rating = 0L;
     }
 
+    public long getSequence() {
+        return sequence;
+    }
+
+    public void setSequence(long sequence) {
+        this.sequence = sequence;
+    }
+
+    public long getRating() {
+        return rating;
+    }
+
+    public void setRating(long rating) {
+        this.rating = rating;
+    }
+
+    @Nullable
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(@Nullable String address) {
+        this.address = address;
+    }
 
     @NonNull
     public String getPid() {
