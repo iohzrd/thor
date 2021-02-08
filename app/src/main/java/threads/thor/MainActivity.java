@@ -85,6 +85,7 @@ import threads.thor.work.ClearCacheWorker;
 import threads.thor.work.DownloadContentWorker;
 import threads.thor.work.DownloadFileWorker;
 import threads.thor.work.DownloadMagnetWorker;
+import threads.thor.work.PageResolveWorker;
 
 
 public class MainActivity extends AppCompatActivity implements
@@ -1184,6 +1185,11 @@ public class MainActivity extends AppCompatActivity implements
                         return docs.getResponse(uri, closeable);
 
                     } catch (Throwable throwable) {
+
+                        if (Objects.equals(uri.getScheme(), Content.IPNS)) {
+                            PageResolveWorker.resolve(getApplicationContext(), uri.getHost());
+                        }
+
                         return createErrorMessage(throwable);
                     }
                 }

@@ -428,6 +428,27 @@ public class IPFS implements Listener {
     }
 
 
+    public void resolveName(@NonNull String name, @NonNull Closeable closeable) {
+
+        try {
+
+            node.resolveName(new ResolveInfo() {
+                @Override
+                public boolean close() {
+                    return closeable.isClosed();
+                }
+
+                @Override
+                public void resolved(String hash, long seq) {
+                    LogUtils.error(TAG, "" + seq + " " + hash);
+                }
+            }, name, false, 64);
+
+        } catch (Throwable e) {
+            LogUtils.error(TAG, e);
+        }
+    }
+
     @Nullable
     public ResolvedName resolveName(@NonNull String name, long initSequence,
                                     @NonNull Closeable closeable) {

@@ -407,6 +407,7 @@ public class DOCS {
         }
     }
 
+
     @Nullable
     public String getRoot(@NonNull Uri uri, @NonNull Closeable closeable)
             throws ResolveNameException, InvalidNameException {
@@ -523,7 +524,6 @@ public class DOCS {
                         }
                     }
                 }
-
             } else {
                 try {
                     String root = getRoot(uri, closeable);
