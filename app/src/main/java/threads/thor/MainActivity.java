@@ -1174,7 +1174,7 @@ public class MainActivity extends AppCompatActivity implements
                         final AtomicLong time = new AtomicLong(System.currentTimeMillis());
                         long timeout = Settings.IPFS_TIMEOUT;
 
-
+                        docs.connectUri(getApplicationContext(), uri);
                         Closeable closeable = () -> System.currentTimeMillis() - time.get() > timeout;
                         {
                             Pair<Uri, Boolean> result = docs.redirectUri(uri, closeable);
