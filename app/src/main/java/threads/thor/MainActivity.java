@@ -1186,8 +1186,10 @@ public class MainActivity extends AppCompatActivity implements
 
                     } catch (Throwable throwable) {
 
-                        if (Objects.equals(uri.getScheme(), Content.IPNS)) {
-                            PageResolveWorker.resolve(getApplicationContext(), uri.getHost());
+                        if(throwable instanceof DOCS.ContentException) {
+                            if (Objects.equals(uri.getScheme(), Content.IPNS)) {
+                                PageResolveWorker.resolve(getApplicationContext(), uri.getHost());
+                            }
                         }
 
                         return createErrorMessage(throwable);
