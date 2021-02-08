@@ -621,7 +621,7 @@ public class DOCS {
                 for (Page bootstrap : bootstraps) {
                     String address = bootstrap.getAddress();
                     if (!address.isEmpty()) {
-                        addresses.add(address);
+                        addresses.add(address.concat(Content.P2P_PATH).concat(bootstrap.getPid()));
                     }
                 }
 

@@ -74,7 +74,8 @@ public class PageConnectWorker extends Worker {
                 if (page != null) {
                     String address = page.getAddress();
                     if (!address.isEmpty()) {
-                        connected = ipfs.swarmConnect(address, 5);
+                        connected = ipfs.swarmConnect(
+                                address.concat(Content.P2P_PATH).concat(page.getPid()), 5);
                     }
                 }
                 if (!connected) {
