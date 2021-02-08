@@ -1167,6 +1167,8 @@ public class MainActivity extends AppCompatActivity implements
                 } else if (Objects.equals(uri.getScheme(), Content.IPNS) ||
                         Objects.equals(uri.getScheme(), Content.IPFS)) {
 
+                    docs.bootstrap();
+
                     MainActivity.this.runOnUiThread(() -> mProgressBar.setVisibility(View.VISIBLE));
                     try {
                         final AtomicLong time = new AtomicLong(System.currentTimeMillis());

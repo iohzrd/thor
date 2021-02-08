@@ -233,14 +233,7 @@ public class DOCS {
     }
 
     public void connectUri(@NonNull Context context, @NonNull Uri uri) {
-
-
         try {
-            if (ipfs.swarmPeers() < 10) {
-                ipfs.bootstrap(10, 10);
-            }
-
-
             String host = getHost(uri);
             if (host != null) {
                 String pid = ipfs.decodeName(host);
@@ -614,6 +607,12 @@ public class DOCS {
 
     public String decodeName(@NonNull String name) {
         return ipfs.decodeName(name);
+    }
+
+    public void bootstrap() {
+        if (ipfs.swarmPeers() < 10) {
+            ipfs.bootstrap(10, 10);
+        }
     }
 
     public static class FileInfo {
