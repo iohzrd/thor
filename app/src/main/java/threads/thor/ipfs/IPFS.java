@@ -429,7 +429,7 @@ public class IPFS implements Listener {
 
 
     public void resolveName(@NonNull String name, @NonNull Closeable closeable) {
-
+        long time = System.currentTimeMillis();
         try {
 
             node.resolveName(new ResolveInfo() {
@@ -447,6 +447,8 @@ public class IPFS implements Listener {
         } catch (Throwable e) {
             LogUtils.error(TAG, e);
         }
+        LogUtils.error(TAG, "Finished resolve name " + name + " " +
+                (System.currentTimeMillis() - time));
     }
 
     @Nullable
