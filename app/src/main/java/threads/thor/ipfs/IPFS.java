@@ -395,7 +395,7 @@ public class IPFS implements Listener {
         try {
             return node.decodeName(name);
         } catch (Throwable throwable) {
-            LogUtils.error(TAG, throwable);
+            LogUtils.error(TAG, name + " " + throwable.getMessage());
         }
         return "";
     }
