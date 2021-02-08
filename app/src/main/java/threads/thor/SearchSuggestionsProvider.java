@@ -17,8 +17,8 @@ import java.util.Comparator;
 import java.util.List;
 
 import threads.LogUtils;
-import threads.thor.core.pages.Bookmark;
-import threads.thor.core.pages.PAGES;
+import threads.thor.core.books.BOOKS;
+import threads.thor.core.books.Bookmark;
 
 public class SearchSuggestionsProvider
         extends SearchRecentSuggestionsProvider {
@@ -44,9 +44,9 @@ public class SearchSuggestionsProvider
         Context context = getContext();
         if (context != null) {
 
-            PAGES pages = PAGES.getInstance(context);
+            BOOKS BOOKS = threads.thor.core.books.BOOKS.getInstance(context);
 
-            List<Bookmark> searches = pages.getBookmarksByQuery(search);
+            List<Bookmark> searches = BOOKS.getBookmarksByQuery(search);
 
             searches.sort(Comparator.comparing(Bookmark::getTimestamp).reversed());
 

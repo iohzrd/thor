@@ -16,9 +16,9 @@ import java.util.List;
 
 import threads.LogUtils;
 import threads.thor.R;
+import threads.thor.core.books.BOOKS;
+import threads.thor.core.books.Bookmark;
 import threads.thor.core.events.EVENTS;
-import threads.thor.core.pages.Bookmark;
-import threads.thor.core.pages.PAGES;
 
 
 public class BookmarksViewAdapter extends RecyclerView.Adapter<BookmarksViewAdapter.ViewHolder> {
@@ -104,8 +104,8 @@ public class BookmarksViewAdapter extends RecyclerView.Adapter<BookmarksViewAdap
             Bookmark bookmark = bookmarks.get(position);
             if (bookmark != null) {
                 String name = bookmark.getTitle();
-                PAGES pages = PAGES.getInstance(mContext);
-                pages.removeBookmark(bookmark);
+                BOOKS BOOKS = threads.thor.core.books.BOOKS.getInstance(mContext);
+                BOOKS.removeBookmark(bookmark);
 
                 EVENTS.getInstance(mContext).info(
                         mContext.getString(R.string.bookmark_removed, name));

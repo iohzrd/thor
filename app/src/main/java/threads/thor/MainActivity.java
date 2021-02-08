@@ -65,10 +65,10 @@ import java.util.concurrent.atomic.AtomicLong;
 import threads.LogUtils;
 import threads.thor.core.Content;
 import threads.thor.core.DOCS;
+import threads.thor.core.books.BOOKS;
+import threads.thor.core.books.Bookmark;
 import threads.thor.core.events.EVENTS;
 import threads.thor.core.events.EventViewModel;
-import threads.thor.core.pages.Bookmark;
-import threads.thor.core.pages.PAGES;
 import threads.thor.fragments.ActionListener;
 import threads.thor.fragments.BookmarksDialogFragment;
 import threads.thor.fragments.HistoryDialogFragment;
@@ -257,12 +257,12 @@ public class MainActivity extends AppCompatActivity implements
                 String url = mWebView.getUrl();
                 Uri uri = docs.getOriginalUri(Uri.parse(url));
 
-                PAGES pages = PAGES.getInstance(getApplicationContext());
+                BOOKS books = BOOKS.getInstance(getApplicationContext());
 
-                Bookmark bookmark = pages.getBookmark(uri.toString());
+                Bookmark bookmark = books.getBookmark(uri.toString());
                 if (bookmark != null) {
                     String name = bookmark.getTitle();
-                    pages.removeBookmark(bookmark);
+                    books.removeBookmark(bookmark);
                     EVENTS.getInstance(getApplicationContext()).warning(
                             getString(R.string.bookmark_removed, name));
                 } else {
@@ -274,7 +274,7 @@ public class MainActivity extends AppCompatActivity implements
                         title = "" + mWebView.getTitle();
                     }
 
-                    bookmark = pages.createBookmark(uri.toString(), title);
+                    bookmark = books.createBookmark(uri.toString(), title);
                     if (bitmap != null) {
                         bookmark.setBitmapIcon(bitmap);
                     }
@@ -282,18 +282,16 @@ public class MainActivity extends AppCompatActivity implements
 
                     String host = docs.getHost(Uri.parse(url));
                     if (host != null) {
-                        if (host != null) {
-                            String pid = docs.decodeName(host);
-                            if (!pid.isEmpty()) {
-                                String content = docs.getResolvedContent(pid);
-                                if (content != null) {
-                                    bookmark.setContent(content);
-                                }
+                        String pid = docs.decodeName(host);
+                        if (!pid.isEmpty()) {
+                            String content = docs.getResolvedContent(pid);
+                            if (content != null) {
+                                bookmark.setContent(content);
                             }
                         }
                     }
 
-                    pages.storeBookmark(bookmark);
+                    books.storeBookmark(bookmark);
 
 
                     EVENTS.getInstance(getApplicationContext()).warning(
@@ -633,9 +631,9 @@ public class MainActivity extends AppCompatActivity implements
             }
 
             try {
-                PAGES pages = PAGES.getInstance(getApplicationContext());
+                BOOKS books = BOOKS.getInstance(getApplicationContext());
                 Uri uri = docs.getOriginalUri(Uri.parse(mWebView.getUrl()));
-                if (pages.hasBookmark(uri.toString())) {
+                if (books.hasBookmark(uri.toString())) {
                     mActionBookmark.setIcon(R.drawable.star);
                 } else {
                     mActionBookmark.setIcon(R.drawable.star_outline);

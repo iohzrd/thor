@@ -1,4 +1,4 @@
-package threads.thor.core.pages;
+package threads.thor.core.books;
 
 import android.app.Application;
 
@@ -13,7 +13,7 @@ public class BookmarkViewModel extends AndroidViewModel {
 
     public BookmarkViewModel(@NonNull Application application) {
         super(application);
-        pageDatabase = PAGES.getInstance(
+        pageDatabase = BOOKS.getInstance(
                 application.getApplicationContext()).getPageDatabase();
     }
 

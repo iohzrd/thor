@@ -6028,8 +6028,8 @@
 4086	string		SWAP-SPACE	Linux/i386 swap file
 4076	string		SWAPSPACE2S1SUSPEND	Linux/i386 swap file (new style) with SWSUSP1 image
 4086	string		SWAPSPACE2	Linux/i386 swap file (new style),
->0x400	long		x		version %d (4K pages),
->0x404	long		x		size %d pages,
+>0x400	long		x		version %d (4K BOOKS),
+>0x404	long		x		size %d BOOKS,
 >1052	string		\0		no label,
 >1052	string		>\0		LABEL=%s,
 >0x40c	belong		x		UUID=%x
@@ -8583,7 +8583,7 @@
 0	lelong	0x01023962			mdbm file, version 0 (obsolete)
 0	string	mdbm				mdbm file,
 >5	byte	x				version %d,
->6	byte	x				2^%d pages,
+>6	byte	x				2^%d BOOKS,
 >7	byte	x				pagesize 2^%d,
 >17	byte	x				hash %d,
 >11	byte	x				dataformat %d
@@ -9999,12 +9999,12 @@
 >>0xf88	lelong		1		\b, full dump
 >>0xf88	lelong		2		\b, kernel dump
 >>0xf88	lelong		3		\b, small dump
->>0x068	lelong		x		\b, %ld pages
+>>0x068	lelong		x		\b, %ld BOOKS
 >4	string		DU64		MS Windows 64bit crash dump
 >>0xf98	lelong		1		\b, full dump
 >>0xf98	lelong		2		\b, kernel dump
 >>0xf98	lelong		3		\b, small dump
->>0x090	lequad		x		\b, %lld pages
+>>0x090	lequad		x		\b, %lld BOOKS
 
 
 0	string		ElfFile\0	MS Windows Vista Event Log

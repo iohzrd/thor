@@ -22,8 +22,8 @@ import java.util.Objects;
 import threads.LogUtils;
 import threads.thor.MainActivity;
 import threads.thor.R;
-import threads.thor.core.pages.Bookmark;
-import threads.thor.core.pages.BookmarkViewModel;
+import threads.thor.core.books.Bookmark;
+import threads.thor.core.books.BookmarkViewModel;
 import threads.thor.utils.BookmarksViewAdapter;
 import threads.thor.utils.SwipeToDeleteCallback;
 

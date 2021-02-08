@@ -1,4 +1,4 @@
-package threads.thor.core.pages;
+package threads.thor.core.books;
 
 import android.content.Context;
 
@@ -11,7 +11,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase;
 import java.util.List;
 
 
-public class PAGES {
+public class BOOKS {
 
     private static final Migration MIGRATION_2_3 = new Migration(2, 3) {
         @Override
@@ -20,26 +20,26 @@ public class PAGES {
                     + " ADD COLUMN sequence INTEGER DEFAULT 0 NOT NULL");
         }
     };
-    private static PAGES INSTANCE = null;
+    private static BOOKS INSTANCE = null;
     private final BookmarkDatabase pageDatabase;
 
 
-    private PAGES(final PAGES.Builder builder) {
+    private BOOKS(final BOOKS.Builder builder) {
         pageDatabase = builder.pageDatabase;
     }
 
     @NonNull
-    private static PAGES createPages(@NonNull BookmarkDatabase threadsDatabase) {
+    private static BOOKS createPages(@NonNull BookmarkDatabase threadsDatabase) {
 
-        return new PAGES.Builder()
+        return new BOOKS.Builder()
                 .pageDatabase(threadsDatabase)
                 .build();
     }
 
-    public static PAGES getInstance(@NonNull Context context) {
+    public static BOOKS getInstance(@NonNull Context context) {
 
         if (INSTANCE == null) {
-            synchronized (PAGES.class) {
+            synchronized (BOOKS.class) {
                 if (INSTANCE == null) {
                     BookmarkDatabase pageDatabase = Room.databaseBuilder(context,
                             BookmarkDatabase.class,
@@ -49,7 +49,7 @@ public class PAGES {
                             fallbackToDestructiveMigration().
                             build();
 
-                    INSTANCE = PAGES.createPages(pageDatabase);
+                    INSTANCE = BOOKS.createPages(pageDatabase);
                 }
             }
         }
@@ -110,12 +110,12 @@ public class PAGES {
 
         BookmarkDatabase pageDatabase = null;
 
-        PAGES build() {
+        BOOKS build() {
 
-            return new PAGES(this);
+            return new BOOKS(this);
         }
 
-        PAGES.Builder pageDatabase(@NonNull BookmarkDatabase pageDatabase) {
+        BOOKS.Builder pageDatabase(@NonNull BookmarkDatabase pageDatabase) {
 
             this.pageDatabase = pageDatabase;
             return this;

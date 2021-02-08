@@ -20,8 +20,8 @@ import java.util.Objects;
 
 import threads.LogUtils;
 import threads.thor.Settings;
-import threads.thor.core.pages.Bookmark;
-import threads.thor.core.pages.PAGES;
+import threads.thor.core.books.BOOKS;
+import threads.thor.core.books.Bookmark;
 import threads.thor.ipfs.Closeable;
 import threads.thor.ipfs.DnsAddrResolver;
 import threads.thor.ipfs.IPFS;
@@ -39,7 +39,7 @@ public class DOCS {
     private static final String TAG = DOCS.class.getSimpleName();
     private static DOCS INSTANCE = null;
     private final IPFS ipfs;
-    private final PAGES pages;
+    private final BOOKS books;
     private final ContentInfoUtil util;
     private final Hashtable<Uri, Uri> redirects = new Hashtable<>();
     private final Hashtable<String, String> resolves = new Hashtable<>();
@@ -47,7 +47,7 @@ public class DOCS {
     private DOCS(@NonNull Context context) {
         long timestamp = System.currentTimeMillis();
         ipfs = IPFS.getInstance(context);
-        pages = PAGES.getInstance(context);
+        books = BOOKS.getInstance(context);
         util = ContentInfoUtil.getInstance(context);
         LogUtils.error(TAG, "Time : " + (System.currentTimeMillis() - timestamp));
     }
@@ -118,7 +118,7 @@ public class DOCS {
         long sequence = 0L;
         String cid = null;
         String bookmarkID = getOriginalUri(uri).toString();
-        Bookmark bookmark = pages.getBookmark(bookmarkID);
+        Bookmark bookmark = books.getBookmark(bookmarkID);
         if (bookmark != null) {
             sequence = bookmark.getSequence();
             cid = bookmark.getContent();
@@ -136,8 +136,8 @@ public class DOCS {
             throw new ResolveNameException(uri.toString());
         }
         resolves.put(pid, resolvedName.getHash());
-        pages.setBookmarkContent(bookmarkID, resolvedName.getHash());
-        pages.setBookmarkSequence(bookmarkID, resolvedName.getSequence());
+        books.setBookmarkContent(bookmarkID, resolvedName.getHash());
+        books.setBookmarkSequence(bookmarkID, resolvedName.getSequence());
         return resolvedName.getHash();
     }
 
@@ -236,13 +236,13 @@ public class DOCS {
 
 
         try {
+            if (ipfs.swarmPeers() < 10) {
+                ipfs.bootstrap(10, 10);
+            }
+
+
             String host = getHost(uri);
             if (host != null) {
-
-                if (ipfs.swarmPeers() < 10) {
-                    ipfs.bootstrap(10, 10);
-                }
-
                 String pid = ipfs.decodeName(host);
                 if (!pid.isEmpty()) {
                     PageConnectWorker.connect(context, pid);
