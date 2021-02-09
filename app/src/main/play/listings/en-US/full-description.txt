@@ -1,6 +1,4 @@
 The Thor browser based on the WebKit API and is a free and open source project.
 Its focus is to support decentralized technologies.
 Therefore it handles the protocols IPNS, IPFS and MAGNET.
-Moreover TOR is integrated, therefore Onion sites can be visited.
-In incognito mode all http and https traffic will be routed via the TOR network.
 An adblocker is also integrated which based on https://pgl.yoyo.org/adservers
