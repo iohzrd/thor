@@ -1090,15 +1090,15 @@ public class MainActivity extends AppCompatActivity implements
                                 "<html lang=\"en-US\">\n" +
                                 "    <head>\n" +
                                 "        <meta charset=\"UTF-8\">\n" +
-                                "        <meta http-equiv=\"refresh\" content=\"0; url="+uri.toString()+"\">\n" +
+                                "        <meta http-equiv=\"refresh\" content=\"0; url=" + uri.toString() + "\">\n" +
                                 "        <script type=\"text/javascript\">\n" +
-                                "            window.location.href = \""+uri.toString()+"\"\n" +
+                                "            window.location.href = \"" + uri.toString() + "\"\n" +
                                 "        </script>\n" +
                                 "        <title>Page Redirection</title>\n" +
                                 "    </head>\n" +
                                 "    <body>\n" +
                                 "        <!-- Note: don't tell people to `click` the link, just tell them that it is a link. -->\n" +
-                                "        If you are not redirected automatically, follow this <a href='"+uri.toString()+"'>link to example</a>.\n" +
+                                "        If you are not redirected automatically, follow this <a href='" + uri.toString() + "'>link to example</a>.\n" +
                                 "    </body>\n" +
                                 "</html>").getBytes()));
             }
@@ -1186,7 +1186,7 @@ public class MainActivity extends AppCompatActivity implements
 
                     } catch (Throwable throwable) {
 
-                        if(throwable instanceof DOCS.ContentException) {
+                        if (throwable instanceof DOCS.ContentException) {
                             if (Objects.equals(uri.getScheme(), Content.IPNS)) {
                                 PageResolveWorker.resolve(getApplicationContext(), uri.getHost());
                             }

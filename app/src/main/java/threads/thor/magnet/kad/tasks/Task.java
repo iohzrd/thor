@@ -83,13 +83,6 @@ public abstract class Task implements Comparable<Task> {
 
         }
     };
-    long firstResultTime;
-    private String info;
-    private long startTime;
-    private int taskID;
-    private List<TaskListener> listeners;
-    private long finishTime;
-    private final Runnable serializedUpdate = SerializedTaskExecutor.onceMore(this::runStuff);
     private final RPCCallListener postProcessingListener = new RPCCallListener() {
         public void stateTransition(RPCCall c, RPCState previous, RPCState current) {
 
@@ -106,6 +99,13 @@ public abstract class Task implements Comparable<Task> {
 
         }
     };
+    long firstResultTime;
+    private String info;
+    private long startTime;
+    private int taskID;
+    private List<TaskListener> listeners;
+    private long finishTime;
+    private final Runnable serializedUpdate = SerializedTaskExecutor.onceMore(this::runStuff);
     //private boolean lowPriority;
 
     /**

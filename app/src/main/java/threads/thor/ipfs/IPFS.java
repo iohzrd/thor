@@ -302,7 +302,7 @@ public class IPFS implements Listener {
 
                 List<String> second = result.second;
                 tasks.clear();
-                if(!second.isEmpty()) {
+                if (!second.isEmpty()) {
                     executor = Executors.newFixedThreadPool(second.size());
                     for (String address : second) {
                         tasks.add(() -> swarmConnect(address, timeout));

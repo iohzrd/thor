@@ -210,6 +210,7 @@ public class DOCS {
 
         return answer.toString();
     }
+
     private String getFileSize(long size) {
 
         String fileSize;
@@ -284,7 +285,7 @@ public class DOCS {
             if (closeable.isClosed()) {
                 throw new TimeoutException(uri.toString());
             }
-            if(cid == null){
+            if (cid == null) {
                 throw new ContentException(uri.toString());
             }
             if (ipfs.isEmptyDir(cid)) {
@@ -640,6 +641,23 @@ public class DOCS {
 
     }
 
+    public void cleanupResolver(@NonNull Uri uri) {
+
+        try {
+            String host = getHost(uri);
+            if (host != null) {
+                String pid = ipfs.decodeName(host);
+                if (!pid.isEmpty()) {
+                    resolves.remove(pid);
+                }
+            }
+
+        } catch (Throwable e) {
+            LogUtils.error(TAG, e);
+        }
+
+    }
+
     public static class FileInfo {
         @NonNull
         private final String filename;
@@ -681,7 +699,6 @@ public class DOCS {
         }
     }
 
-
     public static class ContentException extends Exception {
 
         public ContentException(@NonNull String name) {
@@ -694,23 +711,6 @@ public class DOCS {
         public ResolveNameException(@NonNull String name) {
             super("Resolve name failed for " + name);
         }
-    }
-
-    public void cleanupResolver(@NonNull Uri uri) {
-
-        try {
-            String host = getHost(uri);
-            if (host != null) {
-                String pid = ipfs.decodeName(host);
-                if (!pid.isEmpty()) {
-                    resolves.remove(pid);
-                }
-            }
-
-        } catch (Throwable e) {
-            LogUtils.error(TAG, e);
-        }
-
     }
 
     public static class InvalidNameException extends Exception {

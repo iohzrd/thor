@@ -57,7 +57,6 @@ public class BOOKS {
     }
 
 
-
     @NonNull
     public Bookmark createBookmark(@NonNull String uri, @NonNull String title) {
         return new Bookmark(uri, title);
