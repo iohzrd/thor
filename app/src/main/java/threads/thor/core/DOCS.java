@@ -70,7 +70,6 @@ public class DOCS {
         return INSTANCE;
     }
 
-
     public void attachThread(@NonNull Long thread) {
         synchronized (TAG.intern()) {
             threads.add(thread);
@@ -305,7 +304,7 @@ public class DOCS {
             if (closeable.isClosed()) {
                 throw new ClosedException(uri.toString());
             }
-            if (cid == null) {
+            if (cid.isEmpty()) {
                 throw new ContentException(uri.toString());
             }
             if (ipfs.isEmptyDir(cid)) {
@@ -517,7 +516,7 @@ public class DOCS {
 
     @NonNull
     public Pair<Uri, Boolean> redirectUri(@NonNull Uri uri, @NonNull Closeable closeable)
-            throws ResolveNameException, InvalidNameException {
+            throws ResolveNameException, InvalidNameException, ClosedException {
 
 
         if (Objects.equals(uri.getScheme(), Content.IPNS) ||
@@ -598,12 +597,15 @@ public class DOCS {
                 }
             }
         }
+        if (closeable.isClosed()) {
+            throw new ClosedException(uri.toString());
+        }
         return Pair.create(uri, false);
     }
 
     @NonNull
-    public Pair<Uri, Boolean> redirect(@NonNull Uri uri, @NonNull String root,
-                                       @NonNull List<String> paths, @NonNull Closeable closeable) {
+    private Pair<Uri, Boolean> redirect(@NonNull Uri uri, @NonNull String root,
+                                        @NonNull List<String> paths, @NonNull Closeable closeable) {
 
         if (paths.isEmpty()) {
 
@@ -626,7 +628,7 @@ public class DOCS {
 
             String cid = ipfs.resolve(root, paths, closeable);
 
-            if (cid != null) {
+            if (!cid.isEmpty()) {
                 if (!ipfs.isEmptyDir(cid)) {
                     boolean exists = ipfs.resolve(cid, INDEX_HTML, closeable);
                     if (exists) {

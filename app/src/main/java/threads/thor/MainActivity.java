@@ -301,14 +301,14 @@ public class MainActivity extends AppCompatActivity implements
             return true;
         } else if (itemId == R.id.action_previous_page) {
             try {
-                mWebView.goBack();
+               goBack();
             } catch (Throwable throwable) {
                 LogUtils.error(TAG, throwable);
             }
             return true;
         } else if (itemId == R.id.action_next_page) {
             try {
-                mWebView.goForward();
+                goForward();
             } catch (Throwable throwable) {
                 LogUtils.error(TAG, throwable);
             }
@@ -596,7 +596,7 @@ public class MainActivity extends AppCompatActivity implements
     public boolean onBackPressedCheck() {
 
         if (mWebView.canGoBack()) {
-            mWebView.goBack();
+            goBack();
             return true;
         }
 
@@ -692,6 +692,18 @@ public class MainActivity extends AppCompatActivity implements
         }
     }
 
+    private void goBack() {
+        mWebView.stopLoading();
+        docs.releaseThreads();
+        mWebView.goBack();
+    }
+
+    private void goForward() {
+        mWebView.stopLoading();
+        docs.releaseThreads();
+        mWebView.goForward();
+    }
+
     @SuppressLint({"ClickableViewAccessibility"})
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -766,11 +778,11 @@ public class MainActivity extends AppCompatActivity implements
         if (isTablet) {
             mActionNextPage = findViewById(R.id.action_next_page);
             mActionNextPage.setEnabled(mWebView.canGoForward());
-            mActionNextPage.setOnClickListener(v -> mWebView.goForward());
+            mActionNextPage.setOnClickListener(v -> goForward());
 
             mActionPreviousPage = findViewById(R.id.action_previous_page);
             mActionPreviousPage.setEnabled(mWebView.canGoBack());
-            mActionPreviousPage.setOnClickListener(v -> mWebView.goBack());
+            mActionPreviousPage.setOnClickListener(v -> goBack());
 
 
             ImageButton actionReload = findViewById(R.id.action_reload);
@@ -903,6 +915,7 @@ public class MainActivity extends AppCompatActivity implements
 
             private final Map<Uri, Boolean> loadedUrls = new HashMap<>();
             private final SharedPreferences sharedPref = getPreferences(Context.MODE_PRIVATE);
+            private final AtomicBoolean progressActive = new AtomicBoolean(false);
 
 
             @Override
@@ -1057,7 +1070,7 @@ public class MainActivity extends AppCompatActivity implements
                             contentDownloader(uri, ThorService.getFileName(uri));
                             return true;
                         }
-
+                        progressActive.set(true);
                         return false;
                     } else if (Objects.equals(uri.getScheme(), Content.MAGNET)) {
 
@@ -1167,7 +1180,10 @@ public class MainActivity extends AppCompatActivity implements
 
                     docs.bootstrap();
 
-                    MainActivity.this.runOnUiThread(() -> mProgressBar.setVisibility(View.VISIBLE));
+                    if (progressActive.get()) {
+                        MainActivity.this.runOnUiThread(() ->
+                                mProgressBar.setVisibility(View.VISIBLE));
+                    }
 
                     docs.connectUri(getApplicationContext(), uri);
 
@@ -1178,18 +1194,18 @@ public class MainActivity extends AppCompatActivity implements
 
                     Closeable closeable = () -> !docs.shouldRun(thread.getId());
                     try {
-                        {
-                            Pair<Uri, Boolean> result = docs.redirectUri(uri, closeable);
-                            Uri redirectUri = result.first;
-                            if (!Objects.equals(uri, redirectUri)) {
-                                docs.storeRedirect(redirectUri, uri);
-                            }
-                            if (result.second) {
-                                return createRedirectMessage(redirectUri);
-                            }
 
-                            uri = redirectUri;
+                        Pair<Uri, Boolean> result = docs.redirectUri(uri, closeable);
+                        Uri redirectUri = result.first;
+                        if (!Objects.equals(uri, redirectUri)) {
+                            docs.storeRedirect(redirectUri, uri);
                         }
+                        if (result.second) {
+                            return createRedirectMessage(redirectUri);
+                        }
+
+                        uri = redirectUri;
+
 
                         docs.connectUri(getApplicationContext(), uri);
 
@@ -1206,6 +1222,11 @@ public class MainActivity extends AppCompatActivity implements
                         }
 
                         return createErrorMessage(throwable);
+                    } finally {
+                        if (progressActive.getAndSet(false)) {
+                            MainActivity.this.runOnUiThread(() ->
+                                    mProgressBar.setVisibility(View.INVISIBLE));
+                        }
                     }
                 }
                 return null;

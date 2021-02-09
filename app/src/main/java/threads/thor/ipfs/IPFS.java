@@ -84,8 +84,8 @@ public class IPFS implements Listener {
 
 
         node.setGracePeriod("10s");
-        node.setHighWater(200);
-        node.setLowWater(50);
+        node.setHighWater(500);
+        node.setLowWater(100);
 
     }
 
@@ -543,22 +543,19 @@ public class IPFS implements Listener {
     }
 
 
-    @Nullable
-    public String resolve(@NonNull String dir, @NonNull List<String> path, @NonNull Closeable closeable) {
-
-        String cid = dir;
-        String root = dir;
-
-        for (String name : path) {
-            cid = resolve("/" + Content.IPFS + "/" + root + "/" + name, closeable);
-            if (!cid.isEmpty()) {
-                root = cid;
-            } else {
-                return null;
+    @NonNull
+    public String resolve(@NonNull String root, @NonNull List<String> path, @NonNull Closeable closeable) {
+        try {
+            String resultPath = Content.IPFS_PATH + root;
+            for (String name : path) {
+                resultPath = resultPath.concat("/").concat(name);
             }
-        }
 
-        return cid;
+            return resolve(resultPath, closeable);
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable);
+        }
+        return "";
     }
 
     @NonNull
