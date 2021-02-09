@@ -98,7 +98,7 @@ public class DOCS {
 
         String mimeType = MimeType.OCTET_MIME_TYPE;
         if (!closeable.isClosed()) {
-            try (InputStream in = ipfs.getLoaderStream(doc, closeable, Settings.IPFS_READ_TIMEOUT)) {
+            try (InputStream in = ipfs.getLoaderStream(doc, closeable)) {
 
                 ContentInfo info = util.findMatch(in);
 
@@ -289,12 +289,12 @@ public class DOCS {
             } else {
                 String mimeType = getMimeType(root, closeable);
                 if (closeable.isClosed()) {
-                    throw new TimeoutException(uri.toString());
+                    throw new ClosedException(uri.toString());
                 }
 
                 long size = ipfs.getSize(root, closeable);
                 if (closeable.isClosed()) {
-                    throw new TimeoutException(uri.toString());
+                    throw new ClosedException(uri.toString());
                 }
                 return getContentResponse(uri, root, mimeType, size, closeable);
             }
@@ -303,7 +303,7 @@ public class DOCS {
         } else {
             String cid = ipfs.resolve(root, paths, closeable);
             if (closeable.isClosed()) {
-                throw new TimeoutException(uri.toString());
+                throw new ClosedException(uri.toString());
             }
             if (cid == null) {
                 throw new ContentException(uri.toString());
@@ -321,11 +321,11 @@ public class DOCS {
             } else {
                 String mimeType = getMimeType(uri, cid, closeable);
                 if (closeable.isClosed()) {
-                    throw new TimeoutException(uri.toString());
+                    throw new ClosedException(uri.toString());
                 }
                 long size = ipfs.getSize(cid, closeable);
                 if (closeable.isClosed()) {
-                    throw new TimeoutException(uri.toString());
+                    throw new ClosedException(uri.toString());
                 }
                 return getContentResponse(uri, cid, mimeType,
                         size, closeable);
@@ -336,7 +336,7 @@ public class DOCS {
     }
 
     @NonNull
-    private FileInfo getDataInfo(@NonNull Uri uri, @NonNull String root, @NonNull Closeable closeable) throws TimeoutException {
+    private FileInfo getDataInfo(@NonNull Uri uri, @NonNull String root, @NonNull Closeable closeable) throws ClosedException {
         String host = uri.getHost();
         Objects.requireNonNull(host);
 
@@ -346,7 +346,7 @@ public class DOCS {
             return new FileInfo(root, mimeType, root);
         } catch (Throwable throwable) {
             if (closeable.isClosed()) {
-                throw new TimeoutException(uri.toString());
+                throw new ClosedException(uri.toString());
             }
             throw new RuntimeException(throwable);
         }
@@ -356,12 +356,11 @@ public class DOCS {
     private WebResourceResponse getContentResponse(@NonNull Uri uri,
                                                    @NonNull String content,
                                                    @NonNull String mimeType, long size,
-                                                   @NonNull Closeable closeable) throws TimeoutException {
+                                                   @NonNull Closeable closeable) throws ClosedException {
 
         try {
 
-            InputStream in = ipfs.getLoaderStream(content, closeable, Settings.IPFS_READ_TIMEOUT);
-
+            InputStream in = ipfs.getLoaderStream(content, closeable);
 
             Map<String, String> responseHeaders = new HashMap<>();
             if (size > 0) {
@@ -373,7 +372,7 @@ public class DOCS {
                     "OK", responseHeaders, new BufferedInputStream(in));
         } catch (Throwable throwable) {
             if (closeable.isClosed()) {
-                throw new TimeoutException(uri.toString());
+                throw new ClosedException(uri.toString());
             }
             throw new RuntimeException(throwable);
         }
@@ -403,7 +402,7 @@ public class DOCS {
 
     @NonNull
     public FileInfo getFileInfo(@NonNull Uri uri, @NonNull Closeable closeable)
-            throws InvalidNameException, ResolveNameException, TimeoutException {
+            throws InvalidNameException, ResolveNameException, ClosedException {
 
         String host = uri.getHost();
         Objects.requireNonNull(host);
@@ -464,7 +463,7 @@ public class DOCS {
         Objects.requireNonNull(root);
 
         if (closeable.isClosed()) {
-            throw new TimeoutException(uri.toString());
+            throw new ClosedException(uri.toString());
         }
 
         return getResponse(uri, root, paths, closeable);
@@ -758,10 +757,10 @@ public class DOCS {
 
     }
 
-    public static class TimeoutException extends Exception {
+    private static class ClosedException extends Exception {
 
-        public TimeoutException(@NonNull String name) {
-            super("Timeout for " + name);
+        public ClosedException(@NonNull String name) {
+            super("Closed for " + name);
         }
     }
 

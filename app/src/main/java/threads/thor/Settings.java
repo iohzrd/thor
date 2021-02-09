@@ -22,7 +22,6 @@ import threads.thor.magnet.service.NetworkUtil;
 
 public class Settings {
 
-    public static final int IPFS_READ_TIMEOUT = 5000; // ms
     public static final int TIMEOUT_BOOTSTRAP = 5;
     public static final int MIN_PEERS = 10;
 

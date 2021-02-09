@@ -1168,16 +1168,16 @@ public class MainActivity extends AppCompatActivity implements
                     docs.bootstrap();
 
                     MainActivity.this.runOnUiThread(() -> mProgressBar.setVisibility(View.VISIBLE));
+
+                    docs.connectUri(getApplicationContext(), uri);
+
+
+                    Thread thread = Thread.currentThread();
+
+                    docs.attachThread(thread.getId());
+
+                    Closeable closeable = () -> !docs.shouldRun(thread.getId());
                     try {
-                        docs.connectUri(getApplicationContext(), uri);
-
-
-                        Thread thread = Thread.currentThread();
-
-                        docs.attachThread(thread.getId());
-
-                        Closeable closeable = () -> !docs.shouldRun(thread.getId());
-
                         {
                             Pair<Uri, Boolean> result = docs.redirectUri(uri, closeable);
                             Uri redirectUri = result.first;
@@ -1190,15 +1190,15 @@ public class MainActivity extends AppCompatActivity implements
 
                             uri = redirectUri;
                         }
-                        if (closeable.isClosed()) {
-                            throw new DOCS.TimeoutException(uri.toString());
-                        }
+
                         docs.connectUri(getApplicationContext(), uri);
 
                         return docs.getResponse(uri, closeable);
 
                     } catch (Throwable throwable) {
-
+                        if (closeable.isClosed()) {
+                            return createEmptyResource();
+                        }
                         if (throwable instanceof DOCS.ContentException) {
                             if (Objects.equals(uri.getScheme(), Content.IPNS)) {
                                 PageResolveWorker.resolve(getApplicationContext(), uri.getHost());
