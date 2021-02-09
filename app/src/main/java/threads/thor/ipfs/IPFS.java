@@ -302,14 +302,16 @@ public class IPFS implements Listener {
 
                 List<String> second = result.second;
                 tasks.clear();
-                executor = Executors.newFixedThreadPool(second.size());
-                for (String address : second) {
-                    tasks.add(() -> swarmConnect(address, timeout));
-                }
-                futures.clear();
-                futures = executor.invokeAll(tasks, timeout, TimeUnit.SECONDS);
-                for (Future<Boolean> future : futures) {
-                    LogUtils.info(TAG, "\nConnect done " + future.isDone());
+                if(!second.isEmpty()) {
+                    executor = Executors.newFixedThreadPool(second.size());
+                    for (String address : second) {
+                        tasks.add(() -> swarmConnect(address, timeout));
+                    }
+                    futures.clear();
+                    futures = executor.invokeAll(tasks, timeout, TimeUnit.SECONDS);
+                    for (Future<Boolean> future : futures) {
+                        LogUtils.info(TAG, "\nConnect done " + future.isDone());
+                    }
                 }
             } catch (Throwable throwable) {
                 LogUtils.error(TAG, throwable);
