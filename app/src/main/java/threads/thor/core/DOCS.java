@@ -451,6 +451,51 @@ public class DOCS {
 
     }
 
+
+    @NonNull
+    public Uri redirectHttp(@NonNull Uri uri) {
+        try {
+            if (Objects.equals(uri.getScheme(), Content.HTTP)) {
+                String host = uri.getHost();
+                Objects.requireNonNull(host);
+                if (Objects.equals(host, "localhost") || Objects.equals(host, "127.0.0.1")) {
+                    List<String> paths = uri.getPathSegments();
+                    if (paths.size() >= 2) {
+                        String protocol = paths.get(0);
+                        String authority = paths.get(1);
+                        List<String> subPaths = new ArrayList<>(paths);
+                        subPaths.remove(protocol);
+                        subPaths.remove(authority);
+                        if (ipfs.isValidCID(authority)) {
+                            if (Objects.equals(protocol, Content.IPFS)) {
+                                Uri.Builder builder = new Uri.Builder();
+                                builder.scheme(Content.IPFS)
+                                        .authority(authority);
+
+                                for (String path : subPaths) {
+                                    builder.appendPath(path);
+                                }
+                                return builder.build();
+                            } else if (Objects.equals(protocol, Content.IPNS)) {
+                                Uri.Builder builder = new Uri.Builder();
+                                builder.scheme(Content.IPNS)
+                                        .authority(authority);
+
+                                for (String path : subPaths) {
+                                    builder.appendPath(path);
+                                }
+                                return builder.build();
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable);
+        }
+        return uri;
+    }
+
     @NonNull
     public Pair<Uri, Boolean> redirectUri(@NonNull Uri uri, @NonNull Closeable closeable)
             throws ResolveNameException, InvalidNameException {
@@ -500,7 +545,7 @@ public class DOCS {
                                     for (String path : paths) {
                                         builder.appendPath(path);
                                     }
-                                    return redirectUri(dnsUri, closeable);
+                                    return redirectUri(builder.build(), closeable);
                                 }
                             } catch (Throwable throwable) {
                                 LogUtils.error(TAG, throwable);
@@ -517,7 +562,7 @@ public class DOCS {
                                 for (String path : paths) {
                                     builder.appendPath(path);
                                 }
-                                return redirectUri(dnsUri, closeable);
+                                return redirectUri(builder.build(), closeable);
                             }
                         } catch (Throwable throwable) {
                             LogUtils.error(TAG, throwable);

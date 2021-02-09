@@ -1039,6 +1039,15 @@ public class MainActivity extends AppCompatActivity implements
                         return true;
                     } else if (Objects.equals(uri.getScheme(), Content.HTTP) ||
                             Objects.equals(uri.getScheme(), Content.HTTPS)) {
+
+                        Uri newUri = docs.redirectHttp(uri);
+                        if(!Objects.equals(newUri, uri)){
+                            Intent intent = new Intent(Intent.ACTION_VIEW, newUri,
+                                    getApplicationContext(), MainActivity.class);
+                            startActivity(intent);
+                            return true;
+                        }
+
                         return false;
                     } else if (Objects.equals(uri.getScheme(), Content.IPNS) ||
                             Objects.equals(uri.getScheme(), Content.IPFS)) {
