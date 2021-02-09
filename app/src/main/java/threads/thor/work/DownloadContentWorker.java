@@ -31,7 +31,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import threads.LogUtils;
 import threads.thor.MainActivity;
 import threads.thor.R;
-import threads.thor.Settings;
 import threads.thor.core.Content;
 import threads.thor.core.DOCS;
 import threads.thor.ipfs.IPFS;
@@ -196,10 +195,7 @@ public class DownloadContentWorker extends Worker {
             try (InputStream is = ipfs.getLoaderStream(cid, new Progress() {
                 @Override
                 public boolean isClosed() {
-
-                    long diff = System.currentTimeMillis() - started.get();
-                    boolean abort = (diff > (Settings.IPFS_TIMEOUT));
-                    return isStopped() || abort;
+                    return isStopped();
                 }
 
                 @Override

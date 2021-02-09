@@ -60,7 +60,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 
 import threads.LogUtils;
 import threads.thor.core.Content;
@@ -96,6 +95,7 @@ public class MainActivity extends AppCompatActivity implements
     private static final String DOWNLOADS = "content://com.android.externalstorage.documents/document/primary:Download";
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final long CLICK_OFFSET = 500;
+
     private final ActivityResultLauncher<Intent> mFolderRequestForResult = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
             result -> {
@@ -1169,11 +1169,15 @@ public class MainActivity extends AppCompatActivity implements
 
                     MainActivity.this.runOnUiThread(() -> mProgressBar.setVisibility(View.VISIBLE));
                     try {
-                        final AtomicLong time = new AtomicLong(System.currentTimeMillis());
-                        long timeout = Settings.IPFS_TIMEOUT;
-
                         docs.connectUri(getApplicationContext(), uri);
-                        Closeable closeable = () -> System.currentTimeMillis() - time.get() > timeout;
+
+
+                        Thread thread = Thread.currentThread();
+
+                        docs.attachThread(thread.getId());
+
+                        Closeable closeable = () -> !docs.shouldRun(thread.getId());
+
                         {
                             Pair<Uri, Boolean> result = docs.redirectUri(uri, closeable);
                             Uri redirectUri = result.first;
@@ -1357,13 +1361,14 @@ public class MainActivity extends AppCompatActivity implements
         }
         return false;
     }
-
     public void openUri(@NonNull Uri uri) {
 
 
         invalidateMenu(uri);
 
         docs.cleanupResolver(uri);
+
+        docs.releaseThreads();
 
         mWebView.stopLoading();
 

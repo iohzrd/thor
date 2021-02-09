@@ -13,6 +13,7 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
@@ -48,7 +49,7 @@ public class DOCS {
     private final ContentInfoUtil util;
     private final Hashtable<Uri, Uri> redirects = new Hashtable<>();
     private final Hashtable<String, String> resolves = new Hashtable<>();
-
+    private static final HashSet<Long> threads = new HashSet<>();
     private DOCS(@NonNull Context context) {
         long timestamp = System.currentTimeMillis();
         ipfs = IPFS.getInstance(context);
@@ -67,6 +68,25 @@ public class DOCS {
             }
         }
         return INSTANCE;
+    }
+
+
+    public void attachThread(@NonNull Long thread) {
+        synchronized (TAG.intern()) {
+            threads.add(thread);
+        }
+    }
+
+    public void releaseThreads() {
+        synchronized (TAG.intern()) {
+            threads.clear();
+        }
+    }
+
+    public boolean shouldRun(@NonNull Long thread) {
+        synchronized (TAG.intern()) {
+            return threads.contains(thread);
+        }
     }
 
     @NonNull
@@ -669,14 +689,16 @@ public class DOCS {
                     }
                 }
 
-                List<Callable<Boolean>> tasks = new ArrayList<>();
-                ExecutorService executor = Executors.newFixedThreadPool(addresses.size());
-                for (String address : addresses) {
-                    tasks.add(() -> ipfs.swarmConnect(address, 5));
-                }
-                List<Future<Boolean>> result = executor.invokeAll(tasks, 5, TimeUnit.SECONDS);
-                for (Future<Boolean> future : result) {
-                    LogUtils.error(TAG, "Bootstrap done " + future.isDone());
+                if(!addresses.isEmpty()) {
+                    List<Callable<Boolean>> tasks = new ArrayList<>();
+                    ExecutorService executor = Executors.newFixedThreadPool(addresses.size());
+                    for (String address : addresses) {
+                        tasks.add(() -> ipfs.swarmConnect(address, 5));
+                    }
+                    List<Future<Boolean>> result = executor.invokeAll(tasks, 5, TimeUnit.SECONDS);
+                    for (Future<Boolean> future : result) {
+                        LogUtils.error(TAG, "Bootstrap done " + future.isDone());
+                    }
                 }
             }
         } catch (Throwable throwable) {
