@@ -451,7 +451,8 @@ public class DOCS {
     }
 
     @NonNull
-    public Pair<Uri, Boolean> redirectUri(@NonNull Uri uri, @NonNull Closeable closeable) {
+    public Pair<Uri, Boolean> redirectUri(@NonNull Uri uri, @NonNull Closeable closeable)
+            throws ResolveNameException, InvalidNameException {
 
 
         if (Objects.equals(uri.getScheme(), Content.IPNS) ||
@@ -461,14 +462,12 @@ public class DOCS {
             Objects.requireNonNull(host);
             if (!ipfs.isValidCID(host)) {
                 String link = DnsAddrResolver.getDNSLink(host);
-                if (link == null) {
-                    Uri.Builder builder = new Uri.Builder();
-                    builder.scheme(Content.HTTPS)
-                            .authority(host);
-                    for (String path : paths) {
-                        builder.appendPath(path);
+                if (link.isEmpty()) {
+                    if (Objects.equals(uri.getScheme(), Content.IPNS)) {
+                        throw new DOCS.ResolveNameException(uri.toString());
+                    } else {
+                        throw new DOCS.InvalidNameException(uri.toString());
                     }
-                    return Pair.create(builder.build(), false);
                 } else {
                     if (link.startsWith(Content.IPFS_PATH)) {
                         String cid = link.replaceFirst(Content.IPFS_PATH, "");
@@ -695,8 +694,6 @@ public class DOCS {
         public ResolveNameException(@NonNull String name) {
             super("Resolve name failed for " + name);
         }
-
-
     }
 
     public void cleanupResolver(@NonNull Uri uri) {
@@ -719,7 +716,7 @@ public class DOCS {
     public static class InvalidNameException extends Exception {
 
         public InvalidNameException(@NonNull String name) {
-            super("Invalid name " + name);
+            super("Invalid name detected for " + name);
         }
 
 

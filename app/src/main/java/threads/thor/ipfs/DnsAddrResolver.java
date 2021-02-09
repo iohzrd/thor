@@ -3,7 +3,6 @@ package threads.thor.ipfs;
 import android.util.Pair;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import org.minidns.DnsClient;
 import org.minidns.cache.LruCache;
@@ -77,7 +76,7 @@ public class DnsAddrResolver {
     }
 
 
-    @Nullable
+    @NonNull
     public static String getDNSLink(@NonNull String host) {
 
         List<String> txtRecords = getTxtRecords("_dnslink.".concat(host));
@@ -90,7 +89,7 @@ public class DnsAddrResolver {
                 LogUtils.error(TAG, "" + e.getLocalizedMessage(), e);
             }
         }
-        return null;
+        return "";
     }
 
     @NonNull
