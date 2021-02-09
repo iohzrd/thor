@@ -90,15 +90,15 @@ public class DOCS {
     }
 
     @NonNull
-    private String getMimeType(@NonNull String doc, @NonNull Closeable closeable) {
+    private String getMimeType(@NonNull String cid, @NonNull Closeable closeable) {
 
-        if (ipfs.isEmptyDir(doc) || ipfs.isDir(doc, closeable)) {
+        if (ipfs.isEmptyDir(cid) || ipfs.isDir(cid, closeable)) {
             return MimeType.DIR_MIME_TYPE;
         }
 
         String mimeType = MimeType.OCTET_MIME_TYPE;
         if (!closeable.isClosed()) {
-            try (InputStream in = ipfs.getLoaderStream(doc, closeable)) {
+            try (InputStream in = ipfs.getLoaderStream(cid, closeable)) {
 
                 ContentInfo info = util.findMatch(in);
 
