@@ -32,6 +32,7 @@ import thor.Node;
 import thor.Peer;
 import thor.ResolveInfo;
 import threads.LogUtils;
+import threads.thor.Settings;
 import threads.thor.core.Content;
 import threads.thor.core.blocks.BLOCKS;
 import threads.thor.core.blocks.Block;
@@ -281,9 +282,9 @@ public class IPFS implements Listener {
         }
     }
 
-    public void bootstrap(int minPeers, int timeout) {
+    public void bootstrap() {
         checkDaemon();
-        if (swarmPeers() < minPeers) {
+        if (swarmPeers() < Settings.MIN_PEERS) {
             try {
                 Pair<List<String>, List<String>> result = DnsAddrResolver.getBootstrap();
 
@@ -291,10 +292,10 @@ public class IPFS implements Listener {
                 List<Callable<Boolean>> tasks = new ArrayList<>();
                 ExecutorService executor = Executors.newFixedThreadPool(bootstrap.size());
                 for (String address : bootstrap) {
-                    tasks.add(() -> swarmConnect(address, timeout));
+                    tasks.add(() -> swarmConnect(address, Settings.TIMEOUT_BOOTSTRAP));
                 }
 
-                List<Future<Boolean>> futures = executor.invokeAll(tasks, timeout, TimeUnit.SECONDS);
+                List<Future<Boolean>> futures = executor.invokeAll(tasks, Settings.TIMEOUT_BOOTSTRAP, TimeUnit.SECONDS);
                 for (Future<Boolean> future : futures) {
                     LogUtils.info(TAG, "\nBootstrap done " + future.isDone());
                 }
@@ -305,10 +306,10 @@ public class IPFS implements Listener {
                 if (!second.isEmpty()) {
                     executor = Executors.newFixedThreadPool(second.size());
                     for (String address : second) {
-                        tasks.add(() -> swarmConnect(address, timeout));
+                        tasks.add(() -> swarmConnect(address, Settings.TIMEOUT_BOOTSTRAP));
                     }
                     futures.clear();
-                    futures = executor.invokeAll(tasks, timeout, TimeUnit.SECONDS);
+                    futures = executor.invokeAll(tasks, Settings.TIMEOUT_BOOTSTRAP, TimeUnit.SECONDS);
                     for (Future<Boolean> future : futures) {
                         LogUtils.info(TAG, "\nConnect done " + future.isDone());
                     }

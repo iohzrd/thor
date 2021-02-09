@@ -33,7 +33,7 @@ public class InitApplication extends Application {
         AdBlocker.init(getApplicationContext());
 
         IPFS ipfs = IPFS.getInstance(getApplicationContext());
-        Executors.newSingleThreadExecutor().submit(() -> ipfs.bootstrap(10, 10));
+        Executors.newSingleThreadExecutor().submit(ipfs::bootstrap);
 
         if (LogUtils.isDebug()) {
             IPFS.logCacheDir(getApplicationContext());

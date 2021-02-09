@@ -610,12 +610,11 @@ public class DOCS {
     }
 
     public void bootstrap() {
-        if (ipfs.swarmPeers() < 10) {
-            ipfs.bootstrap(10, 10);
-        }
 
         try {
-            if (ipfs.swarmPeers() < 5) {
+            ipfs.bootstrap();
+
+            if (ipfs.swarmPeers() < Settings.MIN_PEERS) {
                 List<Page> bootstraps = pages.getBootstraps(5);
                 List<String> addresses = new ArrayList<>();
                 for (Page bootstrap : bootstraps) {
