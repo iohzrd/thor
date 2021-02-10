@@ -62,15 +62,20 @@ public class BookmarksViewAdapter extends RecyclerView.Adapter<BookmarksViewAdap
         Bookmark bookmark = bookmarks.get(position);
 
         try {
-            holder.bookmark_title.setText(bookmark.getTitle());
+            String title = bookmark.getTitle();
+            holder.bookmark_title.setText(title);
             holder.bookmark_uri.setText(bookmark.getUri());
-            int res = R.drawable.bookmark;
+
 
             Bitmap image = bookmark.getBitmapIcon();
             if (image != null) {
                 holder.bookmark_image.setImageBitmap(image);
             } else {
-                holder.bookmark_image.setImageResource(res);
+                holder.bookmark_image.setImageResource(R.drawable.bookmark);
+                if(title.isEmpty()) {
+                    int color = ColorGenerator.MATERIAL.getColor(title);
+                    holder.bookmark_image.setColorFilter(color);
+                }
             }
 
             holder.view.setClickable(true);

@@ -50,14 +50,19 @@ public class HistoryViewAdapter extends RecyclerView.Adapter<HistoryViewAdapter.
         WebHistoryItem history = mWebBackForwardList.getItemAtIndex(pos);
 
         try {
-            holder.title.setText(history.getTitle());
+            String title = history.getTitle();
+            holder.title.setText(title);
             holder.uri.setText(history.getUrl());
 
             Bitmap image = history.getFavicon();
             if (image != null) {
                 holder.image.setImageBitmap(image);
             } else {
-                holder.image.setImageResource(R.drawable.browse);
+                holder.image.setImageResource(R.drawable.bookmark);
+                if(title != null && !title.isEmpty()) {
+                    int color = ColorGenerator.MATERIAL.getColor(title);
+                    holder.image.setColorFilter(color);
+                }
             }
 
             holder.view.setClickable(true);
