@@ -563,6 +563,9 @@ public class IPFS implements Listener {
 
     @NonNull
     public String resolve(@NonNull String path, @NonNull Closeable closeable) {
+        if (!isDaemonRunning()) {
+            return "";
+        }
         AtomicBoolean abort = new AtomicBoolean(false);
         try {
             return node.resolve(path, () -> abort.get() || closeable.isClosed());
@@ -580,7 +583,9 @@ public class IPFS implements Listener {
 
     @Nullable
     public Link link(@NonNull String dir, @NonNull List<String> path, @NonNull Closeable closeable) {
-
+        if (!isDaemonRunning()) {
+            return null;
+        }
         Link linkInfo = null;
         String root = dir;
 
@@ -599,6 +604,9 @@ public class IPFS implements Listener {
 
     @Nullable
     public Link link(@NonNull String cid, @NonNull String name, @NonNull Closeable closeable) {
+        if (!isDaemonRunning()) {
+            return null;
+        }
         AtomicReference<Link> result = new AtomicReference<>(null);
         try {
             AtomicBoolean abort = new AtomicBoolean(false);
