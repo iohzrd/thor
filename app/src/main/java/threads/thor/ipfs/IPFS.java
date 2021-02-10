@@ -432,6 +432,9 @@ public class IPFS implements Listener {
 
 
     public void resolveName(@NonNull String name, @NonNull Closeable closeable) {
+        if (!isDaemonRunning()) {
+            return;
+        }
         long time = System.currentTimeMillis();
         try {
 
@@ -445,7 +448,7 @@ public class IPFS implements Listener {
                 public void resolved(String hash, long seq) {
                     LogUtils.error(TAG, "" + seq + " " + hash);
                 }
-            }, name, false, 64);
+            }, name, false, 32);
 
         } catch (Throwable e) {
             LogUtils.error(TAG, e);
