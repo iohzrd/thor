@@ -53,6 +53,7 @@ import androidx.core.view.MenuCompat;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
+import com.google.android.material.appbar.AppBarLayout;
 import com.google.android.material.snackbar.Snackbar;
 
 import java.io.ByteArrayInputStream;
@@ -204,7 +205,7 @@ public class MainActivity extends AppCompatActivity implements
                 }
             });
 
-    private WebView mWebView;
+    private NestedWebView mWebView;
     private long mLastClickTime = 0;
     private TextView mBrowserText;
     private ActionMode mActionMode;
@@ -691,17 +692,28 @@ public class MainActivity extends AppCompatActivity implements
             LogUtils.error(TAG, throwable);
         }
     }
+    private AppBarLayout mAppBar;
 
     private void goBack() {
-        mWebView.stopLoading();
-        docs.releaseThreads();
-        mWebView.goBack();
+        try {
+            mWebView.stopLoading();
+            docs.releaseThreads();
+            mWebView.goBack();
+            mAppBar.setExpanded(true, true);
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable);
+        }
     }
 
     private void goForward() {
-        mWebView.stopLoading();
-        docs.releaseThreads();
-        mWebView.goForward();
+        try {
+            mWebView.stopLoading();
+            docs.releaseThreads();
+            mWebView.goForward();
+            mAppBar.setExpanded(true, true);
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable);
+        }
     }
 
     @SuppressLint({"ClickableViewAccessibility"})
@@ -710,6 +722,7 @@ public class MainActivity extends AppCompatActivity implements
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_main);
+        mAppBar = findViewById(R.id.appbar);
         Toolbar mToolbar = findViewById(R.id.toolbar);
         mToolbar.setContentInsetsAbsolute(0, 0);
         setTitle(null);
@@ -1384,18 +1397,23 @@ public class MainActivity extends AppCompatActivity implements
     }
     public void openUri(@NonNull Uri uri) {
 
+        try {
+            invalidateMenu(uri);
 
-        invalidateMenu(uri);
+            docs.cleanupResolver(uri);
 
-        docs.cleanupResolver(uri);
+            docs.releaseThreads();
 
-        docs.releaseThreads();
+            mWebView.stopLoading();
 
-        mWebView.stopLoading();
+            mProgressBar.setVisibility(View.VISIBLE);
 
-        mProgressBar.setVisibility(View.VISIBLE);
+            mWebView.loadUrl(uri.toString());
 
-        mWebView.loadUrl(uri.toString());
+            mAppBar.setExpanded(true, true);
+        } catch (Throwable throwable){
+            LogUtils.error(TAG, throwable);
+        }
 
 
     }
