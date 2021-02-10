@@ -56,6 +56,7 @@ public class HistoryViewAdapter extends RecyclerView.Adapter<HistoryViewAdapter.
 
             Bitmap image = history.getFavicon();
             if (image != null) {
+                holder.image.clearColorFilter();
                 holder.image.setImageBitmap(image);
             } else {
                 holder.image.setImageResource(R.drawable.bookmark);
