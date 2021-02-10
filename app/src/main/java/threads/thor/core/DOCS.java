@@ -281,7 +281,13 @@ public class DOCS {
                 return new WebResourceResponse(MimeType.HTML_MIME_TYPE, Content.UTF8,
                         new ByteArrayInputStream(answer.getBytes()));
             } else if (ipfs.isDir(root, closeable)) {
+                if (closeable.isClosed()) {
+                    throw new ClosedException(uri.toString());
+                }
                 List<LinkInfo> links = ipfs.getLinks(root, closeable);
+                if (closeable.isClosed()) {
+                    throw new ClosedException(uri.toString());
+                }
                 String answer = generateDirectoryHtml(uri, root, paths, links);
                 return new WebResourceResponse(MimeType.HTML_MIME_TYPE, Content.UTF8,
                         new ByteArrayInputStream(answer.getBytes()));
@@ -290,7 +296,6 @@ public class DOCS {
                 if (closeable.isClosed()) {
                     throw new ClosedException(uri.toString());
                 }
-
                 long size = ipfs.getSize(root, closeable);
                 if (closeable.isClosed()) {
                     throw new ClosedException(uri.toString());
@@ -312,7 +317,13 @@ public class DOCS {
                 return new WebResourceResponse(MimeType.HTML_MIME_TYPE, Content.UTF8,
                         new ByteArrayInputStream(answer.getBytes()));
             } else if (ipfs.isDir(cid, closeable)) {
+                if (closeable.isClosed()) {
+                    throw new ClosedException(uri.toString());
+                }
                 List<LinkInfo> links = ipfs.getLinks(cid, closeable);
+                if (closeable.isClosed()) {
+                    throw new ClosedException(uri.toString());
+                }
                 String answer = generateDirectoryHtml(uri, root, paths, links);
                 return new WebResourceResponse(MimeType.HTML_MIME_TYPE, Content.UTF8,
                         new ByteArrayInputStream(answer.getBytes()));
@@ -360,6 +371,10 @@ public class DOCS {
         try {
 
             InputStream in = ipfs.getLoaderStream(content, closeable);
+
+            if (closeable.isClosed()) {
+                throw new ClosedException(uri.toString());
+            }
 
             Map<String, String> responseHeaders = new HashMap<>();
             if (size > 0) {
