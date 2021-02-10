@@ -931,7 +931,7 @@ public class MainActivity extends AppCompatActivity implements
 
             private final Map<Uri, Boolean> loadedUrls = new HashMap<>();
             private final SharedPreferences sharedPref = getPreferences(Context.MODE_PRIVATE);
-            private final AtomicBoolean progressActive = new AtomicBoolean(false);
+
 
 
             @Override
@@ -952,10 +952,7 @@ public class MainActivity extends AppCompatActivity implements
             public void onPageCommitVisible(WebView view, String url) {
                 super.onPageCommitVisible(view, url);
                 LogUtils.info(TAG, "onPageCommitVisible " + url);
-
                 mProgressBar.setVisibility(View.GONE);
-
-
             }
 
             @Override
@@ -1045,7 +1042,17 @@ public class MainActivity extends AppCompatActivity implements
             public void onPageFinished(WebView view, String url) {
                 LogUtils.info(TAG, "onPageFinished : " + url);
 
-                mProgressBar.setVisibility(View.GONE);
+                Uri uri = Uri.parse(url);
+                if (Objects.equals(uri.getScheme(), Content.IPNS) ||
+                        Objects.equals(uri.getScheme(), Content.IPFS)) {
+
+                    if (docs.numUris() == 0) {
+                        mProgressBar.setVisibility(View.GONE);
+                    }
+
+                } else {
+                    mProgressBar.setVisibility(View.GONE);
+                }
 
             }
 
@@ -1086,7 +1093,9 @@ public class MainActivity extends AppCompatActivity implements
                             contentDownloader(uri, ThorService.getFileName(uri));
                             return true;
                         }
-                        progressActive.set(true);
+                        mProgressBar.setVisibility(View.VISIBLE);
+                        docs.attachUri(uri);
+                        docs.releaseThreads();
                         return false;
                     } else if (Objects.equals(uri.getScheme(), Content.MAGNET)) {
 
@@ -1196,13 +1205,7 @@ public class MainActivity extends AppCompatActivity implements
 
                     docs.bootstrap();
 
-                    if (progressActive.get()) {
-                        MainActivity.this.runOnUiThread(() ->
-                                mProgressBar.setVisibility(View.VISIBLE));
-                    }
-
                     docs.connectUri(getApplicationContext(), uri);
-
 
                     Thread thread = Thread.currentThread();
 
@@ -1219,13 +1222,9 @@ public class MainActivity extends AppCompatActivity implements
                         if (result.second) {
                             return createRedirectMessage(redirectUri);
                         }
+                        docs.connectUri(getApplicationContext(), redirectUri);
 
-                        uri = redirectUri;
-
-
-                        docs.connectUri(getApplicationContext(), uri);
-
-                        return docs.getResponse(uri, closeable);
+                        return docs.getResponse(redirectUri, closeable);
 
                     } catch (Throwable throwable) {
                         if (closeable.isClosed()) {
@@ -1239,10 +1238,7 @@ public class MainActivity extends AppCompatActivity implements
 
                         return createErrorMessage(throwable);
                     } finally {
-                        if (progressActive.getAndSet(false)) {
-                            MainActivity.this.runOnUiThread(() ->
-                                    mProgressBar.setVisibility(View.INVISIBLE));
-                        }
+                        docs.detachUri(uri);
                     }
                 }
                 return null;
