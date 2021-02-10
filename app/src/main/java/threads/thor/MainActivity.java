@@ -636,6 +636,9 @@ public class MainActivity extends AppCompatActivity implements
 
     }
 
+    private String prettyUri(@NonNull Uri uri, @NonNull String replace){
+        return uri.toString().replaceFirst(replace, "");
+    }
     private void invalidateMenu(@Nullable Uri uri) {
         try {
             if (uri != null) {
@@ -645,12 +648,12 @@ public class MainActivity extends AppCompatActivity implements
                     mBrowserText.setCompoundDrawablesRelativeWithIntrinsicBounds(
                             R.drawable.lock, 0, 0, 0
                     );
-                    mBrowserText.setText(uri.getHost());
+                    mBrowserText.setText(prettyUri(uri, "https://"));
                 } else if (Objects.equals(uri.getScheme(), Content.HTTP)) {
                     mBrowserText.setCompoundDrawablesRelativeWithIntrinsicBounds(
                             R.drawable.lock_open, 0, 0, 0
                     );
-                    mBrowserText.setText(uri.getHost());
+                    mBrowserText.setText(prettyUri(uri, "http://"));
                 } else {
                     mBrowserText.setCompoundDrawablesRelativeWithIntrinsicBounds(
                             R.drawable.lock, 0, 0, 0
