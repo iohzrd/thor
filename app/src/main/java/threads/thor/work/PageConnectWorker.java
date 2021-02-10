@@ -79,7 +79,7 @@ public class PageConnectWorker extends Worker {
                     }
                 }
                 if (!connected) {
-                    connected = ipfs.swarmConnect("/p2p/" + pid, 10);
+                    connected = ipfs.swarmConnect(Content.P2P_PATH + pid, 10);
                 }
             }
 

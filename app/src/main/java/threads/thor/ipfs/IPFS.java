@@ -13,6 +13,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.Callable;
@@ -283,42 +284,43 @@ public class IPFS implements Listener {
     }
 
     public void bootstrap() {
-        checkDaemon();
-        if (swarmPeers() < Settings.MIN_PEERS) {
-            try {
-                Pair<List<String>, List<String>> result = DnsAddrResolver.getBootstrap();
+        if (isDaemonRunning()) {
 
-                List<String> bootstrap = result.first;
-                List<Callable<Boolean>> tasks = new ArrayList<>();
-                ExecutorService executor = Executors.newFixedThreadPool(bootstrap.size());
-                for (String address : bootstrap) {
-                    tasks.add(() -> swarmConnect(address, Settings.TIMEOUT_BOOTSTRAP));
-                }
+            if (swarmPeers() < Settings.MIN_PEERS) {
+                try {
+                    Pair<List<String>, List<String>> result = DnsAddrResolver.getBootstrap();
 
-                List<Future<Boolean>> futures = executor.invokeAll(tasks, Settings.TIMEOUT_BOOTSTRAP, TimeUnit.SECONDS);
-                for (Future<Boolean> future : futures) {
-                    LogUtils.info(TAG, "\nBootstrap done " + future.isDone());
-                }
-
-
-                List<String> second = result.second;
-                tasks.clear();
-                if (!second.isEmpty()) {
-                    executor = Executors.newFixedThreadPool(second.size());
-                    for (String address : second) {
+                    List<String> bootstrap = result.first;
+                    List<Callable<Boolean>> tasks = new ArrayList<>();
+                    ExecutorService executor = Executors.newFixedThreadPool(bootstrap.size());
+                    for (String address : bootstrap) {
                         tasks.add(() -> swarmConnect(address, Settings.TIMEOUT_BOOTSTRAP));
                     }
-                    futures.clear();
-                    futures = executor.invokeAll(tasks, Settings.TIMEOUT_BOOTSTRAP, TimeUnit.SECONDS);
+
+                    List<Future<Boolean>> futures = executor.invokeAll(tasks, Settings.TIMEOUT_BOOTSTRAP, TimeUnit.SECONDS);
                     for (Future<Boolean> future : futures) {
-                        LogUtils.info(TAG, "\nConnect done " + future.isDone());
+                        LogUtils.info(TAG, "\nBootstrap done " + future.isDone());
                     }
+
+
+                    List<String> second = result.second;
+                    tasks.clear();
+                    if (!second.isEmpty()) {
+                        executor = Executors.newFixedThreadPool(second.size());
+                        for (String address : second) {
+                            tasks.add(() -> swarmConnect(address, Settings.TIMEOUT_BOOTSTRAP));
+                        }
+                        futures.clear();
+                        futures = executor.invokeAll(tasks, Settings.TIMEOUT_BOOTSTRAP, TimeUnit.SECONDS);
+                        for (Future<Boolean> future : futures) {
+                            LogUtils.info(TAG, "\nConnect done " + future.isDone());
+                        }
+                    }
+                } catch (Throwable throwable) {
+                    LogUtils.error(TAG, throwable);
                 }
-            } catch (Throwable throwable) {
-                LogUtils.error(TAG, throwable);
             }
         }
-
     }
 
 
@@ -335,7 +337,7 @@ public class IPFS implements Listener {
         return null;
     }
 
-    private synchronized void startDaemon() {
+    public synchronized void startDaemon() {
         if (!node.getRunning()) {
             synchronized (locker) {
                 if (!node.getRunning()) {
@@ -370,14 +372,6 @@ public class IPFS implements Listener {
         }
     }
 
-
-    private void checkDaemon() {
-        if (!isDaemonRunning()) {
-            startDaemon();
-        }
-    }
-
-
     public boolean isConnected(@NonNull String pid) {
 
         if (!isDaemonRunning()) {
@@ -392,7 +386,9 @@ public class IPFS implements Listener {
     }
 
     public boolean swarmConnect(@NonNull String multiAddress, int timeout) {
-        checkDaemon();
+        if (!isDaemonRunning()) {
+            return false;
+        }
         try {
             return node.swarmConnect(multiAddress, timeout);
         } catch (Throwable throwable) {
@@ -403,7 +399,9 @@ public class IPFS implements Listener {
 
 
     public int swarmPeers() {
-        checkDaemon();
+        if (!isDaemonRunning()) {
+            return 0;
+        }
         return swarm_peers();
     }
 
@@ -676,7 +674,9 @@ public class IPFS implements Listener {
 
     @Nullable
     public List<LinkInfo> ls(@NonNull String cid, @NonNull Closeable closeable) {
-        checkDaemon();
+        if (!isDaemonRunning()) {
+            return Collections.emptyList();
+        }
         List<LinkInfo> infoList = new ArrayList<>();
         try {
             LogUtils.info(TAG, "ls : " + cid);
