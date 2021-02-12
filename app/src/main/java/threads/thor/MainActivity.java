@@ -236,7 +236,6 @@ public class MainActivity extends AppCompatActivity implements
             mMagnetForResult.launch(intent);
 
             mProgressBar.setVisibility(View.GONE);
-            EVENTS.getInstance(getApplicationContext()).warning(name);
         });
         builder.setNeutralButton(getString(android.R.string.cancel),
                 (dialog, which) -> {
@@ -248,11 +247,11 @@ public class MainActivity extends AppCompatActivity implements
 
     }
 
-    private void contentDownloader(@NonNull Uri uri, @NonNull String name) {
+    private void contentDownloader(@NonNull Uri uri) {
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle(R.string.download_title);
-        builder.setMessage(name);
+        builder.setMessage(docs.getFileName(uri));
 
         builder.setPositiveButton(getString(android.R.string.yes), (dialog, which) -> {
 
@@ -264,7 +263,6 @@ public class MainActivity extends AppCompatActivity implements
             intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
             mContentForResult.launch(intent);
             mProgressBar.setVisibility(View.GONE);
-            EVENTS.getInstance(getApplicationContext()).warning(name);
         });
         builder.setNeutralButton(getString(android.R.string.cancel),
                 (dialog, which) -> {
@@ -293,7 +291,6 @@ public class MainActivity extends AppCompatActivity implements
             intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
             mFileForResult.launch(intent);
             mProgressBar.setVisibility(View.GONE);
-            EVENTS.getInstance(getApplicationContext()).warning(filename);
 
         });
         builder.setNeutralButton(getString(android.R.string.cancel),
@@ -337,11 +334,9 @@ public class MainActivity extends AppCompatActivity implements
                 MenuItem action_mode_find = menu.findItem(R.id.action_mode_find);
                 EditText mFindText = (EditText) action_mode_find.getActionView();
 
-                mFindText.setMinWidth(dpToPx(32));
-                mFindText.setMaxWidth(dpToPx(128));
-
+                mFindText.setMaxWidth(Integer.MAX_VALUE);
                 mFindText.setSingleLine();
-                mFindText.setBackgroundResource(android.R.color.transparent);
+                mFindText.setTextSize(14);
                 mFindText.setHint(R.string.find_page);
                 mFindText.setFocusable(true);
                 mFindText.requestFocus();
@@ -646,16 +641,24 @@ public class MainActivity extends AppCompatActivity implements
             });
 
             ImageButton actionDownload = menuOverflow.findViewById(R.id.action_download);
-            actionDownload.setEnabled(false);
 
-            actionDownload.setColorFilter(ContextCompat.getColor(getApplicationContext(),
-                    android.R.color.darker_gray), android.graphics.PorterDuff.Mode.SRC_IN);
+            if (downloadActive()) {
+                actionDownload.setEnabled(true);
+
+                actionDownload.setColorFilter(ContextCompat.getColor(getApplicationContext(),
+                        android.R.color.black), android.graphics.PorterDuff.Mode.SRC_IN);
+            } else {
+                actionDownload.setEnabled(false);
+
+                actionDownload.setColorFilter(ContextCompat.getColor(getApplicationContext(),
+                        android.R.color.darker_gray), android.graphics.PorterDuff.Mode.SRC_IN);
+            }
 
             actionDownload.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     try {
-
+                        download();
                     } catch (Throwable throwable) {
                         LogUtils.error(TAG, throwable);
                     } finally {
@@ -964,7 +967,7 @@ public class MainActivity extends AppCompatActivity implements
 
                 if (Objects.equals(uri.getScheme(), Content.IPFS) ||
                         Objects.equals(uri.getScheme(), Content.IPNS)) {
-                    contentDownloader(uri, ThorService.getFileName(uri));
+                    contentDownloader(uri);
                 } else {
                     fileDownloader(uri, filename, mimeType, contentLength);
                 }
@@ -1139,7 +1142,7 @@ public class MainActivity extends AppCompatActivity implements
 
                         String res = uri.getQueryParameter("download");
                         if (Objects.equals(res, "1")) {
-                            contentDownloader(uri, ThorService.getFileName(uri));
+                            contentDownloader(uri);
                             return true;
                         }
                         mProgressBar.setVisibility(View.VISIBLE);
@@ -1308,6 +1311,37 @@ public class MainActivity extends AppCompatActivity implements
         }
 
 
+    }
+
+    private void download() {
+        try {
+            String url = mWebView.getUrl();
+            if (url != null && !url.isEmpty()) {
+                Uri uri = Uri.parse(url);
+                if (Objects.equals(uri.getScheme(), Content.IPFS) ||
+                        Objects.equals(uri.getScheme(), Content.IPNS)) {
+                    contentDownloader(uri);
+                }
+            }
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable);
+        }
+    }
+
+    private boolean downloadActive() {
+        try {
+            String url = mWebView.getUrl();
+            if (url != null && !url.isEmpty()) {
+                Uri uri = Uri.parse(url);
+                if (Objects.equals(uri.getScheme(), Content.IPFS) ||
+                        Objects.equals(uri.getScheme(), Content.IPNS)) {
+                    return true;
+                }
+            }
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable);
+        }
+        return false;
     }
 
     private void showDownloads(@NonNull Uri uri) {
@@ -1524,11 +1558,12 @@ public class MainActivity extends AppCompatActivity implements
                 magImage.setVisibility(View.GONE);
                 magImage.setImageDrawable(null);
 
-                mSearchView.requestFocus();
                 mSearchView.setIconifiedByDefault(false);
                 mSearchView.setIconified(false);
                 mSearchView.setSubmitButtonEnabled(false);
                 mSearchView.setQueryHint(getString(R.string.enter_url));
+                mSearchView.setFocusable(true);
+                mSearchView.requestFocus();
                 return true;
             }
 

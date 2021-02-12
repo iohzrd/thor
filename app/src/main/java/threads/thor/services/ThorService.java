@@ -16,7 +16,6 @@ import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.URL;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -38,17 +37,6 @@ public class ThorService {
         return "https://start.duckduckgo.com/";
     }
 
-    @NonNull
-    public static String getFileName(@NonNull Uri uri) {
-
-        List<String> paths = uri.getPathSegments();
-        if (!paths.isEmpty()) {
-            return paths.get(paths.size() - 1);
-        } else {
-            return "" + uri.getHost();
-        }
-
-    }
 
 
     public static WebResourceResponse getProxyResponse(@NonNull WebResourceRequest request,

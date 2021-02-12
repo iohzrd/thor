@@ -108,7 +108,7 @@ public class DownloadContentWorker extends Worker {
             String url = getInputData().getString(Content.ADDR);
             Objects.requireNonNull(url);
             Uri uri = Uri.parse(url);
-            String name = ThorService.getFileName(uri);
+            String name = docs.getFileName(uri);
 
             if (Objects.equals(uri.getScheme(), Content.IPFS) ||
                     Objects.equals(uri.getScheme(), Content.IPNS)) {
@@ -128,20 +128,16 @@ public class DownloadContentWorker extends Worker {
 
                 try {
 
-                    DOCS.FileInfo fileInfo = docs.getFileInfo(uri, this::isStopped);
+                    String content = docs.getContent(uri, this::isStopped);
 
-
-                    String root = fileInfo.getContent();
-
-                    String mimeType = fileInfo.getMimeType();
-                    String fileName = fileInfo.getFilename();
+                    String mimeType = docs.getMimeType(uri, content, this::isStopped);
 
                     if (Objects.equals(mimeType, MimeType.DIR_MIME_TYPE)) {
-                        doc = doc.createDirectory(fileName);
+                        doc = doc.createDirectory(name);
                         Objects.requireNonNull(doc);
                     }
 
-                    downloadContent(doc, root, mimeType, fileName);
+                    downloadContent(doc, content, mimeType, name);
 
 
                     if (!isStopped()) {

@@ -32,7 +32,6 @@ import threads.thor.ipfs.Closeable;
 import threads.thor.ipfs.ClosedException;
 import threads.thor.ipfs.DnsAddrResolver;
 import threads.thor.ipfs.IPFS;
-import threads.thor.ipfs.Link;
 import threads.thor.ipfs.LinkInfo;
 import threads.thor.magic.ContentInfo;
 import threads.thor.magic.ContentInfoUtil;
@@ -266,15 +265,6 @@ public class DOCS {
         }
     }
 
-
-    @Nullable
-    public Link getLink(@NonNull Uri uri, @NonNull String root, @NonNull Closeable progress) {
-        List<String> paths = uri.getPathSegments();
-        String host = uri.getHost();
-        Objects.requireNonNull(host);
-        return ipfs.link(root, paths, progress);
-    }
-
     public void connectUri(@NonNull Context context, @NonNull Uri uri) {
         try {
             String host = getHost(uri);
@@ -362,22 +352,6 @@ public class DOCS {
         }
     }
 
-    @NonNull
-    private FileInfo getDataInfo(@NonNull Uri uri, @NonNull String root, @NonNull Closeable closeable) throws ClosedException {
-        String host = uri.getHost();
-        Objects.requireNonNull(host);
-
-        try {
-            String mimeType = getMimeType(root, closeable);
-
-            return new FileInfo(root, mimeType, root);
-        } catch (Throwable throwable) {
-            if (closeable.isClosed()) {
-                throw new ClosedException();
-            }
-            throw new RuntimeException(throwable);
-        }
-    }
 
     @NonNull
     private WebResourceResponse getContentResponse(@NonNull String content,
@@ -412,9 +386,9 @@ public class DOCS {
     }
 
     @NonNull
-    private String getMimeType(@NonNull Uri uri,
-                               @NonNull String element,
-                               @NonNull Closeable closeable) {
+    public String getMimeType(@NonNull Uri uri,
+                              @NonNull String cid,
+                              @NonNull Closeable closeable) {
 
         List<String> paths = uri.getPathSegments();
         if (!paths.isEmpty()) {
@@ -423,17 +397,29 @@ public class DOCS {
             if (!mimeType.equals(MimeType.OCTET_MIME_TYPE)) {
                 return mimeType;
             } else {
-                return getMimeType(element, closeable);
+                return getMimeType(cid, closeable);
             }
         } else {
-            return getMimeType(element, closeable);
+            return getMimeType(cid, closeable);
         }
 
     }
 
     @NonNull
-    public FileInfo getFileInfo(@NonNull Uri uri, @NonNull Closeable closeable)
-            throws InvalidNameException, ResolveNameException, ClosedException {
+    public String getFileName(@NonNull Uri uri) {
+
+        List<String> paths = uri.getPathSegments();
+        if (!paths.isEmpty()) {
+            return paths.get(paths.size() - 1);
+        } else {
+            return "" + uri.getHost();
+        }
+
+    }
+
+    @NonNull
+    public String getContent(@NonNull Uri uri, @NonNull Closeable closeable)
+            throws InvalidNameException, ResolveNameException {
 
         String host = uri.getHost();
         Objects.requireNonNull(host);
@@ -441,21 +427,12 @@ public class DOCS {
         String root = getRoot(uri, closeable);
         Objects.requireNonNull(root);
 
-
-        Link linkInfo = getLink(uri, root, closeable);
-        if (linkInfo != null) {
-            String filename = linkInfo.getName();
-            if (ipfs.isDir(linkInfo.getContent(), closeable)) {
-                return new FileInfo(filename, MimeType.DIR_MIME_TYPE,
-                        linkInfo.getContent());
-            } else {
-                String mimeType = getMimeType(uri, linkInfo.getContent(), closeable);
-                return new FileInfo(filename, mimeType, linkInfo.getContent());
-            }
-
-        } else {
-            return getDataInfo(uri, root, closeable);
+        List<String> paths = uri.getPathSegments();
+        if (paths.isEmpty()) {
+            return root;
         }
+
+        return ipfs.resolve(root, paths, closeable);
     }
 
 
@@ -751,41 +728,6 @@ public class DOCS {
 
         } catch (Throwable e) {
             LogUtils.error(TAG, e);
-        }
-
-    }
-
-
-    public static class FileInfo {
-        @NonNull
-        private final String filename;
-        @NonNull
-        private final String mimeType;
-        @NonNull
-        private final String content;
-
-
-        public FileInfo(@NonNull String filename, @NonNull String mimeType,
-                        @NonNull String content) {
-            this.filename = filename;
-            this.mimeType = mimeType;
-            this.content = content;
-
-        }
-
-        @NonNull
-        public String getFilename() {
-            return filename;
-        }
-
-        @NonNull
-        public String getMimeType() {
-            return mimeType;
-        }
-
-        @NonNull
-        public String getContent() {
-            return content;
         }
 
     }
