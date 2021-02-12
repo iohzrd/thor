@@ -610,34 +610,28 @@ public class MainActivity extends AppCompatActivity implements
                 actionNextPage.setColorFilter(ContextCompat.getColor(getApplicationContext(),
                         android.R.color.black), android.graphics.PorterDuff.Mode.SRC_IN);
             }
-            actionNextPage.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    try {
-                        goForward();
-                    } catch (Throwable throwable) {
-                        LogUtils.error(TAG, throwable);
-                    } finally {
-                        mPopupWindow.dismiss();
-                    }
-
+            actionNextPage.setOnClickListener(v1 -> {
+                try {
+                    goForward();
+                } catch (Throwable throwable) {
+                    LogUtils.error(TAG, throwable);
+                } finally {
+                    mPopupWindow.dismiss();
                 }
+
             });
 
             ImageButton actionFindPage = menuOverflow.findViewById(R.id.action_find_page);
-            actionFindPage.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    try {
-                        startSupportActionMode(
-                                createFindActionModeCallback());
-                    } catch (Throwable throwable) {
-                        LogUtils.error(TAG, throwable);
-                    } finally {
-                        mPopupWindow.dismiss();
-                    }
-
+            actionFindPage.setOnClickListener(v12 -> {
+                try {
+                    startSupportActionMode(
+                            createFindActionModeCallback());
+                } catch (Throwable throwable) {
+                    LogUtils.error(TAG, throwable);
+                } finally {
+                    mPopupWindow.dismiss();
                 }
+
             });
 
             ImageButton actionDownload = menuOverflow.findViewById(R.id.action_download);
@@ -654,204 +648,177 @@ public class MainActivity extends AppCompatActivity implements
                         android.R.color.darker_gray), android.graphics.PorterDuff.Mode.SRC_IN);
             }
 
-            actionDownload.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    try {
-                        download();
-                    } catch (Throwable throwable) {
-                        LogUtils.error(TAG, throwable);
-                    } finally {
-                        mPopupWindow.dismiss();
-                    }
-
+            actionDownload.setOnClickListener(v13 -> {
+                try {
+                    download();
+                } catch (Throwable throwable) {
+                    LogUtils.error(TAG, throwable);
+                } finally {
+                    mPopupWindow.dismiss();
                 }
+
             });
 
             ImageButton actionShare = menuOverflow.findViewById(R.id.action_share);
-            actionShare.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    try {
-                        String url = mWebView.getUrl();
-                        Uri uri = docs.getOriginalUri(Uri.parse(url));
+            actionShare.setOnClickListener(v14 -> {
+                try {
+                    String url = mWebView.getUrl();
+                    Uri uri = docs.getOriginalUri(Uri.parse(url));
 
-                        ComponentName[] names = {new ComponentName(getApplicationContext(), MainActivity.class)};
+                    ComponentName[] names = {new ComponentName(getApplicationContext(), MainActivity.class)};
 
-                        Intent intent = new Intent(Intent.ACTION_SEND);
-                        intent.putExtra(Intent.EXTRA_SUBJECT, getString(R.string.share_link));
-                        intent.putExtra(Intent.EXTRA_TEXT, uri.toString());
-                        intent.setType(MimeType.PLAIN_MIME_TYPE);
-                        intent.putExtra(DocumentsContract.EXTRA_EXCLUDE_SELF, true);
-                        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                    Intent intent = new Intent(Intent.ACTION_SEND);
+                    intent.putExtra(Intent.EXTRA_SUBJECT, getString(R.string.share_link));
+                    intent.putExtra(Intent.EXTRA_TEXT, uri.toString());
+                    intent.setType(MimeType.PLAIN_MIME_TYPE);
+                    intent.putExtra(DocumentsContract.EXTRA_EXCLUDE_SELF, true);
+                    intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
 
 
-                        Intent chooser = Intent.createChooser(intent, getText(R.string.share));
-                        chooser.putExtra(Intent.EXTRA_EXCLUDE_COMPONENTS, names);
-                        startActivity(chooser);
-                    } catch (Throwable throwable) {
-                        LogUtils.error(TAG, throwable);
-                    } finally {
-                        mPopupWindow.dismiss();
-                    }
-
+                    Intent chooser = Intent.createChooser(intent, getText(R.string.share));
+                    chooser.putExtra(Intent.EXTRA_EXCLUDE_COMPONENTS, names);
+                    startActivity(chooser);
+                } catch (Throwable throwable) {
+                    LogUtils.error(TAG, throwable);
+                } finally {
+                    mPopupWindow.dismiss();
                 }
+
             });
 
             ImageButton actionReload = menuOverflow.findViewById(R.id.action_reload);
-            actionReload.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    try {
-                        reload();
-                    } catch (Throwable throwable) {
-                        LogUtils.error(TAG, throwable);
-                    } finally {
-                        mPopupWindow.dismiss();
-                    }
-
+            actionReload.setOnClickListener(v15 -> {
+                try {
+                    reload();
+                } catch (Throwable throwable) {
+                    LogUtils.error(TAG, throwable);
+                } finally {
+                    mPopupWindow.dismiss();
                 }
+
             });
 
 
             TextView actionHistory = menuOverflow.findViewById(R.id.action_history);
-            actionHistory.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    try {
-                        HistoryDialogFragment dialogFragment = new HistoryDialogFragment();
-                        dialogFragment.show(getSupportFragmentManager(), HistoryDialogFragment.TAG);
-                    } catch (Throwable throwable) {
-                        LogUtils.error(TAG, throwable);
-                    } finally {
-                        mPopupWindow.dismiss();
-                    }
-
+            actionHistory.setOnClickListener(v16 -> {
+                try {
+                    HistoryDialogFragment dialogFragment = new HistoryDialogFragment();
+                    dialogFragment.show(getSupportFragmentManager(), HistoryDialogFragment.TAG);
+                } catch (Throwable throwable) {
+                    LogUtils.error(TAG, throwable);
+                } finally {
+                    mPopupWindow.dismiss();
                 }
+
             });
 
 
             TextView actionDownloads = menuOverflow.findViewById(R.id.action_downloads);
-            actionDownloads.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    try {
-                        Uri root = Uri.parse(DOWNLOADS);
-                        showDownloads(root);
-                    } catch (Throwable throwable) {
-                        LogUtils.error(TAG, throwable);
-                    } finally {
-                        mPopupWindow.dismiss();
-                    }
-
+            actionDownloads.setOnClickListener(v17 -> {
+                try {
+                    Uri root = Uri.parse(DOWNLOADS);
+                    showDownloads(root);
+                } catch (Throwable throwable) {
+                    LogUtils.error(TAG, throwable);
+                } finally {
+                    mPopupWindow.dismiss();
                 }
+
             });
 
 
             TextView actionCleanup = menuOverflow.findViewById(R.id.action_cleanup);
-            actionCleanup.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    try {
+            actionCleanup.setOnClickListener(v18 -> {
+                try {
 
 
-                        mWebView.clearHistory();
-                        mWebView.clearCache(true);
-                        mWebView.clearFormData();
+                    mWebView.clearHistory();
+                    mWebView.clearCache(true);
+                    mWebView.clearFormData();
 
 
-                        // Clear data and cookies
-                        ClearCacheWorker.clearCache(getApplicationContext());
+                    // Clear data and cookies
+                    ClearCacheWorker.clearCache(getApplicationContext());
 
-                        EVENTS.getInstance(getApplicationContext()).warning(
-                                getString(R.string.clear_cache_and_cookies));
-                    } catch (Throwable throwable) {
-                        LogUtils.error(TAG, throwable);
-                    } finally {
-                        mPopupWindow.dismiss();
-                    }
-
+                    EVENTS.getInstance(getApplicationContext()).warning(
+                            getString(R.string.clear_cache_and_cookies));
+                } catch (Throwable throwable) {
+                    LogUtils.error(TAG, throwable);
+                } finally {
+                    mPopupWindow.dismiss();
                 }
+
             });
 
 
             TextView actionDocumentation = menuOverflow.findViewById(R.id.action_documentation);
-            actionDocumentation.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    try {
-                        String uri = "https://gitlab.com/remmer.wilts/thor";
+            actionDocumentation.setOnClickListener(v19 -> {
+                try {
+                    String uri = "https://gitlab.com/remmer.wilts/thor";
 
-                        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(uri),
-                                getApplicationContext(), MainActivity.class);
-                        startActivity(intent);
-                    } catch (Throwable throwable) {
-                        LogUtils.error(TAG, throwable);
-                    } finally {
-                        mPopupWindow.dismiss();
-                    }
-
+                    Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(uri),
+                            getApplicationContext(), MainActivity.class);
+                    startActivity(intent);
+                } catch (Throwable throwable) {
+                    LogUtils.error(TAG, throwable);
+                } finally {
+                    mPopupWindow.dismiss();
                 }
+
             });
 
         });
 
 
         mActionBookmark = findViewById(R.id.action_bookmark);
-        mActionBookmark.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
+        mActionBookmark.setOnClickListener(v -> {
 
-                try {
-                    String url = mWebView.getUrl();
-                    Uri uri = docs.getOriginalUri(Uri.parse(url));
+            try {
+                String url = mWebView.getUrl();
+                Uri uri = docs.getOriginalUri(Uri.parse(url));
 
-                    BOOKS books = BOOKS.getInstance(getApplicationContext());
+                BOOKS books = BOOKS.getInstance(getApplicationContext());
 
-                    Bookmark bookmark = books.getBookmark(uri.toString());
-                    if (bookmark != null) {
-                        String name = bookmark.getTitle();
-                        books.removeBookmark(bookmark);
-                        EVENTS.getInstance(getApplicationContext()).warning(
-                                getString(R.string.bookmark_removed, name));
-                    } else {
-                        Bitmap bitmap = mCustomWebChromeClient.getFavicon(url);
+                Bookmark bookmark = books.getBookmark(uri.toString());
+                if (bookmark != null) {
+                    String name = bookmark.getTitle();
+                    books.removeBookmark(bookmark);
+                    EVENTS.getInstance(getApplicationContext()).warning(
+                            getString(R.string.bookmark_removed, name));
+                } else {
+                    Bitmap bitmap = mCustomWebChromeClient.getFavicon(url);
 
-                        String title = mCustomWebChromeClient.getTitle(url);
+                    String title = mCustomWebChromeClient.getTitle(url);
 
-                        if (title == null) {
-                            title = "" + mWebView.getTitle();
-                        }
-
-                        bookmark = books.createBookmark(uri.toString(), title);
-                        if (bitmap != null) {
-                            bookmark.setBitmapIcon(bitmap);
-                        }
-
-                        books.storeBookmark(bookmark);
-
-
-                        EVENTS.getInstance(getApplicationContext()).warning(
-                                getString(R.string.bookmark_added, title));
+                    if (title == null) {
+                        title = "" + mWebView.getTitle();
                     }
-                } catch (Throwable throwable) {
-                    LogUtils.error(TAG, throwable);
-                } finally {
-                    checkBookmarkState();
+
+                    bookmark = books.createBookmark(uri.toString(), title);
+                    if (bitmap != null) {
+                        bookmark.setBitmapIcon(bitmap);
+                    }
+
+                    books.storeBookmark(bookmark);
+
+
+                    EVENTS.getInstance(getApplicationContext()).warning(
+                            getString(R.string.bookmark_added, title));
                 }
+            } catch (Throwable throwable) {
+                LogUtils.error(TAG, throwable);
+            } finally {
+                checkBookmarkState();
             }
         });
 
         ImageView actionBookmarks = findViewById(R.id.action_bookmarks);
-        actionBookmarks.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                try {
-                    BookmarksDialogFragment dialogFragment = new BookmarksDialogFragment();
-                    dialogFragment.show(getSupportFragmentManager(), BookmarksDialogFragment.TAG);
-                } catch (Throwable throwable) {
-                    LogUtils.error(TAG, throwable);
-                }
+        actionBookmarks.setOnClickListener(v -> {
+            try {
+                BookmarksDialogFragment dialogFragment = new BookmarksDialogFragment();
+                dialogFragment.show(getSupportFragmentManager(), BookmarksDialogFragment.TAG);
+            } catch (Throwable throwable) {
+                LogUtils.error(TAG, throwable);
             }
         });
 
