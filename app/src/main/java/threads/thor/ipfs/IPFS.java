@@ -579,58 +579,6 @@ public class IPFS implements Listener {
         return !res.isEmpty();
     }
 
-    @Nullable
-    public Link link(@NonNull String dir, @NonNull List<String> path, @NonNull Closeable closeable) {
-        if (!isDaemonRunning()) {
-            return null;
-        }
-        Link linkInfo = null;
-        String root = dir;
-
-        for (String name : path) {
-            linkInfo = link(root, name, closeable);
-            if (linkInfo != null) {
-                root = linkInfo.getContent();
-            } else {
-                return null;
-            }
-        }
-
-        return linkInfo;
-    }
-
-
-    @Nullable
-    public Link link(@NonNull String cid, @NonNull String name, @NonNull Closeable closeable) {
-        if (!isDaemonRunning()) {
-            return null;
-        }
-        AtomicReference<Link> result = new AtomicReference<>(null);
-        try {
-            AtomicBoolean abort = new AtomicBoolean(false);
-
-            node.ls(cid, new LsInfoClose() {
-                @Override
-                public boolean close() {
-                    return abort.get() || closeable.isClosed();
-                }
-
-                @Override
-                public void lsInfo(String test, String hash, long size, int type) {
-                    if (Objects.equals(name, test)) {
-                        result.set(Link.create(name, hash));
-                        abort.set(true);
-                    }
-
-                }
-            }, false);
-
-        } catch (Throwable e) {
-            LogUtils.error(TAG, e);
-        }
-
-        return result.get();
-    }
 
     public boolean isDir(@NonNull String cid, @NonNull Closeable closeable) {
 
