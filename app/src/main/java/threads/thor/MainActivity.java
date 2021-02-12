@@ -10,6 +10,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.net.http.SslError;
 import android.os.Bundle;
@@ -19,10 +20,12 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.DisplayMetrics;
 import android.util.Pair;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.webkit.CookieManager;
 import android.webkit.HttpAuthHandler;
 import android.webkit.SslErrorHandler;
@@ -35,6 +38,7 @@ import android.webkit.WebViewClient;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.PopupWindow;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -45,11 +49,10 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.content.res.AppCompatResources;
 import androidx.appcompat.view.ActionMode;
 import androidx.appcompat.widget.SearchView;
-import androidx.appcompat.widget.Toolbar;
 import androidx.core.content.ContextCompat;
-import androidx.core.view.MenuCompat;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
@@ -205,185 +208,15 @@ public class MainActivity extends AppCompatActivity implements
                 }
             });
 
-    private NestedWebView mWebView;
+    private WebView mWebView;
     private long mLastClickTime = 0;
     private TextView mBrowserText;
     private ActionMode mActionMode;
     private CustomWebChromeClient mCustomWebChromeClient;
     private SwipeRefreshLayout mSwipeRefreshLayout;
     private ProgressBar mProgressBar;
-    private boolean isTablet;
-    private ImageButton mActionNextPage;
-    private ImageButton mActionPreviousPage;
+    private ImageButton mActionBookmark;
     private DOCS docs;
-
-    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-
-        if (SystemClock.elapsedRealtime() - mLastClickTime < CLICK_OFFSET) {
-            return true;
-        }
-        mLastClickTime = SystemClock.elapsedRealtime();
-
-
-        int itemId = item.getItemId();
-        if (itemId == R.id.action_share) {
-
-            try {
-                String url = mWebView.getUrl();
-                Uri uri = docs.getOriginalUri(Uri.parse(url));
-
-                ComponentName[] names = {new ComponentName(getApplicationContext(), MainActivity.class)};
-
-                Intent intent = new Intent(Intent.ACTION_SEND);
-                intent.putExtra(Intent.EXTRA_SUBJECT, getString(R.string.share_link));
-                intent.putExtra(Intent.EXTRA_TEXT, uri.toString());
-                intent.setType(MimeType.PLAIN_MIME_TYPE);
-                intent.putExtra(DocumentsContract.EXTRA_EXCLUDE_SELF, true);
-                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-
-
-                Intent chooser = Intent.createChooser(intent, getText(R.string.share));
-                chooser.putExtra(Intent.EXTRA_EXCLUDE_COMPONENTS, names);
-                startActivity(chooser);
-
-
-            } catch (Throwable throwable) {
-                EVENTS.getInstance(getApplicationContext()).warning(
-                        getString(R.string.no_activity_found_to_handle_uri));
-            }
-            return true;
-        } else if (itemId == R.id.action_bookmark) {
-
-
-            try {
-                String url = mWebView.getUrl();
-                Uri uri = docs.getOriginalUri(Uri.parse(url));
-
-                BOOKS books = BOOKS.getInstance(getApplicationContext());
-
-                Bookmark bookmark = books.getBookmark(uri.toString());
-                if (bookmark != null) {
-                    String name = bookmark.getTitle();
-                    books.removeBookmark(bookmark);
-                    EVENTS.getInstance(getApplicationContext()).warning(
-                            getString(R.string.bookmark_removed, name));
-                } else {
-                    Bitmap bitmap = mCustomWebChromeClient.getFavicon(url);
-
-                    String title = mCustomWebChromeClient.getTitle(url);
-
-                    if (title == null) {
-                        title = "" + mWebView.getTitle();
-                    }
-
-                    bookmark = books.createBookmark(uri.toString(), title);
-                    if (bitmap != null) {
-                        bookmark.setBitmapIcon(bitmap);
-                    }
-
-                    books.storeBookmark(bookmark);
-
-
-                    EVENTS.getInstance(getApplicationContext()).warning(
-                            getString(R.string.bookmark_added, title));
-                }
-            } catch (Throwable throwable) {
-                LogUtils.error(TAG, throwable);
-            } finally {
-                invalidateOptionsMenu();
-            }
-            return true;
-        } else if (itemId == R.id.action_bookmarks) {
-
-
-            BookmarksDialogFragment dialogFragment = new BookmarksDialogFragment();
-            dialogFragment.show(getSupportFragmentManager(), BookmarksDialogFragment.TAG);
-
-            return true;
-        } else if (itemId == R.id.action_previous_page) {
-            try {
-               goBack();
-            } catch (Throwable throwable) {
-                LogUtils.error(TAG, throwable);
-            }
-            return true;
-        } else if (itemId == R.id.action_next_page) {
-            try {
-                goForward();
-            } catch (Throwable throwable) {
-                LogUtils.error(TAG, throwable);
-            }
-            return true;
-        } else if (itemId == R.id.action_reload) {
-            reload();
-            return true;
-        } else if (itemId == R.id.action_find_page) {
-
-
-            try {
-                startSupportActionMode(
-                        createFindActionModeCallback());
-            } catch (Throwable throwable) {
-                LogUtils.error(TAG, throwable);
-            }
-            return true;
-        } else if (itemId == R.id.action_downloads) {
-
-
-            try {
-                Uri root = Uri.parse(DOWNLOADS);
-                showDownloads(root);
-            } catch (Throwable throwable) {
-                LogUtils.error(TAG, throwable);
-            }
-            return true;
-        } else if (itemId == R.id.action_history) {
-
-
-            try {
-                HistoryDialogFragment dialogFragment = new HistoryDialogFragment();
-                dialogFragment.show(getSupportFragmentManager(), HistoryDialogFragment.TAG);
-            } catch (Throwable throwable) {
-                LogUtils.error(TAG, throwable);
-            }
-            return true;
-        } else if (itemId == R.id.action_cleanup) {
-
-
-            try {
-
-
-                mWebView.clearHistory();
-                mWebView.clearCache(true);
-                mWebView.clearFormData();
-
-
-                // Clear data and cokies
-                ClearCacheWorker.clearCache(getApplicationContext());
-
-                EVENTS.getInstance(getApplicationContext()).warning(
-                        getString(R.string.clear_cache_and_cookies));
-
-            } catch (Throwable throwable) {
-                LogUtils.error(TAG, throwable);
-            }
-            return true;
-        } else if (itemId == R.id.action_documentation) {
-
-
-            try {
-                String uri = "https://gitlab.com/remmer.wilts/thor";
-
-                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(uri),
-                        getApplicationContext(), MainActivity.class);
-                startActivity(intent);
-            } catch (Throwable throwable) {
-                LogUtils.error(TAG, throwable);
-            }
-            return true;
-        }
-        return super.onOptionsItemSelected(item);
-    }
 
     private void magnetDownloader(@NonNull Uri uri, @NonNull String name) {
 
@@ -503,13 +336,10 @@ public class MainActivity extends AppCompatActivity implements
 
                 MenuItem action_mode_find = menu.findItem(R.id.action_mode_find);
                 EditText mFindText = (EditText) action_mode_find.getActionView();
-                if (isTablet) {
-                    mFindText.setMinWidth(400);
-                    mFindText.setMaxWidth(600);
-                } else {
-                    mFindText.setMinWidth(200);
-                    mFindText.setMaxWidth(400);
-                }
+
+                mFindText.setMinWidth(dpToPx(32));
+                mFindText.setMaxWidth(dpToPx(128));
+
                 mFindText.setSingleLine();
                 mFindText.setBackgroundResource(android.R.color.transparent);
                 mFindText.setHint(R.string.find_page);
@@ -604,46 +434,37 @@ public class MainActivity extends AppCompatActivity implements
         return false;
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        super.onCreateOptionsMenu(menu);
-        MenuCompat.setGroupDividerEnabled(menu, true);
-        getMenuInflater().inflate(R.menu.menu_main, menu);
+    private void checkBookmarkState() {
 
-        MenuItem mActionBookmark = menu.findItem(R.id.action_bookmark);
-        mActionBookmark.setVisible(true);
-
-
-        if (mWebView != null) {
-            if (!isTablet) {
-                menu.findItem(R.id.action_previous_page).setEnabled(mWebView.canGoBack());
-                menu.findItem(R.id.action_next_page).setEnabled(mWebView.canGoForward());
-            }
-
-            try {
+        try {
+            String url = mWebView.getUrl();
+            if (url != null && !url.isEmpty()) {
                 BOOKS books = BOOKS.getInstance(getApplicationContext());
-                Uri uri = docs.getOriginalUri(Uri.parse(mWebView.getUrl()));
+                Uri uri = docs.getOriginalUri(Uri.parse(url));
                 if (books.hasBookmark(uri.toString())) {
-                    mActionBookmark.setIcon(R.drawable.star);
+                    Drawable drawable = AppCompatResources.getDrawable(
+                            getApplicationContext(), R.drawable.star);
+                    mActionBookmark.setImageDrawable(drawable);
                 } else {
-                    mActionBookmark.setIcon(R.drawable.star_outline);
+                    Drawable drawable = AppCompatResources.getDrawable(
+                            getApplicationContext(), R.drawable.star_outline);
+                    mActionBookmark.setImageDrawable(drawable);
                 }
-            } catch (Throwable throwable) {
-                LogUtils.error(TAG, throwable);
             }
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable);
         }
-        return super.onCreateOptionsMenu(menu);
 
     }
 
     private String prettyUri(@NonNull Uri uri, @NonNull String replace){
         return uri.toString().replaceFirst(replace, "");
     }
+
     private void invalidateMenu(@Nullable Uri uri) {
         try {
             if (uri != null) {
 
-                mBrowserText.setClickable(true);
                 if (Objects.equals(uri.getScheme(), Content.HTTPS)) {
                     mBrowserText.setCompoundDrawablesRelativeWithIntrinsicBounds(
                             R.drawable.lock, 0, 0, 0
@@ -660,39 +481,12 @@ public class MainActivity extends AppCompatActivity implements
                     );
                     mBrowserText.setText(uri.toString());
                 }
-                mBrowserText.setCompoundDrawablePadding(8);
+
             }
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
-        }
-
-        try {
-            if (mActionNextPage != null) {
-                if (mWebView.canGoForward()) {
-                    mActionNextPage.setColorFilter(ContextCompat.getColor(getApplicationContext(),
-                            android.R.color.white), android.graphics.PorterDuff.Mode.SRC_IN);
-                    mActionNextPage.setEnabled(true);
-                } else {
-                    mActionNextPage.setColorFilter(ContextCompat.getColor(getApplicationContext(),
-                            android.R.color.darker_gray), android.graphics.PorterDuff.Mode.SRC_IN);
-                    mActionNextPage.setEnabled(false);
-                }
-            }
-            if (mActionPreviousPage != null) {
-                if (mWebView.canGoBack()) {
-                    mActionPreviousPage.setColorFilter(ContextCompat.getColor(getApplicationContext(),
-                            android.R.color.white), android.graphics.PorterDuff.Mode.SRC_IN);
-                    mActionPreviousPage.setEnabled(true);
-                } else {
-                    mActionPreviousPage.setColorFilter(ContextCompat.getColor(getApplicationContext(),
-                            android.R.color.darker_gray), android.graphics.PorterDuff.Mode.SRC_IN);
-                    mActionPreviousPage.setEnabled(false);
-                }
-
-            }
-            invalidateOptionsMenu();
-        } catch (Throwable throwable) {
-            LogUtils.error(TAG, throwable);
+        } finally {
+            checkBookmarkState();
         }
     }
     private AppBarLayout mAppBar;
@@ -719,33 +513,32 @@ public class MainActivity extends AppCompatActivity implements
         }
     }
 
+    private int dpToPx(int dp) {
+        float density = getApplicationContext().getResources()
+                .getDisplayMetrics().density;
+        return Math.round((float) dp * density);
+    }
+
+
     @SuppressLint({"ClickableViewAccessibility"})
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_main);
-        mAppBar = findViewById(R.id.appbar);
-        Toolbar mToolbar = findViewById(R.id.toolbar);
-        mToolbar.setContentInsetsAbsolute(0, 0);
-        setTitle(null);
 
         docs = DOCS.getInstance(getApplicationContext());
-        isTablet = getResources().getBoolean(R.bool.isTablet);
-
-        setSupportActionBar(mToolbar);
 
 
-        ImageButton actionIncognito = findViewById(R.id.action_incognito);
-
+        mAppBar = findViewById(R.id.appbar);
         mProgressBar = findViewById(R.id.progress_bar);
         mProgressBar.setVisibility(View.GONE);
-
         mWebView = findViewById(R.id.web_view);
 
         Settings.setWebSettings(mWebView);
         CookieManager.getInstance().setAcceptThirdPartyCookies(mWebView, false);
 
+        ImageButton actionIncognito = findViewById(R.id.action_incognito);
         actionIncognito.setOnClickListener(v -> {
             try {
                 if (SystemClock.elapsedRealtime() - mLastClickTime < CLICK_OFFSET) {
@@ -791,19 +584,274 @@ public class MainActivity extends AppCompatActivity implements
         }
 
 
-        if (isTablet) {
-            mActionNextPage = findViewById(R.id.action_next_page);
-            mActionNextPage.setEnabled(mWebView.canGoForward());
-            mActionNextPage.setOnClickListener(v -> goForward());
+        ImageView mActionOverflow = findViewById(R.id.action_overflow);
 
-            mActionPreviousPage = findViewById(R.id.action_previous_page);
-            mActionPreviousPage.setEnabled(mWebView.canGoBack());
-            mActionPreviousPage.setOnClickListener(v -> goBack());
+        mActionOverflow.setOnClickListener(v -> {
+
+            LayoutInflater inflater = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
 
 
-            ImageButton actionReload = findViewById(R.id.action_reload);
-            actionReload.setOnClickListener(v -> reload());
-        }
+            View menuOverflow = inflater.inflate(R.layout.menu_overflow, null);
+
+
+            PopupWindow mPopupWindow = new PopupWindow(menuOverflow);
+            mPopupWindow.setHeight(ViewGroup.LayoutParams.WRAP_CONTENT);
+            mPopupWindow.setWidth(ViewGroup.LayoutParams.WRAP_CONTENT);
+            mPopupWindow.setOutsideTouchable(true);
+            mPopupWindow.setFocusable(true);
+            mPopupWindow.setElevation(12);
+            mPopupWindow.showAsDropDown(mActionOverflow, 0, -dpToPx(48), Gravity.TOP);
+
+
+            ImageButton actionNextPage = menuOverflow.findViewById(R.id.action_next_page);
+            if (!mWebView.canGoForward()) {
+                actionNextPage.setEnabled(false);
+
+                actionNextPage.setColorFilter(ContextCompat.getColor(getApplicationContext(),
+                        android.R.color.darker_gray), android.graphics.PorterDuff.Mode.SRC_IN);
+            } else {
+                actionNextPage.setEnabled(true);
+
+                actionNextPage.setColorFilter(ContextCompat.getColor(getApplicationContext(),
+                        android.R.color.black), android.graphics.PorterDuff.Mode.SRC_IN);
+            }
+            actionNextPage.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    try {
+                        goForward();
+                    } catch (Throwable throwable) {
+                        LogUtils.error(TAG, throwable);
+                    } finally {
+                        mPopupWindow.dismiss();
+                    }
+
+                }
+            });
+
+            ImageButton actionFindPage = menuOverflow.findViewById(R.id.action_find_page);
+            actionFindPage.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    try {
+                        startSupportActionMode(
+                                createFindActionModeCallback());
+                    } catch (Throwable throwable) {
+                        LogUtils.error(TAG, throwable);
+                    } finally {
+                        mPopupWindow.dismiss();
+                    }
+
+                }
+            });
+
+            ImageButton actionDownload = menuOverflow.findViewById(R.id.action_download);
+            actionDownload.setEnabled(false);
+
+            actionDownload.setColorFilter(ContextCompat.getColor(getApplicationContext(),
+                    android.R.color.darker_gray), android.graphics.PorterDuff.Mode.SRC_IN);
+
+            actionDownload.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    try {
+
+                    } catch (Throwable throwable) {
+                        LogUtils.error(TAG, throwable);
+                    } finally {
+                        mPopupWindow.dismiss();
+                    }
+
+                }
+            });
+
+            ImageButton actionShare = menuOverflow.findViewById(R.id.action_share);
+            actionShare.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    try {
+                        String url = mWebView.getUrl();
+                        Uri uri = docs.getOriginalUri(Uri.parse(url));
+
+                        ComponentName[] names = {new ComponentName(getApplicationContext(), MainActivity.class)};
+
+                        Intent intent = new Intent(Intent.ACTION_SEND);
+                        intent.putExtra(Intent.EXTRA_SUBJECT, getString(R.string.share_link));
+                        intent.putExtra(Intent.EXTRA_TEXT, uri.toString());
+                        intent.setType(MimeType.PLAIN_MIME_TYPE);
+                        intent.putExtra(DocumentsContract.EXTRA_EXCLUDE_SELF, true);
+                        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+
+
+                        Intent chooser = Intent.createChooser(intent, getText(R.string.share));
+                        chooser.putExtra(Intent.EXTRA_EXCLUDE_COMPONENTS, names);
+                        startActivity(chooser);
+                    } catch (Throwable throwable) {
+                        LogUtils.error(TAG, throwable);
+                    } finally {
+                        mPopupWindow.dismiss();
+                    }
+
+                }
+            });
+
+            ImageButton actionReload = menuOverflow.findViewById(R.id.action_reload);
+            actionReload.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    try {
+                        reload();
+                    } catch (Throwable throwable) {
+                        LogUtils.error(TAG, throwable);
+                    } finally {
+                        mPopupWindow.dismiss();
+                    }
+
+                }
+            });
+
+
+            TextView actionHistory = menuOverflow.findViewById(R.id.action_history);
+            actionHistory.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    try {
+                        HistoryDialogFragment dialogFragment = new HistoryDialogFragment();
+                        dialogFragment.show(getSupportFragmentManager(), HistoryDialogFragment.TAG);
+                    } catch (Throwable throwable) {
+                        LogUtils.error(TAG, throwable);
+                    } finally {
+                        mPopupWindow.dismiss();
+                    }
+
+                }
+            });
+
+
+            TextView actionDownloads = menuOverflow.findViewById(R.id.action_downloads);
+            actionDownloads.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    try {
+                        Uri root = Uri.parse(DOWNLOADS);
+                        showDownloads(root);
+                    } catch (Throwable throwable) {
+                        LogUtils.error(TAG, throwable);
+                    } finally {
+                        mPopupWindow.dismiss();
+                    }
+
+                }
+            });
+
+
+            TextView actionCleanup = menuOverflow.findViewById(R.id.action_cleanup);
+            actionCleanup.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    try {
+
+
+                        mWebView.clearHistory();
+                        mWebView.clearCache(true);
+                        mWebView.clearFormData();
+
+
+                        // Clear data and cookies
+                        ClearCacheWorker.clearCache(getApplicationContext());
+
+                        EVENTS.getInstance(getApplicationContext()).warning(
+                                getString(R.string.clear_cache_and_cookies));
+                    } catch (Throwable throwable) {
+                        LogUtils.error(TAG, throwable);
+                    } finally {
+                        mPopupWindow.dismiss();
+                    }
+
+                }
+            });
+
+
+            TextView actionDocumentation = menuOverflow.findViewById(R.id.action_documentation);
+            actionDocumentation.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    try {
+                        String uri = "https://gitlab.com/remmer.wilts/thor";
+
+                        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(uri),
+                                getApplicationContext(), MainActivity.class);
+                        startActivity(intent);
+                    } catch (Throwable throwable) {
+                        LogUtils.error(TAG, throwable);
+                    } finally {
+                        mPopupWindow.dismiss();
+                    }
+
+                }
+            });
+
+        });
+
+
+        mActionBookmark = findViewById(R.id.action_bookmark);
+        mActionBookmark.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                try {
+                    String url = mWebView.getUrl();
+                    Uri uri = docs.getOriginalUri(Uri.parse(url));
+
+                    BOOKS books = BOOKS.getInstance(getApplicationContext());
+
+                    Bookmark bookmark = books.getBookmark(uri.toString());
+                    if (bookmark != null) {
+                        String name = bookmark.getTitle();
+                        books.removeBookmark(bookmark);
+                        EVENTS.getInstance(getApplicationContext()).warning(
+                                getString(R.string.bookmark_removed, name));
+                    } else {
+                        Bitmap bitmap = mCustomWebChromeClient.getFavicon(url);
+
+                        String title = mCustomWebChromeClient.getTitle(url);
+
+                        if (title == null) {
+                            title = "" + mWebView.getTitle();
+                        }
+
+                        bookmark = books.createBookmark(uri.toString(), title);
+                        if (bitmap != null) {
+                            bookmark.setBitmapIcon(bitmap);
+                        }
+
+                        books.storeBookmark(bookmark);
+
+
+                        EVENTS.getInstance(getApplicationContext()).warning(
+                                getString(R.string.bookmark_added, title));
+                    }
+                } catch (Throwable throwable) {
+                    LogUtils.error(TAG, throwable);
+                } finally {
+                    checkBookmarkState();
+                }
+            }
+        });
+
+        ImageView actionBookmarks = findViewById(R.id.action_bookmarks);
+        actionBookmarks.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                try {
+                    BookmarksDialogFragment dialogFragment = new BookmarksDialogFragment();
+                    dialogFragment.show(getSupportFragmentManager(), BookmarksDialogFragment.TAG);
+                } catch (Throwable throwable) {
+                    LogUtils.error(TAG, throwable);
+                }
+            }
+        });
+
 
         mSwipeRefreshLayout = findViewById(R.id.swipe_container);
 
@@ -823,7 +871,8 @@ public class MainActivity extends AppCompatActivity implements
 
 
         mBrowserText = findViewById(R.id.action_browser);
-
+        mBrowserText.setClickable(true);
+        mBrowserText.setCompoundDrawablePadding(8);
 
         mBrowserText.setOnClickListener(view -> {
 

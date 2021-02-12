@@ -30,5 +30,7 @@
     <string name="next_page">Next page</string>
     <string name="incognito">Incognito Mode</string>
     <string name="reload_page">Reload Page</string>
+    <string name="download">Download</string>
+    <string name="more_options">More options</string>
 
 </resources>

@@ -30,10 +30,12 @@
 
     <string name="enter_url">URL-Eingabe</string>
     <string name="tor_mode">Strikter Inkognito-Modus (TOR)</string>
-    <string name="action_cleanup">Browser bereinigen</string>
+    <string name="action_cleanup">Browserdaten löschen</string>
     <string name="previous_page">Vorherige Seite</string>
     <string name="next_page">Nächste Seite</string>
     <string name="incognito">Incognito Modus</string>
     <string name="reload_page">Reload Seite</string>
+    <string name="download">Download</string>
+    <string name="more_options">More options</string>
 
 </resources>
