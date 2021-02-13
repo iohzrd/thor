@@ -11,7 +11,7 @@
     <string name="download_complete">Download abgeschlossen für \"%1$s\"</string>
     <string name="file_has_no_write_permission">Keine \"Write Permission\" für den Speicherort</string>
 
-    <string name="download_title">Download Datei</string>
+    <string name="download_title">Download Daten</string>
     <string name="bookmarks">Lesezeichen</string>
     <string name="bookmark">Lesezeichen hinzufügen oder entfernen</string>
     <string name="bookmark_added">Lesezeichen \"%1$s\" hinzugefügt</string>

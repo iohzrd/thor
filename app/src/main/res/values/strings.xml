@@ -8,7 +8,7 @@
     <string name="download_complete">Download complete for \"%1$s\"</string>
     <string name="search">Search</string>
     <string name="file_has_no_write_permission">No \"Write Permission\" on the location</string>
-    <string name="download_title">Download File</string>
+    <string name="download_title">Download Data</string>
     <string name="bookmarks">Bookmarks</string>
     <string name="bookmark">Alter Bookmark</string>
     <string name="bookmark_added">Bookmark \"%1$s\" added</string>
