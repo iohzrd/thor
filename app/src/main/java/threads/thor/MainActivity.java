@@ -52,6 +52,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.content.res.AppCompatResources;
 import androidx.appcompat.view.ActionMode;
 import androidx.appcompat.widget.SearchView;
+import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.core.content.ContextCompat;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
@@ -525,6 +526,7 @@ public class MainActivity extends AppCompatActivity implements
         docs = DOCS.getInstance(getApplicationContext());
 
 
+        CoordinatorLayout mDrawerLayout = findViewById(R.id.drawer_layout);
         mAppBar = findViewById(R.id.appbar);
         mProgressBar = findViewById(R.id.progress_bar);
         mProgressBar.setVisibility(View.GONE);
@@ -586,8 +588,8 @@ public class MainActivity extends AppCompatActivity implements
             LayoutInflater inflater = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
 
 
-            View menuOverflow = inflater.inflate(R.layout.menu_overflow, null);
-
+            View menuOverflow = inflater.inflate(
+                    R.layout.menu_overflow, mDrawerLayout, false);
 
             PopupWindow mPopupWindow = new PopupWindow(
                     MainActivity.this, null, R.attr.popupMenuStyle);
