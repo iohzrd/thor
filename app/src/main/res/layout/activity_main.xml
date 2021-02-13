@@ -50,7 +50,6 @@
                 android:src="@drawable/star_outline"
                 app:tint="@android:color/white" />
 
-
             <ImageButton
                 android:id="@+id/action_bookmarks"
                 android:layout_width="wrap_content"

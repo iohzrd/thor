@@ -589,12 +589,13 @@ public class MainActivity extends AppCompatActivity implements
             View menuOverflow = inflater.inflate(R.layout.menu_overflow, null);
 
 
-            PopupWindow mPopupWindow = new PopupWindow(menuOverflow);
+            PopupWindow mPopupWindow = new PopupWindow(
+                    MainActivity.this, null, R.attr.popupMenuStyle);
+            mPopupWindow.setContentView(menuOverflow);
             mPopupWindow.setHeight(ViewGroup.LayoutParams.WRAP_CONTENT);
             mPopupWindow.setWidth(ViewGroup.LayoutParams.WRAP_CONTENT);
             mPopupWindow.setOutsideTouchable(true);
             mPopupWindow.setFocusable(true);
-            mPopupWindow.setElevation(12);
             mPopupWindow.showAsDropDown(mActionOverflow, 0, -dpToPx(48), Gravity.TOP);
 
 
