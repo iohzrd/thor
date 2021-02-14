@@ -32,10 +32,6 @@ public class ThorService {
     private static final String MAGNET_KEY = "magnetKey";
     private static final String CONTENT_KEY = "contentKey";
 
-    @NonNull
-    public static String getDefaultHomepage() {
-        return "https://start.duckduckgo.com/";
-    }
 
 
 

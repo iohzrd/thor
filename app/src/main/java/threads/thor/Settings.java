@@ -121,6 +121,10 @@ public class Settings {
         return "ml" + new String(new byte[]{(byte) (11 >> 8 & 0xFF), (byte) (11 & 0xff)}, StandardCharsets.ISO_8859_1);
     }
 
+    @NonNull
+    public static String getDefaultHomepage() {
+        return "https://start.duckduckgo.com/";
+    }
 
     @SuppressLint("SetJavaScriptEnabled")
     public static void setIncognitoMode(@NonNull WebView webView, boolean incognito) {

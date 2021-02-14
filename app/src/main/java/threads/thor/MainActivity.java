@@ -1276,7 +1276,7 @@ public class MainActivity extends AppCompatActivity implements
             mWebView.restoreState(savedInstanceState);
         } else {
             if (!urlLoading) {
-                openUri(Uri.parse(ThorService.getDefaultHomepage()));
+                openUri(Uri.parse(Settings.getDefaultHomepage()));
             }
         }
 
