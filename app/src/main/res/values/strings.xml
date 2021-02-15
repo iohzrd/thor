@@ -23,7 +23,7 @@
     <string name="user_name">Username</string>
     <string name="authentication">Authentication</string>
     <string name="downloads">Downloads</string>
-    <string name="enter_url">Enter URL</string>
+    <string name="enter_url">URL or search input</string>
     <string name="tor_mode">Strict Incognito Mode (TOR)</string>
     <string name="action_cleanup">Cleanup Browser</string>
     <string name="previous_page">Previous page</string>

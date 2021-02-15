@@ -28,7 +28,7 @@
     <string name="downloads">Downloads</string>
 
 
-    <string name="enter_url">URL-Eingabe</string>
+    <string name="enter_url">URL oder Sucheingabe</string>
     <string name="tor_mode">Strikter Inkognito-Modus (TOR)</string>
     <string name="action_cleanup">Browserdaten löschen</string>
     <string name="previous_page">Vorherige Seite</string>
