@@ -110,16 +110,20 @@ public class DOCS {
     }
 
     @NonNull
-    private String getMimeType(@NonNull Context context,
-                               @NonNull String cid,
+    private String getMimeType(@NonNull Context context, @NonNull String cid,
                                @NonNull Closeable closeable) throws ClosedException {
 
         if (ipfs.isEmptyDir(cid) || ipfs.isDir(cid, closeable)) {
             return MimeType.DIR_MIME_TYPE;
         }
 
-        String mimeType = MimeType.OCTET_MIME_TYPE;
+        return getContentMimeType(context, cid, closeable);
+    }
+    @NonNull
+    private String getContentMimeType(@NonNull Context context, @NonNull String cid,
+                                      @NonNull Closeable closeable) throws ClosedException {
 
+        String mimeType = MimeType.OCTET_MIME_TYPE;
 
         try (InputStream in = ipfs.getLoaderStream(cid, closeable)) {
 
@@ -303,7 +307,7 @@ public class DOCS {
                 return new WebResourceResponse(MimeType.HTML_MIME_TYPE, Content.UTF8,
                         new ByteArrayInputStream(answer.getBytes()));
             } else {
-                String mimeType = getMimeType(context, root, closeable);
+                String mimeType = getContentMimeType(context, root, closeable);
                 long size = ipfs.getSize(root, closeable);
                 return getContentResponse(root, mimeType, size, closeable);
             }
