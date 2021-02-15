@@ -369,10 +369,9 @@ public class DOCS {
     }
 
     @NonNull
-    public String getMimeType(@NonNull Context context,
-                              @NonNull Uri uri,
-                              @NonNull String cid,
-                              @NonNull Closeable closeable) throws ClosedException {
+    public String getMimeType(@NonNull Context context, @NonNull Uri uri,
+                              @NonNull String cid, @NonNull Closeable closeable)
+            throws ClosedException {
 
         List<String> paths = uri.getPathSegments();
         if (!paths.isEmpty()) {
