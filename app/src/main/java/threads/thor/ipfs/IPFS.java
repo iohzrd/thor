@@ -337,7 +337,7 @@ public class IPFS implements Listener {
         return null;
     }
 
-    public synchronized void startDaemon() {
+    public void startDaemon() {
         if (!node.getRunning()) {
             synchronized (locker) {
                 if (!node.getRunning()) {
