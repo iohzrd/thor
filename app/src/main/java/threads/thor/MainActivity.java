@@ -531,6 +531,21 @@ public class MainActivity extends AppCompatActivity implements
         mProgressBar = findViewById(R.id.progress_bar);
         mProgressBar.setVisibility(View.GONE);
         mWebView = findViewById(R.id.web_view);
+        mSwipeRefreshLayout = findViewById(R.id.swipe_container);
+
+        mAppBar.addOnOffsetChangedListener(new AppBarStateChangedListener() {
+            @Override
+            public void onStateChanged(AppBarLayout appBarLayout, State state) {
+                LogUtils.error(TAG, state.name());
+
+                if (state == State.EXPANDED) {
+                    mSwipeRefreshLayout.setEnabled(true);
+                } else if (state == State.COLLAPSED) {
+                    mSwipeRefreshLayout.setEnabled(false);
+                }
+
+            }
+        });
 
         Settings.setWebSettings(mWebView);
         CookieManager.getInstance().setAcceptThirdPartyCookies(mWebView, false);
@@ -826,7 +841,6 @@ public class MainActivity extends AppCompatActivity implements
         });
 
 
-        mSwipeRefreshLayout = findViewById(R.id.swipe_container);
 
         mSwipeRefreshLayout.setOnRefreshListener(() -> {
             try {
@@ -839,9 +853,6 @@ public class MainActivity extends AppCompatActivity implements
             }
         });
         mSwipeRefreshLayout.setColorSchemeResources(android.R.color.holo_blue_dark);
-        final DisplayMetrics metrics = getResources().getDisplayMetrics();
-        mSwipeRefreshLayout.setDistanceToTriggerSync((int) metrics.density * 128);
-
 
         mBrowserText = findViewById(R.id.action_browser);
         mBrowserText.setClickable(true);
@@ -1565,4 +1576,34 @@ public class MainActivity extends AppCompatActivity implements
     }
 
 
+    public abstract static class AppBarStateChangedListener implements AppBarLayout.OnOffsetChangedListener {
+
+        private State mCurrentState = State.IDLE;
+
+        @Override
+        public final void onOffsetChanged(AppBarLayout appBarLayout, int verticalOffset) {
+            if (verticalOffset == 0) {
+                setCurrentStateAndNotify(appBarLayout, State.EXPANDED);
+            } else if (Math.abs(verticalOffset) >= appBarLayout.getTotalScrollRange()) {
+                setCurrentStateAndNotify(appBarLayout, State.COLLAPSED);
+            } else {
+                setCurrentStateAndNotify(appBarLayout, State.IDLE);
+            }
+        }
+
+        private void setCurrentStateAndNotify(AppBarLayout appBarLayout, State state) {
+            if (mCurrentState != state) {
+                onStateChanged(appBarLayout, state);
+            }
+            mCurrentState = state;
+        }
+
+        public abstract void onStateChanged(AppBarLayout appBarLayout, State state);
+
+        public enum State {
+            EXPANDED,
+            COLLAPSED,
+            IDLE
+        }
+    }
 }
