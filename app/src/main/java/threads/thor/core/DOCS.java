@@ -108,26 +108,26 @@ public class DOCS {
     }
 
     @NonNull
-    private String getMimeType(@NonNull String cid, @NonNull Closeable closeable) {
+    private String getMimeType(@NonNull String cid, @NonNull Closeable closeable) throws ClosedException {
 
         if (ipfs.isEmptyDir(cid) || ipfs.isDir(cid, closeable)) {
             return MimeType.DIR_MIME_TYPE;
         }
 
         String mimeType = MimeType.OCTET_MIME_TYPE;
-        if (!closeable.isClosed()) {
-            try (InputStream in = ipfs.getLoaderStream(cid, closeable)) {
 
-                ContentInfo info = util.findMatch(in);
+        try (InputStream in = ipfs.getLoaderStream(cid, closeable)) {
 
-                if (info != null) {
-                    mimeType = info.getMimeType();
-                }
+            ContentInfo info = util.findMatch(in);
 
-            } catch (Throwable throwable) {
-                LogUtils.error(TAG, throwable);
+            if (info != null) {
+                mimeType = info.getMimeType();
             }
+
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable);
         }
+
         return mimeType;
     }
 
@@ -147,7 +147,7 @@ public class DOCS {
 
     @NonNull
     public String resolveName(@NonNull Uri uri, @NonNull String name,
-                              @NonNull Closeable closeable) throws ResolveNameException {
+                              @NonNull Closeable closeable) throws ResolveNameException, ClosedException {
         String pid = ipfs.decodeName(name);
         String resolved = resolves.get(pid);
         if (resolved != null) {
@@ -291,34 +291,19 @@ public class DOCS {
                 return new WebResourceResponse(MimeType.HTML_MIME_TYPE, Content.UTF8,
                         new ByteArrayInputStream(answer.getBytes()));
             } else if (ipfs.isDir(root, closeable)) {
-                if (closeable.isClosed()) {
-                    throw new ClosedException();
-                }
                 List<LinkInfo> links = ipfs.getLinks(root, closeable);
-                if (closeable.isClosed()) {
-                    throw new ClosedException();
-                }
                 String answer = generateDirectoryHtml(uri, root, paths, links);
                 return new WebResourceResponse(MimeType.HTML_MIME_TYPE, Content.UTF8,
                         new ByteArrayInputStream(answer.getBytes()));
             } else {
                 String mimeType = getMimeType(root, closeable);
-                if (closeable.isClosed()) {
-                    throw new ClosedException();
-                }
                 long size = ipfs.getSize(root, closeable);
-                if (closeable.isClosed()) {
-                    throw new ClosedException();
-                }
                 return getContentResponse(root, mimeType, size, closeable);
             }
 
 
         } else {
             String cid = ipfs.resolve(root, paths, closeable);
-            if (closeable.isClosed()) {
-                throw new ClosedException();
-            }
             if (cid.isEmpty()) {
                 throw new ContentException(uri.toString());
             }
@@ -327,26 +312,14 @@ public class DOCS {
                 return new WebResourceResponse(MimeType.HTML_MIME_TYPE, Content.UTF8,
                         new ByteArrayInputStream(answer.getBytes()));
             } else if (ipfs.isDir(cid, closeable)) {
-                if (closeable.isClosed()) {
-                    throw new ClosedException();
-                }
                 List<LinkInfo> links = ipfs.getLinks(cid, closeable);
-                if (closeable.isClosed()) {
-                    throw new ClosedException();
-                }
                 String answer = generateDirectoryHtml(uri, root, paths, links);
                 return new WebResourceResponse(MimeType.HTML_MIME_TYPE, Content.UTF8,
                         new ByteArrayInputStream(answer.getBytes()));
 
             } else {
                 String mimeType = getMimeType(uri, cid, closeable);
-                if (closeable.isClosed()) {
-                    throw new ClosedException();
-                }
                 long size = ipfs.getSize(cid, closeable);
-                if (closeable.isClosed()) {
-                    throw new ClosedException();
-                }
                 return getContentResponse(cid, mimeType, size, closeable);
             }
         }
@@ -388,7 +361,7 @@ public class DOCS {
     @NonNull
     public String getMimeType(@NonNull Uri uri,
                               @NonNull String cid,
-                              @NonNull Closeable closeable) {
+                              @NonNull Closeable closeable) throws ClosedException {
 
         List<String> paths = uri.getPathSegments();
         if (!paths.isEmpty()) {
@@ -419,7 +392,7 @@ public class DOCS {
 
     @NonNull
     public String getContent(@NonNull Uri uri, @NonNull Closeable closeable)
-            throws InvalidNameException, ResolveNameException {
+            throws InvalidNameException, ResolveNameException, ClosedException {
 
         String host = uri.getHost();
         Objects.requireNonNull(host);
@@ -438,7 +411,7 @@ public class DOCS {
 
     @Nullable
     public String getRoot(@NonNull Uri uri, @NonNull Closeable closeable)
-            throws ResolveNameException, InvalidNameException {
+            throws ResolveNameException, InvalidNameException, ClosedException {
         String host = uri.getHost();
         Objects.requireNonNull(host);
 
@@ -469,10 +442,6 @@ public class DOCS {
 
         String root = getRoot(uri, closeable);
         Objects.requireNonNull(root);
-
-        if (closeable.isClosed()) {
-            throw new ClosedException();
-        }
 
         return getResponse(uri, root, paths, closeable);
 
@@ -610,9 +579,7 @@ public class DOCS {
 
             if (!ipfs.isEmptyDir(root)) {
                 boolean exists = ipfs.resolve(root, INDEX_HTML, closeable);
-                if (closeable.isClosed()) {
-                    throw new ClosedException();
-                }
+
                 if (exists) {
                     Uri.Builder builder = new Uri.Builder();
                     builder.scheme(uri.getScheme())
@@ -629,15 +596,11 @@ public class DOCS {
         } else {
 
             String cid = ipfs.resolve(root, paths, closeable);
-            if (closeable.isClosed()) {
-                throw new ClosedException();
-            }
+
             if (!cid.isEmpty()) {
                 if (!ipfs.isEmptyDir(cid)) {
                     boolean exists = ipfs.resolve(cid, INDEX_HTML, closeable);
-                    if (closeable.isClosed()) {
-                        throw new ClosedException();
-                    }
+
                     if (exists) {
                         Uri.Builder builder = new Uri.Builder();
                         builder.scheme(uri.getScheme())

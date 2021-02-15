@@ -429,7 +429,7 @@ public class IPFS implements Listener {
     }
 
 
-    public void resolveName(@NonNull String name, @NonNull Closeable closeable) {
+    public void resolveName(@NonNull String name, @NonNull Closeable closeable) throws ClosedException {
         if (!isDaemonRunning()) {
             return;
         }
@@ -451,13 +451,18 @@ public class IPFS implements Listener {
         } catch (Throwable e) {
             LogUtils.error(TAG, e);
         }
+
         LogUtils.error(TAG, "Finished resolve name " + name + " " +
                 (System.currentTimeMillis() - time));
+
+        if (closeable.isClosed()) {
+            throw new ClosedException();
+        }
     }
 
     @Nullable
     public ResolvedName resolveName(@NonNull String name, long initSequence,
-                                    @NonNull Closeable closeable) {
+                                    @NonNull Closeable closeable) throws ClosedException {
         if (!isDaemonRunning()) {
             return null;
         }
@@ -519,18 +524,19 @@ public class IPFS implements Listener {
         LogUtils.error(TAG, "Finished resolve name " + name + " " +
                 (System.currentTimeMillis() - time));
 
+        if (closeable.isClosed()) {
+            throw new ClosedException();
+        }
         return resolvedName.get();
     }
 
 
     @Nullable
-    public List<LinkInfo> getLinks(@NonNull String cid, @NonNull Closeable closeable) {
-
-        LogUtils.info(TAG, "getLinks : " + cid);
+    public List<LinkInfo> getLinks(@NonNull String cid, @NonNull Closeable closeable) throws ClosedException {
 
         List<LinkInfo> links = ls(cid, closeable);
         if (links == null) {
-            LogUtils.info(TAG, "no links or stopped");
+            LogUtils.info(TAG, "no links");
             return null;
         }
 
@@ -545,22 +551,19 @@ public class IPFS implements Listener {
 
 
     @NonNull
-    public String resolve(@NonNull String root, @NonNull List<String> path, @NonNull Closeable closeable) {
-        try {
-            String resultPath = Content.IPFS_PATH + root;
-            for (String name : path) {
-                resultPath = resultPath.concat("/").concat(name);
-            }
+    public String resolve(@NonNull String root, @NonNull List<String> path, @NonNull Closeable closeable) throws ClosedException {
 
-            return resolve(resultPath, closeable);
-        } catch (Throwable throwable) {
-            LogUtils.error(TAG, throwable);
+        String resultPath = Content.IPFS_PATH + root;
+        for (String name : path) {
+            resultPath = resultPath.concat("/").concat(name);
         }
-        return "";
+
+        return resolve(resultPath, closeable);
+
     }
 
     @NonNull
-    public String resolve(@NonNull String path, @NonNull Closeable closeable) {
+    public String resolve(@NonNull String path, @NonNull Closeable closeable) throws ClosedException {
         if (!isDaemonRunning()) {
             return "";
         }
@@ -571,16 +574,19 @@ public class IPFS implements Listener {
             LogUtils.error(TAG, throwable);
             abort.set(true);
         }
+        if (closeable.isClosed()) {
+            throw new ClosedException();
+        }
         return "";
     }
 
-    public boolean resolve(@NonNull String cid, @NonNull String name, @NonNull Closeable closeable) {
+    public boolean resolve(@NonNull String cid, @NonNull String name, @NonNull Closeable closeable) throws ClosedException {
         String res = resolve("/" + Content.IPFS + "/" + cid + "/" + name, closeable);
         return !res.isEmpty();
     }
 
 
-    public boolean isDir(@NonNull String cid, @NonNull Closeable closeable) {
+    public boolean isDir(@NonNull String cid, @NonNull Closeable closeable) throws ClosedException {
 
         AtomicBoolean abort = new AtomicBoolean(false);
         if (!isDaemonRunning()) {
@@ -604,11 +610,14 @@ public class IPFS implements Listener {
         } catch (Throwable e) {
             LogUtils.error(TAG, e);
         }
+        if (closeable.isClosed()) {
+            throw new ClosedException();
+        }
         return abort.get();
     }
 
 
-    public long getSize(@NonNull String cid, @NonNull Closeable closeable) {
+    public long getSize(@NonNull String cid, @NonNull Closeable closeable) throws ClosedException {
         List<LinkInfo> links = ls(cid, closeable);
         int size = -1;
         if (links != null) {
@@ -621,7 +630,7 @@ public class IPFS implements Listener {
 
 
     @Nullable
-    public List<LinkInfo> ls(@NonNull String cid, @NonNull Closeable closeable) {
+    public List<LinkInfo> ls(@NonNull String cid, @NonNull Closeable closeable) throws ClosedException {
         if (!isDaemonRunning()) {
             return Collections.emptyList();
         }
@@ -644,16 +653,19 @@ public class IPFS implements Listener {
 
         } catch (Throwable e) {
             LogUtils.error(TAG, e);
+            if (closeable.isClosed()) {
+                throw new ClosedException();
+            }
             return null;
         }
         if (closeable.isClosed()) {
-            return null;
+            throw new ClosedException();
         }
         return infoList;
     }
 
     @NonNull
-    public Loader getLoader(@NonNull String cid, @NonNull Closeable closeable) throws Exception {
+    private Loader getLoader(@NonNull String cid, @NonNull Closeable closeable) throws Exception {
         return node.getLoader(cid, closeable::isClosed);
 
     }

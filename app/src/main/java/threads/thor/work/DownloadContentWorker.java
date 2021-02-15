@@ -33,6 +33,7 @@ import threads.thor.MainActivity;
 import threads.thor.R;
 import threads.thor.core.Content;
 import threads.thor.core.DOCS;
+import threads.thor.ipfs.ClosedException;
 import threads.thor.ipfs.IPFS;
 import threads.thor.ipfs.LinkInfo;
 import threads.thor.ipfs.Progress;
@@ -168,7 +169,7 @@ public class DownloadContentWorker extends Worker {
 
 
     private void downloadContent(@NonNull DocumentFile doc, @NonNull String root,
-                                 @NonNull String mimeType, @NonNull String name) {
+                                 @NonNull String mimeType, @NonNull String name) throws ClosedException {
         downloadLinks(doc, root, mimeType, name);
     }
 
@@ -342,7 +343,7 @@ public class DownloadContentWorker extends Worker {
     }
 
 
-    private void evalLinks(@NonNull DocumentFile doc, @NonNull List<LinkInfo> links) {
+    private void evalLinks(@NonNull DocumentFile doc, @NonNull List<LinkInfo> links) throws ClosedException {
 
         for (LinkInfo link : links) {
             if (!isStopped()) {
@@ -364,7 +365,7 @@ public class DownloadContentWorker extends Worker {
     private void downloadLinks(@NonNull DocumentFile doc,
                                @NonNull String cid,
                                @NonNull String mimeType,
-                               @NonNull String name) {
+                               @NonNull String name) throws ClosedException {
 
 
         List<LinkInfo> links = ipfs.getLinks(cid, this::isStopped);
