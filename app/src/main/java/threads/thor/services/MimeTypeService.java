@@ -87,8 +87,8 @@ public class MimeTypeService {
             if (info != null) {
                 return info.getMimeType();
             }
-        } catch (Throwable e) {
-            LogUtils.error(TAG, e);
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable);
         }
 
         return MimeType.OCTET_MIME_TYPE;

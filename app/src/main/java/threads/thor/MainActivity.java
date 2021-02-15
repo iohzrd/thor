@@ -18,7 +18,6 @@ import android.os.SystemClock;
 import android.provider.DocumentsContract;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.DisplayMetrics;
 import android.util.Pair;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -519,8 +518,9 @@ public class MainActivity extends AppCompatActivity implements
     @SuppressLint({"ClickableViewAccessibility"})
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+        long start = System.currentTimeMillis();
 
+        super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
         docs = DOCS.getInstance(getApplicationContext());
@@ -536,8 +536,6 @@ public class MainActivity extends AppCompatActivity implements
         mAppBar.addOnOffsetChangedListener(new AppBarStateChangedListener() {
             @Override
             public void onStateChanged(AppBarLayout appBarLayout, State state) {
-                LogUtils.error(TAG, state.name());
-
                 if (state == State.EXPANDED) {
                     mSwipeRefreshLayout.setEnabled(true);
                 } else if (state == State.COLLAPSED) {
@@ -1257,7 +1255,7 @@ public class MainActivity extends AppCompatActivity implements
                         }
                         docs.connectUri(getApplicationContext(), redirectUri);
 
-                        return docs.getResponse(redirectUri, closeable);
+                        return docs.getResponse(getApplicationContext(), redirectUri, closeable);
 
                     } catch (Throwable throwable) {
                         if (closeable.isClosed()) {
@@ -1291,7 +1289,8 @@ public class MainActivity extends AppCompatActivity implements
             }
         }
 
-
+        LogUtils.info(InitApplication.TIME_TAG,
+                "MainActivity finish onCreate [" + (System.currentTimeMillis() - start) + "]...");
     }
 
     private void download() {

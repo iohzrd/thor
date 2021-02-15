@@ -25,6 +25,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import threads.LogUtils;
+import threads.thor.InitApplication;
 import threads.thor.Settings;
 import threads.thor.core.pages.PAGES;
 import threads.thor.core.pages.Page;
@@ -46,17 +47,18 @@ public class DOCS {
     private static DOCS INSTANCE = null;
     private final IPFS ipfs;
     private final PAGES pages;
-    private final ContentInfoUtil util;
     private final Hashtable<Uri, Uri> redirects = new Hashtable<>();
     private final Hashtable<String, String> resolves = new Hashtable<>();
     private static final HashSet<Long> threads = new HashSet<>();
     private static final HashSet<Uri> uris = new HashSet<>();
+
+
     private DOCS(@NonNull Context context) {
-        long timestamp = System.currentTimeMillis();
+        long start = System.currentTimeMillis();
         ipfs = IPFS.getInstance(context);
         pages = PAGES.getInstance(context);
-        util = ContentInfoUtil.getInstance(context);
-        LogUtils.error(TAG, "Time : " + (System.currentTimeMillis() - timestamp));
+        LogUtils.info(InitApplication.TIME_TAG, "DOCS finish [" +
+                (System.currentTimeMillis() - start) + "]...");
     }
 
     public static DOCS getInstance(@NonNull Context context) {
@@ -108,7 +110,9 @@ public class DOCS {
     }
 
     @NonNull
-    private String getMimeType(@NonNull String cid, @NonNull Closeable closeable) throws ClosedException {
+    private String getMimeType(@NonNull Context context,
+                               @NonNull String cid,
+                               @NonNull Closeable closeable) throws ClosedException {
 
         if (ipfs.isEmptyDir(cid) || ipfs.isDir(cid, closeable)) {
             return MimeType.DIR_MIME_TYPE;
@@ -116,16 +120,19 @@ public class DOCS {
 
         String mimeType = MimeType.OCTET_MIME_TYPE;
 
+
         try (InputStream in = ipfs.getLoaderStream(cid, closeable)) {
 
-            ContentInfo info = util.findMatch(in);
+            ContentInfo info = ContentInfoUtil.getInstance(context).findMatch(in);
 
             if (info != null) {
                 mimeType = info.getMimeType();
             }
 
         } catch (Throwable throwable) {
-            LogUtils.error(TAG, throwable);
+            if (closeable.isClosed()) {
+                throw new ClosedException();
+            }
         }
 
         return mimeType;
@@ -281,8 +288,8 @@ public class DOCS {
 
 
     @NonNull
-    public WebResourceResponse getResponse(@NonNull Uri uri, @NonNull String root,
-                                           @NonNull List<String> paths,
+    public WebResourceResponse getResponse(@NonNull Context context, @NonNull Uri uri,
+                                           @NonNull String root, @NonNull List<String> paths,
                                            @NonNull Closeable closeable) throws Exception {
 
         if (paths.isEmpty()) {
@@ -296,7 +303,7 @@ public class DOCS {
                 return new WebResourceResponse(MimeType.HTML_MIME_TYPE, Content.UTF8,
                         new ByteArrayInputStream(answer.getBytes()));
             } else {
-                String mimeType = getMimeType(root, closeable);
+                String mimeType = getMimeType(context, root, closeable);
                 long size = ipfs.getSize(root, closeable);
                 return getContentResponse(root, mimeType, size, closeable);
             }
@@ -318,7 +325,7 @@ public class DOCS {
                         new ByteArrayInputStream(answer.getBytes()));
 
             } else {
-                String mimeType = getMimeType(uri, cid, closeable);
+                String mimeType = getMimeType(context, uri, cid, closeable);
                 long size = ipfs.getSize(cid, closeable);
                 return getContentResponse(cid, mimeType, size, closeable);
             }
@@ -327,10 +334,9 @@ public class DOCS {
 
 
     @NonNull
-    private WebResourceResponse getContentResponse(@NonNull String content,
-                                                   @NonNull String mimeType,
-                                                   long size,
-                                                   @NonNull Closeable closeable) throws ClosedException {
+    private WebResourceResponse getContentResponse(@NonNull String content, @NonNull String mimeType,
+                                                   long size, @NonNull Closeable closeable)
+            throws ClosedException {
 
         try {
 
@@ -359,7 +365,8 @@ public class DOCS {
     }
 
     @NonNull
-    public String getMimeType(@NonNull Uri uri,
+    public String getMimeType(@NonNull Context context,
+                              @NonNull Uri uri,
                               @NonNull String cid,
                               @NonNull Closeable closeable) throws ClosedException {
 
@@ -370,10 +377,10 @@ public class DOCS {
             if (!mimeType.equals(MimeType.OCTET_MIME_TYPE)) {
                 return mimeType;
             } else {
-                return getMimeType(cid, closeable);
+                return getMimeType(context, cid, closeable);
             }
         } else {
-            return getMimeType(cid, closeable);
+            return getMimeType(context, cid, closeable);
         }
 
     }
@@ -435,7 +442,8 @@ public class DOCS {
     }
 
     @NonNull
-    public WebResourceResponse getResponse(@NonNull Uri uri, @NonNull Closeable closeable) throws Exception {
+    public WebResourceResponse getResponse(@NonNull Context context, @NonNull Uri uri,
+                                           @NonNull Closeable closeable) throws Exception {
 
 
         List<String> paths = uri.getPathSegments();
@@ -443,7 +451,7 @@ public class DOCS {
         String root = getRoot(uri, closeable);
         Objects.requireNonNull(root);
 
-        return getResponse(uri, root, paths, closeable);
+        return getResponse(context, uri, root, paths, closeable);
 
     }
 

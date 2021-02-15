@@ -24,6 +24,7 @@ import threads.thor.utils.AdBlocker;
 
 public class InitApplication extends Application {
 
+    public static final String TIME_TAG = "TIME_TAG";
     private static final String TAG = InitApplication.class.getSimpleName();
 
     @Override
@@ -34,16 +35,19 @@ public class InitApplication extends Application {
 
         AdBlocker.init(getApplicationContext());
 
-        LogUtils.info(TAG, " after add blocker [" + (System.currentTimeMillis() - start) + "]...");
+        LogUtils.info(TIME_TAG, "InitApplication after add blocker [" +
+                (System.currentTimeMillis() - start) + "]...");
         try {
             IPFS ipfs = IPFS.getInstance(getApplicationContext());
             ipfs.startDaemon();
             Executors.newSingleThreadExecutor().submit(ipfs::bootstrap);
-        } catch (Throwable throwable){
+        } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         }
 
-        LogUtils.info(TAG, " after starting ipfs [" + (System.currentTimeMillis() - start) + "]...");
+        LogUtils.info(TIME_TAG, "InitApplication after starting ipfs [" +
+                (System.currentTimeMillis() - start) + "]...");
+
 
         try {
             TorResourceInstaller torResourceInstaller = new TorResourceInstaller(
@@ -97,7 +101,8 @@ public class InitApplication extends Application {
             LogUtils.error(TAG, throwable);
             EVENTS.getInstance(getApplicationContext()).tor();
         }
-        LogUtils.info(TAG, " after starting tor [" + (System.currentTimeMillis() - start) + "]...");
+        LogUtils.info(TIME_TAG, "InitApplication after starting tor [" +
+                (System.currentTimeMillis() - start) + "]...");
     }
 
 

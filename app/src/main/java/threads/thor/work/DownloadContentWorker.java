@@ -128,10 +128,10 @@ public class DownloadContentWorker extends Worker {
                     Objects.equals(uri.getScheme(), Content.IPFS)) {
 
                 try {
-
                     String content = docs.getContent(uri, this::isStopped);
 
-                    String mimeType = docs.getMimeType(uri, content, this::isStopped);
+                    String mimeType = docs.getMimeType(getApplicationContext(),
+                            uri, content, this::isStopped);
 
                     if (Objects.equals(mimeType, MimeType.DIR_MIME_TYPE)) {
                         doc = doc.createDirectory(name);
