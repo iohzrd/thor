@@ -30,8 +30,11 @@ public class InitApplication extends Application {
     public void onCreate() {
         super.onCreate();
 
+        long start = System.currentTimeMillis();
+
         AdBlocker.init(getApplicationContext());
 
+        LogUtils.info(TAG, " after add blocker [" + (System.currentTimeMillis() - start) + "]...");
         try {
             IPFS ipfs = IPFS.getInstance(getApplicationContext());
             ipfs.startDaemon();
@@ -40,10 +43,7 @@ public class InitApplication extends Application {
             LogUtils.error(TAG, throwable);
         }
 
-        if (LogUtils.isDebug()) {
-            IPFS.logCacheDir(getApplicationContext());
-            IPFS.logBaseDir(getApplicationContext());
-        }
+        LogUtils.info(TAG, " after starting ipfs [" + (System.currentTimeMillis() - start) + "]...");
 
         try {
             TorResourceInstaller torResourceInstaller = new TorResourceInstaller(
@@ -97,6 +97,7 @@ public class InitApplication extends Application {
             LogUtils.error(TAG, throwable);
             EVENTS.getInstance(getApplicationContext()).tor();
         }
+        LogUtils.info(TAG, " after starting tor [" + (System.currentTimeMillis() - start) + "]...");
     }
 
 
