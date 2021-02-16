@@ -7,7 +7,6 @@ import android.util.Pair;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -234,26 +233,6 @@ public class IPFS implements Listener {
         }
     }
 
-    public static void logCacheDir(@NonNull Context context) {
-        try {
-            File[] files = context.getCacheDir().listFiles();
-            if (files != null) {
-                for (File file : files) {
-                    LogUtils.error(TAG, "" + file.length() + " " + file.getAbsolutePath());
-                    if (file.isDirectory()) {
-                        File[] children = file.listFiles();
-                        if (children != null) {
-                            for (File child : children) {
-                                LogUtils.error(TAG, "" + child.length() + " " + child.getAbsolutePath());
-                            }
-                        }
-                    }
-                }
-            }
-        } catch (Throwable e) {
-            LogUtils.error(TAG, e);
-        }
-    }
 
 
     public void bootstrap() {

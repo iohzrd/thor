@@ -84,7 +84,7 @@ import threads.thor.utils.AdBlocker;
 import threads.thor.utils.CustomWebChromeClient;
 import threads.thor.utils.FileDocumentsProvider;
 import threads.thor.utils.MimeType;
-import threads.thor.work.ClearCacheWorker;
+import threads.thor.work.ClearBrowserDataWorker;
 import threads.thor.work.DownloadContentWorker;
 import threads.thor.work.DownloadFileWorker;
 import threads.thor.work.DownloadMagnetWorker;
@@ -798,10 +798,8 @@ public class MainActivity extends AppCompatActivity implements
 
 
                     // Clear data and cookies
-                    ClearCacheWorker.clearCache(getApplicationContext());
+                    ClearBrowserDataWorker.clearCache(getApplicationContext());
 
-                    EVENTS.getInstance(getApplicationContext()).warning(
-                            getString(R.string.clear_cache_and_cookies));
                 } catch (Throwable throwable) {
                     LogUtils.error(TAG, throwable);
                 } finally {
