@@ -8,8 +8,8 @@ android {
         applicationId "threads.thor"
         minSdkVersion 26
         targetSdkVersion 30
-        versionCode 58
-        versionName "0.5.8"
+        versionCode 59
+        versionName "0.5.9"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
