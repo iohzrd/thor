@@ -220,6 +220,7 @@ public class DOCS {
                 for (Link link : links) {
 
                     String mimeType = MimeType.DIR_MIME_TYPE;
+
                     if (!ipfs.isDir(link.getContent(), closeable)) {
                         mimeType = MimeTypeService.getMimeType(link.getName());
                     }

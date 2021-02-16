@@ -520,12 +520,11 @@ public class IPFS implements Listener {
             return "";
         }
         String result = "";
-        AtomicBoolean abort = new AtomicBoolean(false);
+
         try {
-            result = node.resolve(path, () -> abort.get() || closeable.isClosed());
+            result = node.resolve(path, closeable::isClosed);
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
-            abort.set(true);
         }
         if (closeable.isClosed()) {
             throw new ClosedException();
@@ -538,35 +537,22 @@ public class IPFS implements Listener {
         return !res.isEmpty();
     }
 
-
     public boolean isDir(@NonNull String cid, @NonNull Closeable closeable) throws ClosedException {
 
-        AtomicBoolean abort = new AtomicBoolean(false);
         if (!isDaemonRunning()) {
-            return abort.get();
+            return false;
         }
+        boolean result;
         try {
-            node.ls(cid, new LsInfoClose() {
-                @Override
-                public boolean close() {
-                    return abort.get() || closeable.isClosed();
-                }
-
-                @Override
-                public void lsInfo(String name, String hash, long size, int type) {
-                    if (!name.isEmpty()) {
-                        abort.set(true);
-                    }
-                }
-            }, false);
+            result = node.isDir(cid, closeable::isClosed);
 
         } catch (Throwable e) {
-            LogUtils.error(TAG, e);
+            result = false;
         }
         if (closeable.isClosed()) {
             throw new ClosedException();
         }
-        return abort.get();
+        return result;
     }
 
 
