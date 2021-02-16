@@ -598,6 +598,11 @@ public class MainActivity extends AppCompatActivity implements
 
         mActionOverflow.setOnClickListener(v -> {
 
+            if (SystemClock.elapsedRealtime() - mLastClickTime < CLICK_OFFSET) {
+                return;
+            }
+            mLastClickTime = SystemClock.elapsedRealtime();
+
             LayoutInflater inflater = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
 
 
@@ -628,6 +633,11 @@ public class MainActivity extends AppCompatActivity implements
             }
             actionNextPage.setOnClickListener(v1 -> {
                 try {
+                    if (SystemClock.elapsedRealtime() - mLastClickTime < CLICK_OFFSET) {
+                        return;
+                    }
+                    mLastClickTime = SystemClock.elapsedRealtime();
+
                     goForward();
                 } catch (Throwable throwable) {
                     LogUtils.error(TAG, throwable);
@@ -640,6 +650,11 @@ public class MainActivity extends AppCompatActivity implements
             ImageButton actionFindPage = menuOverflow.findViewById(R.id.action_find_page);
             actionFindPage.setOnClickListener(v12 -> {
                 try {
+                    if (SystemClock.elapsedRealtime() - mLastClickTime < CLICK_OFFSET) {
+                        return;
+                    }
+                    mLastClickTime = SystemClock.elapsedRealtime();
+
                     startSupportActionMode(
                             createFindActionModeCallback());
                 } catch (Throwable throwable) {
@@ -666,6 +681,11 @@ public class MainActivity extends AppCompatActivity implements
 
             actionDownload.setOnClickListener(v13 -> {
                 try {
+                    if (SystemClock.elapsedRealtime() - mLastClickTime < CLICK_OFFSET) {
+                        return;
+                    }
+                    mLastClickTime = SystemClock.elapsedRealtime();
+
                     download();
                 } catch (Throwable throwable) {
                     LogUtils.error(TAG, throwable);
@@ -678,6 +698,11 @@ public class MainActivity extends AppCompatActivity implements
             ImageButton actionShare = menuOverflow.findViewById(R.id.action_share);
             actionShare.setOnClickListener(v14 -> {
                 try {
+                    if (SystemClock.elapsedRealtime() - mLastClickTime < CLICK_OFFSET) {
+                        return;
+                    }
+                    mLastClickTime = SystemClock.elapsedRealtime();
+
                     String url = mWebView.getUrl();
                     Uri uri = docs.getOriginalUri(Uri.parse(url));
 
@@ -705,6 +730,11 @@ public class MainActivity extends AppCompatActivity implements
             ImageButton actionReload = menuOverflow.findViewById(R.id.action_reload);
             actionReload.setOnClickListener(v15 -> {
                 try {
+                    if (SystemClock.elapsedRealtime() - mLastClickTime < CLICK_OFFSET) {
+                        return;
+                    }
+                    mLastClickTime = SystemClock.elapsedRealtime();
+
                     reload();
                 } catch (Throwable throwable) {
                     LogUtils.error(TAG, throwable);
@@ -718,6 +748,11 @@ public class MainActivity extends AppCompatActivity implements
             TextView actionHistory = menuOverflow.findViewById(R.id.action_history);
             actionHistory.setOnClickListener(v16 -> {
                 try {
+                    if (SystemClock.elapsedRealtime() - mLastClickTime < CLICK_OFFSET) {
+                        return;
+                    }
+                    mLastClickTime = SystemClock.elapsedRealtime();
+
                     HistoryDialogFragment dialogFragment = new HistoryDialogFragment();
                     dialogFragment.show(getSupportFragmentManager(), HistoryDialogFragment.TAG);
                 } catch (Throwable throwable) {
@@ -732,6 +767,11 @@ public class MainActivity extends AppCompatActivity implements
             TextView actionDownloads = menuOverflow.findViewById(R.id.action_downloads);
             actionDownloads.setOnClickListener(v17 -> {
                 try {
+                    if (SystemClock.elapsedRealtime() - mLastClickTime < CLICK_OFFSET) {
+                        return;
+                    }
+                    mLastClickTime = SystemClock.elapsedRealtime();
+
                     Uri root = Uri.parse(DOWNLOADS);
                     showDownloads(root);
                 } catch (Throwable throwable) {
@@ -746,6 +786,10 @@ public class MainActivity extends AppCompatActivity implements
             TextView actionCleanup = menuOverflow.findViewById(R.id.action_cleanup);
             actionCleanup.setOnClickListener(v18 -> {
                 try {
+                    if (SystemClock.elapsedRealtime() - mLastClickTime < CLICK_OFFSET) {
+                        return;
+                    }
+                    mLastClickTime = SystemClock.elapsedRealtime();
 
 
                     mWebView.clearHistory();
@@ -770,6 +814,11 @@ public class MainActivity extends AppCompatActivity implements
             TextView actionDocumentation = menuOverflow.findViewById(R.id.action_documentation);
             actionDocumentation.setOnClickListener(v19 -> {
                 try {
+                    if (SystemClock.elapsedRealtime() - mLastClickTime < CLICK_OFFSET) {
+                        return;
+                    }
+                    mLastClickTime = SystemClock.elapsedRealtime();
+
                     String uri = "https://gitlab.com/remmer.wilts/thor";
 
                     Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(uri),
@@ -790,6 +839,11 @@ public class MainActivity extends AppCompatActivity implements
         mActionBookmark.setOnClickListener(v -> {
 
             try {
+                if (SystemClock.elapsedRealtime() - mLastClickTime < CLICK_OFFSET) {
+                    return;
+                }
+                mLastClickTime = SystemClock.elapsedRealtime();
+
                 String url = mWebView.getUrl();
                 Uri uri = docs.getOriginalUri(Uri.parse(url));
 
@@ -831,6 +885,11 @@ public class MainActivity extends AppCompatActivity implements
         ImageView actionBookmarks = findViewById(R.id.action_bookmarks);
         actionBookmarks.setOnClickListener(v -> {
             try {
+                if (SystemClock.elapsedRealtime() - mLastClickTime < CLICK_OFFSET) {
+                    return;
+                }
+                mLastClickTime = SystemClock.elapsedRealtime();
+
                 BookmarksDialogFragment dialogFragment = new BookmarksDialogFragment();
                 dialogFragment.show(getSupportFragmentManager(), BookmarksDialogFragment.TAG);
             } catch (Throwable throwable) {
@@ -968,8 +1027,8 @@ public class MainActivity extends AppCompatActivity implements
             @Override
             public void onReceivedHttpError(
                     WebView view, WebResourceRequest request, WebResourceResponse errorResponse) {
-                LogUtils.info(TAG, "onReceivedHttpError" + errorResponse.toString());
-
+                super.onReceivedHttpError(view, request, errorResponse);
+                LogUtils.info(TAG, "onReceivedHttpError " + errorResponse.getReasonPhrase());
             }
 
             @Override
