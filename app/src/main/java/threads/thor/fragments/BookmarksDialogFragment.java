@@ -6,15 +6,14 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.SystemClock;
-import android.view.Window;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.widget.Toolbar;
-import androidx.fragment.app.DialogFragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 
 import java.util.Comparator;
 import java.util.Objects;
@@ -27,7 +26,7 @@ import threads.thor.core.books.BookmarkViewModel;
 import threads.thor.utils.BookmarksViewAdapter;
 import threads.thor.utils.SwipeToDeleteCallback;
 
-public class BookmarksDialogFragment extends DialogFragment implements BookmarksViewAdapter.BookmarkListener {
+public class BookmarksDialogFragment extends BottomSheetDialogFragment implements BookmarksViewAdapter.BookmarkListener {
     public static final String TAG = BookmarksDialogFragment.class.getSimpleName();
 
     private static final int CLICK_OFFSET = 500;
@@ -54,21 +53,9 @@ public class BookmarksDialogFragment extends DialogFragment implements Bookmarks
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
 
-        Dialog dialog = new Dialog(mContext, R.style.ThreadsTheme);
+        Dialog dialog = super.onCreateDialog(savedInstanceState);
         dialog.setContentView(R.layout.booksmark_view);
 
-        Toolbar mToolbar = dialog.findViewById(R.id.toolbar);
-        Objects.requireNonNull(mToolbar);
-        mToolbar.setTitle(R.string.bookmarks);
-        mToolbar.setNavigationIcon(R.drawable.arrow_left);
-        mToolbar.setNavigationOnClickListener(v -> {
-            if (SystemClock.elapsedRealtime() - mLastClickTime < CLICK_OFFSET) {
-                return;
-            }
-            mLastClickTime = SystemClock.elapsedRealtime();
-
-            dismiss();
-        });
 
 
         RecyclerView bookmarks = dialog.findViewById(R.id.bookmarks);
@@ -96,11 +83,6 @@ public class BookmarksDialogFragment extends DialogFragment implements Bookmarks
                 LogUtils.error(TAG, throwable);
             }
         }));
-
-        Window window = dialog.getWindow();
-        if (window != null) {
-            window.getAttributes().windowAnimations = R.style.DialogAnimationFullscreen;
-        }
 
         return dialog;
     }

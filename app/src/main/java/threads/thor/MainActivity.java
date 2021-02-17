@@ -639,7 +639,7 @@ public class MainActivity extends AppCompatActivity implements
             dialog.getWindow().setGravity(Gravity.TOP | Gravity.END);
             dialog.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
             if (!isDarkTheme()) {
-                dialog.getWindow().setBackgroundDrawableResource(R.drawable.round);
+                dialog.getWindow().setBackgroundDrawableResource(R.drawable.popup);
             }
             dialog.show();
 
@@ -957,11 +957,11 @@ public class MainActivity extends AppCompatActivity implements
 
 
         if (isDarkTheme()) {
-            mBrowserText.getBackground().setAlpha(255);
+            mBrowserText.setBackgroundResource(R.drawable.round_dark);
         } else {
-            mBrowserText.getBackground().setAlpha(75);
+            mBrowserText.setBackgroundResource(R.drawable.round);
         }
-
+        mBrowserText.getBackground().setAlpha(75);
 
         mBrowserText.setOnClickListener(view -> {
 

@@ -5,16 +5,16 @@
     android:layout_height="wrap_content"
     android:orientation="vertical">
 
-    <com.google.android.material.appbar.AppBarLayout
+    <TextView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
-
-        <com.google.android.material.appbar.MaterialToolbar
-            android:id="@+id/toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar" />
-    </com.google.android.material.appbar.AppBarLayout>
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_margin="16dp"
+        android:singleLine="true"
+        android:text="@string/bookmarks"
+        android:textAlignment="center"
+        android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+        android:textColor="?android:textColorPrimary" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/bookmarks"
