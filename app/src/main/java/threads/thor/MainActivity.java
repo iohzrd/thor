@@ -11,7 +11,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
-import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.net.http.SslError;
@@ -628,17 +627,6 @@ public class MainActivity extends AppCompatActivity implements
             dialog.show();
 
 
-            /*
-            PopupWindow dialog = new PopupWindow(
-                    MainActivity.this, null, android.R.attr.popupMenuStyle);
-            dialog.setContentView(menuOverflow);
-            dialog.setHeight(ViewGroup.LayoutParams.WRAP_CONTENT);
-            dialog.setWidth(ViewGroup.LayoutParams.WRAP_CONTENT);
-            dialog.setOutsideTouchable(true);
-            dialog.setFocusable(true);
-            dialog.showAsDropDown(mActionOverflow, 0, -dpToPx(android.R.attr.actionBarSize), Gravity.TOP);*/
-
-
             ImageButton actionNextPage = menuOverflow.findViewById(R.id.action_next_page);
             if (!mWebView.canGoForward()) {
                 actionNextPage.setEnabled(false);
@@ -938,14 +926,9 @@ public class MainActivity extends AppCompatActivity implements
 
         mBrowserText = findViewById(R.id.action_browser);
         mBrowserText.setClickable(true);
+        mBrowserText.setBackgroundResource(R.drawable.round);
+        mBrowserText.getBackground().setAlpha(125);
 
-
-        if (isDarkTheme()) {
-            mBrowserText.setBackgroundResource(R.drawable.round_dark);
-        } else {
-            mBrowserText.setBackgroundResource(R.drawable.round);
-        }
-        mBrowserText.getBackground().setAlpha(75);
 
         mBrowserText.setOnClickListener(view -> {
 
@@ -957,14 +940,6 @@ public class MainActivity extends AppCompatActivity implements
             }
         });
 
-        if (!isDarkTheme()) {
-            Window window = getWindow();
-            window.setStatusBarColor(Color.BLACK);
-
-            View decorView = window.getDecorView();
-            decorView.setSystemUiVisibility(
-                    decorView.getSystemUiVisibility() & ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR); //set status text light
-        }
 
         EventViewModel eventViewModel =
                 new ViewModelProvider(this).get(EventViewModel.class);
