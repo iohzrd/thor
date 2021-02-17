@@ -37,8 +37,4 @@ public class EventViewModel extends AndroidViewModel {
         return eventsDatabase.eventDao().getEvent(EVENTS.TOR);
 
     }
-
-    public LiveData<Event> getTheme() {
-        return eventsDatabase.eventDao().getEvent(EVENTS.THEME);
-    }
 }
