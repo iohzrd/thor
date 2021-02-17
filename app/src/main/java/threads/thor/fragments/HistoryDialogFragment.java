@@ -48,7 +48,7 @@ public class HistoryDialogFragment extends DialogFragment implements HistoryView
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
 
-        Dialog dialog = new Dialog(mContext, R.style.ThreadsThemeFullscreen);
+        Dialog dialog = new Dialog(mContext, R.style.ThreadsTheme);
         dialog.setContentView(R.layout.history_view);
 
 

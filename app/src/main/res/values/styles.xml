@@ -1,45 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
 
-    <style name="DialogAnimationFullscreen">
+    <style name="DialogAnimationFullscreen" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <item name="android:windowEnterAnimation">@anim/slide_up</item>
         <item name="android:windowExitAnimation">@anim/slide_bottom</item>
-        <item name="android:statusBarColor">@android:color/black</item>
-        <item name="android:windowLightStatusBar">false</item>
     </style>
 
-    <style name="ThreadsThemeFullscreen" parent="ThreadsTheme">
-        <item name="android:windowEnterAnimation">@anim/slide_up</item>
-        <item name="android:windowExitAnimation">@anim/slide_bottom</item>
-        <item name="android:statusBarColor">@android:color/black</item>
-        <item name="android:windowLightStatusBar">false</item>
-    </style>
-
-
-    <style name="ThreadsTheme" parent="Theme.MaterialComponents.Light.NoActionBar">
+    <style name="ThreadsTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <!-- Customize your theme here. -->
-        <item name="colorSecondary">#808080</item>
         <item name="colorPrimary">@android:color/black</item>
         <item name="colorPrimaryDark">@android:color/white</item>
         <item name="colorOnSecondary">@android:color/white</item>
-
         <item name="android:statusBarColor">@android:color/black</item>
         <item name="android:windowLightStatusBar">false</item>
         <item name="windowActionModeOverlay">true</item>
         <item name="android:windowAnimationStyle">@null</item>
         <item name="android:windowDisablePreview">true</item>
         <item name="textAppearanceSearchResultTitle">@style/ThorSearchResult</item>
+        <item name="android:forceDarkAllowed" tools:targetApi="q">true</item>
+        <item name="android:isLightTheme" tools:targetApi="q">true</item>
 
     </style>
 
 
     <style name="CustomProgressBarHorizontal" parent="android:Widget.Material.ProgressBar.Horizontal">
-        <item name="android:progressBackgroundTint">@android:color/transparent</item>
-        <item name="android:progressTint">@android:color/holo_blue_dark</item>
-        <item name="android:indeterminateTint">@android:color/holo_blue_dark</item>
         <item name="android:progressDrawable">@android:drawable/progress_horizontal</item>
-        <item name="android:minHeight">6dip</item>
-        <item name="android:maxHeight">6dip</item>
     </style>
 
     <style name="ThorAutoCompleteTextViewStyle" parent="Widget.AppCompat.AutoCompleteTextView">

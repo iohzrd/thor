@@ -24,7 +24,7 @@ public class Settings {
 
     public static final int TIMEOUT_BOOTSTRAP = 5;
     public static final int MIN_PEERS = 10;
-
+    public static final boolean THEME_ACTIVE = false;
     // DHT
     public static final int MAX_ENTRIES_PER_BUCKET = 8;
     public static final int MAX_ACTIVE_TASKS = 7;

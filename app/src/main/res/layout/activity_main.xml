@@ -37,6 +37,7 @@
                 android:layout_weight="1"
                 android:background="@drawable/browser"
                 android:singleLine="true"
+                android:drawablePadding="8dp"
                 android:textAppearance="@style/TextAppearance.AppCompat.Small"
                 android:textColor="@android:color/white" />
 
@@ -77,9 +78,9 @@
             style="@style/CustomProgressBarHorizontal"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_gravity="center"
             android:indeterminate="true"
-            android:indeterminateTint="@android:color/holo_blue_dark"
-            android:scaleY="6" />
+            android:indeterminateTint="@android:color/holo_blue_light"/>
 
 
     </com.google.android.material.appbar.AppBarLayout>

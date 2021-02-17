@@ -8,8 +8,11 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.ColorStateList;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
+import android.graphics.Color;
+import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.net.http.SslError;
@@ -25,8 +28,11 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
+import android.view.WindowManager;
 import android.webkit.CookieManager;
 import android.webkit.HttpAuthHandler;
+import android.webkit.JavascriptInterface;
 import android.webkit.SslErrorHandler;
 import android.webkit.URLUtil;
 import android.webkit.WebResourceError;
@@ -44,6 +50,7 @@ import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.ColorInt;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
@@ -53,8 +60,12 @@ import androidx.appcompat.view.ActionMode;
 import androidx.appcompat.widget.SearchView;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.core.content.ContextCompat;
+import androidx.core.graphics.ColorUtils;
+import androidx.core.widget.TextViewCompat;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
+import androidx.webkit.WebSettingsCompat;
+import androidx.webkit.WebViewFeature;
 
 import com.google.android.material.appbar.AppBarLayout;
 import com.google.android.material.snackbar.Snackbar;
@@ -523,6 +534,7 @@ public class MainActivity extends AppCompatActivity implements
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+
         docs = DOCS.getInstance(getApplicationContext());
 
 
@@ -546,10 +558,19 @@ public class MainActivity extends AppCompatActivity implements
         });
 
         Settings.setWebSettings(mWebView);
+
+
+        if (WebViewFeature.isFeatureSupported(WebViewFeature.FORCE_DARK)) {
+            WebSettingsCompat.setForceDark(mWebView.getSettings(), WebSettingsCompat.FORCE_DARK_AUTO);
+        }
+
+        if (Settings.THEME_ACTIVE && !isDarkTheme()) {
+            mWebView.addJavascriptInterface(new JsInterface(getApplicationContext()), "CC_FUND");
+        }
         CookieManager.getInstance().setAcceptThirdPartyCookies(mWebView, false);
 
-        ImageButton actionIncognito = findViewById(R.id.action_incognito);
-        actionIncognito.setOnClickListener(v -> {
+        ImageButton mActionIncognito = findViewById(R.id.action_incognito);
+        mActionIncognito.setOnClickListener(v -> {
             try {
                 if (SystemClock.elapsedRealtime() - mLastClickTime < CLICK_OFFSET) {
                     return;
@@ -561,13 +582,13 @@ public class MainActivity extends AppCompatActivity implements
                 if (!PROXY.get()) {
                     Settings.setIncognitoMode(mWebView, false);
 
-                    actionIncognito.setColorFilter(ContextCompat.getColor(getApplicationContext(),
+                    mActionIncognito.setColorFilter(ContextCompat.getColor(getApplicationContext(),
                             android.R.color.white), android.graphics.PorterDuff.Mode.SRC_IN);
 
                 } else {
                     Settings.setIncognitoMode(mWebView, true);
 
-                    actionIncognito.setColorFilter(ContextCompat.getColor(getApplicationContext(),
+                    mActionIncognito.setColorFilter(ContextCompat.getColor(getApplicationContext(),
                             android.R.color.holo_green_light), android.graphics.PorterDuff.Mode.SRC_IN);
 
                     EVENTS.getInstance(getApplicationContext()).error(
@@ -584,12 +605,12 @@ public class MainActivity extends AppCompatActivity implements
         if (!PROXY.get()) {
             Settings.setIncognitoMode(mWebView, false);
 
-            actionIncognito.setColorFilter(ContextCompat.getColor(getApplicationContext(),
+            mActionIncognito.setColorFilter(ContextCompat.getColor(getApplicationContext(),
                     android.R.color.white), android.graphics.PorterDuff.Mode.SRC_IN);
         } else {
             Settings.setIncognitoMode(mWebView, true);
 
-            actionIncognito.setColorFilter(ContextCompat.getColor(getApplicationContext(),
+            mActionIncognito.setColorFilter(ContextCompat.getColor(getApplicationContext(),
                     android.R.color.holo_green_light), android.graphics.PorterDuff.Mode.SRC_IN);
         }
 
@@ -880,8 +901,8 @@ public class MainActivity extends AppCompatActivity implements
             }
         });
 
-        ImageView actionBookmarks = findViewById(R.id.action_bookmarks);
-        actionBookmarks.setOnClickListener(v -> {
+        ImageView mActionBookmarks = findViewById(R.id.action_bookmarks);
+        mActionBookmarks.setOnClickListener(v -> {
             try {
                 if (SystemClock.elapsedRealtime() - mLastClickTime < CLICK_OFFSET) {
                     return;
@@ -911,7 +932,14 @@ public class MainActivity extends AppCompatActivity implements
 
         mBrowserText = findViewById(R.id.action_browser);
         mBrowserText.setClickable(true);
-        mBrowserText.setCompoundDrawablePadding(8);
+
+
+        if(isDarkTheme()) {
+            mBrowserText.getBackground().setAlpha(255);
+        } else {
+            mBrowserText.getBackground().setAlpha(75);
+        }
+
 
         mBrowserText.setOnClickListener(view -> {
 
@@ -923,15 +951,68 @@ public class MainActivity extends AppCompatActivity implements
             }
         });
 
+        if(!isDarkTheme()) {
+            Window window = getWindow();
+            window.setStatusBarColor(Color.BLACK);
+
+            View decorView = window.getDecorView();
+            decorView.setSystemUiVisibility(
+                    decorView.getSystemUiVisibility() & ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR); //set status text light
+        }
 
         EventViewModel eventViewModel =
                 new ViewModelProvider(this).get(EventViewModel.class);
 
 
+        eventViewModel.getTheme().observe(this, (event) -> {
+
+            if (event != null) {
+                String content = event.getContent();
+                if (!content.isEmpty()) {
+                    try {
+                        int color = Color.parseColor(content);
+                        mAppBar.setBackgroundColor(color);
+
+
+                        Window window = getWindow();
+                        window.setStatusBarColor(color);
+
+                        View decorView = window.getDecorView();
+                        if (isDarkColor(color)) {
+                            decorView.setSystemUiVisibility(decorView.getSystemUiVisibility() & ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR); //set status text light
+                            mBrowserText.setTextColor(Color.WHITE);
+                            TextViewCompat.setCompoundDrawableTintList(mBrowserText,
+                                    ColorStateList.valueOf(Color.WHITE));
+                            mActionBookmark.setColorFilter(Color.WHITE);
+                            mActionOverflow.setColorFilter(Color.WHITE);
+                            mActionBookmarks.setColorFilter(Color.WHITE);
+                            mActionIncognito.setColorFilter(Color.WHITE);
+                            mProgressBar.setIndeterminateTintList(ColorStateList.valueOf(Color.WHITE));
+                        } else {
+                            decorView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR); // set status text dark
+                            mBrowserText.setTextColor(Color.BLACK);
+                            TextViewCompat.setCompoundDrawableTintList(mBrowserText,
+                                    ColorStateList.valueOf(Color.BLACK));
+                            mActionBookmark.setColorFilter(Color.BLACK);
+                            mActionOverflow.setColorFilter(Color.BLACK);
+                            mActionBookmarks.setColorFilter(Color.BLACK);
+                            mActionIncognito.setColorFilter(Color.BLACK);
+                            mProgressBar.setIndeterminateTintList(ColorStateList.valueOf(Color.BLACK));
+                        }
+                    } catch (Throwable throwable) {
+                        LogUtils.error(TAG, throwable);
+                    }
+                }
+                eventViewModel.removeEvent(event);
+            }
+
+
+        });
+
         eventViewModel.getTor().observe(this, (event) -> {
             try {
                 if (event != null) {
-                    actionIncognito.setVisibility(View.GONE);
+                    mActionIncognito.setVisibility(View.GONE);
                 }
             } catch (Throwable throwable) {
                 LogUtils.error(TAG, throwable);
@@ -1129,7 +1210,17 @@ public class MainActivity extends AppCompatActivity implements
             @Override
             public void onPageFinished(WebView view, String url) {
                 LogUtils.info(TAG, "onPageFinished : " + url);
-
+                if (Settings.THEME_ACTIVE && !isDarkTheme()) {
+                    mWebView.loadUrl("javascript:window.CC_FUND.processHTML( (function (){var metas = document.getElementsByTagName('meta'); \n" +
+                            "\n" +
+                            "   for (var i=0; i<metas.length; i++) { \n" +
+                            "      if (metas[i].getAttribute(\"name\") == \"theme-color\") { \n" +
+                            "         return metas[i].getAttribute(\"content\"); \n" +
+                            "      } \n" +
+                            "   } \n" +
+                            "\n" +
+                            "    return \"\";})() );");
+                }
                 Uri uri = Uri.parse(url);
                 if (Objects.equals(uri.getScheme(), Content.IPNS) ||
                         Objects.equals(uri.getScheme(), Content.IPFS)) {
@@ -1660,6 +1751,39 @@ public class MainActivity extends AppCompatActivity implements
             EXPANDED,
             COLLAPSED,
             IDLE
+        }
+    }
+
+    private boolean isDarkColor(@ColorInt int color) {
+        return ColorUtils.calculateLuminance(color) < 0.5;
+    }
+
+    private int getInverseColor(int color) {
+        int red = Color.red(color);
+        int green = Color.green(color);
+        int blue = Color.blue(color);
+        int alpha = Color.alpha(color);
+        return Color.argb(alpha, 255 - red, 255 - green, 255 - blue);
+    }
+
+    private boolean isDarkTheme() {
+        int nightModeFlags = getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK;
+        return nightModeFlags == Configuration.UI_MODE_NIGHT_YES;
+    }
+
+    private static class JsInterface {
+        private final EVENTS events;
+
+        public JsInterface(@NonNull Context context) {
+            events = EVENTS.getInstance(context);
+        }
+
+        @JavascriptInterface
+        @SuppressWarnings("unused")
+        public void processHTML(String content) {
+            if (content != null) {
+                events.theme(content);
+            }
         }
     }
 }

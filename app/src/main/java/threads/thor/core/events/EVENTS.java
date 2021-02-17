@@ -11,6 +11,7 @@ public class EVENTS {
     public static final String WARNING = "WARNING";
     public static final String INFO = "INFO";
     public static final String TOR = "TOR";
+    public static final String THEME = "THEME";
 
 
     private static EVENTS INSTANCE = null;
@@ -77,6 +78,10 @@ public class EVENTS {
 
     public EventsDatabase getEventsDatabase() {
         return mEventsDatabase;
+    }
+
+    public void theme(@NonNull String content) {
+        storeEvent(createEvent(THEME, content));
     }
 
     static class Builder {

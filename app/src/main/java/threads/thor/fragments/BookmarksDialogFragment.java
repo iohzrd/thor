@@ -54,7 +54,7 @@ public class BookmarksDialogFragment extends DialogFragment implements Bookmarks
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
 
-        Dialog dialog = new Dialog(mContext, R.style.ThreadsThemeFullscreen);
+        Dialog dialog = new Dialog(mContext, R.style.ThreadsTheme);
         dialog.setContentView(R.layout.booksmark_view);
 
         Toolbar mToolbar = dialog.findViewById(R.id.toolbar);
