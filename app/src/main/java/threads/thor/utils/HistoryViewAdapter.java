@@ -60,7 +60,7 @@ public class HistoryViewAdapter extends RecyclerView.Adapter<HistoryViewAdapter.
                 holder.image.setImageBitmap(image);
             } else {
                 holder.image.setImageResource(R.drawable.bookmark);
-                if(title != null && !title.isEmpty()) {
+                if (title != null && !title.isEmpty()) {
                     int color = ColorGenerator.MATERIAL.getColor(title);
                     holder.image.setColorFilter(color);
                 }

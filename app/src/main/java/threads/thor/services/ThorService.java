@@ -33,8 +33,6 @@ public class ThorService {
     private static final String CONTENT_KEY = "contentKey";
 
 
-
-
     public static WebResourceResponse getProxyResponse(@NonNull WebResourceRequest request,
                                                        @NonNull String urlString) throws Throwable {
         Proxy proxy = new Proxy(Proxy.Type.SOCKS,

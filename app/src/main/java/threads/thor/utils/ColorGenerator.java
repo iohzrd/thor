@@ -2,7 +2,6 @@ package threads.thor.utils;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Random;
 
 public class ColorGenerator {
 
@@ -33,13 +32,14 @@ public class ColorGenerator {
 
     private final List<Integer> mColors;
 
+    private ColorGenerator(List<Integer> colorList) {
+        mColors = colorList;
+    }
+
     public static ColorGenerator create(List<Integer> colorList) {
         return new ColorGenerator(colorList);
     }
 
-    private ColorGenerator(List<Integer> colorList) {
-        mColors = colorList;
-    }
     public int getColor(Object key) {
         return mColors.get(Math.abs(key.hashCode()) % mColors.size());
     }

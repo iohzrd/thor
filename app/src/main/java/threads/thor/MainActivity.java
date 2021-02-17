@@ -12,7 +12,6 @@ import android.content.res.ColorStateList;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Color;
-import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.net.http.SslError;
@@ -29,7 +28,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
-import android.view.WindowManager;
 import android.webkit.CookieManager;
 import android.webkit.HttpAuthHandler;
 import android.webkit.JavascriptInterface;
@@ -228,6 +226,7 @@ public class MainActivity extends AppCompatActivity implements
     private ProgressBar mProgressBar;
     private ImageButton mActionBookmark;
     private DOCS docs;
+    private AppBarLayout mAppBar;
 
     private void magnetDownloader(@NonNull Uri uri, @NonNull String name) {
 
@@ -463,7 +462,7 @@ public class MainActivity extends AppCompatActivity implements
 
     }
 
-    private String prettyUri(@NonNull Uri uri, @NonNull String replace){
+    private String prettyUri(@NonNull Uri uri, @NonNull String replace) {
         return uri.toString().replaceFirst(replace, "");
     }
 
@@ -495,7 +494,6 @@ public class MainActivity extends AppCompatActivity implements
             checkBookmarkState();
         }
     }
-    private AppBarLayout mAppBar;
 
     private void goBack() {
         try {
@@ -917,7 +915,6 @@ public class MainActivity extends AppCompatActivity implements
         });
 
 
-
         mSwipeRefreshLayout.setOnRefreshListener(() -> {
             try {
                 mSwipeRefreshLayout.setRefreshing(true);
@@ -934,7 +931,7 @@ public class MainActivity extends AppCompatActivity implements
         mBrowserText.setClickable(true);
 
 
-        if(isDarkTheme()) {
+        if (isDarkTheme()) {
             mBrowserText.getBackground().setAlpha(255);
         } else {
             mBrowserText.getBackground().setAlpha(75);
@@ -951,7 +948,7 @@ public class MainActivity extends AppCompatActivity implements
             }
         });
 
-        if(!isDarkTheme()) {
+        if (!isDarkTheme()) {
             Window window = getWindow();
             window.setStatusBarColor(Color.BLACK);
 
@@ -1100,7 +1097,6 @@ public class MainActivity extends AppCompatActivity implements
 
             private final Map<Uri, Boolean> loadedUrls = new HashMap<>();
             private final SharedPreferences sharedPref = getPreferences(Context.MODE_PRIVATE);
-
 
 
             @Override
@@ -1256,7 +1252,7 @@ public class MainActivity extends AppCompatActivity implements
                             Objects.equals(uri.getScheme(), Content.HTTPS)) {
 
                         Uri newUri = docs.redirectHttp(uri);
-                        if(!Objects.equals(newUri, uri)){
+                        if (!Objects.equals(newUri, uri)) {
                             Intent intent = new Intent(Intent.ACTION_VIEW, newUri,
                                     getApplicationContext(), MainActivity.class);
                             startActivity(intent);
@@ -1605,6 +1601,7 @@ public class MainActivity extends AppCompatActivity implements
         }
         return false;
     }
+
     public void openUri(@NonNull Uri uri) {
 
         try {
@@ -1621,7 +1618,7 @@ public class MainActivity extends AppCompatActivity implements
             mWebView.loadUrl(uri.toString());
 
             mAppBar.setExpanded(true, true);
-        } catch (Throwable throwable){
+        } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         }
 
@@ -1722,6 +1719,22 @@ public class MainActivity extends AppCompatActivity implements
         return false;
     }
 
+    private boolean isDarkColor(@ColorInt int color) {
+        return ColorUtils.calculateLuminance(color) < 0.5;
+    }
+
+    private int getInverseColor(int color) {
+        int red = Color.red(color);
+        int green = Color.green(color);
+        int blue = Color.blue(color);
+        int alpha = Color.alpha(color);
+        return Color.argb(alpha, 255 - red, 255 - green, 255 - blue);
+    }
+
+    private boolean isDarkTheme() {
+        int nightModeFlags = getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK;
+        return nightModeFlags == Configuration.UI_MODE_NIGHT_YES;
+    }
 
     public abstract static class AppBarStateChangedListener implements AppBarLayout.OnOffsetChangedListener {
 
@@ -1752,23 +1765,6 @@ public class MainActivity extends AppCompatActivity implements
             COLLAPSED,
             IDLE
         }
-    }
-
-    private boolean isDarkColor(@ColorInt int color) {
-        return ColorUtils.calculateLuminance(color) < 0.5;
-    }
-
-    private int getInverseColor(int color) {
-        int red = Color.red(color);
-        int green = Color.green(color);
-        int blue = Color.blue(color);
-        int alpha = Color.alpha(color);
-        return Color.argb(alpha, 255 - red, 255 - green, 255 - blue);
-    }
-
-    private boolean isDarkTheme() {
-        int nightModeFlags = getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK;
-        return nightModeFlags == Configuration.UI_MODE_NIGHT_YES;
     }
 
     private static class JsInterface {

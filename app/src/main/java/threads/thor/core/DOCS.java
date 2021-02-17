@@ -44,13 +44,13 @@ public class DOCS {
 
     private static final String INDEX_HTML = "index.html";
     private static final String TAG = DOCS.class.getSimpleName();
+    private static final HashSet<Long> threads = new HashSet<>();
+    private static final HashSet<Uri> uris = new HashSet<>();
     private static DOCS INSTANCE = null;
     private final IPFS ipfs;
     private final PAGES pages;
     private final Hashtable<Uri, Uri> redirects = new Hashtable<>();
     private final Hashtable<String, String> resolves = new Hashtable<>();
-    private static final HashSet<Long> threads = new HashSet<>();
-    private static final HashSet<Uri> uris = new HashSet<>();
 
 
     private DOCS(@NonNull Context context) {
@@ -119,6 +119,7 @@ public class DOCS {
 
         return getContentMimeType(context, cid, closeable);
     }
+
     @NonNull
     private String getContentMimeType(@NonNull Context context, @NonNull String cid,
                                       @NonNull Closeable closeable) throws ClosedException {
@@ -651,7 +652,7 @@ public class DOCS {
                     }
                 }
 
-                if(!addresses.isEmpty()) {
+                if (!addresses.isEmpty()) {
                     List<Callable<Boolean>> tasks = new ArrayList<>();
                     ExecutorService executor = Executors.newFixedThreadPool(addresses.size());
                     for (String address : addresses) {

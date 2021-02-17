@@ -234,7 +234,6 @@ public class IPFS implements Listener {
     }
 
 
-
     public void bootstrap() {
         if (isDaemonRunning()) {
 

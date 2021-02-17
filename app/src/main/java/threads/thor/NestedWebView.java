@@ -37,7 +37,7 @@ public class NestedWebView extends WebView implements NestedScrollingChild {
         MotionEvent event = MotionEvent.obtain(ev);
         final int action = event.getAction();
 
-        if( event.getPointerCount() > 1 ){
+        if (event.getPointerCount() > 1) {
             return super.onTouchEvent(event);
         }
 

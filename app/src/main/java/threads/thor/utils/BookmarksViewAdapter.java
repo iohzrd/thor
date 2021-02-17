@@ -73,7 +73,7 @@ public class BookmarksViewAdapter extends RecyclerView.Adapter<BookmarksViewAdap
                 holder.bookmark_image.setImageBitmap(image);
             } else {
                 holder.bookmark_image.setImageResource(R.drawable.bookmark);
-                if(!title.isEmpty()) {
+                if (!title.isEmpty()) {
                     int color = ColorGenerator.MATERIAL.getColor(title);
                     holder.bookmark_image.setColorFilter(color);
                 }
