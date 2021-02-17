@@ -3,6 +3,7 @@ package threads.thor;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.Dialog;
 import android.app.SearchManager;
 import android.content.ComponentName;
 import android.content.Context;
@@ -28,6 +29,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
+import android.view.WindowManager;
 import android.webkit.CookieManager;
 import android.webkit.HttpAuthHandler;
 import android.webkit.JavascriptInterface;
@@ -41,7 +43,6 @@ import android.webkit.WebViewClient;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
-import android.widget.PopupWindow;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -628,14 +629,30 @@ public class MainActivity extends AppCompatActivity implements
             View menuOverflow = inflater.inflate(
                     R.layout.menu_overflow, mDrawerLayout, false);
 
-            PopupWindow mPopupWindow = new PopupWindow(
-                    MainActivity.this, null, R.attr.popupMenuStyle);
-            mPopupWindow.setContentView(menuOverflow);
-            mPopupWindow.setHeight(ViewGroup.LayoutParams.WRAP_CONTENT);
-            mPopupWindow.setWidth(ViewGroup.LayoutParams.WRAP_CONTENT);
-            mPopupWindow.setOutsideTouchable(true);
-            mPopupWindow.setFocusable(true);
-            mPopupWindow.showAsDropDown(mActionOverflow, 0, -dpToPx(48), Gravity.TOP);
+
+            Dialog dialog = new Dialog(MainActivity.this);
+
+            dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+            dialog.setContentView(menuOverflow);
+            dialog.getWindow().setLayout(ViewGroup.LayoutParams.WRAP_CONTENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT);
+            dialog.getWindow().setGravity(Gravity.TOP | Gravity.END);
+            dialog.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
+            if (!isDarkTheme()) {
+                dialog.getWindow().setBackgroundDrawableResource(R.drawable.round);
+            }
+            dialog.show();
+
+
+            /*
+            PopupWindow dialog = new PopupWindow(
+                    MainActivity.this, null, android.R.attr.popupMenuStyle);
+            dialog.setContentView(menuOverflow);
+            dialog.setHeight(ViewGroup.LayoutParams.WRAP_CONTENT);
+            dialog.setWidth(ViewGroup.LayoutParams.WRAP_CONTENT);
+            dialog.setOutsideTouchable(true);
+            dialog.setFocusable(true);
+            dialog.showAsDropDown(mActionOverflow, 0, -dpToPx(android.R.attr.actionBarSize), Gravity.TOP);*/
 
 
             ImageButton actionNextPage = menuOverflow.findViewById(R.id.action_next_page);
@@ -661,12 +678,15 @@ public class MainActivity extends AppCompatActivity implements
                 } catch (Throwable throwable) {
                     LogUtils.error(TAG, throwable);
                 } finally {
-                    mPopupWindow.dismiss();
+                    dialog.dismiss();
                 }
 
             });
 
             ImageButton actionFindPage = menuOverflow.findViewById(R.id.action_find_page);
+
+            actionFindPage.setColorFilter(ContextCompat.getColor(getApplicationContext(),
+                    android.R.color.black), android.graphics.PorterDuff.Mode.SRC_IN);
             actionFindPage.setOnClickListener(v12 -> {
                 try {
                     if (SystemClock.elapsedRealtime() - mLastClickTime < CLICK_OFFSET) {
@@ -679,7 +699,7 @@ public class MainActivity extends AppCompatActivity implements
                 } catch (Throwable throwable) {
                     LogUtils.error(TAG, throwable);
                 } finally {
-                    mPopupWindow.dismiss();
+                    dialog.dismiss();
                 }
 
             });
@@ -709,12 +729,15 @@ public class MainActivity extends AppCompatActivity implements
                 } catch (Throwable throwable) {
                     LogUtils.error(TAG, throwable);
                 } finally {
-                    mPopupWindow.dismiss();
+                    dialog.dismiss();
                 }
 
             });
 
             ImageButton actionShare = menuOverflow.findViewById(R.id.action_share);
+
+            actionShare.setColorFilter(ContextCompat.getColor(getApplicationContext(),
+                    android.R.color.black), android.graphics.PorterDuff.Mode.SRC_IN);
             actionShare.setOnClickListener(v14 -> {
                 try {
                     if (SystemClock.elapsedRealtime() - mLastClickTime < CLICK_OFFSET) {
@@ -741,12 +764,14 @@ public class MainActivity extends AppCompatActivity implements
                 } catch (Throwable throwable) {
                     LogUtils.error(TAG, throwable);
                 } finally {
-                    mPopupWindow.dismiss();
+                    dialog.dismiss();
                 }
 
             });
 
             ImageButton actionReload = menuOverflow.findViewById(R.id.action_reload);
+            actionReload.setColorFilter(ContextCompat.getColor(getApplicationContext(),
+                    android.R.color.black), android.graphics.PorterDuff.Mode.SRC_IN);
             actionReload.setOnClickListener(v15 -> {
                 try {
                     if (SystemClock.elapsedRealtime() - mLastClickTime < CLICK_OFFSET) {
@@ -758,7 +783,7 @@ public class MainActivity extends AppCompatActivity implements
                 } catch (Throwable throwable) {
                     LogUtils.error(TAG, throwable);
                 } finally {
-                    mPopupWindow.dismiss();
+                    dialog.dismiss();
                 }
 
             });
@@ -777,7 +802,7 @@ public class MainActivity extends AppCompatActivity implements
                 } catch (Throwable throwable) {
                     LogUtils.error(TAG, throwable);
                 } finally {
-                    mPopupWindow.dismiss();
+                    dialog.dismiss();
                 }
 
             });
@@ -796,7 +821,7 @@ public class MainActivity extends AppCompatActivity implements
                 } catch (Throwable throwable) {
                     LogUtils.error(TAG, throwable);
                 } finally {
-                    mPopupWindow.dismiss();
+                    dialog.dismiss();
                 }
 
             });
@@ -822,7 +847,7 @@ public class MainActivity extends AppCompatActivity implements
                 } catch (Throwable throwable) {
                     LogUtils.error(TAG, throwable);
                 } finally {
-                    mPopupWindow.dismiss();
+                    dialog.dismiss();
                 }
 
             });
@@ -844,7 +869,7 @@ public class MainActivity extends AppCompatActivity implements
                 } catch (Throwable throwable) {
                     LogUtils.error(TAG, throwable);
                 } finally {
-                    mPopupWindow.dismiss();
+                    dialog.dismiss();
                 }
 
             });
