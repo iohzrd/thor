@@ -26,7 +26,6 @@
     <string name="enter_url">URL or search input</string>
     <string name="tor_mode">Strict Incognito Mode (TOR)</string>
     <string name="action_cleanup">Delete browser data</string>
-    <string name="previous_page">Previous page</string>
     <string name="next_page">Next page</string>
     <string name="incognito">Incognito Mode</string>
     <string name="reload_page">Reload Page</string>

@@ -24,13 +24,8 @@
 
     </style>
 
-
     <style name="CustomProgressBarHorizontal" parent="android:Widget.Material.ProgressBar.Horizontal">
         <item name="android:progressDrawable">@android:drawable/progress_horizontal</item>
-    </style>
-
-    <style name="ThorAutoCompleteTextViewStyle" parent="Widget.AppCompat.AutoCompleteTextView">
-        <item name="android:popupBackground">@android:color/white</item>
     </style>
 
     <style name="ThorSearchResult" parent="TextAppearance.AppCompat.SearchResult.Title">
@@ -38,6 +33,5 @@
         <item name="android:textSize">14sp</item>
     </style>
 
-    <style name="ThorPopupTheme" parent="ThemeOverlay.AppCompat.Light" />
 
 </resources>

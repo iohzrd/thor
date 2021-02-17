@@ -14,7 +14,6 @@ import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 
@@ -28,8 +27,6 @@ import threads.thor.core.books.Bookmark;
 import threads.thor.core.books.BookmarkViewModel;
 import threads.thor.utils.BookmarksViewAdapter;
 import threads.thor.utils.SwipeToDeleteCallback;
-
-import static com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED;
 
 public class BookmarksDialogFragment extends BottomSheetDialogFragment implements BookmarksViewAdapter.BookmarkListener {
     public static final String TAG = BookmarksDialogFragment.class.getSimpleName();
