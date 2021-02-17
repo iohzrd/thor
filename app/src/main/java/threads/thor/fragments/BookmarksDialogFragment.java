@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.SystemClock;
+import android.view.Window;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.ViewModelProvider;
@@ -53,7 +54,6 @@ public class BookmarksDialogFragment extends BottomSheetDialogFragment implement
         mContext = context;
     }
 
-
     @NonNull
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
@@ -86,7 +86,10 @@ public class BookmarksDialogFragment extends BottomSheetDialogFragment implement
                 LogUtils.error(TAG, throwable);
             }
         }));
-
+        Window window = dialog.getWindow();
+        if(window != null) {
+                window.getAttributes().windowAnimations = R.style.DialogAnimation;
+        }
         return dialog;
     }
 

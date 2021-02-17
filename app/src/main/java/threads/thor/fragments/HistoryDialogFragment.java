@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.SystemClock;
+import android.view.Window;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -60,7 +61,10 @@ public class HistoryDialogFragment extends BottomSheetDialogFragment implements 
         HistoryViewAdapter mHistoryViewAdapter = new HistoryViewAdapter(this,
                 mListener.getWebView().copyBackForwardList());
         history.setAdapter(mHistoryViewAdapter);
-
+        Window window = dialog.getWindow();
+        if(window != null) {
+            window.getAttributes().windowAnimations = R.style.DialogAnimation;
+        }
 
         return dialog;
     }
