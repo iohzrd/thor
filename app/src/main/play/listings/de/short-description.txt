@@ -1,1 +1,1 @@
-IPFS, IPNS and MAGNET browser which based on WebKit API
+IPFS and IPNS browser which based on WebKit API

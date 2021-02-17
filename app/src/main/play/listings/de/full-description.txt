@@ -1,4 +1,4 @@
 The Thor browser based on the WebKit API and is a free and open source project.
 Its focus is to support decentralized technologies.
-Therefore it handles the protocols IPNS, IPFS and MAGNET.
+Therefore it handles the protocols IPNS and IPFS.
 An adblocker is integrated which based on https://pgl.yoyo.org/adservers
