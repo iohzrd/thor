@@ -517,14 +517,6 @@ public class MainActivity extends AppCompatActivity implements
             LogUtils.error(TAG, throwable);
         }
     }
-
-    private int dpToPx(int dp) {
-        float density = getApplicationContext().getResources()
-                .getDisplayMetrics().density;
-        return Math.round((float) dp * density);
-    }
-
-
     @SuppressLint({"ClickableViewAccessibility"})
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -1747,14 +1739,7 @@ public class MainActivity extends AppCompatActivity implements
     private boolean isDarkColor(@ColorInt int color) {
         return ColorUtils.calculateLuminance(color) < 0.5;
     }
-
-    private int getInverseColor(int color) {
-        int red = Color.red(color);
-        int green = Color.green(color);
-        int blue = Color.blue(color);
-        int alpha = Color.alpha(color);
-        return Color.argb(alpha, 255 - red, 255 - green, 255 - blue);
-    }
+    
 
     private boolean isDarkTheme() {
         int nightModeFlags = getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK;
