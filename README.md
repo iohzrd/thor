@@ -1,6 +1,6 @@
 # Thor
 The **Thor** browser is a web browser with the focus on decentralized technologies.
-It supports the **ipns**, **ipfs** and the **magnet** protocol.
+It supports the **ipns** and **ipfs** protocol.
 
 In addition to the protocols enhancements it focus on privacy and usability.
 
@@ -11,7 +11,7 @@ route all connections via the **Tor** network.
 
 **Warning:** 
 The **incognito** mode is not active when using the decentralized protocols
-**ipns**, **ipfs** and **magnet**. It only applies to to the normal protocols like **https** and **http**.
+**ipns** and **ipfs**. It only applies to to the normal protocols like **https** and **http**.
 
 **Usability:**
 To improve the usability of the browser a **adblocker** is integrated.
@@ -35,12 +35,6 @@ The service itself is configured in client mode, that means that you are only be
 to download data, but not providing data to others.
 
 Additional information about **ipns** and **ipfs** can be found here **https://ipfs.io/**
-
-## MAGNET
-The browser runs the bittorrent service only when a **magnet** URL should be downloaded.
-
-The service is only active during download of the **magnet** URL. In this phase you are **seeding** 
-the data also to others users.
 
 ## TOR
 The TOR service is running from the moment you are starting the application. This enables
