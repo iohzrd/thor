@@ -13,6 +13,8 @@ import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.bottomsheet.BottomSheetBehavior;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 
 import java.util.Comparator;
@@ -26,10 +28,13 @@ import threads.thor.core.books.BookmarkViewModel;
 import threads.thor.utils.BookmarksViewAdapter;
 import threads.thor.utils.SwipeToDeleteCallback;
 
+import static com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED;
+
 public class BookmarksDialogFragment extends BottomSheetDialogFragment implements BookmarksViewAdapter.BookmarkListener {
     public static final String TAG = BookmarksDialogFragment.class.getSimpleName();
 
     private static final int CLICK_OFFSET = 500;
+
     private long mLastClickTime = 0;
     private BookmarksViewAdapter mBookmarksViewAdapter;
     private Context mContext;
@@ -53,10 +58,8 @@ public class BookmarksDialogFragment extends BottomSheetDialogFragment implement
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
 
-        Dialog dialog = super.onCreateDialog(savedInstanceState);
+        BottomSheetDialog dialog = (BottomSheetDialog) super.onCreateDialog(savedInstanceState);
         dialog.setContentView(R.layout.booksmark_view);
-
-
 
         RecyclerView bookmarks = dialog.findViewById(R.id.bookmarks);
         Objects.requireNonNull(bookmarks);
