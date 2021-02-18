@@ -37,7 +37,8 @@ public class MimeTypeService {
     }
 
     @NonNull
-    public static String getSvgResource(@NonNull String mimeType) {
+    public static String getSvgResource(@NonNull String name) {
+        String mimeType = getMimeTypeDefaultDir(name);
 
         if (!mimeType.isEmpty()) {
             if (mimeType.equals(DocumentsContract.Document.MIME_TYPE_DIR)) {
@@ -66,6 +67,24 @@ public class MimeTypeService {
             }
         }
         return SVG_OCTET;
+    }
+
+    @NonNull
+    private static String getMimeTypeDefaultDir(@NonNull String name) {
+        String mimeType = evaluateMimeType(name);
+        if (mimeType != null) {
+            return mimeType;
+        }
+        try {
+            ContentInfo info = ContentInfoUtil.findExtensionMatch(name);
+            if (info != null) {
+                return info.getMimeType();
+            }
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable);
+        }
+
+        return MimeType.DIR_MIME_TYPE;
     }
 
 

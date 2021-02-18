@@ -199,8 +199,9 @@ public class DOCS {
     }
 
 
-    public String generateDirectoryHtml(@NonNull Uri uri, @NonNull String root, List<String> paths,
-                                        @Nullable List<Link> links, @NonNull Closeable closeable) throws ClosedException {
+    public String generateDirectoryHtml(@NonNull Uri uri, @NonNull String root,
+                                        @NonNull List<String> paths,
+                                        @Nullable List<Link> links) {
         String title = root;
 
         if (!paths.isEmpty()) {
@@ -224,17 +225,12 @@ public class DOCS {
                 answer.append("<form><table  width=\"100%\" style=\"border-spacing: 4px;\">");
                 for (Link link : links) {
 
-                    String mimeType = MimeType.DIR_MIME_TYPE;
 
-                    if (!ipfs.isDir(link.getContent(), closeable)) {
-                        mimeType = MimeTypeService.getMimeType(link.getName());
-                    }
                     String linkUri = uri + "/" + link.getName();
 
                     answer.append("<tr>");
-
                     answer.append("<td>");
-                    answer.append(MimeTypeService.getSvgResource(mimeType));
+                    answer.append(MimeTypeService.getSvgResource(link.getName()));
                     answer.append("</td>");
 
                     answer.append("<td width=\"100%\" style=\"word-break:break-word\">");
@@ -283,12 +279,12 @@ public class DOCS {
 
         if (paths.isEmpty()) {
             if (ipfs.isEmptyDir(root)) {
-                String answer = generateDirectoryHtml(uri, root, paths, new ArrayList<>(), closeable);
+                String answer = generateDirectoryHtml(uri, root, paths, new ArrayList<>());
                 return new WebResourceResponse(MimeType.HTML_MIME_TYPE, Content.UTF8,
                         new ByteArrayInputStream(answer.getBytes()));
             } else if (ipfs.isDir(root, closeable)) {
                 List<Link> links = ipfs.links(root, closeable);
-                String answer = generateDirectoryHtml(uri, root, paths, links, closeable);
+                String answer = generateDirectoryHtml(uri, root, paths, links);
                 return new WebResourceResponse(MimeType.HTML_MIME_TYPE, Content.UTF8,
                         new ByteArrayInputStream(answer.getBytes()));
             } else {
@@ -304,12 +300,12 @@ public class DOCS {
                 throw new ContentException(uri.toString());
             }
             if (ipfs.isEmptyDir(cid)) {
-                String answer = generateDirectoryHtml(uri, root, paths, new ArrayList<>(), closeable);
+                String answer = generateDirectoryHtml(uri, root, paths, new ArrayList<>());
                 return new WebResourceResponse(MimeType.HTML_MIME_TYPE, Content.UTF8,
                         new ByteArrayInputStream(answer.getBytes()));
             } else if (ipfs.isDir(cid, closeable)) {
                 List<Link> links = ipfs.links(cid, closeable);
-                String answer = generateDirectoryHtml(uri, root, paths, links, closeable);
+                String answer = generateDirectoryHtml(uri, root, paths, links);
                 return new WebResourceResponse(MimeType.HTML_MIME_TYPE, Content.UTF8,
                         new ByteArrayInputStream(answer.getBytes()));
 
