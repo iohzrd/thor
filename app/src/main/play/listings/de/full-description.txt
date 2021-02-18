@@ -1,3 +1,3 @@
 Der Thor-Browser basiert auf der WebKit-API und ist ein Open-Source-Projekt.
-Sein Schwerpunkt liegt auf der Unterstützung der IPFS-Technologie.
+Der Schwerpunkt der Anwendung liegt auf der nativen Unterstützung von IPFS in dem Browser.
 Es ist ein  Ad-Blocker integriert, der auf https://pgl.yoyo.org/adservers basiert
