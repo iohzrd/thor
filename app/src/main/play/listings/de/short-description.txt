@@ -1,1 +1,1 @@
-IPFS and IPNS browser which based on WebKit API
+Native IPFS and IPNS browser which based on WebKit API
