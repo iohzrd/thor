@@ -400,10 +400,8 @@ public class MainActivity extends AppCompatActivity implements
         return uri.toString().replaceFirst(replace, "");
     }
 
-    private void invalidateMenu(@NonNull Uri uri) {
+    private void updateUri(@NonNull Uri uri) {
         try {
-
-
             if (Objects.equals(uri.getScheme(), Content.HTTPS)) {
                 mBrowserText.setCompoundDrawablesRelativeWithIntrinsicBounds(
                         R.drawable.lock, 0, 0, 0
@@ -1037,7 +1035,7 @@ public class MainActivity extends AppCompatActivity implements
                 LogUtils.info(TAG, "onPageStarted : " + uri);
 
                 mProgressBar.setVisibility(View.VISIBLE);
-                invalidateMenu(docs.getOriginalUri(Uri.parse(uri)));
+                updateUri(docs.getOriginalUri(Uri.parse(uri)));
             }
 
 
@@ -1408,9 +1406,7 @@ public class MainActivity extends AppCompatActivity implements
     public void openUri(@NonNull Uri uri) {
 
         try {
-            invalidateMenu(uri);
-
-            docs.cleanupResolver(uri);
+            updateUri(uri);
 
             docs.releaseThreads();
 
