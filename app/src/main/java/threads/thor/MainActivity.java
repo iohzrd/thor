@@ -81,8 +81,6 @@ import threads.thor.fragments.BookmarksDialogFragment;
 import threads.thor.fragments.HistoryDialogFragment;
 import threads.thor.ipfs.Closeable;
 import threads.thor.ipfs.IPFS;
-import threads.thor.magnet.magnet.MagnetUri;
-import threads.thor.magnet.magnet.MagnetUriParser;
 import threads.thor.services.ThorService;
 import threads.thor.utils.AdBlocker;
 import threads.thor.utils.CustomWebChromeClient;
@@ -91,7 +89,6 @@ import threads.thor.utils.MimeType;
 import threads.thor.work.ClearBrowserDataWorker;
 import threads.thor.work.DownloadContentWorker;
 import threads.thor.work.DownloadFileWorker;
-import threads.thor.work.DownloadMagnetWorker;
 import threads.thor.work.PageResolveWorker;
 
 
@@ -185,33 +182,6 @@ public class MainActivity extends AppCompatActivity implements
                 }
             });
 
-
-    private final ActivityResultLauncher<Intent> mMagnetForResult = registerForActivityResult(
-            new ActivityResultContracts.StartActivityForResult(),
-            result -> {
-                if (result.getResultCode() == Activity.RESULT_OK) {
-                    Intent data = result.getData();
-                    try {
-                        Objects.requireNonNull(data);
-
-                        Uri uri = data.getData();
-                        Objects.requireNonNull(uri);
-                        if (!FileDocumentsProvider.hasWritePermission(getApplicationContext(), uri)) {
-                            EVENTS.getInstance(getApplicationContext()).error(
-                                    getString(R.string.file_has_no_write_permission));
-                            return;
-                        }
-                        Uri magnet = Uri.parse(ThorService.getMagnet(getApplicationContext()));
-                        Objects.requireNonNull(magnet);
-                        DownloadMagnetWorker.download(getApplicationContext(), magnet, uri);
-
-
-                    } catch (Throwable throwable) {
-                        LogUtils.error(TAG, throwable);
-                    }
-                }
-            });
-
     private WebView mWebView;
     private long mLastClickTime = 0;
     private TextView mBrowserText;
@@ -222,35 +192,6 @@ public class MainActivity extends AppCompatActivity implements
     private ImageButton mActionBookmark;
     private DOCS docs;
     private AppBarLayout mAppBar;
-
-    private void magnetDownloader(@NonNull Uri uri, @NonNull String name) {
-
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle(R.string.download_title);
-        builder.setMessage(name);
-
-        builder.setPositiveButton(getString(android.R.string.yes), (dialog, which) -> {
-
-            ThorService.setMagnet(getApplicationContext(), uri.toString());
-
-            Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
-            intent.setFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
-            intent.putExtra(DocumentsContract.EXTRA_INITIAL_URI, Uri.parse(DOWNLOADS));
-            intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
-            mMagnetForResult.launch(intent);
-
-            mProgressBar.setVisibility(View.GONE);
-        });
-        builder.setNeutralButton(getString(android.R.string.cancel),
-                (dialog, which) -> {
-                    mProgressBar.setVisibility(View.GONE);
-                    dialog.cancel();
-                });
-        builder.show();
-
-
-    }
 
     private void contentDownloader(@NonNull Uri uri) {
 
@@ -1201,17 +1142,6 @@ public class MainActivity extends AppCompatActivity implements
                         docs.attachUri(uri);
                         docs.releaseThreads();
                         return false;
-                    } else if (Objects.equals(uri.getScheme(), Content.MAGNET)) {
-
-                        MagnetUri magnetUri = MagnetUriParser.lenientParser().parse(uri.toString());
-
-                        String name = uri.toString();
-                        if (magnetUri.getDisplayName().isPresent()) {
-                            name = magnetUri.getDisplayName().get();
-                        }
-                        magnetDownloader(uri, name);
-
-                        return true;
                     } else {
                         // all other stuff
                         try {

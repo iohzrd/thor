@@ -6,7 +6,7 @@ import java.util.List;
 public class ColorGenerator {
 
 
-    public static ColorGenerator MATERIAL;
+    public static final ColorGenerator MATERIAL;
 
     static {
         MATERIAL = create(Arrays.asList(
