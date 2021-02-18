@@ -84,8 +84,8 @@ public class BookmarksDialogFragment extends BottomSheetDialogFragment implement
             }
         }));
         Window window = dialog.getWindow();
-        if(window != null) {
-                window.getAttributes().windowAnimations = R.style.DialogAnimation;
+        if (window != null) {
+            window.getAttributes().windowAnimations = R.style.DialogAnimation;
         }
         return dialog;
     }

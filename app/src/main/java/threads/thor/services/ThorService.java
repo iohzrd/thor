@@ -18,7 +18,6 @@ public class ThorService {
     private static final String CONTENT_KEY = "contentKey";
 
 
-
     @Nullable
     public static Uri getContentUri(@NonNull Context context) {
         Objects.requireNonNull(context);

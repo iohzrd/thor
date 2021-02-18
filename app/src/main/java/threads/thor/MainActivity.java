@@ -451,6 +451,7 @@ public class MainActivity extends AppCompatActivity implements
             LogUtils.error(TAG, throwable);
         }
     }
+
     @SuppressLint({"ClickableViewAccessibility"})
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -873,7 +874,6 @@ public class MainActivity extends AppCompatActivity implements
 
         EventViewModel eventViewModel =
                 new ViewModelProvider(this).get(EventViewModel.class);
-
 
 
         eventViewModel.getError().observe(this, (event) -> {

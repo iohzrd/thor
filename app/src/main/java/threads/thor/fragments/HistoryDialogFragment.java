@@ -61,7 +61,7 @@ public class HistoryDialogFragment extends BottomSheetDialogFragment implements 
                 mListener.getWebView().copyBackForwardList());
         history.setAdapter(mHistoryViewAdapter);
         Window window = dialog.getWindow();
-        if(window != null) {
+        if (window != null) {
             window.getAttributes().windowAnimations = R.style.DialogAnimation;
         }
 

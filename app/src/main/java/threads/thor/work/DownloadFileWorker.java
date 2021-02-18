@@ -105,7 +105,6 @@ public class DownloadFileWorker extends Worker {
     }
 
 
-
     @NonNull
     @Override
     public Result doWork() {
