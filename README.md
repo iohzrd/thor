@@ -14,7 +14,7 @@ The **incognito** mode is not active when using the decentralized protocols
 **ipns** and **ipfs**. It only applies to to the normal protocols like **https** and **http**.
 
 **Usability:**
-To improve the usability of the browser a **adblocker** is integrated.
+To improve the usability of the browser a **Ad-blocker** is integrated.
 It based on the information which are coming from **https://pgl.yoyo.org/adservers/**
 
 
