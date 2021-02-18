@@ -1,3 +1,3 @@
-The Thor browser based on the WebKit API and is a free and open source project.
+The Thor browser based on the WebKit API and is an open source project.
 Its focus is to support IPFS technology.
-An adblocker is also integrated which based on https://pgl.yoyo.org/adservers
+An Ad-blocker is also integrated which based on https://pgl.yoyo.org/adservers
