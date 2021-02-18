@@ -2,16 +2,7 @@
 The **Thor** browser is a web browser with the focus on decentralized technologies.
 It supports the **ipns** and **ipfs** protocol.
 
-In addition to the protocols enhancements it focus on privacy and usability.
-
-**Privacy:**
-The **Tor** service is integrated which can be used to visit **onion** 
-sites and in case of using the application in **incognito** mode, the service will be used to 
-route all connections via the **Tor** network.
-
-**Warning:** 
-The **incognito** mode is not active when using the decentralized protocols
-**ipns** and **ipfs**. It only applies to to the normal protocols like **https** and **http**.
+In addition to the protocols enhancements it focus on usability.
 
 **Usability:**
 To improve the usability of the browser a **Ad-blocker** is integrated.
@@ -36,15 +27,6 @@ to download data, but not providing data to others.
 
 Additional information about **ipns** and **ipfs** can be found here **https://ipfs.io/**
 
-## TOR
-The TOR service is running from the moment you are starting the application. This enables
-the user to visit **onion** sites, even when you are not in **incognito** mode.
-
-In **incognito** mode, all **http** and **https** requests will be routed via the **Tor** network.
-
-**Warning:** 
-When you main goal is to focus on privacy, it might be better to use the 
-**Tor** browser (https://www.torproject.org/) directly.
 
 ## Settings
 This application based on the WebKit API (like Chrome, Brave, etc). This section just gives
@@ -89,21 +71,6 @@ The application accept all cookies, except third party cookies.
 
 ```
 CookieManager.getInstance().setAcceptThirdPartyCookies(mWebView, false);
-```
-
-Background information **https://www.youtube.com/watch?v=fx6MyPeMLEM&t=1355s**
-
-
-### Incognito Mode
-In **incognito** mode, the **Tor** service is active. Moreover **javascript** will be
-disabled. The purpose of the changed settings is, to protect your privacy at least a bit. 
-(Key words are **Device and Browser Fingerprint**)
-
-```
-public static void setIncognitoMode(@NonNull WebView webView, boolean incognito) {
-        webView.getSettings().setJavaScriptEnabled(!incognito);
-}
-
 ```
 
 

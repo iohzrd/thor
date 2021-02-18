@@ -22,8 +22,6 @@ import androidx.work.WorkerParameters;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
-import java.net.InetSocketAddress;
-import java.net.Proxy;
 import java.net.URL;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -32,7 +30,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import threads.LogUtils;
 import threads.thor.MainActivity;
 import threads.thor.R;
-import threads.thor.Settings;
 import threads.thor.core.Content;
 import threads.thor.ipfs.IPFS;
 import threads.thor.ipfs.ReaderProgress;
@@ -108,15 +105,6 @@ public class DownloadFileWorker extends Worker {
     }
 
 
-    private boolean isOnion(@NonNull Uri uri) {
-        try {
-            return uri.getHost().endsWith(Content.ONION);
-        } catch (Throwable throwable) {
-            LogUtils.error(TAG, throwable);
-        }
-        return false;
-    }
-
 
     @NonNull
     @Override
@@ -160,14 +148,7 @@ public class DownloadFileWorker extends Worker {
 
                     HttpURLConnection huc;
                     URL urlCon = new URL(uri.toString());
-                    if (isOnion(uri)) {
-                        Proxy proxy = new Proxy(Proxy.Type.SOCKS,
-                                new InetSocketAddress(Settings.LOCALHOST,
-                                        Settings.SOCKSPort));
-                        huc = (HttpURLConnection) urlCon.openConnection(proxy);
-                    } else {
-                        huc = (HttpURLConnection) urlCon.openConnection();
-                    }
+                    huc = (HttpURLConnection) urlCon.openConnection();
                     huc.setReadTimeout(30000);
                     huc.connect();
 

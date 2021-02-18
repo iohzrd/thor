@@ -1138,9 +1138,6 @@ public enum ContentType {
         return mimeType;
     }
 
-    public String[] getFileExtensions() {
-        return fileExtensions;
-    }
 
 
 }

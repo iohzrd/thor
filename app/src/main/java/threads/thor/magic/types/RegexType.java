@@ -25,8 +25,6 @@ public class RegexType implements MagicMatcher {
                 for (char ch : flagsStr.toCharArray()) {
                     if (ch == 'c') {
                         patternInfo.patternFlags |= Pattern.CASE_INSENSITIVE;
-                    } else if (ch == 's') {
-                        patternInfo.updateOffsetStart = true;
                     }
                 }
             }
@@ -88,7 +86,6 @@ public class RegexType implements MagicMatcher {
 
     private static class PatternInfo {
         int patternFlags;
-        boolean updateOffsetStart;
         Pattern pattern;
     }
 }

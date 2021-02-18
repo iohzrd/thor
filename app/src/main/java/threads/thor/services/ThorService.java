@@ -3,92 +3,20 @@ package threads.thor.services;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.net.Uri;
-import android.webkit.WebResourceRequest;
-import android.webkit.WebResourceResponse;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import java.io.BufferedInputStream;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.InetSocketAddress;
-import java.net.Proxy;
-import java.net.URL;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Objects;
 
-import threads.LogUtils;
-import threads.thor.Settings;
 import threads.thor.core.Content;
 
 
 public class ThorService {
     public static final String CHANNEL_ID = "CHANNEL_ID";
-    private static final String TAG = ThorService.class.getSimpleName();
-
     private static final String APP_KEY = "AppKey";
-    private static final String MAGNET_KEY = "magnetKey";
     private static final String CONTENT_KEY = "contentKey";
 
-
-    public static WebResourceResponse getProxyResponse(@NonNull WebResourceRequest request,
-                                                       @NonNull String urlString) throws Throwable {
-        Proxy proxy = new Proxy(Proxy.Type.SOCKS,
-                new InetSocketAddress(Settings.LOCALHOST, Settings.SOCKSPort));
-
-
-        HttpURLConnection connection = (HttpURLConnection)
-                new URL(urlString).openConnection(proxy);
-
-
-        connection.setRequestMethod(request.getMethod());
-        for (Map.Entry<String, String> requestHeader : request.getRequestHeaders().entrySet()) {
-            connection.setRequestProperty(requestHeader.getKey(), requestHeader.getValue());
-        }
-
-
-        String encoding = connection.getContentEncoding();
-
-        connection.getHeaderFields();
-        Map<String, String> responseHeaders = new HashMap<>();
-        for (String key : connection.getHeaderFields().keySet()) {
-            responseHeaders.put(key, connection.getHeaderField(key));
-        }
-
-        String connectionType = connection.getContentType();
-        String mimeType = "text/plain";
-        if (connectionType != null && !connectionType.isEmpty()) {
-            mimeType = connectionType.split(";")[0];
-        }
-
-        int statusCode = connection.getResponseCode();
-        String response = connection.getResponseMessage();
-
-        LogUtils.error(TAG, "" + statusCode);
-        LogUtils.error(TAG, response);
-        LogUtils.error(TAG, connectionType);
-        LogUtils.error(TAG, responseHeaders.toString());
-        LogUtils.error(TAG, mimeType);
-        LogUtils.error(TAG, encoding);
-
-        if (statusCode == 301 || statusCode == 302) {
-            String newUri = responseHeaders.get("Location");
-            Objects.requireNonNull(newUri);
-            return getProxyResponse(request, newUri);
-        }
-
-        InputStream in = null;
-        try {
-            in = new BufferedInputStream(connection.getInputStream());
-        } catch (Throwable throwable) {
-            LogUtils.error(TAG, throwable);
-        }
-
-        return new WebResourceResponse(mimeType, encoding, statusCode,
-                response, responseHeaders, in);
-    }
 
 
     @Nullable
@@ -110,25 +38,6 @@ public class ThorService {
                 APP_KEY, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.putString(CONTENT_KEY, contentUri.toString());
-        editor.apply();
-
-    }
-
-    @Nullable
-    public static String getMagnet(@NonNull Context context) {
-        Objects.requireNonNull(context);
-        SharedPreferences sharedPref = context.getSharedPreferences(
-                APP_KEY, Context.MODE_PRIVATE);
-        return sharedPref.getString(MAGNET_KEY, null);
-    }
-
-    public static void setMagnet(@NonNull Context context, @NonNull String magnet) {
-        Objects.requireNonNull(context);
-        Objects.requireNonNull(magnet);
-        SharedPreferences sharedPref = context.getSharedPreferences(
-                APP_KEY, Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPref.edit();
-        editor.putString(MAGNET_KEY, magnet);
         editor.apply();
 
     }

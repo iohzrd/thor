@@ -13,6 +13,7 @@ import java.util.List;
 
 public class Settings {
 
+    public static final String HOMEPAGE = "https://start.duckduckgo.com/";
     public static final int TIMEOUT_BOOTSTRAP = 5;
     public static final int MIN_PEERS = 10;
 
@@ -31,21 +32,6 @@ public class Settings {
     public static final String DNS_ADDR = "dnsaddr=/dnsaddr/";
     public static final String DNS_LINK = "dnslink=";
 
-    // TOR CONFIGURATION
-    public static final int SOCKSPort = 9050;
-    public static final String LOCALHOST = "localhost";
-    public static final String DIRECTORY_TOR_DATA = "data";
-
-
-    @NonNull
-    public static String getDefaultHomepage() {
-        return "https://start.duckduckgo.com/";
-    }
-
-    @SuppressLint("SetJavaScriptEnabled")
-    public static void setIncognitoMode(@NonNull WebView webView, boolean incognito) {
-        webView.getSettings().setJavaScriptEnabled(!incognito);
-    }
 
 
     @SuppressLint("SetJavaScriptEnabled")

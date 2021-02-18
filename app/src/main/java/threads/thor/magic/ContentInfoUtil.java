@@ -8,15 +8,12 @@ import androidx.annotation.Nullable;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.Closeable;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.Arrays;
 
-import threads.LogUtils;
 import threads.thor.R;
 import threads.thor.magic.entries.MagicEntries;
 
@@ -51,11 +48,9 @@ public class ContentInfoUtil {
      * Number of bytes that the utility class by default reads to determine the content type information.
      */
     private final static int DEFAULT_READ_SIZE = 10 * 1024;
-    private static final String TAG = ContentInfoUtil.class.getSimpleName();
     private static MagicEntries internalMagicEntries;
     private static ContentInfoUtil INSTANCE = null;
     private final MagicEntries magicEntries;
-    private final int fileReadSize = DEFAULT_READ_SIZE;
 
     /**
      * Construct a magic utility using the internal magic file built into the package. This also allows the caller to
@@ -115,81 +110,9 @@ public class ContentInfoUtil {
         }
     }
 
-    /**
-     * Return the content type if the mime-type matches our internal list.
-     *
-     * @return The matching content-info or null if no matches.
-     */
-    public static ContentInfo findMimeTypeMatch(String mimeType) {
-        ContentType type = ContentType.fromMimeType(mimeType.toLowerCase());
-        if (type == ContentType.OTHER) {
-            return null;
-        } else {
-            return new ContentInfo(type);
-        }
-    }
-
-
-    @Nullable
-    public ContentInfo getContentInfo(@NonNull File file) {
-
-        try {
-            return findMatch(file);
-        } catch (Throwable e) {
-            LogUtils.error(TAG, "" + e.getLocalizedMessage());
-        }
-        return null;
-    }
-
-    /**
-     * Return the content type for the file-path or null if none of the magic entries matched.
-     *
-     * @throws IOException If there was a problem reading from the file.
-     */
-    public ContentInfo findMatch(String filePath) throws IOException {
-        return findMatch(new File(filePath));
-    }
-
-    /**
-     * Return the content type for the file or null if none of the magic entries matched.
-     *
-     * @throws IOException If there was a problem reading from the file.
-     */
-    private ContentInfo findMatch(File file) throws IOException {
-        int readSize = fileReadSize;
-        if (!file.exists()) {
-            throw new IOException("File does not exist: " + file);
-        }
-        if (!file.canRead()) {
-            throw new IOException("File is not readable: " + file);
-        }
-        long length = file.length();
-        if (length <= 0) {
-            return ContentInfo.EMPTY_INFO;
-        }
-        if (length < readSize) {
-            readSize = (int) length;
-        }
-        byte[] bytes = new byte[readSize];
-        FileInputStream fis = null;
-        try {
-            fis = new FileInputStream(file);
-            int numRead = fis.read(bytes);
-            if (numRead <= 0) {
-                return ContentInfo.EMPTY_INFO;
-            }
-            if (numRead < bytes.length) {
-                bytes = Arrays.copyOf(bytes, numRead);
-            }
-        } finally {
-            closeQuietly(fis);
-        }
-        return findMatch(bytes);
-    }
-
 
     public ContentInfo findMatch(InputStream inputStream) throws IOException {
-        byte[] bytes = new byte[fileReadSize];
+        byte[] bytes = new byte[DEFAULT_READ_SIZE];
         int numRead = inputStream.read(bytes);
         if (numRead < 0) {
             return null;

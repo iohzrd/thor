@@ -17,9 +17,6 @@ public interface PageDao {
     @Query("SELECT * FROM Page WHERE pid = :pid")
     Page getPage(String pid);
 
-    @Query("SELECT content FROM Page WHERE pid = :pid")
-    String getPageContent(String pid);
-
     @Query("UPDATE Page SET content =:content WHERE pid = :pid")
     void setContent(String pid, String content);
 

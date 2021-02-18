@@ -10,7 +10,6 @@ public class EVENTS {
     public static final String ERROR = "ERROR";
     public static final String WARNING = "WARNING";
     public static final String INFO = "INFO";
-    public static final String TOR = "TOR";
 
 
     private static EVENTS INSTANCE = null;
@@ -57,11 +56,6 @@ public class EVENTS {
     public void error(@NonNull String content) {
 
         storeEvent(createEvent(ERROR, content));
-    }
-
-
-    public void tor() {
-        storeEvent(createEvent(TOR, String.valueOf(System.currentTimeMillis())));
     }
 
     public void info(@NonNull String content) {

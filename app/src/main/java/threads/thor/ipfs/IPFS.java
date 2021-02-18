@@ -453,11 +453,10 @@ public class IPFS implements Listener {
                             if (seq > init) {
                                 sequence.set(seq);
                                 visited.set(false);
-                                setName(hash);
                             } else {
                                 visited.set(true);
-                                setName(hash);
                             }
+                            setName(hash);
                             if (visited.get()) {
                                 close.set(true);
                             }
@@ -556,10 +555,10 @@ public class IPFS implements Listener {
 
 
     public long getSize(@NonNull String cid, @NonNull Closeable closeable) throws ClosedException {
-        List<LinkInfo> links = ls(cid, closeable);
+        List<LinkSize> links = ls(cid, closeable);
         int size = -1;
         if (links != null) {
-            for (LinkInfo info : links) {
+            for (LinkSize info : links) {
                 size += info.getSize();
             }
         }
@@ -603,11 +602,11 @@ public class IPFS implements Listener {
     }
 
     @Nullable
-    private List<LinkInfo> ls(@NonNull String cid, @NonNull Closeable closeable) throws ClosedException {
+    private List<LinkSize> ls(@NonNull String cid, @NonNull Closeable closeable) throws ClosedException {
         if (!isDaemonRunning()) {
             return Collections.emptyList();
         }
-        List<LinkInfo> infoList = new ArrayList<>();
+        List<LinkSize> infoList = new ArrayList<>();
         try {
 
             node.ls(cid, new LsInfoClose() {
@@ -618,7 +617,7 @@ public class IPFS implements Listener {
 
                 @Override
                 public void lsInfo(String name, String hash, long size, int type) {
-                    LinkInfo info = LinkInfo.create(name, hash, size, type);
+                    LinkSize info = LinkSize.create(size);
                     infoList.add(info);
                 }
 

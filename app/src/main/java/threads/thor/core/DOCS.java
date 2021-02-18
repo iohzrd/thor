@@ -477,6 +477,40 @@ public class DOCS {
                         }
                     }
                 }
+            } else if (Objects.equals(uri.getScheme(), Content.HTTPS)) { // TODO find a general solution (or remove)
+                String host = uri.getHost();
+                Objects.requireNonNull(host);
+                if (Objects.equals(host, "ipfs.io")) {
+                    List<String> paths = uri.getPathSegments();
+                    if (paths.size() >= 2) {
+                        String protocol = paths.get(0);
+                        String authority = paths.get(1);
+                        List<String> subPaths = new ArrayList<>(paths);
+                        subPaths.remove(protocol);
+                        subPaths.remove(authority);
+                        if (ipfs.isValidCID(authority)) {
+                            if (Objects.equals(protocol, Content.IPFS)) {
+                                Uri.Builder builder = new Uri.Builder();
+                                builder.scheme(Content.IPFS)
+                                        .authority(authority);
+
+                                for (String path : subPaths) {
+                                    builder.appendPath(path);
+                                }
+                                return builder.build();
+                            } else if (Objects.equals(protocol, Content.IPNS)) {
+                                Uri.Builder builder = new Uri.Builder();
+                                builder.scheme(Content.IPNS)
+                                        .authority(authority);
+
+                                for (String path : subPaths) {
+                                    builder.appendPath(path);
+                                }
+                                return builder.build();
+                            }
+                        }
+                    }
+                }
             }
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);

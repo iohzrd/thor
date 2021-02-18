@@ -67,7 +67,6 @@ import java.io.ByteArrayInputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import threads.LogUtils;
 import threads.thor.core.Content;
@@ -96,7 +95,6 @@ public class MainActivity extends AppCompatActivity implements
         ActionListener {
 
     public static final String SHOW_DOWNLOADS = "SHOW_DOWNLOADS";
-    public static final AtomicBoolean PROXY = new AtomicBoolean(false);
     private static final String DOWNLOADS = "content://com.android.externalstorage.documents/document/primary:Download";
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final long CLICK_OFFSET = 500;
@@ -402,28 +400,28 @@ public class MainActivity extends AppCompatActivity implements
         return uri.toString().replaceFirst(replace, "");
     }
 
-    private void invalidateMenu(@Nullable Uri uri) {
+    private void invalidateMenu(@NonNull Uri uri) {
         try {
-            if (uri != null) {
 
-                if (Objects.equals(uri.getScheme(), Content.HTTPS)) {
-                    mBrowserText.setCompoundDrawablesRelativeWithIntrinsicBounds(
-                            R.drawable.lock, 0, 0, 0
-                    );
-                    mBrowserText.setText(prettyUri(uri, "https://"));
-                } else if (Objects.equals(uri.getScheme(), Content.HTTP)) {
-                    mBrowserText.setCompoundDrawablesRelativeWithIntrinsicBounds(
-                            R.drawable.lock_open, 0, 0, 0
-                    );
-                    mBrowserText.setText(prettyUri(uri, "http://"));
-                } else {
-                    mBrowserText.setCompoundDrawablesRelativeWithIntrinsicBounds(
-                            R.drawable.lock, 0, 0, 0
-                    );
-                    mBrowserText.setText(uri.toString());
-                }
 
+            if (Objects.equals(uri.getScheme(), Content.HTTPS)) {
+                mBrowserText.setCompoundDrawablesRelativeWithIntrinsicBounds(
+                        R.drawable.lock, 0, 0, 0
+                );
+                mBrowserText.setText(prettyUri(uri, "https://"));
+            } else if (Objects.equals(uri.getScheme(), Content.HTTP)) {
+                mBrowserText.setCompoundDrawablesRelativeWithIntrinsicBounds(
+                        R.drawable.lock_open, 0, 0, 0
+                );
+                mBrowserText.setText(prettyUri(uri, "http://"));
+            } else {
+                mBrowserText.setCompoundDrawablesRelativeWithIntrinsicBounds(
+                        R.drawable.lock, 0, 0, 0
+                );
+                mBrowserText.setText(uri.toString());
             }
+
+
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         } finally {
@@ -473,7 +471,7 @@ public class MainActivity extends AppCompatActivity implements
 
         mAppBar.addOnOffsetChangedListener(new AppBarStateChangedListener() {
             @Override
-            public void onStateChanged(AppBarLayout appBarLayout, State state) {
+            public void onStateChanged(State state) {
                 if (state == State.EXPANDED) {
                     mSwipeRefreshLayout.setEnabled(true);
                 } else if (state == State.COLLAPSED) {
@@ -492,50 +490,20 @@ public class MainActivity extends AppCompatActivity implements
 
         CookieManager.getInstance().setAcceptThirdPartyCookies(mWebView, false);
 
-        ImageButton mActionIncognito = findViewById(R.id.action_incognito);
-        mActionIncognito.setOnClickListener(v -> {
+        ImageButton mActionHome = findViewById(R.id.action_home);
+        mActionHome.setOnClickListener(v -> {
             try {
                 if (SystemClock.elapsedRealtime() - mLastClickTime < CLICK_OFFSET) {
                     return;
                 }
                 mLastClickTime = SystemClock.elapsedRealtime();
 
-                PROXY.set(!PROXY.get());
+                openUri(Uri.parse(Settings.HOMEPAGE));
 
-                if (!PROXY.get()) {
-                    Settings.setIncognitoMode(mWebView, false);
-
-                    mActionIncognito.setColorFilter(ContextCompat.getColor(getApplicationContext(),
-                            android.R.color.white), android.graphics.PorterDuff.Mode.SRC_IN);
-
-                } else {
-                    Settings.setIncognitoMode(mWebView, true);
-
-                    mActionIncognito.setColorFilter(ContextCompat.getColor(getApplicationContext(),
-                            android.R.color.holo_green_light), android.graphics.PorterDuff.Mode.SRC_IN);
-
-                    EVENTS.getInstance(getApplicationContext()).error(
-                            getString(R.string.tor_mode));
-                }
-
-                invalidateMenu(null);
             } catch (Throwable throwable) {
                 LogUtils.error(TAG, throwable);
             }
         });
-
-
-        if (!PROXY.get()) {
-            Settings.setIncognitoMode(mWebView, false);
-
-            mActionIncognito.setColorFilter(ContextCompat.getColor(getApplicationContext(),
-                    android.R.color.white), android.graphics.PorterDuff.Mode.SRC_IN);
-        } else {
-            Settings.setIncognitoMode(mWebView, true);
-
-            mActionIncognito.setColorFilter(ContextCompat.getColor(getApplicationContext(),
-                    android.R.color.holo_green_light), android.graphics.PorterDuff.Mode.SRC_IN);
-        }
 
 
         ImageView mActionOverflow = findViewById(R.id.action_overflow);
@@ -886,16 +854,6 @@ public class MainActivity extends AppCompatActivity implements
                 new ViewModelProvider(this).get(EventViewModel.class);
 
 
-        eventViewModel.getTor().observe(this, (event) -> {
-            try {
-                if (event != null) {
-                    mActionIncognito.setVisibility(View.GONE);
-                }
-            } catch (Throwable throwable) {
-                LogUtils.error(TAG, throwable);
-            }
-
-        });
 
         eventViewModel.getError().observe(this, (event) -> {
             try {
@@ -1217,21 +1175,7 @@ public class MainActivity extends AppCompatActivity implements
                     if (ad) {
                         return createEmptyResource();
                     } else {
-
-                        if (isOnion(uri) || PROXY.get()) {
-                            try {
-
-                                // todo why ???
-                                String urlString = uri.toString().split("#")[0];
-
-                                return ThorService.getProxyResponse(request, urlString);
-                            } catch (Throwable throwable) {
-                                LogUtils.error(TAG, throwable);
-                                return createErrorMessage(throwable);
-                            }
-                        } else {
-                            return null;
-                        }
+                        return null;
                     }
 
                 } else if (Objects.equals(uri.getScheme(), Content.IPNS) ||
@@ -1288,7 +1232,7 @@ public class MainActivity extends AppCompatActivity implements
             mWebView.restoreState(savedInstanceState);
         } else {
             if (!urlLoading) {
-                openUri(Uri.parse(Settings.getDefaultHomepage()));
+                openUri(Uri.parse(Settings.HOMEPAGE));
             }
         }
 
@@ -1569,15 +1513,6 @@ public class MainActivity extends AppCompatActivity implements
 
     }
 
-    private boolean isOnion(@NonNull Uri uri) {
-        try {
-            return uri.getHost().endsWith(Content.ONION);
-        } catch (Throwable throwable) {
-            LogUtils.error(TAG, throwable);
-        }
-        return false;
-    }
-
     private boolean isDarkTheme() {
         int nightModeFlags = getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK;
         return nightModeFlags == Configuration.UI_MODE_NIGHT_YES;
@@ -1590,22 +1525,22 @@ public class MainActivity extends AppCompatActivity implements
         @Override
         public final void onOffsetChanged(AppBarLayout appBarLayout, int verticalOffset) {
             if (verticalOffset == 0) {
-                setCurrentStateAndNotify(appBarLayout, State.EXPANDED);
+                setCurrentStateAndNotify(State.EXPANDED);
             } else if (Math.abs(verticalOffset) >= appBarLayout.getTotalScrollRange()) {
-                setCurrentStateAndNotify(appBarLayout, State.COLLAPSED);
+                setCurrentStateAndNotify(State.COLLAPSED);
             } else {
-                setCurrentStateAndNotify(appBarLayout, State.IDLE);
+                setCurrentStateAndNotify(State.IDLE);
             }
         }
 
-        private void setCurrentStateAndNotify(AppBarLayout appBarLayout, State state) {
+        private void setCurrentStateAndNotify(State state) {
             if (mCurrentState != state) {
-                onStateChanged(appBarLayout, state);
+                onStateChanged(state);
             }
             mCurrentState = state;
         }
 
-        public abstract void onStateChanged(AppBarLayout appBarLayout, State state);
+        public abstract void onStateChanged(State state);
 
         public enum State {
             EXPANDED,

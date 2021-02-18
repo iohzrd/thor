@@ -6,8 +6,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.room.Room;
 
-import java.util.List;
-
 public class BLOCKS {
 
     private static BLOCKS INSTANCE = null;
@@ -74,10 +72,6 @@ public class BLOCKS {
 
     public long getBlockSize(@NonNull String id) {
         return getBlocksDatabase().blockDao().getBlockSize(id);
-    }
-
-    public List<Block> getBlocks() {
-        return getBlocksDatabase().blockDao().getBlocks();
     }
 
     @Nullable

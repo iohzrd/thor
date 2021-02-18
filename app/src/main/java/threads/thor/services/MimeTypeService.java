@@ -14,20 +14,13 @@ import threads.thor.magic.ContentInfoUtil;
 import threads.thor.utils.MimeType;
 
 public class MimeTypeService {
-    public static final String HTML_MIME_TYPE = "text/html";
     public static final String PDF_MIME_TYPE = "application/pdf";
     public static final String OCTET_MIME_TYPE = "application/octet-stream";
-    public static final String PLAIN_MIME_TYPE = "text/plain";
-    public static final String TORRENT_MIME_TYPE = "application/x-bittorrent";
-    public static final String URL_MIME_TYPE = "text/uri-list";
-    public static final String DIR_MIME_TYPE = DocumentsContract.Document.MIME_TYPE_DIR;
     public static final String AUDIO = "audio";
-    public static final String ALL = "*/*";
     public static final String TEXT = "text";
     public static final String VIDEO = "video";
     public static final String IMAGE = "image";
     public static final String APPLICATION = "application";
-    public static final String RFC_822 = "message/rfc822";
     private static final String TAG = MimeTypeService.class.getSimpleName();
     private static final String SVG_DOWNLOAD = "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" version=\"1.1\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\"><path fill=\"#696969\" d=\"M5,20H19V18H5M19,9H15V3H9V9H5L12,16L19,9Z\" /></svg>";
     private static final String SVG_FOLDER = "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"  version=\"1.1\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\"><path fill=\"#696969\" d=\"M10,4H4C2.89,4 2,4.89 2,6V18C2,19.1 2.9,20 4,20H20C21.1,20 22,19.1 22,18V8C22,6.89 21.1,6 20,6H12L10,4Z\" /></svg>";

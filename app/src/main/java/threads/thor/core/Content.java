@@ -14,11 +14,9 @@ public class Content {
     public static final String HTTPS = "https";
     public static final String ABOUT = "about";
     public static final String HTTP = "http";
-    public static final String MAGNET = "magnet";
     public static final String UTF8 = "UTF-8";
     public static final String INFO = "info";
     public static final String FILE = "file";
-    public static final String ONION = ".onion";
     public static final String PID = "pid";
     public static final String CIRCUIT = "p2p-circuit";
     public static final String P2P_PATH = "/p2p/";

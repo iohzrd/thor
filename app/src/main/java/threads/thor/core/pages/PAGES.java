@@ -73,12 +73,6 @@ public class PAGES {
     }
 
 
-    @Nullable
-    public String getPageContent(@NonNull String pid) {
-        return pageDatabase.pageDao().getPageContent(pid);
-    }
-
-
     public void setPageContent(@NonNull String pid, @NonNull String content) {
         pageDatabase.pageDao().setContent(pid, content);
     }

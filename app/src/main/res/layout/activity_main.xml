@@ -19,13 +19,13 @@
             app:layout_scrollFlags="scroll|enterAlways|snap">
 
             <ImageButton
-                android:id="@+id/action_incognito"
+                android:id="@+id/action_home"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="@string/incognito"
+                android:contentDescription="@null"
                 android:padding="8dp"
-                android:src="@drawable/incognito"
+                android:src="@drawable/home_outline"
                 app:tint="@android:color/white" />
 
 
