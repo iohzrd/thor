@@ -30,4 +30,15 @@
     <string name="download">Download</string>
     <string name="more_options">More options</string>
 
+    <string name="enable_javascript">Enable Javascript</string>
+    <string name="redirect_url_support">Redirect URL Support</string>
+    <string name="settings">Settings</string>
+    <string name="concurrency_value">Concurrency (DHT) [%1$s]</string>
+    <string name="restart_config_changed">Please restart the application due to the configuration changes.</string>
+    <string name="redirect_index_support">Redirect Index HTML</string>
+    <string name="javascript_text">When javascript is disabled, many websites might not work properly.</string>
+    <string name="redirect_url_support_text">When this option is enabled, URLs which references IPFS or IPNS content, will be automatically redirected to the local IPFS node. Currently only URLs of the form https://xxx/ipfs/… or https://xxx/ipns/… will be redirected.</string>
+    <string name="redirect_index_support_text">If this option is enabled, the local node tries to find an HTML index file for a given ipfs or ipns URL if it is not specified.</string>
+    <string name="concurrency_text">The higher the concurrency value, the more aggressively the local node tries to find the requested content. This also consumes more energy.</string>
+
 </resources>

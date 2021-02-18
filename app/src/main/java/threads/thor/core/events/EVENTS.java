@@ -10,7 +10,7 @@ public class EVENTS {
     public static final String ERROR = "ERROR";
     public static final String WARNING = "WARNING";
     public static final String INFO = "INFO";
-
+    public static final String EXIT = "EXIT";
 
     private static EVENTS INSTANCE = null;
     private final EventsDatabase mEventsDatabase;
@@ -51,6 +51,12 @@ public class EVENTS {
 
     private void storeEvent(@NonNull Event event) {
         mEventsDatabase.eventDao().insertEvent(event);
+    }
+
+
+    public void exit(@NonNull String content) {
+
+        storeEvent(createEvent(EXIT, content));
     }
 
     public void error(@NonNull String content) {

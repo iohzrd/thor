@@ -11,6 +11,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.net.http.SslError;
@@ -59,6 +60,7 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import androidx.webkit.WebSettingsCompat;
 import androidx.webkit.WebViewFeature;
+import androidx.work.WorkManager;
 
 import com.google.android.material.appbar.AppBarLayout;
 import com.google.android.material.snackbar.Snackbar;
@@ -78,6 +80,7 @@ import threads.thor.core.events.EventViewModel;
 import threads.thor.fragments.ActionListener;
 import threads.thor.fragments.BookmarksDialogFragment;
 import threads.thor.fragments.HistoryDialogFragment;
+import threads.thor.fragments.SettingsDialogFragment;
 import threads.thor.ipfs.Closeable;
 import threads.thor.ipfs.IPFS;
 import threads.thor.services.ThorService;
@@ -479,7 +482,8 @@ public class MainActivity extends AppCompatActivity implements
             }
         });
 
-        Settings.setWebSettings(mWebView);
+
+        Settings.setWebSettings(mWebView, Settings.isJavascriptEnabled(getApplicationContext()));
 
 
         if (WebViewFeature.isFeatureSupported(WebViewFeature.FORCE_DARK)) {
@@ -732,6 +736,25 @@ public class MainActivity extends AppCompatActivity implements
             });
 
 
+            TextView actionSettings = menuOverflow.findViewById(R.id.action_settings);
+            actionSettings.setOnClickListener(v19 -> {
+                try {
+                    if (SystemClock.elapsedRealtime() - mLastClickTime < CLICK_OFFSET) {
+                        return;
+                    }
+                    mLastClickTime = SystemClock.elapsedRealtime();
+
+
+                    SettingsDialogFragment dialogFragment = new SettingsDialogFragment();
+                    dialogFragment.show(getSupportFragmentManager(), SettingsDialogFragment.TAG);
+                } catch (Throwable throwable) {
+                    LogUtils.error(TAG, throwable);
+                } finally {
+                    dialog.dismiss();
+                }
+
+            });
+
             TextView actionDocumentation = menuOverflow.findViewById(R.id.action_documentation);
             actionDocumentation.setOnClickListener(v19 -> {
                 try {
@@ -859,6 +882,7 @@ public class MainActivity extends AppCompatActivity implements
                     String content = event.getContent();
                     if (!content.isEmpty()) {
                         Snackbar snackbar = Snackbar.make(mWebView, content, Snackbar.LENGTH_LONG);
+                        snackbar.setActionTextColor(Color.WHITE);
                         snackbar.show();
                     }
                     eventViewModel.removeEvent(event);
@@ -878,6 +902,7 @@ public class MainActivity extends AppCompatActivity implements
                     if (!content.isEmpty()) {
                         Snackbar snackbar = Snackbar.make(mWebView, content,
                                 Snackbar.LENGTH_SHORT);
+                        snackbar.setActionTextColor(Color.WHITE);
                         snackbar.show();
                     }
                     eventViewModel.removeEvent(event);
@@ -888,6 +913,41 @@ public class MainActivity extends AppCompatActivity implements
 
         });
 
+
+        eventViewModel.getExit().observe(this, (event) -> {
+            try {
+                if (event != null) {
+                    String content = event.getContent();
+                    if (!content.isEmpty()) {
+                        Snackbar snackbar = Snackbar.make(mDrawerLayout, content,
+                                Snackbar.LENGTH_INDEFINITE);
+                        snackbar.setActionTextColor(Color.WHITE);
+                        snackbar.setAction(android.R.string.ok, (view) -> {
+
+                            try {
+
+                                WorkManager.getInstance(getApplicationContext()).cancelAllWork();
+
+                                // TODO IPFS.getInstance(getApplicationContext()).shutdown();
+                                finishAffinity();
+                                System.exit(0);
+                            } catch (Throwable e) {
+                                LogUtils.error(TAG, "" + e.getLocalizedMessage(), e);
+                            } finally {
+                                snackbar.dismiss();
+                            }
+
+                        });
+                        snackbar.show();
+
+                    }
+                    eventViewModel.removeEvent(event);
+                }
+            } catch (Throwable e) {
+                LogUtils.error(TAG, "" + e.getLocalizedMessage(), e);
+            }
+
+        });
 
         eventViewModel.getInfo().observe(this, (event) -> {
             try {

@@ -32,4 +32,8 @@ public class EventViewModel extends AndroidViewModel {
     public void removeEvent(@NonNull final Event event) {
         new Thread(() -> eventsDatabase.eventDao().deleteEvent(event)).start();
     }
+
+    public LiveData<Event> getExit() {
+        return eventsDatabase.eventDao().getEvent(EVENTS.EXIT);
+    }
 }

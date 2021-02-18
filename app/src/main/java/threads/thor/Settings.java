@@ -1,6 +1,8 @@
 package threads.thor;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Build;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -16,6 +18,52 @@ public class Settings {
     public static final String HOMEPAGE = "https://start.duckduckgo.com/";
     public static final int TIMEOUT_BOOTSTRAP = 5;
     public static final int MIN_PEERS = 10;
+
+    private static final String APP_KEY = "AppKey";
+    private static final String JAVASCRIPT_KEY = "javascriptKey";
+    private static final String REDIRECT_URL_KEY = "redirectUrlKey";
+    private static final String REDIRECT_INDEX_KEY = "redirectIndexKey";
+
+    public static void setJavascriptEnabled(Context context, boolean auto) {
+        SharedPreferences sharedPref = context.getSharedPreferences(APP_KEY, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putBoolean(JAVASCRIPT_KEY, auto);
+        editor.apply();
+    }
+
+    public static boolean isJavascriptEnabled(@NonNull Context context) {
+        SharedPreferences sharedPref = context.getSharedPreferences(APP_KEY, Context.MODE_PRIVATE);
+        return sharedPref.getBoolean(JAVASCRIPT_KEY, true);
+
+    }
+
+
+    public static void setRedirectUrlEnabled(Context context, boolean auto) {
+        SharedPreferences sharedPref = context.getSharedPreferences(APP_KEY, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putBoolean(REDIRECT_URL_KEY, auto);
+        editor.apply();
+    }
+
+    public static boolean isRedirectUrlEnabled(@NonNull Context context) {
+        SharedPreferences sharedPref = context.getSharedPreferences(APP_KEY, Context.MODE_PRIVATE);
+        return sharedPref.getBoolean(REDIRECT_URL_KEY, false);
+    }
+
+
+    public static void setRedirectIndexEnabled(Context context, boolean auto) {
+        SharedPreferences sharedPref = context.getSharedPreferences(APP_KEY, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putBoolean(REDIRECT_INDEX_KEY, auto);
+        editor.apply();
+    }
+
+    public static boolean isRedirectIndexEnabled(@NonNull Context context) {
+        SharedPreferences sharedPref = context.getSharedPreferences(APP_KEY, Context.MODE_PRIVATE);
+        return sharedPref.getBoolean(REDIRECT_INDEX_KEY, true);
+
+    }
+
 
     // IPFS BOOTSTRAP
     @NonNull
@@ -33,16 +81,15 @@ public class Settings {
     public static final String DNS_LINK = "dnslink=";
 
 
-
     @SuppressLint("SetJavaScriptEnabled")
-    public static void setWebSettings(@NonNull WebView webView) {
+    public static void setWebSettings(@NonNull WebView webView, boolean enableJavascript) {
 
 
         WebSettings settings = webView.getSettings();
         settings.setUserAgentString("Mozilla/5.0 (Linux; Android " + Build.VERSION.RELEASE + ")");
 
 
-        settings.setJavaScriptEnabled(true);
+        settings.setJavaScriptEnabled(enableJavascript);
         settings.setJavaScriptCanOpenWindowsAutomatically(false);
 
         settings.setSafeBrowsingEnabled(true);

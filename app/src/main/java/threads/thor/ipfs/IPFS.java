@@ -47,6 +47,7 @@ public class IPFS implements Listener {
     private static final String SWARM_PORT_KEY = "swarmPortKey";
     private static final String PUBLIC_KEY = "publicKey";
     private static final String AGENT_KEY = "agentKey";
+    private static final String CONCURRENCY_KEY = "concurrencyKey";
     private static final String PRIVATE_KEY = "privateKey";
     private static final String TAG = IPFS.class.getSimpleName();
     private static IPFS INSTANCE = null;
@@ -82,11 +83,26 @@ public class IPFS implements Listener {
 
         node.setPort(IPFS.getSwarmPort(context));
 
-        node.setConcurrency(25);
+        node.setConcurrency(getConcurrencyValue(context));
         node.setGracePeriod("10s");
         node.setHighWater(500);
         node.setLowWater(100);
 
+    }
+
+
+    public static int getConcurrencyValue(@NonNull Context context) {
+        Objects.requireNonNull(context);
+        SharedPreferences sharedPref = context.getSharedPreferences(PREF_KEY, Context.MODE_PRIVATE);
+        return sharedPref.getInt(CONCURRENCY_KEY, 25);
+    }
+
+    public static void setConcurrencyValue(@NonNull Context context, int timeout) {
+        Objects.requireNonNull(context);
+        SharedPreferences sharedPref = context.getSharedPreferences(PREF_KEY, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putInt(CONCURRENCY_KEY, timeout);
+        editor.apply();
     }
 
 

@@ -49,6 +49,8 @@ public class DOCS {
     private static DOCS INSTANCE = null;
     private final IPFS ipfs;
     private final PAGES pages;
+    private final boolean isRedirectIndex;
+    private final boolean isRedirectUrl;
     private final Hashtable<Uri, Uri> redirects = new Hashtable<>();
     private final Hashtable<String, String> resolves = new Hashtable<>();
 
@@ -57,6 +59,8 @@ public class DOCS {
         long start = System.currentTimeMillis();
         ipfs = IPFS.getInstance(context);
         pages = PAGES.getInstance(context);
+        isRedirectIndex = Settings.isRedirectIndexEnabled(context);
+        isRedirectUrl = Settings.isRedirectUrlEnabled(context);
         LogUtils.info(InitApplication.TIME_TAG, "DOCS finish [" +
                 (System.currentTimeMillis() - start) + "]...");
     }
@@ -477,13 +481,14 @@ public class DOCS {
                         }
                     }
                 }
-            } else if (Objects.equals(uri.getScheme(), Content.HTTPS)) { // TODO find a general solution (or remove)
-                String host = uri.getHost();
-                Objects.requireNonNull(host);
-                if (Objects.equals(host, "ipfs.io")) {
-                    List<String> paths = uri.getPathSegments();
-                    if (paths.size() >= 2) {
-                        String protocol = paths.get(0);
+            } else if (isRedirectUrl && Objects.equals(uri.getScheme(), Content.HTTPS)) {
+
+
+                List<String> paths = uri.getPathSegments();
+                if (paths.size() >= 2) {
+                    String protocol = paths.get(0);
+                    if (Objects.equals(protocol, Content.IPFS) ||
+                            Objects.equals(protocol, Content.IPNS)) {
                         String authority = paths.get(1);
                         List<String> subPaths = new ArrayList<>(paths);
                         subPaths.remove(protocol);
@@ -601,31 +606,11 @@ public class DOCS {
                                         @NonNull List<String> paths, @NonNull Closeable closeable)
             throws ClosedException {
 
-        if (paths.isEmpty()) {
+        if (isRedirectIndex) {
+            if (paths.isEmpty()) {
 
-            if (!ipfs.isEmptyDir(root)) {
-                boolean exists = ipfs.resolve(root, INDEX_HTML, closeable);
-
-                if (exists) {
-                    Uri.Builder builder = new Uri.Builder();
-                    builder.scheme(uri.getScheme())
-                            .authority(uri.getAuthority());
-                    for (String path : paths) {
-                        builder.appendPath(path);
-                    }
-                    builder.appendPath(INDEX_HTML);
-                    return Pair.create(builder.build(), true);
-                }
-            }
-
-
-        } else {
-
-            String cid = ipfs.resolve(root, paths, closeable);
-
-            if (!cid.isEmpty()) {
-                if (!ipfs.isEmptyDir(cid)) {
-                    boolean exists = ipfs.resolve(cid, INDEX_HTML, closeable);
+                if (!ipfs.isEmptyDir(root)) {
+                    boolean exists = ipfs.resolve(root, INDEX_HTML, closeable);
 
                     if (exists) {
                         Uri.Builder builder = new Uri.Builder();
@@ -638,8 +623,30 @@ public class DOCS {
                         return Pair.create(builder.build(), true);
                     }
                 }
-            }
 
+
+            } else {
+
+                String cid = ipfs.resolve(root, paths, closeable);
+
+                if (!cid.isEmpty()) {
+                    if (!ipfs.isEmptyDir(cid)) {
+                        boolean exists = ipfs.resolve(cid, INDEX_HTML, closeable);
+
+                        if (exists) {
+                            Uri.Builder builder = new Uri.Builder();
+                            builder.scheme(uri.getScheme())
+                                    .authority(uri.getAuthority());
+                            for (String path : paths) {
+                                builder.appendPath(path);
+                            }
+                            builder.appendPath(INDEX_HTML);
+                            return Pair.create(builder.build(), true);
+                        }
+                    }
+                }
+
+            }
         }
         return Pair.create(uri, false);
     }
