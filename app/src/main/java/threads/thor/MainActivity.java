@@ -1467,6 +1467,11 @@ public class MainActivity extends AppCompatActivity implements
         try {
             updateUri(uri);
 
+            if (Objects.equals(uri.getScheme(), Content.IPNS) ||
+                    Objects.equals(uri.getScheme(), Content.IPFS)) {
+                docs.attachUri(uri);
+            }
+
             docs.releaseThreads();
 
             mWebView.stopLoading();
