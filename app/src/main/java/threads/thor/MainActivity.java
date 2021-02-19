@@ -1121,8 +1121,6 @@ public class MainActivity extends AppCompatActivity implements
             @Override
             public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
                 LogUtils.info(TAG, "onReceivedError " + view.getUrl() + " " + error.getDescription());
-
-                mProgressBar.setVisibility(View.GONE);
             }
 
 
@@ -1156,7 +1154,6 @@ public class MainActivity extends AppCompatActivity implements
                             return true;
                         }
                         mProgressBar.setVisibility(View.VISIBLE);
-                        docs.attachUri(uri);
                         docs.releaseThreads();
                         return false;
                     } else {
@@ -1240,6 +1237,7 @@ public class MainActivity extends AppCompatActivity implements
                 } else if (Objects.equals(uri.getScheme(), Content.IPNS) ||
                         Objects.equals(uri.getScheme(), Content.IPFS)) {
 
+                    docs.attachUri(uri);
                     docs.bootstrap();
 
                     docs.connectUri(getApplicationContext(), uri);
