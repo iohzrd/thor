@@ -6,7 +6,7 @@ In addition to the protocols enhancements it focus on usability.
 
 **Usability:**
 To improve the usability of the browser a **Ad-blocker** is integrated.
-It based on the information which are coming from **https://pgl.yoyo.org/adservers/**
+It based on the information which are coming from **https://pgl.yoyo.org/adservers/serverlist.php?hostformat=nohtml&showintro=0&mimetype=plaintext**
 
 
 ## General
