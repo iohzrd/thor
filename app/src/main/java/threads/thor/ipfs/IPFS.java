@@ -87,6 +87,7 @@ public class IPFS implements Listener {
         node.setGracePeriod("10s");
         node.setHighWater(500);
         node.setLowWater(100);
+        node.setResponsive(200);
 
     }
 
@@ -655,6 +656,14 @@ public class IPFS implements Listener {
     private Loader getLoader(@NonNull String cid, @NonNull Closeable closeable) throws Exception {
         return node.getLoader(cid, closeable::isClosed);
 
+    }
+
+    public void shutdown() {
+        try {
+            node.setShutdown(true);
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable);
+        }
     }
 
     @NonNull

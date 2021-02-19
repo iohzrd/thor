@@ -928,7 +928,8 @@ public class MainActivity extends AppCompatActivity implements
 
                                 WorkManager.getInstance(getApplicationContext()).cancelAllWork();
 
-                                // TODO IPFS.getInstance(getApplicationContext()).shutdown();
+                                IPFS.getInstance(getApplicationContext()).shutdown();
+
                                 finishAffinity();
                                 System.exit(0);
                             } catch (Throwable e) {
