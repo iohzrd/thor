@@ -2,6 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_margin="16dp"
     android:orientation="vertical">
 
@@ -147,6 +148,8 @@
             android:padding="12dp"
             android:text="@string/settings"
             android:textColor="?android:textColorPrimary"
+            app:drawableEndCompat="@drawable/tune"
+            app:drawableTint="?android:textColorPrimary"
             android:textSize="16sp" />
 
     </LinearLayout>
