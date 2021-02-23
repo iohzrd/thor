@@ -7,6 +7,8 @@ import android.util.Pair;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.google.protobuf.InvalidProtocolBufferException;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -25,6 +27,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
+import ipns.pb.IpnsEntryProtos;
 import thor.Listener;
 import thor.Loader;
 import thor.LsInfoClose;
@@ -39,6 +42,7 @@ import threads.thor.core.blocks.Block;
 
 public class IPFS implements Listener {
 
+    private static final int RESOLVE_TIMEOUT = 3000;
     private static final String EMPTY_DIR_58 = "QmUNLLsPACCz1vLxQVkXqqLX5R1X345qqfHbsf67hvA3Nn";
     private static final String EMPTY_DIR_32 = "bafybeiczsscdsbs7ffqz55asqdf3smv6klcw3gofszvwlyarci47bgf354";
     private static final String PREF_KEY = "prefKey";
@@ -397,39 +401,8 @@ public class IPFS implements Listener {
     }
 
 
-    public void resolveName(@NonNull String name, @NonNull Closeable closeable) throws ClosedException {
-        if (!isDaemonRunning()) {
-            return;
-        }
-        long time = System.currentTimeMillis();
-        try {
-
-            node.resolveName(new ResolveInfo() {
-                @Override
-                public boolean close() {
-                    return closeable.isClosed();
-                }
-
-                @Override
-                public void resolved(String hash, long seq) {
-                    LogUtils.error(TAG, "" + seq + " " + hash);
-                }
-            }, name, false, 32);
-
-        } catch (Throwable e) {
-            LogUtils.error(TAG, e);
-        }
-
-        LogUtils.error(TAG, "Finished resolve name " + name + " " +
-                (System.currentTimeMillis() - time));
-
-        if (closeable.isClosed()) {
-            throw new ClosedException();
-        }
-    }
-
     @Nullable
-    public ResolvedName resolveName(@NonNull String name, long initSequence,
+    public ResolvedName resolveName(@NonNull String name, long last,
                                     @NonNull Closeable closeable) throws ClosedException {
         if (!isDaemonRunning()) {
             return null;
@@ -440,48 +413,47 @@ public class IPFS implements Listener {
 
         AtomicReference<ResolvedName> resolvedName = new AtomicReference<>(null);
         try {
-            AtomicLong sequence = new AtomicLong(initSequence);
-            AtomicBoolean visited = new AtomicBoolean(false);
-            AtomicBoolean close = new AtomicBoolean(false);
+            AtomicLong timeout = new AtomicLong(0);
+            AtomicBoolean abort = new AtomicBoolean(false);
             node.resolveName(new ResolveInfo() {
                 @Override
                 public boolean close() {
-                    return close.get() || closeable.isClosed();
+                    return (timeout.get() > System.currentTimeMillis()) || abort.get() || closeable.isClosed();
                 }
 
-                private void setName(@NonNull String hash) {
-                    resolvedName.set(new ResolvedName(
-                            sequence.get(), hash.replaceFirst(Content.IPFS_PATH, "")));
+                private void setName(@NonNull String hash, long sequence) {
+                    resolvedName.set(new ResolvedName(sequence,
+                            hash.replaceFirst(Content.IPFS_PATH, "")));
                 }
 
                 @Override
-                public void resolved(String hash, long seq) {
+                public void resolved(byte[] data) {
 
+                    try {
+                        IpnsEntryProtos.IpnsEntry entry = IpnsEntryProtos.IpnsEntry.parseFrom(data);
+                        Objects.requireNonNull(entry);
+                        String hash = entry.getValue().toStringUtf8();
+                        long seq = entry.getSequence();
 
-                    LogUtils.error(TAG, "" + seq + " " + hash);
-                    if (!close.get()) {
-                        long init = sequence.get();
-                        if (seq < init) {
-                            close.set(true);
+                        LogUtils.error(TAG, "IpnsEntry : " + seq + " " + hash  + " " +
+                                (System.currentTimeMillis() - time));
+
+                        if (seq < last) {
+                            abort.set(true);
                             return; // newest value already available
                         }
-
-                        if (hash.startsWith(Content.IPFS_PATH)) {
-                            if (seq > init) {
-                                sequence.set(seq);
-                                visited.set(false);
+                        if(!abort.get()) {
+                            if (hash.startsWith(Content.IPFS_PATH)) {
+                                timeout.set(System.currentTimeMillis() + RESOLVE_TIMEOUT);
+                                setName(hash, seq);
                             } else {
-                                visited.set(true);
+                                LogUtils.error(TAG, "invalid hash " + hash);
                             }
-                            setName(hash);
-                            if (visited.get()) {
-                                close.set(true);
-                            }
-
-                        } else {
-                            LogUtils.error(TAG, "invalid hash " + hash);
                         }
+                    } catch (InvalidProtocolBufferException e) {
+                        LogUtils.error(TAG, e);
                     }
+
                 }
             }, name, false, 8);
 
@@ -727,7 +699,7 @@ public class IPFS implements Listener {
 
     @Override
     public long blockSize(String key) {
-
+        // TODO when not found maybe return -1
         return blocks.getBlockSize(key);
     }
 

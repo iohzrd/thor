@@ -91,7 +91,6 @@ import threads.thor.utils.MimeType;
 import threads.thor.work.ClearBrowserDataWorker;
 import threads.thor.work.DownloadContentWorker;
 import threads.thor.work.DownloadFileWorker;
-import threads.thor.work.PageResolveWorker;
 
 
 public class MainActivity extends AppCompatActivity implements
@@ -1267,7 +1266,8 @@ public class MainActivity extends AppCompatActivity implements
                         }
                         if (throwable instanceof DOCS.ContentException) {
                             if (Objects.equals(uri.getScheme(), Content.IPNS)) {
-                                PageResolveWorker.resolve(getApplicationContext(), uri.getHost());
+                                LogUtils.error(TAG,
+                                        "Content not found ... " + uri.toString());
                             }
                         }
 

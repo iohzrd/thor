@@ -18,6 +18,7 @@ public class Settings {
     public static final String HOMEPAGE = "https://start.duckduckgo.com/";
     public static final int TIMEOUT_BOOTSTRAP = 5;
     public static final int MIN_PEERS = 10;
+
     // IPFS BOOTSTRAP
     @NonNull
     public static final List<String> IPFS_BOOTSTRAP_NODES = new ArrayList<>(Arrays.asList(
