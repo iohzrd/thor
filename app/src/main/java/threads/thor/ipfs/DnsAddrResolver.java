@@ -122,8 +122,8 @@ public class DnsAddrResolver {
                 TXT text = (TXT) record.getPayload();
                 txtRecords.add(text.getText());
             }
-        } catch (Throwable e) {
-            LogUtils.error(TAG, "" + e.getLocalizedMessage(), e);
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable.getMessage());
         }
         return txtRecords;
     }

@@ -117,7 +117,7 @@ public class DOCS {
     private String getMimeType(@NonNull Context context, @NonNull String cid,
                                @NonNull Closeable closeable) throws ClosedException {
 
-        if (ipfs.isEmptyDir(cid) || ipfs.isDir(cid, closeable)) {
+        if (ipfs.isDir(cid, closeable)) {
             return MimeType.DIR_MIME_TYPE;
         }
 
@@ -278,11 +278,7 @@ public class DOCS {
                                            @NonNull Closeable closeable) throws Exception {
 
         if (paths.isEmpty()) {
-            if (ipfs.isEmptyDir(root)) {
-                String answer = generateDirectoryHtml(uri, root, paths, new ArrayList<>());
-                return new WebResourceResponse(MimeType.HTML_MIME_TYPE, Content.UTF8,
-                        new ByteArrayInputStream(answer.getBytes()));
-            } else if (ipfs.isDir(root, closeable)) {
+            if (ipfs.isDir(root, closeable)) {
                 List<Link> links = ipfs.links(root, closeable);
                 String answer = generateDirectoryHtml(uri, root, paths, links);
                 return new WebResourceResponse(MimeType.HTML_MIME_TYPE, Content.UTF8,
@@ -299,11 +295,7 @@ public class DOCS {
             if (cid.isEmpty()) {
                 throw new ContentException(uri.toString());
             }
-            if (ipfs.isEmptyDir(cid)) {
-                String answer = generateDirectoryHtml(uri, root, paths, new ArrayList<>());
-                return new WebResourceResponse(MimeType.HTML_MIME_TYPE, Content.UTF8,
-                        new ByteArrayInputStream(answer.getBytes()));
-            } else if (ipfs.isDir(cid, closeable)) {
+            if (ipfs.isDir(cid, closeable)) {
                 List<Link> links = ipfs.links(cid, closeable);
                 String answer = generateDirectoryHtml(uri, root, paths, links);
                 return new WebResourceResponse(MimeType.HTML_MIME_TYPE, Content.UTF8,
@@ -602,10 +594,10 @@ public class DOCS {
                                         @NonNull List<String> paths, @NonNull Closeable closeable)
             throws ClosedException {
 
-        if (isRedirectIndex) {
+
             if (paths.isEmpty()) {
 
-                if (!ipfs.isEmptyDir(root)) {
+                if (isRedirectIndex && ipfs.isDir(root, closeable)) {
                     boolean exists = ipfs.resolve(root, INDEX_HTML, closeable);
 
                     if (exists) {
@@ -623,27 +615,63 @@ public class DOCS {
 
             } else {
 
-                String cid = ipfs.resolve(root, paths, closeable);
+                // check first paths
+                // if like this .../ipfs/Qa..../
+                // THIS IS A BIG HACK AND SHOULD NOT BE SUPPORTED
+                if (paths.size() >= 2) {
+                    String protocol = paths.get(0);
+                    if (Objects.equals(protocol, Content.IPFS) ||
+                            Objects.equals(protocol, Content.IPNS)) {
+                        String authority = paths.get(1);
+                        List<String> subPaths = new ArrayList<>(paths);
+                        subPaths.remove(protocol);
+                        subPaths.remove(authority);
+                        if (ipfs.isValidCID(authority)) {
+                            if (Objects.equals(protocol, Content.IPFS)) {
+                                Uri.Builder builder = new Uri.Builder();
+                                builder.scheme(Content.IPFS)
+                                        .authority(authority);
 
-                if (!cid.isEmpty()) {
-                    if (!ipfs.isEmptyDir(cid)) {
-                        boolean exists = ipfs.resolve(cid, INDEX_HTML, closeable);
+                                for (String path : subPaths) {
+                                    builder.appendPath(path);
+                                }
+                                return Pair.create(builder.build(), false);
+                            } else if (Objects.equals(protocol, Content.IPNS)) {
+                                Uri.Builder builder = new Uri.Builder();
+                                builder.scheme(Content.IPNS)
+                                        .authority(authority);
 
-                        if (exists) {
-                            Uri.Builder builder = new Uri.Builder();
-                            builder.scheme(uri.getScheme())
-                                    .authority(uri.getAuthority());
-                            for (String path : paths) {
-                                builder.appendPath(path);
+                                for (String path : subPaths) {
+                                    builder.appendPath(path);
+                                }
+                                return Pair.create(builder.build(), false);
                             }
-                            builder.appendPath(INDEX_HTML);
-                            return Pair.create(builder.build(), true);
                         }
                     }
                 }
 
+                if (isRedirectIndex) {
+                    String cid = ipfs.resolve(root, paths, closeable);
+
+                    if (!cid.isEmpty()) {
+                        if (ipfs.isDir(cid, closeable)) {
+                            boolean exists = ipfs.resolve(cid, INDEX_HTML, closeable);
+
+                            if (exists) {
+                                Uri.Builder builder = new Uri.Builder();
+                                builder.scheme(uri.getScheme())
+                                        .authority(uri.getAuthority());
+                                for (String path : paths) {
+                                    builder.appendPath(path);
+                                }
+                                builder.appendPath(INDEX_HTML);
+                                return Pair.create(builder.build(), true);
+                            }
+                        }
+                    }
+                }
             }
-        }
+
         return Pair.create(uri, false);
     }
 

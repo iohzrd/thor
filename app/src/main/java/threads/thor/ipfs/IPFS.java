@@ -7,6 +7,9 @@ import android.util.Pair;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.google.protobuf.InvalidProtocolBufferException;
 
 import java.io.IOException;
@@ -43,8 +46,6 @@ import threads.thor.core.blocks.Block;
 public class IPFS implements Listener {
 
     private static final int RESOLVE_TIMEOUT = 3000;
-    private static final String EMPTY_DIR_58 = "QmUNLLsPACCz1vLxQVkXqqLX5R1X345qqfHbsf67hvA3Nn";
-    private static final String EMPTY_DIR_32 = "bafybeiczsscdsbs7ffqz55asqdf3smv6klcw3gofszvwlyarci47bgf354";
     private static final String PREF_KEY = "prefKey";
     private static final String PID_KEY = "pidKey";
 
@@ -59,6 +60,7 @@ public class IPFS implements Listener {
     private final Node node;
     private final Object locker = new Object();
 
+    private final LoadingCache<String, Block> cache;
 
     private IPFS(@NonNull Context context) throws Exception {
         this.blocks = BLOCKS.getInstance(context);
@@ -93,6 +95,16 @@ public class IPFS implements Listener {
         node.setLowWater(100);
         node.setResponsive(200);
 
+        cache = CacheBuilder.newBuilder()
+                .maximumSize(1000)
+                .expireAfterWrite(10, TimeUnit.MINUTES)
+                .build(
+                        new CacheLoader<String, Block>() {
+                            @Nullable
+                            public Block load(@NonNull String key) {
+                                return blocks.getBlock(key);
+                            }
+                        });
     }
 
 
@@ -678,29 +690,37 @@ public class IPFS implements Listener {
 
     @Override
     public byte[] blockGet(String key) {
-
-        Block block = blocks.getBlock(key);
-        if (block != null) {
-            return block.getData();
+        //LogUtils.error(TAG, "get "  +key);
+        try {
+            return cache.get(key).getData();
+        } catch (Throwable ignore) {
+            // ignore is expected, when block is null
         }
         return null;
     }
 
     @Override
     public boolean blockHas(String key) {
+        //LogUtils.error(TAG, "has "  +key);
         return blocks.hasBlock(key);
     }
 
     @Override
     public void blockPut(String key, byte[] bytes) {
-
+        //LogUtils.error(TAG, "put " + key);
         blocks.insertBlock(key, bytes);
     }
 
     @Override
     public long blockSize(String key) {
-        // TODO when not found maybe return -1
-        return blocks.getBlockSize(key);
+        long size = -1;
+        try {
+            size = cache.get(key).getSize();
+        } catch (Throwable ignore) {
+            // ignore is expected, when block is null
+        }
+        // LogUtils.error(TAG, "size " + size + " " +key);
+        return size;
     }
 
     @Override
@@ -719,10 +739,6 @@ public class IPFS implements Listener {
         } catch (Throwable e) {
             return false;
         }
-    }
-
-    public boolean isEmptyDir(@NonNull String cid) {
-        return Objects.equals(cid, EMPTY_DIR_32) || Objects.equals(cid, EMPTY_DIR_58);
     }
 
 
