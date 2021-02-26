@@ -28,4 +28,9 @@ public interface BookmarkDao {
     @Delete
     void removeBookmark(Bookmark bookmark);
 
+    @Query("SELECT content FROM Bookmark WHERE uri =:uri")
+    String getDnsLink(String uri);
+
+    @Query("UPDATE Bookmark SET content = :link WHERE uri = :uri")
+    void setDnsLink(String uri, String link);
 }

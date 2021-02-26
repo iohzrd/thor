@@ -27,6 +27,7 @@ import java.util.concurrent.TimeUnit;
 import threads.LogUtils;
 import threads.thor.InitApplication;
 import threads.thor.Settings;
+import threads.thor.core.books.BOOKS;
 import threads.thor.core.pages.PAGES;
 import threads.thor.core.pages.Page;
 import threads.thor.ipfs.Closeable;
@@ -49,6 +50,7 @@ public class DOCS {
     private static DOCS INSTANCE = null;
     private final IPFS ipfs;
     private final PAGES pages;
+    private final BOOKS books;
     private final boolean isRedirectIndex;
     private final boolean isRedirectUrl;
     private final Hashtable<Uri, Uri> redirects = new Hashtable<>();
@@ -59,6 +61,7 @@ public class DOCS {
         long start = System.currentTimeMillis();
         ipfs = IPFS.getInstance(context);
         pages = PAGES.getInstance(context);
+        books = BOOKS.getInstance(context);
         isRedirectIndex = Settings.isRedirectIndexEnabled(context);
         isRedirectUrl = Settings.isRedirectUrlEnabled(context);
         LogUtils.info(InitApplication.TIME_TAG, "DOCS finish [" +
@@ -522,6 +525,62 @@ public class DOCS {
         return uri;
     }
 
+    @NonNull
+    public Pair<Uri, Boolean> redirectDnsLink(@NonNull Uri uri, @NonNull String link,
+                                              @NonNull Closeable closeable)
+            throws ClosedException, InvalidNameException, ResolveNameException {
+
+        List<String> paths = uri.getPathSegments();
+        if (link.startsWith(Content.IPFS_PATH)) {
+            String cid = link.replaceFirst(Content.IPFS_PATH, "");
+            Uri.Builder builder = new Uri.Builder();
+            builder.scheme(Content.IPFS)
+                    .authority(cid);
+            for (String path : paths) {
+                builder.appendPath(path);
+            }
+            return redirect(builder.build(), cid, paths, closeable);
+        } else if (link.startsWith(Content.IPNS_PATH)) {
+            String cid = link.replaceFirst(Content.IPNS_PATH, "");
+            if (!ipfs.decodeName(cid).isEmpty()) {
+                Uri.Builder builder = new Uri.Builder();
+                builder.scheme(Content.IPNS)
+                        .authority(cid);
+                for (String path : paths) {
+                    builder.appendPath(path);
+                }
+                return redirect(builder.build(), cid, paths, closeable);
+            } else {
+                // is is assume like /ipns/<dns_link> = > therefore <dns_link> is url
+
+                Uri dnsUri = Uri.parse(cid);
+                if (dnsUri != null) {
+                    Uri.Builder builder = new Uri.Builder();
+                    builder.scheme(Content.IPNS)
+                            .authority(dnsUri.getAuthority());
+                    for (String path : paths) {
+                        builder.appendPath(path);
+                    }
+                    return redirectUri(builder.build(), closeable);
+                }
+
+            }
+        } else {
+            // is is assume that links is  <dns_link> is url
+
+            Uri dnsUri = Uri.parse(link);
+            if (dnsUri != null) {
+                Uri.Builder builder = new Uri.Builder();
+                builder.scheme(Content.IPNS)
+                        .authority(dnsUri.getAuthority());
+                for (String path : paths) {
+                    builder.appendPath(path);
+                }
+                return redirectUri(builder.build(), closeable);
+            }
+        }
+        return Pair.create(uri, false);
+    }
 
     @NonNull
     public Pair<Uri, Boolean> redirectUri(@NonNull Uri uri, @NonNull Closeable closeable)
@@ -536,61 +595,21 @@ public class DOCS {
             if (!ipfs.isValidCID(host)) {
                 String link = DnsAddrResolver.getDNSLink(host);
                 if (link.isEmpty()) {
-                    if (Objects.equals(uri.getScheme(), Content.IPNS)) {
-                        throw new DOCS.ResolveNameException(uri.toString());
+                    // could not resolved, maybe no NET
+                    String dnsLink = books.getDnsLink(uri.toString());
+                    if (dnsLink == null) {
+                        if (Objects.equals(uri.getScheme(), Content.IPNS)) {
+                            throw new DOCS.ResolveNameException(uri.toString());
+                        } else {
+                            throw new DOCS.InvalidNameException(uri.toString());
+                        }
                     } else {
-                        throw new DOCS.InvalidNameException(uri.toString());
+                        return redirectDnsLink(uri, dnsLink, closeable);
                     }
                 } else {
-                    if (link.startsWith(Content.IPFS_PATH)) {
-                        String cid = link.replaceFirst(Content.IPFS_PATH, "");
-                        Uri.Builder builder = new Uri.Builder();
-                        builder.scheme(Content.IPFS)
-                                .authority(cid);
-                        for (String path : paths) {
-                            builder.appendPath(path);
-                        }
-                        return redirect(builder.build(), cid, paths, closeable);
-                    } else if (link.startsWith(Content.IPNS_PATH)) {
-                        String cid = link.replaceFirst(Content.IPNS_PATH, "");
-                        if (!ipfs.decodeName(cid).isEmpty()) {
-                            Uri.Builder builder = new Uri.Builder();
-                            builder.scheme(Content.IPNS)
-                                    .authority(cid);
-                            for (String path : paths) {
-                                builder.appendPath(path);
-                            }
-                            return redirect(builder.build(), cid, paths, closeable);
-                        } else {
-                            // is is assume like /ipns/<dns_link> = > therefore <dns_link> is url
-
-                            Uri dnsUri = Uri.parse(cid);
-                            if (dnsUri != null) {
-                                Uri.Builder builder = new Uri.Builder();
-                                builder.scheme(Content.IPNS)
-                                        .authority(dnsUri.getAuthority());
-                                for (String path : paths) {
-                                    builder.appendPath(path);
-                                }
-                                return redirectUri(builder.build(), closeable);
-                            }
-
-                        }
-                    } else {
-                        // is is assume that links is  <dns_link> is url
-
-                        Uri dnsUri = Uri.parse(link);
-                        if (dnsUri != null) {
-                            Uri.Builder builder = new Uri.Builder();
-                            builder.scheme(Content.IPNS)
-                                    .authority(dnsUri.getAuthority());
-                            for (String path : paths) {
-                                builder.appendPath(path);
-                            }
-                            return redirectUri(builder.build(), closeable);
-                        }
-
-                    }
+                    // try to store value
+                    books.storeDnsLink(uri.toString(), link);
+                    return redirectDnsLink(uri, link, closeable);
                 }
             } else {
                 String root = getRoot(uri, closeable);

@@ -23,7 +23,6 @@ public class Bookmark {
     @Deprecated
     @ColumnInfo(name = "sequence")
     private long sequence;
-    @Deprecated
     @Nullable
     @ColumnInfo(name = "content")
     private String content;
