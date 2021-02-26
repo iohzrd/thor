@@ -133,7 +133,7 @@ public class DnsAddrResolver {
     @NonNull
     public static DnsClient getInstance() {
         if (INSTANCE == null) {
-            synchronized (IPFS.class) {
+            synchronized (TAG.intern()) {
                 if (INSTANCE == null) {
                     try {
                         INSTANCE = new DnsClient(new LruCache(128));
