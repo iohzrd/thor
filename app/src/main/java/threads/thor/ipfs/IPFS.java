@@ -33,6 +33,7 @@ import thor.Loader;
 import thor.LsInfoClose;
 import thor.Node;
 import thor.Peer;
+import thor.Provider;
 import thor.ResolveInfo;
 import threads.LogUtils;
 import threads.thor.Settings;
@@ -333,6 +334,20 @@ public class IPFS implements Listener {
 
                 }
             }
+        }
+    }
+
+
+    public void dhtFindProviders(@NonNull String cid, @NonNull Provider provider, int numProvs, int timeout) {
+
+        if (!isDaemonRunning()) {
+            return;
+        }
+
+        try {
+            node.dhtFindProvsTimeout(cid, provider, numProvs, timeout);
+        } catch (Throwable e) {
+            LogUtils.error(TAG, e);
         }
     }
 
@@ -665,13 +680,13 @@ public class IPFS implements Listener {
 
     @Override
     public void blockDelete(String key) {
-        LogUtils.error(TAG, "delete "  +key);
+        //LogUtils.error(TAG, "delete "  +key);
         blocks.deleteBlock(Settings.BLOCKS + key);
     }
 
     @Override
     public byte[] blockGet(String key) {
-        LogUtils.error(TAG, "get "  +key);
+        //LogUtils.error(TAG, "get "  +key);
         try {
             Block block = blocks.getBlock(Settings.BLOCKS + key);
             if (block != null) {
@@ -685,19 +700,19 @@ public class IPFS implements Listener {
 
     @Override
     public boolean blockHas(String key) {
-        LogUtils.error(TAG, "has "  +key);
+        //LogUtils.error(TAG, "has "  +key);
         return blocks.hasBlock(Settings.BLOCKS + key);
     }
 
     @Override
     public void blockPut(String key, byte[] bytes) {
-        LogUtils.error(TAG, "put " + key);
+        //LogUtils.error(TAG, "put " + key);
         blocks.insertBlock(Settings.BLOCKS + key, bytes);
     }
 
     @Override
     public long blockSize(String key) {
-        LogUtils.error(TAG, "size " + key);
+        //LogUtils.error(TAG, "size " + key);
         try {
             Block block = blocks.getBlock(Settings.BLOCKS + key);
             if (block != null) {
@@ -708,6 +723,7 @@ public class IPFS implements Listener {
         }
         return -1;
     }
+
 
     @Override
     public void verbose(String s) {

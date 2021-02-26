@@ -40,6 +40,7 @@ import threads.thor.magic.ContentInfoUtil;
 import threads.thor.services.MimeTypeService;
 import threads.thor.utils.MimeType;
 import threads.thor.work.PageConnectWorker;
+import threads.thor.work.PageProviderWorker;
 
 public class DOCS {
 
@@ -429,6 +430,8 @@ public class DOCS {
 
         String root = getRoot(uri, closeable);
         Objects.requireNonNull(root);
+
+        PageProviderWorker.providers(context, root);
 
         return getResponse(context, uri, root, paths, closeable);
 
