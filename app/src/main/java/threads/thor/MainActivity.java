@@ -819,10 +819,6 @@ public class MainActivity extends AppCompatActivity implements
                         title = "" + mWebView.getTitle();
                     }
 
-                    if(title.isEmpty()){
-                        title = uri.toString();
-                    }
-
                     bookmark = books.createBookmark(uri.toString(), title);
                     if (bitmap != null) {
                         bookmark.setBitmapIcon(bitmap);
@@ -830,9 +826,13 @@ public class MainActivity extends AppCompatActivity implements
 
                     books.storeBookmark(bookmark);
 
+                    String msg = title;
+                    if(msg.isEmpty()){
+                        msg = uri.toString();
+                    }
 
                     EVENTS.getInstance(getApplicationContext()).warning(
-                            getString(R.string.bookmark_added, title));
+                            getString(R.string.bookmark_added, msg));
                 }
             } catch (Throwable throwable) {
                 LogUtils.error(TAG, throwable);
