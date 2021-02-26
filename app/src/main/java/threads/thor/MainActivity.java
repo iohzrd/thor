@@ -418,10 +418,18 @@ public class MainActivity extends AppCompatActivity implements
                 );
                 mBrowserText.setText(prettyUri(uri, "http://"));
             } else {
+                BOOKS books = BOOKS.getInstance(getApplicationContext());
+                Bookmark bookmark = books.getBookmark(uri.toString());
+
+                String title = uri.toString();
+                if(bookmark != null){
+                    title = bookmark.getTitle();
+                }
+
                 mBrowserText.setCompoundDrawablesRelativeWithIntrinsicBounds(
                         R.drawable.lock, 0, 0, 0
                 );
-                mBrowserText.setText(uri.toString());
+                mBrowserText.setText(title);
             }
 
 
