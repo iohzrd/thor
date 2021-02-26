@@ -92,11 +92,13 @@ public class DnsAddrResolver {
         return "";
     }
 
+    private static DnsClient INSTANCE = null;
+
     @NonNull
     private static List<String> getTxtRecords(@NonNull String host) {
         List<String> txtRecords = new ArrayList<>();
         try {
-            DnsClient client = new DnsClient(new LruCache(0));
+            DnsClient client = getInstance();
             DnsQueryResult result = client.query(host, Record.TYPE.TXT);
             DnsMessage response = result.response;
             List<Record<? extends Data>> records = response.answerSection;
@@ -114,7 +116,7 @@ public class DnsAddrResolver {
     private static List<String> getTxtRecords() {
         List<String> txtRecords = new ArrayList<>();
         try {
-            DnsClient client = new DnsClient(new LruCache(0));
+            DnsClient client = getInstance();
             DnsQueryResult result = client.query(Settings.LIB2P_DNS, Record.TYPE.TXT);
             DnsMessage response = result.response;
             List<Record<? extends Data>> records = response.answerSection;
@@ -127,4 +129,21 @@ public class DnsAddrResolver {
         }
         return txtRecords;
     }
+
+    @NonNull
+    public static DnsClient getInstance() {
+        if (INSTANCE == null) {
+            synchronized (IPFS.class) {
+                if (INSTANCE == null) {
+                    try {
+                        INSTANCE = new DnsClient(new LruCache(128));
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            }
+        }
+        return INSTANCE;
+    }
+
 }
