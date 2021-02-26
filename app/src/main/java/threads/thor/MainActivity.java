@@ -69,6 +69,7 @@ import java.io.ByteArrayInputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import threads.LogUtils;
 import threads.thor.core.Content;
@@ -359,6 +360,8 @@ public class MainActivity extends AppCompatActivity implements
                     mWebView.setFindListener(null);
                 } catch (Throwable throwable) {
                     LogUtils.error(TAG, throwable);
+                } finally {
+                    mActionMode = null;
                 }
             }
         };
@@ -577,7 +580,7 @@ public class MainActivity extends AppCompatActivity implements
                     }
                     mLastClickTime = SystemClock.elapsedRealtime();
 
-                    startSupportActionMode(
+                    mActionMode = startSupportActionMode(
                             createFindActionModeCallback());
                 } catch (Throwable throwable) {
                     LogUtils.error(TAG, throwable);
@@ -808,6 +811,10 @@ public class MainActivity extends AppCompatActivity implements
                         title = "" + mWebView.getTitle();
                     }
 
+                    if(title.isEmpty()){
+                        title = uri.toString();
+                    }
+
                     bookmark = books.createBookmark(uri.toString(), title);
                     if (bitmap != null) {
                         bookmark.setBitmapIcon(bitmap);
@@ -863,6 +870,11 @@ public class MainActivity extends AppCompatActivity implements
         mBrowserText.setOnClickListener(view -> {
 
             try {
+                if (SystemClock.elapsedRealtime() - mLastClickTime < CLICK_OFFSET) {
+                    return;
+                }
+                mLastClickTime = SystemClock.elapsedRealtime();
+
                 mActionMode = startSupportActionMode(
                         createSearchActionModeCallback());
             } catch (Throwable throwable) {
@@ -993,7 +1005,7 @@ public class MainActivity extends AppCompatActivity implements
 
             private final Map<Uri, Boolean> loadedUrls = new HashMap<>();
             private final SharedPreferences sharedPref = getPreferences(Context.MODE_PRIVATE);
-
+            private final AtomicBoolean firstRun = new AtomicBoolean(true);
 
             @Override
             public void onReceivedHttpError(
@@ -1095,6 +1107,7 @@ public class MainActivity extends AppCompatActivity implements
                 LogUtils.info(TAG, "onPageStarted : " + uri);
 
                 mProgressBar.setVisibility(View.VISIBLE);
+                releaseActionMode();
                 updateUri(docs.getOriginalUri(Uri.parse(uri)));
             }
 
@@ -1230,14 +1243,21 @@ public class MainActivity extends AppCompatActivity implements
                     if (ad) {
                         return createEmptyResource();
                     } else {
+                        Uri redirectUri = docs.redirectHttps(uri);
+                        if (!Objects.equals(redirectUri, uri)) {
+                            return createRedirectMessage(redirectUri);
+                        }
                         return null;
                     }
 
                 } else if (Objects.equals(uri.getScheme(), Content.IPNS) ||
                         Objects.equals(uri.getScheme(), Content.IPFS)) {
 
+                    if (firstRun.getAndSet(false)) {
+                        docs.bootstrap();
+                    }
+
                     docs.attachUri(uri);
-                    docs.bootstrap();
 
                     docs.connectUri(getApplicationContext(), uri);
 
@@ -1346,17 +1366,22 @@ public class MainActivity extends AppCompatActivity implements
     }
 
 
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
 
+    private void releaseActionMode(){
         try {
             if (mActionMode != null) {
                 mActionMode.finish();
+                mActionMode = null;
             }
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         }
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        releaseActionMode();
     }
 
     @Override
@@ -1432,9 +1457,7 @@ public class MainActivity extends AppCompatActivity implements
     private boolean doSearch(@Nullable String query) {
         try {
 
-            if (mActionMode != null) {
-                mActionMode.finish();
-            }
+            releaseActionMode();
             if (query != null && !query.isEmpty()) {
                 Uri uri = Uri.parse(query);
                 String scheme = uri.getScheme();
@@ -1467,6 +1490,8 @@ public class MainActivity extends AppCompatActivity implements
         try {
             updateUri(uri);
 
+            mProgressBar.setVisibility(View.VISIBLE);
+
             if (Objects.equals(uri.getScheme(), Content.IPNS) ||
                     Objects.equals(uri.getScheme(), Content.IPFS)) {
                 docs.attachUri(uri);
@@ -1476,11 +1501,10 @@ public class MainActivity extends AppCompatActivity implements
 
             mWebView.stopLoading();
 
-            mProgressBar.setVisibility(View.VISIBLE);
-
             mWebView.loadUrl(uri.toString());
 
             mAppBar.setExpanded(true, true);
+
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         }

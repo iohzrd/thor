@@ -15,10 +15,13 @@ import java.util.List;
 
 public class Settings {
 
+    public static final String AGENT = "/go-ipfs/0.9.0-dev/thor";
     public static final String HOMEPAGE = "https://start.duckduckgo.com/";
     public static final int TIMEOUT_BOOTSTRAP = 5;
     public static final int MIN_PEERS = 10;
-
+    public static final long RESOLVE_MAX_TIME = 20000; // 20 sec
+    public static final int RESOLVE_TIMEOUT = 3000; // 3 sec
+    public static final String BLOCKS = "/blocks";
     // IPFS BOOTSTRAP
     @NonNull
     public static final List<String> IPFS_BOOTSTRAP_NODES = new ArrayList<>(Arrays.asList(
@@ -33,6 +36,7 @@ public class Settings {
     public static final String LIB2P_DNS = "_dnsaddr.bootstrap.libp2p.io";
     public static final String DNS_ADDR = "dnsaddr=/dnsaddr/";
     public static final String DNS_LINK = "dnslink=";
+
     private static final String APP_KEY = "AppKey";
     private static final String JAVASCRIPT_KEY = "javascriptKey";
     private static final String REDIRECT_URL_KEY = "redirectUrlKey";

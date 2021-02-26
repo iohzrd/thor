@@ -7,9 +7,6 @@ import android.util.Pair;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import com.google.protobuf.InvalidProtocolBufferException;
 
 import java.io.IOException;
@@ -45,13 +42,12 @@ import threads.thor.core.blocks.Block;
 
 public class IPFS implements Listener {
 
-    private static final int RESOLVE_TIMEOUT = 3000;
+
     private static final String PREF_KEY = "prefKey";
     private static final String PID_KEY = "pidKey";
 
     private static final String SWARM_PORT_KEY = "swarmPortKey";
     private static final String PUBLIC_KEY = "publicKey";
-    private static final String AGENT_KEY = "agentKey";
     private static final String CONCURRENCY_KEY = "concurrencyKey";
     private static final String PRIVATE_KEY = "privateKey";
     private static final String TAG = IPFS.class.getSimpleName();
@@ -60,7 +56,7 @@ public class IPFS implements Listener {
     private final Node node;
     private final Object locker = new Object();
 
-    private final LoadingCache<String, Block> cache;
+
 
     private IPFS(@NonNull Context context) throws Exception {
         this.blocks = BLOCKS.getInstance(context);
@@ -85,7 +81,7 @@ public class IPFS implements Listener {
         }
 
 
-        node.setAgent(IPFS.getStoredAgent(context));
+        node.setAgent(Settings.AGENT);
 
         node.setPort(IPFS.getSwarmPort(context));
 
@@ -95,16 +91,6 @@ public class IPFS implements Listener {
         node.setLowWater(100);
         node.setResponsive(200);
 
-        cache = CacheBuilder.newBuilder()
-                .maximumSize(1000)
-                .expireAfterWrite(10, TimeUnit.MINUTES)
-                .build(
-                        new CacheLoader<String, Block>() {
-                            @Nullable
-                            public Block load(@NonNull String key) {
-                                return blocks.getBlock(key);
-                            }
-                        });
     }
 
 
@@ -168,13 +154,6 @@ public class IPFS implements Listener {
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.putString(PUBLIC_KEY, key);
         editor.apply();
-    }
-
-    private static String getStoredAgent(@NonNull Context context) {
-        SharedPreferences sharedPref = context.getSharedPreferences(
-                PREF_KEY, Context.MODE_PRIVATE);
-        return sharedPref.getString(AGENT_KEY, "go-ipfs/0.8.0-dev/thor");
-
     }
 
     private static void setPrivateKey(@NonNull Context context, @NonNull String key) {
@@ -281,7 +260,8 @@ public class IPFS implements Listener {
                         tasks.add(() -> swarmConnect(address, Settings.TIMEOUT_BOOTSTRAP));
                     }
 
-                    List<Future<Boolean>> futures = executor.invokeAll(tasks, Settings.TIMEOUT_BOOTSTRAP, TimeUnit.SECONDS);
+                    List<Future<Boolean>> futures = executor.invokeAll(tasks,
+                            Settings.TIMEOUT_BOOTSTRAP, TimeUnit.SECONDS);
                     for (Future<Boolean> future : futures) {
                         LogUtils.info(TAG, "\nBootstrap done " + future.isDone());
                     }
@@ -425,12 +405,12 @@ public class IPFS implements Listener {
 
         AtomicReference<ResolvedName> resolvedName = new AtomicReference<>(null);
         try {
-            AtomicLong timeout = new AtomicLong(0);
+            AtomicLong timeout = new AtomicLong(System.currentTimeMillis() + Settings.RESOLVE_MAX_TIME);
             AtomicBoolean abort = new AtomicBoolean(false);
             node.resolveName(new ResolveInfo() {
                 @Override
                 public boolean close() {
-                    return (timeout.get() > System.currentTimeMillis()) || abort.get() || closeable.isClosed();
+                    return (timeout.get() < System.currentTimeMillis()) || abort.get() || closeable.isClosed();
                 }
 
                 private void setName(@NonNull String hash, long sequence) {
@@ -456,7 +436,7 @@ public class IPFS implements Listener {
                         }
                         if(!abort.get()) {
                             if (hash.startsWith(Content.IPFS_PATH)) {
-                                timeout.set(System.currentTimeMillis() + RESOLVE_TIMEOUT);
+                                timeout.set(System.currentTimeMillis() + Settings.RESOLVE_TIMEOUT);
                                 setName(hash, seq);
                             } else {
                                 LogUtils.error(TAG, "invalid hash " + hash);
@@ -685,14 +665,17 @@ public class IPFS implements Listener {
 
     @Override
     public void blockDelete(String key) {
-        blocks.deleteBlock(key);
+        blocks.deleteBlock(Settings.BLOCKS + key);
     }
 
     @Override
     public byte[] blockGet(String key) {
         //LogUtils.error(TAG, "get "  +key);
         try {
-            return cache.get(key).getData();
+            Block block = blocks.getBlock(Settings.BLOCKS + key);
+            if (block != null) {
+                return block.getData();
+            }
         } catch (Throwable ignore) {
             // ignore is expected, when block is null
         }
@@ -702,25 +685,27 @@ public class IPFS implements Listener {
     @Override
     public boolean blockHas(String key) {
         //LogUtils.error(TAG, "has "  +key);
-        return blocks.hasBlock(key);
+        return blocks.hasBlock(Settings.BLOCKS + key);
     }
 
     @Override
     public void blockPut(String key, byte[] bytes) {
         //LogUtils.error(TAG, "put " + key);
-        blocks.insertBlock(key, bytes);
+        blocks.insertBlock(Settings.BLOCKS + key, bytes);
     }
 
     @Override
     public long blockSize(String key) {
-        long size = -1;
         try {
-            size = cache.get(key).getSize();
+            Block block = blocks.getBlock(Settings.BLOCKS + key);
+            if (block != null) {
+                return block.getSize();
+            }
         } catch (Throwable ignore) {
             // ignore is expected, when block is null
         }
         // LogUtils.error(TAG, "size " + size + " " +key);
-        return size;
+        return -1;
     }
 
     @Override

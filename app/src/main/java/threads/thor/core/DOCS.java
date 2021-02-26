@@ -162,8 +162,8 @@ public class DOCS {
 
 
     @NonNull
-    public String resolveName(@NonNull Uri uri, @NonNull String name,
-                              @NonNull Closeable closeable) throws ResolveNameException, ClosedException {
+    public String resolveName(@NonNull Uri uri, @NonNull String name, @NonNull Closeable closeable)
+            throws ResolveNameException, ClosedException {
         String pid = ipfs.decodeName(name);
         String resolved = resolves.get(pid);
         if (resolved != null) {
@@ -469,7 +469,18 @@ public class DOCS {
                         }
                     }
                 }
-            } else if (isRedirectUrl && Objects.equals(uri.getScheme(), Content.HTTPS)) {
+            }
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable);
+        }
+        return uri;
+    }
+
+
+    @NonNull
+    public Uri redirectHttps(@NonNull Uri uri) {
+        try {
+            if (isRedirectUrl && Objects.equals(uri.getScheme(), Content.HTTPS)) {
 
 
                 List<String> paths = uri.getPathSegments();
@@ -510,6 +521,7 @@ public class DOCS {
         }
         return uri;
     }
+
 
     @NonNull
     public Pair<Uri, Boolean> redirectUri(@NonNull Uri uri, @NonNull Closeable closeable)
@@ -721,9 +733,10 @@ public class DOCS {
                     List<Callable<Boolean>> tasks = new ArrayList<>();
                     ExecutorService executor = Executors.newFixedThreadPool(addresses.size());
                     for (String address : addresses) {
-                        tasks.add(() -> ipfs.swarmConnect(address, 5));
+                        tasks.add(() -> ipfs.swarmConnect(address, Settings.TIMEOUT_BOOTSTRAP));
                     }
-                    List<Future<Boolean>> result = executor.invokeAll(tasks, 5, TimeUnit.SECONDS);
+                    List<Future<Boolean>> result = executor.invokeAll(tasks,
+                            Settings.TIMEOUT_BOOTSTRAP, TimeUnit.SECONDS);
                     for (Future<Boolean> future : result) {
                         LogUtils.error(TAG, "Bootstrap done " + future.isDone());
                     }

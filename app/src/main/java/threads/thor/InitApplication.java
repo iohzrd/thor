@@ -21,6 +21,7 @@ public class InitApplication extends Application {
 
         AdBlocker.init(getApplicationContext());
 
+
         LogUtils.info(TIME_TAG, "InitApplication after add blocker [" +
                 (System.currentTimeMillis() - start) + "]...");
         try {
