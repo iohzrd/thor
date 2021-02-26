@@ -423,7 +423,10 @@ public class MainActivity extends AppCompatActivity implements
 
                 String title = uri.toString();
                 if(bookmark != null){
-                    title = bookmark.getTitle();
+                    String bookmarkTitle = bookmark.getTitle();
+                    if(!bookmarkTitle.isEmpty()) {
+                        title = bookmarkTitle;
+                    }
                 }
 
                 mBrowserText.setCompoundDrawablesRelativeWithIntrinsicBounds(
