@@ -23,7 +23,7 @@
     <string name="user_name">Username</string>
     <string name="authentication">Authentication</string>
     <string name="downloads">Downloads</string>
-    <string name="enter_url">URL or search input</string>
+    <string name="enter_url">Scan-URL or search input</string>
     <string name="action_cleanup">Delete browser data</string>
     <string name="next_page">Next page</string>
     <string name="reload_page">Reload Page</string>

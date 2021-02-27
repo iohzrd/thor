@@ -786,46 +786,6 @@ public class MainActivity extends AppCompatActivity implements
             });
 
 
-
-            TextView actionScanURL = menuOverflow.findViewById(R.id.action_scan_url);
-            if (!hasCamera) {
-                actionScanURL.setVisibility(View.GONE);
-            }
-
-            actionScanURL.setOnClickListener(v19 -> {
-                try {
-                    if (SystemClock.elapsedRealtime() - mLastClickTime < 500) {
-                        return;
-                    }
-                    mLastClickTime = SystemClock.elapsedRealtime();
-
-
-                    if (ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.CAMERA)
-                            != PackageManager.PERMISSION_GRANTED) {
-                        requestPermissionLauncher.launch(Manifest.permission.CAMERA);
-                        return;
-                    }
-
-                    invokeScan();
-
-                    if (hasCamera) {
-                        IntentIntegrator integrator = new IntentIntegrator(MainActivity.this);
-                        integrator.setOrientationLocked(false);
-                        Intent intent = integrator.createScanIntent();
-                        mScanRequestForResult.launch(intent);
-                    } else {
-                        EVENTS.getInstance(getApplicationContext()).permission(
-                                getString(R.string.feature_camera_required));
-                    }
-                } catch (Throwable throwable) {
-                    LogUtils.error(TAG, throwable);
-                } finally {
-                    dialog.dismiss();
-                }
-
-            });
-
-
             TextView actionHistory = menuOverflow.findViewById(R.id.action_history);
             actionHistory.setOnClickListener(v16 -> {
                 try {
@@ -1720,6 +1680,11 @@ public class MainActivity extends AppCompatActivity implements
                 mode.setTitle("");
                 mode.setTitleOptionalHint(true);
 
+
+                MenuItem scanMenuItem = menu.findItem(R.id.action_scan);
+                if (!hasCamera) {
+                    scanMenuItem.setVisible(false);
+                }
                 MenuItem searchMenuItem = menu.findItem(R.id.action_search);
                 SearchView mSearchView = (SearchView) searchMenuItem.getActionView();
                 mSearchView.setMaxWidth(Integer.MAX_VALUE);
@@ -1741,6 +1706,8 @@ public class MainActivity extends AppCompatActivity implements
                 mSearchView.setQueryHint(getString(R.string.enter_url));
                 mSearchView.setFocusable(true);
                 mSearchView.requestFocus();
+
+
                 return true;
             }
 
@@ -1751,6 +1718,37 @@ public class MainActivity extends AppCompatActivity implements
 
             @Override
             public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
+                if (item.getItemId() == R.id.action_scan) {
+                    try {
+                        if (SystemClock.elapsedRealtime() - mLastClickTime < 500) {
+                            return false;
+                        }
+                        mLastClickTime = SystemClock.elapsedRealtime();
+
+
+                        if (ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.CAMERA)
+                                != PackageManager.PERMISSION_GRANTED) {
+                            requestPermissionLauncher.launch(Manifest.permission.CAMERA);
+                            return false;
+                        }
+
+                        invokeScan();
+
+                        if (hasCamera) {
+                            IntentIntegrator integrator = new IntentIntegrator(MainActivity.this);
+                            integrator.setOrientationLocked(false);
+                            Intent intent = integrator.createScanIntent();
+                            mScanRequestForResult.launch(intent);
+                        } else {
+                            EVENTS.getInstance(getApplicationContext()).permission(
+                                    getString(R.string.feature_camera_required));
+                        }
+                    } catch (Throwable throwable) {
+                        LogUtils.error(TAG, throwable);
+                    } finally {
+                        mode.finish();
+                    }
+                }
                 return false;
             }
 
