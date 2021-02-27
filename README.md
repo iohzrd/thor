@@ -89,12 +89,17 @@ CookieManager.getInstance().setAcceptThirdPartyCookies(mWebView, false);
 <p>No information and data is tracked by this application.</p>
 
 ### Android Permissions
-<p>This section describes briefly why special Android permissions are required.
-            </p>
+<p>This section describes briefly why specific Android permissions are required.</p>
             <ul>
                 <li>
+                    <h4>Camera</h4>
+                    <p>The camera permission is required to read QR codes, which contains
+                        information content data (URLs).
+                    </p>
+                </li>
+                <li>
                     <h4>Foreground Service</h4>
-                    <p>The foreground service permission is required to download content over a
+                    <p>The foreground service permission is required to run the IPFS node over a
                         longer period of time.
                     </p>
                 </li>
