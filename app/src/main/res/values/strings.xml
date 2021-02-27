@@ -40,5 +40,11 @@
     <string name="redirect_url_support_text">When this option is enabled, URLs which references IPFS or IPNS content, will be automatically redirected to the local IPFS node. Currently only URLs of the form https://xxx/ipfs/… or https://xxx/ipns/… will be redirected.</string>
     <string name="redirect_index_support_text">If this option is enabled, the local node tries to find an HTML index file for a given ipfs or ipns URL if it is not specified.</string>
     <string name="concurrency_text">The higher the concurrency value, the more aggressively the local node tries to find the requested content. This also consumes more energy.</string>
+    <string name="information">Information</string>
+    <string name="url_access">The QR-Code contains the URL of the current website</string>
+    <string name="scan_url">Scan URL</string>
+    <string name="permission_camera_denied">Permission camera</string>
+    <string name="feature_camera_required">Feature camera required</string>
+    <string name="codec_not_supported">Not supported QR-Code</string>
 
 </resources>

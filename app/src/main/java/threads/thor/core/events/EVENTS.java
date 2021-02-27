@@ -11,6 +11,7 @@ public class EVENTS {
     public static final String WARNING = "WARNING";
     public static final String INFO = "INFO";
     public static final String EXIT = "EXIT";
+    public static final String PERMISSION = "PERMISSION";
 
     private static EVENTS INSTANCE = null;
     private final EventsDatabase mEventsDatabase;
@@ -62,6 +63,10 @@ public class EVENTS {
     public void error(@NonNull String content) {
 
         storeEvent(createEvent(ERROR, content));
+    }
+    public void permission(@NonNull String content) {
+
+        storeEvent(createEvent(PERMISSION, content));
     }
 
     public void info(@NonNull String content) {

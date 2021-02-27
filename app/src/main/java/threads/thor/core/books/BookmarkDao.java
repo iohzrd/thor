@@ -33,4 +33,7 @@ public interface BookmarkDao {
 
     @Query("UPDATE Bookmark SET content = :link WHERE uri = :uri")
     void setDnsLink(String uri, String link);
+
+    @Query("UPDATE Bookmark SET title = :title WHERE uri = :uri")
+    void setTitle(String uri, String title);
 }

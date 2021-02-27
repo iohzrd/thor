@@ -1,6 +1,7 @@
 package threads.thor;
 
 
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Dialog;
@@ -9,6 +10,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Color;
@@ -64,6 +66,8 @@ import androidx.work.WorkManager;
 
 import com.google.android.material.appbar.AppBarLayout;
 import com.google.android.material.snackbar.Snackbar;
+import com.google.zxing.integration.android.IntentIntegrator;
+import com.google.zxing.integration.android.IntentResult;
 
 import java.io.ByteArrayInputStream;
 import java.util.HashMap;
@@ -80,15 +84,18 @@ import threads.thor.core.events.EVENTS;
 import threads.thor.core.events.EventViewModel;
 import threads.thor.fragments.ActionListener;
 import threads.thor.fragments.BookmarksDialogFragment;
+import threads.thor.fragments.ContentDialogFragment;
 import threads.thor.fragments.HistoryDialogFragment;
 import threads.thor.fragments.SettingsDialogFragment;
 import threads.thor.ipfs.Closeable;
 import threads.thor.ipfs.IPFS;
+import threads.thor.services.QRCodeService;
 import threads.thor.services.ThorService;
 import threads.thor.utils.AdBlocker;
 import threads.thor.utils.CustomWebChromeClient;
 import threads.thor.utils.FileDocumentsProvider;
 import threads.thor.utils.MimeType;
+import threads.thor.utils.PermissionAction;
 import threads.thor.work.ClearBrowserDataWorker;
 import threads.thor.work.DownloadContentWorker;
 import threads.thor.work.DownloadFileWorker;
@@ -156,8 +163,54 @@ public class MainActivity extends AppCompatActivity implements
                     }
                 }
             });
+    private final ActivityResultLauncher<String> requestPermissionLauncher =
+            registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
+                if (isGranted) {
+                    invokeScan();
+                } else {
+                    EVENTS.getInstance(getApplicationContext()).permission(
+                            getString(R.string.permission_camera_denied));
+                }
+            });
 
+    private final ActivityResultLauncher<Intent> mScanRequestForResult = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                try {
+                    IntentResult resultIntent = IntentIntegrator.parseActivityResult(
+                            IntentIntegrator.REQUEST_CODE, result.getResultCode(), result.getData());
+                    if (resultIntent != null) {
+                        if (resultIntent.getContents() != null) {
 
+                            try {
+                                Uri uri = Uri.parse(resultIntent.getContents());
+                                if (uri != null) {
+                                    String scheme = uri.getScheme();
+                                    if (Objects.equals(scheme, Content.IPNS) ||
+                                            Objects.equals(scheme, Content.IPFS) ||
+                                            Objects.equals(scheme, Content.HTTP) ||
+                                            Objects.equals(scheme, Content.HTTPS)) {
+                                        openUri(uri);
+                                    } else {
+                                        EVENTS.getInstance(getApplicationContext()).error(
+                                                getString(R.string.codec_not_supported));
+                                    }
+                                } else {
+                                    EVENTS.getInstance(getApplicationContext()).error(
+                                            getString(R.string.codec_not_supported));
+                                }
+                            } catch (Throwable throwable) {
+                                EVENTS.getInstance(getApplicationContext()).error(
+                                        getString(R.string.codec_not_supported));
+                            }
+                        }
+                    }
+
+                } catch (Throwable throwable) {
+                    LogUtils.error(TAG, throwable);
+                }
+
+            });
     private final ActivityResultLauncher<Intent> mContentForResult = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
             result -> {
@@ -271,6 +324,23 @@ public class MainActivity extends AppCompatActivity implements
 
     }
 
+    private void invokeScan() {
+        try {
+            PackageManager pm = getPackageManager();
+
+            if (pm.hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY)) {
+                IntentIntegrator integrator = new IntentIntegrator(this);
+                integrator.setOrientationLocked(false);
+                Intent intent = integrator.createScanIntent();
+                mScanRequestForResult.launch(intent);
+            } else {
+                EVENTS.getInstance(getApplicationContext()).permission(
+                        getString(R.string.feature_camera_required));
+            }
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable);
+        }
+    }
     private ActionMode.Callback createFindActionModeCallback() {
         return new ActionMode.Callback() {
             @Override
@@ -464,6 +534,7 @@ public class MainActivity extends AppCompatActivity implements
             LogUtils.error(TAG, throwable);
         }
     }
+    private boolean hasCamera;
 
     @SuppressLint({"ClickableViewAccessibility"})
     @Override
@@ -473,6 +544,9 @@ public class MainActivity extends AppCompatActivity implements
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+
+        PackageManager pm = getPackageManager();
+        hasCamera = pm.hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY);
 
         docs = DOCS.getInstance(getApplicationContext());
 
@@ -686,6 +760,72 @@ public class MainActivity extends AppCompatActivity implements
             });
 
 
+            TextView actionInformation = menuOverflow.findViewById(R.id.action_information);
+            actionInformation.setOnClickListener(v19 -> {
+                try {
+                    if (SystemClock.elapsedRealtime() - mLastClickTime < 500) {
+                        return;
+                    }
+                    mLastClickTime = SystemClock.elapsedRealtime();
+
+                    Uri uri = DOCS.getInstance(getApplicationContext()).getOriginalUri(
+                            Uri.parse(mWebView.getUrl()));
+
+                    Uri uriImage = QRCodeService.getImage(getApplicationContext(), uri.toString());
+                    ContentDialogFragment.newInstance(uriImage,
+                            getString(R.string.url_access), uri.toString())
+                            .show(getSupportFragmentManager(), ContentDialogFragment.TAG);
+
+
+                } catch (Throwable throwable) {
+                    LogUtils.error(TAG, throwable);
+                } finally {
+                    dialog.dismiss();
+                }
+
+            });
+
+
+
+            TextView actionScanURL = menuOverflow.findViewById(R.id.action_scan_url);
+            if (!hasCamera) {
+                actionScanURL.setVisibility(View.GONE);
+            }
+
+            actionScanURL.setOnClickListener(v19 -> {
+                try {
+                    if (SystemClock.elapsedRealtime() - mLastClickTime < 500) {
+                        return;
+                    }
+                    mLastClickTime = SystemClock.elapsedRealtime();
+
+
+                    if (ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.CAMERA)
+                            != PackageManager.PERMISSION_GRANTED) {
+                        requestPermissionLauncher.launch(Manifest.permission.CAMERA);
+                        return;
+                    }
+
+                    invokeScan();
+
+                    if (hasCamera) {
+                        IntentIntegrator integrator = new IntentIntegrator(MainActivity.this);
+                        integrator.setOrientationLocked(false);
+                        Intent intent = integrator.createScanIntent();
+                        mScanRequestForResult.launch(intent);
+                    } else {
+                        EVENTS.getInstance(getApplicationContext()).permission(
+                                getString(R.string.feature_camera_required));
+                    }
+                } catch (Throwable throwable) {
+                    LogUtils.error(TAG, throwable);
+                } finally {
+                    dialog.dismiss();
+                }
+
+            });
+
+
             TextView actionHistory = menuOverflow.findViewById(R.id.action_history);
             actionHistory.setOnClickListener(v16 -> {
                 try {
@@ -809,14 +949,19 @@ public class MainActivity extends AppCompatActivity implements
 
                 Bookmark bookmark = books.getBookmark(uri.toString());
                 if (bookmark != null) {
-                    String name = bookmark.getTitle();
-                    books.removeBookmark(bookmark);
-                    EVENTS.getInstance(getApplicationContext()).warning(
-                            getString(R.string.bookmark_removed, name));
-                } else {
-                    Bitmap bitmap = mCustomWebChromeClient.getFavicon(url);
 
-                    String title = mCustomWebChromeClient.getTitle(url);
+                    String msg = bookmark.getTitle();
+                    books.removeBookmark(bookmark);
+
+                    if (msg.isEmpty()) {
+                        msg = uri.toString();
+                    }
+                    EVENTS.getInstance(getApplicationContext()).warning(
+                            getString(R.string.bookmark_removed, msg));
+                } else {
+                    Bitmap bitmap = mCustomWebChromeClient.getFavicon(uri);
+
+                    String title = mCustomWebChromeClient.getTitle(uri);
 
                     if (title == null) {
                         title = "" + mWebView.getTitle();
@@ -971,6 +1116,27 @@ public class MainActivity extends AppCompatActivity implements
             }
 
         });
+
+
+        eventViewModel.getPermission().observe(this, (event) -> {
+            try {
+                if (event != null) {
+                    String content = event.getContent();
+                    if (!content.isEmpty()) {
+                        Snackbar snackbar = Snackbar.make(mDrawerLayout, content,
+                                Snackbar.LENGTH_INDEFINITE);
+                        snackbar.setAction(R.string.settings, new PermissionAction());
+                        snackbar.show();
+
+                    }
+                    eventViewModel.removeEvent(event);
+                }
+            } catch (Throwable e) {
+                LogUtils.error(TAG, e);
+            }
+
+        });
+
 
         eventViewModel.getInfo().observe(this, (event) -> {
             try {
@@ -1410,18 +1576,6 @@ public class MainActivity extends AppCompatActivity implements
             return;
         }
         super.onBackPressed();
-    }
-
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-
-        if (resultCode != Activity.RESULT_OK) {
-            return;
-        }
-
-
-        super.onActivityResult(requestCode, resultCode, data);
-
     }
 
     private boolean handleIntents(Intent intent) {

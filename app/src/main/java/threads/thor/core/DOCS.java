@@ -1,6 +1,7 @@
 package threads.thor.core;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.util.Pair;
 import android.webkit.WebResourceResponse;
@@ -28,6 +29,7 @@ import threads.LogUtils;
 import threads.thor.InitApplication;
 import threads.thor.Settings;
 import threads.thor.core.books.BOOKS;
+import threads.thor.core.books.Bookmark;
 import threads.thor.core.pages.PAGES;
 import threads.thor.core.pages.Page;
 import threads.thor.ipfs.Closeable;
@@ -785,6 +787,18 @@ public class DOCS {
             LogUtils.error(TAG, e);
         }
 
+    }
+
+    public void updateBookmarkTitle(@NonNull Uri uri, @NonNull String title) {
+        books.setBookmarkTitle(uri.toString(), title);
+    }
+
+    public void updateBookmarkIcon(@NonNull Uri uri, @NonNull Bitmap icon) {
+        Bookmark bookmark = books.getBookmark(uri.toString());
+        if (bookmark != null) {
+            bookmark.setBitmapIcon(icon);
+            books.storeBookmark(bookmark);
+        }
     }
 
     public static class ContentException extends Exception {

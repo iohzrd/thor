@@ -21,4 +21,6 @@ public class Content {
     public static final String CIRCUIT = "p2p-circuit";
     public static final String P2P_PATH = "/p2p/";
     public static final String CID = "cid";
+    public static final String TEXT = "text" ;
+    public static final String URL = "url";
 }

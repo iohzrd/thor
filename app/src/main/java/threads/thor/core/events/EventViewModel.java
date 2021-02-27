@@ -36,4 +36,8 @@ public class EventViewModel extends AndroidViewModel {
     public LiveData<Event> getExit() {
         return eventsDatabase.eventDao().getEvent(EVENTS.EXIT);
     }
+
+    public LiveData<Event> getPermission() {
+        return eventsDatabase.eventDao().getEvent(EVENTS.PERMISSION);
+    }
 }

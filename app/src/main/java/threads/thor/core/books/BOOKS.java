@@ -1,7 +1,6 @@
 package threads.thor.core.books;
 
 import android.content.Context;
-import android.net.Uri;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -104,6 +103,10 @@ public class BOOKS {
     @Nullable
     public String getDnsLink(@NonNull String uri) {
         return bookmarkDatabase.bookmarkDao().getDnsLink(uri);
+    }
+
+    public void setBookmarkTitle(@NonNull String uri, @NonNull String title) {
+        bookmarkDatabase.bookmarkDao().setTitle(uri, title);
     }
 
 

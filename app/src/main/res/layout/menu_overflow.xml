@@ -70,6 +70,43 @@
         android:gravity="center_horizontal"
         android:paddingTop="5dip" />
 
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/action_information"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="?android:attr/selectableItemBackground"
+            android:clickable="true"
+            android:padding="12dp"
+            android:text="@string/information"
+            android:textColor="?android:textColorPrimary"
+            android:textSize="16sp"
+            app:drawableEndCompat="@drawable/qrcode"
+            app:drawableTint="?android:textColorPrimary"/>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/action_scan_url"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="?android:attr/selectableItemBackground"
+            android:clickable="true"
+            android:padding="12dp"
+            android:text="@string/scan_url"
+            android:textColor="?android:textColorPrimary"
+            android:textSize="16sp"/>
+
+    </LinearLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -88,6 +125,7 @@
             android:textSize="16sp" />
 
     </LinearLayout>
+
 
     <LinearLayout
         android:layout_width="match_parent"
