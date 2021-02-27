@@ -5,7 +5,7 @@
     <item
         android:id="@+id/action_scan"
         android:orderInCategory="1"
-        android:title="@string/app_name"
+        android:title="@string/scan_url"
         android:icon="@drawable/qrcode"
         app:showAsAction="ifRoom" />
     <item
