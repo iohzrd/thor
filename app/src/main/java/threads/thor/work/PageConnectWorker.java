@@ -25,7 +25,7 @@ import threads.thor.ipfs.IPFS;
 public class PageConnectWorker extends Worker {
 
     private static final String WID = "PCW";
-    private static final String TAG = PageConnectWorker.class.getSimpleName();
+    public static final String TAG = PageConnectWorker.class.getSimpleName();
 
 
     @SuppressWarnings("WeakerAccess")
@@ -83,7 +83,7 @@ public class PageConnectWorker extends Worker {
                 }
             }
 
-            if (page != null) {
+            if (page != null && !isStopped()) {
                 Peer info = ipfs.swarmPeer(pid);
                 if (info != null) {
                     String address = info.getAddress();

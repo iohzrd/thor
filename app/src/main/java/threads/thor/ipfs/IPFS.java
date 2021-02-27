@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import ipns.pb.IpnsEntryProtos;
+import thor.DhtClose;
 import thor.Listener;
 import thor.Loader;
 import thor.LsInfoClose;
@@ -338,14 +339,13 @@ public class IPFS implements Listener {
     }
 
 
-    public void dhtFindProviders(@NonNull String cid, @NonNull Provider provider, int numProvs, int timeout) {
-
+    public void dhtFindProviders(@NonNull String cid, @NonNull Provider provider, int numProvs,
+                                 @NonNull DhtClose closeable) {
         if (!isDaemonRunning()) {
             return;
         }
-
         try {
-            node.dhtFindProvsTimeout(cid, provider, numProvs, timeout);
+            node.dhtFindProvs(cid, provider, numProvs, closeable);
         } catch (Throwable e) {
             LogUtils.error(TAG, e);
         }

@@ -99,6 +99,8 @@ import threads.thor.utils.PermissionAction;
 import threads.thor.work.ClearBrowserDataWorker;
 import threads.thor.work.DownloadContentWorker;
 import threads.thor.work.DownloadFileWorker;
+import threads.thor.work.PageConnectWorker;
+import threads.thor.work.PageProviderWorker;
 
 
 public class MainActivity extends AppCompatActivity implements
@@ -1616,6 +1618,9 @@ public class MainActivity extends AppCompatActivity implements
             updateUri(uri);
 
             mProgressBar.setVisibility(View.VISIBLE);
+
+            WorkManager.getInstance(getApplicationContext()).cancelAllWorkByTag(PageConnectWorker.TAG);
+            WorkManager.getInstance(getApplicationContext()).cancelAllWorkByTag(PageProviderWorker.TAG);
 
             if (Objects.equals(uri.getScheme(), Content.IPNS) ||
                     Objects.equals(uri.getScheme(), Content.IPFS)) {
