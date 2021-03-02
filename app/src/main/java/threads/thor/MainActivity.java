@@ -1711,7 +1711,8 @@ public class MainActivity extends AppCompatActivity implements
                 mSearchView.requestFocus();
 
 
-                ListPopupWindow mPopupWindow = new ListPopupWindow(MainActivity.this) {
+                ListPopupWindow mPopupWindow = new ListPopupWindow(MainActivity.this,
+                        null, R.attr.popupMenuStyle) {
 
                     @Override
                     public boolean isInputMethodNotNeeded() {
