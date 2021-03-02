@@ -4,7 +4,6 @@ package threads.thor;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.app.Dialog;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -28,8 +27,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.Window;
-import android.view.WindowManager;
 import android.webkit.CookieManager;
 import android.webkit.HttpAuthHandler;
 import android.webkit.SslErrorHandler;
@@ -542,11 +539,12 @@ public class MainActivity extends AppCompatActivity implements
         }
     }
 
-    private int dpToPx(int dp) {
+    private int border() {
         float density = getApplicationContext().getResources()
                 .getDisplayMetrics().density;
-        return Math.round((float) dp * density);
+        return Math.round((float) 48 * density);
     }
+
     private boolean hasCamera;
 
     @SuppressLint({"ClickableViewAccessibility"})
@@ -633,7 +631,7 @@ public class MainActivity extends AppCompatActivity implements
             dialog.setOutsideTouchable(true);
             dialog.setFocusable(true);
 
-            dialog.showAsDropDown(mActionOverflow, 0, -dpToPx(48),
+            dialog.showAsDropDown(mActionOverflow, 0, -border(),
                     Gravity.TOP | Gravity.END);
 
 
@@ -1821,11 +1819,6 @@ public class MainActivity extends AppCompatActivity implements
             }
         };
 
-    }
-
-    private boolean isDarkTheme() {
-        int nightModeFlags = getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK;
-        return nightModeFlags == Configuration.UI_MODE_NIGHT_YES;
     }
 
     public abstract static class AppBarStateChangedListener implements AppBarLayout.OnOffsetChangedListener {
