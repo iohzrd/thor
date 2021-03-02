@@ -354,6 +354,7 @@ public class MainActivity extends AppCompatActivity implements
                 EditText mFindText = (EditText) action_mode_find.getActionView();
 
                 mFindText.setMaxWidth(Integer.MAX_VALUE);
+                mFindText.setBackgroundResource(android.R.color.transparent);
                 mFindText.setSingleLine();
                 mFindText.setTextSize(14);
                 mFindText.setHint(R.string.find_page);
