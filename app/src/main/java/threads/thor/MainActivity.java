@@ -5,7 +5,6 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Dialog;
-import android.app.SearchManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -55,6 +54,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.content.res.AppCompatResources;
 import androidx.appcompat.view.ActionMode;
+import androidx.appcompat.widget.ListPopupWindow;
 import androidx.appcompat.widget.SearchView;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.core.content.ContextCompat;
@@ -70,7 +70,9 @@ import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
 
 import java.io.ByteArrayInputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -92,6 +94,7 @@ import threads.thor.ipfs.IPFS;
 import threads.thor.services.QRCodeService;
 import threads.thor.services.ThorService;
 import threads.thor.utils.AdBlocker;
+import threads.thor.utils.BookmarksAdapter;
 import threads.thor.utils.CustomWebChromeClient;
 import threads.thor.utils.FileDocumentsProvider;
 import threads.thor.utils.MimeType;
@@ -1560,14 +1563,6 @@ public class MainActivity extends AppCompatActivity implements
                     return doSearch(text);
                 }
             }
-            if (Intent.ACTION_SEARCH.equals(intent.getAction())) {
-                String query =
-                        intent.getStringExtra(SearchManager.QUERY);
-                if (query == null) {
-                    query = intent.getDataString();
-                }
-                return doSearch(query);
-            }
 
             if (SHOW_DOWNLOADS.equals(intent.getAction())) {
                 Uri uri = intent.getData();
@@ -1694,8 +1689,6 @@ public class MainActivity extends AppCompatActivity implements
                 MenuItem searchMenuItem = menu.findItem(R.id.action_search);
                 SearchView mSearchView = (SearchView) searchMenuItem.getActionView();
                 mSearchView.setMaxWidth(Integer.MAX_VALUE);
-                SearchManager searchManager = (SearchManager) getSystemService(SEARCH_SERVICE);
-                mSearchView.setSearchableInfo(searchManager.getSearchableInfo(getComponentName()));
 
                 TextView textView = mSearchView.findViewById(
                         androidx.appcompat.R.id.search_src_text);
@@ -1712,6 +1705,58 @@ public class MainActivity extends AppCompatActivity implements
                 mSearchView.setQueryHint(getString(R.string.enter_url));
                 mSearchView.setFocusable(true);
                 mSearchView.requestFocus();
+
+
+                ListPopupWindow mPopupWindow = new ListPopupWindow(MainActivity.this) {
+
+                    @Override
+                    public boolean isInputMethodNotNeeded() {
+                        return true;
+                    }
+                };
+                mPopupWindow.setHeight(ViewGroup.LayoutParams.WRAP_CONTENT);
+                mPopupWindow.setWidth(ViewGroup.LayoutParams.MATCH_PARENT);
+                mPopupWindow.setAnimationStyle(0);
+                mPopupWindow.setModal(false);
+
+
+                mSearchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+                    @Override
+                    public boolean onQueryTextSubmit(String query) {
+                        mPopupWindow.dismiss();
+                        doSearch(query);
+                        return false;
+                    }
+
+                    @Override
+                    public boolean onQueryTextChange(String newText) {
+
+                        if (!newText.isEmpty()) {
+                            BOOKS books = BOOKS.getInstance(getApplicationContext());
+                            List<Bookmark> bookmarks = books.getBookmarksByQuery(newText);
+
+                            mPopupWindow.setAdapter(new BookmarksAdapter(getApplicationContext(),
+                                    new ArrayList<>(bookmarks)) {
+                                @Override
+                                public void onClick(@NonNull Bookmark bookmark) {
+                                    try {
+                                        openUri(Uri.parse(bookmark.getUri()));
+                                    } catch (Throwable throwable) {
+                                        LogUtils.error(TAG, throwable);
+                                    } finally {
+                                        mPopupWindow.dismiss();
+                                        releaseActionMode();
+                                    }
+                                }
+                            });
+                            mPopupWindow.setAnchorView(mSearchView);
+                            mPopupWindow.show();
+                            return true;
+                        }
+
+                        return false;
+                    }
+                });
 
 
                 return true;
