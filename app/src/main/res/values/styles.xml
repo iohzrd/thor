@@ -26,6 +26,8 @@
 
     <style name="PopupMenuStyle" parent="Widget.AppCompat.PopupMenu">
         <item name="android:popupBackground">@color/colorBackground</item>
+        <item name="android:popupEnterTransition">@null</item>
+        <item name="android:popupExitTransition">@null</item>
     </style>
 
     <style name="CustomProgressBarHorizontal" parent="android:Widget.Material.ProgressBar.Horizontal">
