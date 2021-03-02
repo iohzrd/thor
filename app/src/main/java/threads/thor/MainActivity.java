@@ -42,6 +42,7 @@ import android.webkit.WebViewClient;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.PopupWindow;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -540,6 +541,12 @@ public class MainActivity extends AppCompatActivity implements
             LogUtils.error(TAG, throwable);
         }
     }
+
+    private int dpToPx(int dp) {
+        float density = getApplicationContext().getResources()
+                .getDisplayMetrics().density;
+        return Math.round((float) dp * density);
+    }
     private boolean hasCamera;
 
     @SuppressLint({"ClickableViewAccessibility"})
@@ -618,18 +625,17 @@ public class MainActivity extends AppCompatActivity implements
                     R.layout.menu_overflow, mDrawerLayout, false);
 
 
-            Dialog dialog = new Dialog(MainActivity.this);
-
-            dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+            PopupWindow dialog = new PopupWindow(
+                    MainActivity.this, null, R.attr.popupMenuStyle);
             dialog.setContentView(menuOverflow);
-            dialog.getWindow().setLayout(ViewGroup.LayoutParams.WRAP_CONTENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT);
-            dialog.getWindow().setGravity(Gravity.TOP | Gravity.END);
-            dialog.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
-            if (!isDarkTheme()) {
-                dialog.getWindow().setBackgroundDrawableResource(R.drawable.popup);
-            }
-            dialog.show();
+            dialog.setHeight(ViewGroup.LayoutParams.WRAP_CONTENT);
+            dialog.setWidth(ViewGroup.LayoutParams.WRAP_CONTENT);
+            dialog.setOutsideTouchable(true);
+            dialog.setFocusable(true);
+
+            dialog.showAsDropDown(mActionOverflow, 0, -dpToPx(48),
+                    Gravity.TOP | Gravity.END);
+
 
 
             ImageButton actionNextPage = menuOverflow.findViewById(R.id.action_next_page);
@@ -1735,23 +1741,29 @@ public class MainActivity extends AppCompatActivity implements
                             BOOKS books = BOOKS.getInstance(getApplicationContext());
                             List<Bookmark> bookmarks = books.getBookmarksByQuery(newText);
 
-                            mPopupWindow.setAdapter(new BookmarksAdapter(getApplicationContext(),
-                                    new ArrayList<>(bookmarks)) {
-                                @Override
-                                public void onClick(@NonNull Bookmark bookmark) {
-                                    try {
-                                        openUri(Uri.parse(bookmark.getUri()));
-                                    } catch (Throwable throwable) {
-                                        LogUtils.error(TAG, throwable);
-                                    } finally {
-                                        mPopupWindow.dismiss();
-                                        releaseActionMode();
+                            if(!bookmarks.isEmpty()) {
+                                mPopupWindow.setAdapter(new BookmarksAdapter(getApplicationContext(),
+                                        new ArrayList<>(bookmarks)) {
+                                    @Override
+                                    public void onClick(@NonNull Bookmark bookmark) {
+                                        try {
+                                            openUri(Uri.parse(bookmark.getUri()));
+                                        } catch (Throwable throwable) {
+                                            LogUtils.error(TAG, throwable);
+                                        } finally {
+                                            mPopupWindow.dismiss();
+                                            releaseActionMode();
+                                        }
                                     }
-                                }
-                            });
-                            mPopupWindow.setAnchorView(mSearchView);
-                            mPopupWindow.show();
-                            return true;
+                                });
+                                mPopupWindow.setAnchorView(mSearchView);
+                                mPopupWindow.show();
+                                return true;
+                            } else {
+                                mPopupWindow.dismiss();
+                            }
+                        } else {
+                            mPopupWindow.dismiss();
                         }
 
                         return false;

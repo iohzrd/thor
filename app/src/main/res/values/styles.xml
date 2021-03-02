@@ -20,6 +20,12 @@
         <item name="android:isLightTheme" tools:targetApi="q">true</item>
         <item name="actionModeStyle">@style/ActionModeStyle</item>
         <item name="actionBarTheme">@style/ThemeOverlay.AppCompat.Dark.ActionBar</item>
+        <item name="popupMenuStyle">@style/PopupMenuStyle</item>
+    </style>
+
+
+    <style name="PopupMenuStyle" parent="Widget.AppCompat.PopupMenu">
+        <item name="android:popupBackground">@color/colorBackground</item>
     </style>
 
     <style name="CustomProgressBarHorizontal" parent="android:Widget.Material.ProgressBar.Horizontal">
