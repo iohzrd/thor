@@ -95,7 +95,7 @@ public class DOCS {
                                             Content.P2P_PATH + pid, closeable);
                                     LogUtils.error(TAG, "Connect " + pid + " " + result);
                                 } catch (Throwable throwable) {
-                                    LogUtils.error(TAG, throwable);
+                                    LogUtils.error(TAG, throwable.getMessage());
                                 }
                             });
                         }
