@@ -14,22 +14,27 @@ import android.widget.FrameLayout;
 
 import androidx.annotation.NonNull;
 
+import threads.LogUtils;
 import threads.thor.MainActivity;
+import threads.thor.core.DOCS;
 
 public class CustomWebChromeClient extends WebChromeClient {
     private static final int FULL_SCREEN_SETTING = View.SYSTEM_UI_FLAG_FULLSCREEN |
             View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN |
             View.SYSTEM_UI_FLAG_IMMERSIVE;
-
+    private static final String TAG = CustomWebChromeClient.class.getSimpleName();
     private final Activity mActivity;
 
     private View mCustomView;
     private WebChromeClient.CustomViewCallback mCustomViewCallback;
     private int mOriginalOrientation;
     private int mOriginalSystemUiVisibility;
+    private final DOCS docs;
 
     public CustomWebChromeClient(@NonNull Activity activity) {
+
         this.mActivity = activity;
+        this.docs = DOCS.getInstance(activity);
     }
 
     @Override
@@ -88,5 +93,26 @@ public class CustomWebChromeClient extends WebChromeClient {
 
     }
 
+    public void onReceivedTitle(WebView view, String title) {
+        try {
+            Uri uri = docs.getOriginalUri(Uri.parse(view.getUrl()));
+            if (title != null && !title.isEmpty()) {
+                docs.updateBookmarkTitle(uri, title);
+            }
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable);
+        }
+    }
+
+    public void onReceivedIcon(WebView view, Bitmap icon) {
+        try {
+            Uri uri = docs.getOriginalUri(Uri.parse(view.getUrl()));
+            if (icon != null) {
+                docs.updateBookmarkIcon(uri, icon);
+            }
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable);
+        }
+    }
 
 }
