@@ -64,18 +64,18 @@ public class SettingsDialogFragment extends BottomSheetDialogFragment {
         Objects.requireNonNull(enableRedirectUrl);
         enableRedirectUrl.setChecked(Settings.isRedirectUrlEnabled(mContext));
         enableRedirectUrl.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            Settings.setRedirectUrlEnabled(mContext, isChecked);
-            DOCS.getInstance(mContext).refreshRedirectOptions(mContext);
-        }
+                    Settings.setRedirectUrlEnabled(mContext, isChecked);
+                    DOCS.getInstance(mContext).refreshRedirectOptions(mContext);
+                }
         );
 
         SwitchMaterial enableRedirectIndex = dialog.findViewById(R.id.enable_redirect_index);
         Objects.requireNonNull(enableRedirectIndex);
         enableRedirectIndex.setChecked(Settings.isRedirectIndexEnabled(mContext));
         enableRedirectIndex.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            Settings.setRedirectIndexEnabled(mContext, isChecked);
-            DOCS.getInstance(mContext).refreshRedirectOptions(mContext);
-        }
+                    Settings.setRedirectIndexEnabled(mContext, isChecked);
+                    DOCS.getInstance(mContext).refreshRedirectOptions(mContext);
+                }
         );
 
 

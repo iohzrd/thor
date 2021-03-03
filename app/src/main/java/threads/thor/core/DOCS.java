@@ -25,6 +25,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import thor.Peer;
 import threads.LogUtils;
 import threads.thor.InitApplication;
 import threads.thor.Settings;
@@ -41,8 +42,6 @@ import threads.thor.magic.ContentInfo;
 import threads.thor.magic.ContentInfoUtil;
 import threads.thor.services.MimeTypeService;
 import threads.thor.utils.MimeType;
-import threads.thor.work.PageConnectWorker;
-import threads.thor.work.PageProviderWorker;
 
 public class DOCS {
 
@@ -54,10 +53,10 @@ public class DOCS {
     private final IPFS ipfs;
     private final PAGES pages;
     private final BOOKS books;
-    private boolean isRedirectIndex;
-    private boolean isRedirectUrl;
     private final Hashtable<Uri, Uri> redirects = new Hashtable<>();
     private final Hashtable<String, String> resolves = new Hashtable<>();
+    private boolean isRedirectIndex;
+    private boolean isRedirectUrl;
 
 
     private DOCS(@NonNull Context context) {
@@ -70,12 +69,6 @@ public class DOCS {
                 (System.currentTimeMillis() - start) + "]...");
     }
 
-
-    public void refreshRedirectOptions(@NonNull Context context) {
-        isRedirectIndex = Settings.isRedirectIndexEnabled(context);
-        isRedirectUrl = Settings.isRedirectUrlEnabled(context);
-    }
-
     public static DOCS getInstance(@NonNull Context context) {
 
         if (INSTANCE == null) {
@@ -86,6 +79,106 @@ public class DOCS {
             }
         }
         return INSTANCE;
+    }
+
+    private void pageProvider(@NonNull String cid, @NonNull Closeable closeable) {
+        Executors.newSingleThreadExecutor().execute(() -> {
+            long start = System.currentTimeMillis();
+            try {
+                ipfs.dhtFindProviders(cid, pid -> {
+                    try {
+                        LogUtils.error(TAG, "Found Provider " + pid);
+                        if (!ipfs.isConnected(pid)) {
+                            Executors.newSingleThreadExecutor().execute(() -> {
+                                try {
+                                    boolean result = ipfs.swarmConnect(
+                                            Content.P2P_PATH + pid, closeable);
+                                    LogUtils.error(TAG, "Connect " + pid + " " + result);
+                                } catch (Throwable throwable) {
+                                    LogUtils.error(TAG, throwable);
+                                }
+                            });
+                        }
+
+                    } catch (Throwable throwable) {
+                        LogUtils.error(TAG, throwable);
+                    }
+                }, 10, closeable);
+
+            } catch (Throwable throwable) {
+                LogUtils.error(TAG, throwable.getMessage());
+            } finally {
+                LogUtils.info(TAG, "Finish " + cid +
+                        " onStart [" + (System.currentTimeMillis() - start) + "]...");
+            }
+        });
+    }
+
+    private void pageConnect(@NonNull String pid, @NonNull Closeable closeable) {
+        Executors.newSingleThreadExecutor().execute(() -> {
+            try {
+
+                Page page = pages.getPage(pid);
+                boolean connected = ipfs.isConnected(pid);
+                if (!connected) {
+                    if (page != null) {
+                        String address = page.getAddress();
+                        if (!address.isEmpty()) {
+                            connected = ipfs.swarmConnect(
+                                    address.concat(Content.P2P_PATH).concat(page.getPid()), closeable);
+                        }
+                    }
+                    if (!connected) {
+                        connected = ipfs.swarmConnect(Content.P2P_PATH + pid, closeable);
+                    }
+                }
+
+                if (page != null) {
+                    Peer info = ipfs.swarmPeer(pid);
+                    if (info != null) {
+                        String address = info.getAddress();
+                        if (!address.isEmpty() && !address.contains(Content.CIRCUIT)) {
+                            if (!Objects.equals(address, page.getAddress())) {
+                                pages.setPageAddress(pid, address);
+                                pages.resetBootstrap(pid);
+                            } else {
+                                pages.incrementRating(pid);
+                                // success here, same address
+                                if (!page.isBootstrap()) {
+                                    pages.setBootstrap(pid);
+                                }
+                            }
+                        } else {
+                            if (!page.getAddress().isEmpty()) {
+                                pages.setPageAddress(pid, "");
+                            }
+                            if (page.isBootstrap()) {
+                                pages.resetBootstrap(pid);
+                            }
+                        }
+                    } else {
+                        if (!page.getAddress().isEmpty()) {
+                            pages.setPageAddress(pid, "");
+                        }
+                        if (page.isBootstrap()) {
+                            pages.resetBootstrap(pid);
+                        }
+                    }
+
+                }
+
+                LogUtils.error(TAG, "Connect " + pid + " " + connected);
+            } catch (Throwable throwable) {
+                LogUtils.error(TAG, throwable.getMessage());
+            } finally {
+                LogUtils.info(TAG, " finish onStart ...");
+            }
+        });
+    }
+
+    public void refreshRedirectOptions(@NonNull Context context) {
+        isRedirectIndex = Settings.isRedirectIndexEnabled(context);
+        isRedirectUrl = Settings.isRedirectUrlEnabled(context);
     }
 
     public int numUris() {
@@ -268,13 +361,13 @@ public class DOCS {
         return answer.toString();
     }
 
-    public void connectUri(@NonNull Context context, @NonNull Uri uri) {
+    public void connectUri(@NonNull Uri uri, @NonNull Closeable closeable) {
         try {
             String host = getHost(uri);
             if (host != null) {
                 String pid = ipfs.decodeName(host);
                 if (!pid.isEmpty()) {
-                    PageConnectWorker.connect(context, pid);
+                    pageConnect(pid, closeable);
                 }
             }
         } catch (Throwable throwable) {
@@ -438,7 +531,7 @@ public class DOCS {
         String root = getRoot(uri, closeable);
         Objects.requireNonNull(root);
 
-        PageProviderWorker.providers(context, root);
+        pageProvider(root, closeable);
 
         return getResponse(context, uri, root, paths, closeable);
 
@@ -636,82 +729,82 @@ public class DOCS {
             throws ClosedException {
 
 
-            if (paths.isEmpty()) {
+        if (paths.isEmpty()) {
 
-                if (isRedirectIndex && ipfs.isDir(root, closeable)) {
-                    boolean exists = ipfs.resolve(root, INDEX_HTML, closeable);
+            if (isRedirectIndex && ipfs.isDir(root, closeable)) {
+                boolean exists = ipfs.resolve(root, INDEX_HTML, closeable);
 
-                    if (exists) {
-                        Uri.Builder builder = new Uri.Builder();
-                        builder.scheme(uri.getScheme())
-                                .authority(uri.getAuthority());
-                        for (String path : paths) {
-                            builder.appendPath(path);
-                        }
-                        builder.appendPath(INDEX_HTML);
-                        return Pair.create(builder.build(), true);
+                if (exists) {
+                    Uri.Builder builder = new Uri.Builder();
+                    builder.scheme(uri.getScheme())
+                            .authority(uri.getAuthority());
+                    for (String path : paths) {
+                        builder.appendPath(path);
                     }
+                    builder.appendPath(INDEX_HTML);
+                    return Pair.create(builder.build(), true);
                 }
+            }
 
 
-            } else {
+        } else {
 
-                // check first paths
-                // if like this .../ipfs/Qa..../
-                // THIS IS A BIG HACK AND SHOULD NOT BE SUPPORTED
-                if (paths.size() >= 2) {
-                    String protocol = paths.get(0);
-                    if (Objects.equals(protocol, Content.IPFS) ||
-                            Objects.equals(protocol, Content.IPNS)) {
-                        String authority = paths.get(1);
-                        List<String> subPaths = new ArrayList<>(paths);
-                        subPaths.remove(protocol);
-                        subPaths.remove(authority);
-                        if (ipfs.isValidCID(authority)) {
-                            if (Objects.equals(protocol, Content.IPFS)) {
-                                Uri.Builder builder = new Uri.Builder();
-                                builder.scheme(Content.IPFS)
-                                        .authority(authority);
+            // check first paths
+            // if like this .../ipfs/Qa..../
+            // THIS IS A BIG HACK AND SHOULD NOT BE SUPPORTED
+            if (paths.size() >= 2) {
+                String protocol = paths.get(0);
+                if (Objects.equals(protocol, Content.IPFS) ||
+                        Objects.equals(protocol, Content.IPNS)) {
+                    String authority = paths.get(1);
+                    List<String> subPaths = new ArrayList<>(paths);
+                    subPaths.remove(protocol);
+                    subPaths.remove(authority);
+                    if (ipfs.isValidCID(authority)) {
+                        if (Objects.equals(protocol, Content.IPFS)) {
+                            Uri.Builder builder = new Uri.Builder();
+                            builder.scheme(Content.IPFS)
+                                    .authority(authority);
 
-                                for (String path : subPaths) {
-                                    builder.appendPath(path);
-                                }
-                                return Pair.create(builder.build(), false);
-                            } else if (Objects.equals(protocol, Content.IPNS)) {
-                                Uri.Builder builder = new Uri.Builder();
-                                builder.scheme(Content.IPNS)
-                                        .authority(authority);
-
-                                for (String path : subPaths) {
-                                    builder.appendPath(path);
-                                }
-                                return Pair.create(builder.build(), false);
+                            for (String path : subPaths) {
+                                builder.appendPath(path);
                             }
-                        }
-                    }
-                }
+                            return Pair.create(builder.build(), false);
+                        } else if (Objects.equals(protocol, Content.IPNS)) {
+                            Uri.Builder builder = new Uri.Builder();
+                            builder.scheme(Content.IPNS)
+                                    .authority(authority);
 
-                if (isRedirectIndex) {
-                    String cid = ipfs.resolve(root, paths, closeable);
-
-                    if (!cid.isEmpty()) {
-                        if (ipfs.isDir(cid, closeable)) {
-                            boolean exists = ipfs.resolve(cid, INDEX_HTML, closeable);
-
-                            if (exists) {
-                                Uri.Builder builder = new Uri.Builder();
-                                builder.scheme(uri.getScheme())
-                                        .authority(uri.getAuthority());
-                                for (String path : paths) {
-                                    builder.appendPath(path);
-                                }
-                                builder.appendPath(INDEX_HTML);
-                                return Pair.create(builder.build(), true);
+                            for (String path : subPaths) {
+                                builder.appendPath(path);
                             }
+                            return Pair.create(builder.build(), false);
                         }
                     }
                 }
             }
+
+            if (isRedirectIndex) {
+                String cid = ipfs.resolve(root, paths, closeable);
+
+                if (!cid.isEmpty()) {
+                    if (ipfs.isDir(cid, closeable)) {
+                        boolean exists = ipfs.resolve(cid, INDEX_HTML, closeable);
+
+                        if (exists) {
+                            Uri.Builder builder = new Uri.Builder();
+                            builder.scheme(uri.getScheme())
+                                    .authority(uri.getAuthority());
+                            for (String path : paths) {
+                                builder.appendPath(path);
+                            }
+                            builder.appendPath(INDEX_HTML);
+                            return Pair.create(builder.build(), true);
+                        }
+                    }
+                }
+            }
+        }
 
         return Pair.create(uri, false);
     }

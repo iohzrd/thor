@@ -7,7 +7,6 @@ import android.net.Uri;
 import androidx.annotation.NonNull;
 import androidx.core.content.FileProvider;
 
-
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.MultiFormatWriter;
 import com.google.zxing.common.BitMatrix;

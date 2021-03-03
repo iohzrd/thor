@@ -78,7 +78,6 @@ public class ContentDialogFragment extends DialogFragment {
         String url = bundle.getString(Content.URL, "");
 
 
-
         TextView page = view.findViewById(R.id.page);
 
         if (url.isEmpty()) {

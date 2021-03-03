@@ -71,7 +71,7 @@ public class ClearBrowserDataWorker extends Worker {
     public static boolean deleteDir(@Nullable File dir) {
         if (dir != null && dir.isDirectory()) {
             String[] children = dir.list();
-            if(children != null) {
+            if (children != null) {
                 for (String child : children) {
                     boolean success = deleteDir(new File(dir, child));
                     if (!success) {

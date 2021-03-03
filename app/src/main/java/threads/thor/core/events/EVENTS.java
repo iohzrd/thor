@@ -64,6 +64,7 @@ public class EVENTS {
 
         storeEvent(createEvent(ERROR, content));
     }
+
     public void permission(@NonNull String content) {
 
         storeEvent(createEvent(PERMISSION, content));

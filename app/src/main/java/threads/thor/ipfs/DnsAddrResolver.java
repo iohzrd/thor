@@ -25,6 +25,7 @@ public class DnsAddrResolver {
     private static final String IPv4 = "/ip4/";
     private static final String IPv6 = "/ip6/";
     private static final String TAG = DnsAddrResolver.class.getSimpleName();
+    private static DnsClient INSTANCE = null;
 
     static Pair<List<String>, List<String>> getBootstrap() {
 
@@ -34,7 +35,6 @@ public class DnsAddrResolver {
         bootstrap.addAll(Settings.IPFS_BOOTSTRAP_NODES);
         return Pair.create(bootstrap, result.second);
     }
-
 
     @NonNull
     static Pair<List<String>, List<String>> getMultiAddresses() {
@@ -75,7 +75,6 @@ public class DnsAddrResolver {
         return result;
     }
 
-
     @NonNull
     public static String getDNSLink(@NonNull String host) {
 
@@ -91,8 +90,6 @@ public class DnsAddrResolver {
         }
         return "";
     }
-
-    private static DnsClient INSTANCE = null;
 
     @NonNull
     private static List<String> getTxtRecords(@NonNull String host) {

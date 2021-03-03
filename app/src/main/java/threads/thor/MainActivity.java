@@ -100,8 +100,6 @@ import threads.thor.utils.PermissionAction;
 import threads.thor.work.ClearBrowserDataWorker;
 import threads.thor.work.DownloadContentWorker;
 import threads.thor.work.DownloadFileWorker;
-import threads.thor.work.PageConnectWorker;
-import threads.thor.work.PageProviderWorker;
 
 
 public class MainActivity extends AppCompatActivity implements
@@ -190,6 +188,15 @@ public class MainActivity extends AppCompatActivity implements
                     }
                 }
             });
+    private final ActivityResultLauncher<String> requestPermissionLauncher =
+            registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
+                if (isGranted) {
+                    invokeScan();
+                } else {
+                    EVENTS.getInstance(getApplicationContext()).permission(
+                            getString(R.string.permission_camera_denied));
+                }
+            });
     private WebView mWebView;
     private long mLastClickTime = 0;
     private TextView mBrowserText;
@@ -237,15 +244,6 @@ public class MainActivity extends AppCompatActivity implements
                     LogUtils.error(TAG, throwable);
                 }
 
-            });
-    private final ActivityResultLauncher<String> requestPermissionLauncher =
-            registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
-                if (isGranted) {
-                    invokeScan();
-                } else {
-                    EVENTS.getInstance(getApplicationContext()).permission(
-                            getString(R.string.permission_camera_denied));
-                }
             });
     private boolean hasCamera;
 
@@ -1179,7 +1177,7 @@ public class MainActivity extends AppCompatActivity implements
                     String storedName = null;
                     String storedPass = null;
 
-                    if(data != null){
+                    if (data != null) {
                         storedName = data[0];
                         storedPass = data[1];
                     }
@@ -1402,13 +1400,14 @@ public class MainActivity extends AppCompatActivity implements
 
                     docs.attachUri(uri);
 
-                    docs.connectUri(getApplicationContext(), uri);
-
                     Thread thread = Thread.currentThread();
 
                     docs.attachThread(thread.getId());
 
                     Closeable closeable = () -> !docs.shouldRun(thread.getId());
+
+                    docs.connectUri(uri, closeable);
+
                     try {
 
                         Pair<Uri, Boolean> result = docs.redirectUri(uri, closeable);
@@ -1419,7 +1418,7 @@ public class MainActivity extends AppCompatActivity implements
                         if (result.second) {
                             return createRedirectMessage(redirectUri);
                         }
-                        docs.connectUri(getApplicationContext(), redirectUri);
+                        docs.connectUri(redirectUri, closeable);
 
                         return docs.getResponse(getApplicationContext(), redirectUri, closeable);
 
@@ -1613,9 +1612,6 @@ public class MainActivity extends AppCompatActivity implements
             updateUri(uri);
 
             mProgressBar.setVisibility(View.VISIBLE);
-
-            WorkManager.getInstance(getApplicationContext()).cancelAllWorkByTag(PageConnectWorker.TAG);
-            WorkManager.getInstance(getApplicationContext()).cancelAllWorkByTag(PageProviderWorker.TAG);
 
             if (Objects.equals(uri.getScheme(), Content.IPNS) ||
                     Objects.equals(uri.getScheme(), Content.IPFS)) {

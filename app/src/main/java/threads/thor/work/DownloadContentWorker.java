@@ -119,7 +119,7 @@ public class DownloadContentWorker extends Worker {
             if (Objects.equals(uri.getScheme(), Content.IPFS) ||
                     Objects.equals(uri.getScheme(), Content.IPNS)) {
                 if (!isStopped()) {
-                    docs.connectUri(getApplicationContext(), uri);
+                    docs.connectUri(uri, this::isStopped);
                 }
             }
 

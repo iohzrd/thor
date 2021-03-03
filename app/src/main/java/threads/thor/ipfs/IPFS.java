@@ -28,7 +28,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import ipns.pb.IpnsEntryProtos;
-
 import thor.Listener;
 import thor.Loader;
 import thor.LsInfoClose;
@@ -57,7 +56,6 @@ public class IPFS implements Listener {
     private final BLOCKS blocks;
     private final Node node;
     private final Object locker = new Object();
-
 
 
     private IPFS(@NonNull Context context) throws Exception {
@@ -340,14 +338,17 @@ public class IPFS implements Listener {
 
 
     public void dhtFindProviders(@NonNull String cid, @NonNull Provider provider, int numProvs,
-                                 @NonNull thor.Closeable closeable) {
+                                 @NonNull Closeable closeable) throws ClosedException {
         if (!isDaemonRunning()) {
             return;
         }
         try {
-            node.dhtFindProvs(cid, provider, numProvs, closeable);
+            node.dhtFindProvs(cid, provider, numProvs, closeable::isClosed);
         } catch (Throwable e) {
             LogUtils.error(TAG, e);
+        }
+        if (closeable.isClosed()) {
+            throw new ClosedException();
         }
     }
 
@@ -364,14 +365,17 @@ public class IPFS implements Listener {
         return false;
     }
 
-    public boolean swarmConnect(@NonNull String multiAddress, @NonNull thor.Closeable closeable) {
+    public boolean swarmConnect(@NonNull String multiAddress, @NonNull Closeable closeable) throws ClosedException {
         if (!isDaemonRunning()) {
             return false;
         }
         try {
-            return node.swarmConnect(multiAddress, closeable);
+            return node.swarmConnect(multiAddress, closeable::isClosed);
         } catch (Throwable throwable) {
             LogUtils.error(TAG, multiAddress + " connection failed");
+        }
+        if (closeable.isClosed()) {
+            throw new ClosedException();
         }
         return false;
     }
@@ -455,14 +459,14 @@ public class IPFS implements Listener {
                         String hash = entry.getValue().toStringUtf8();
                         long seq = entry.getSequence();
 
-                        LogUtils.error(TAG, "IpnsEntry : " + seq + " " + hash  + " " +
+                        LogUtils.error(TAG, "IpnsEntry : " + seq + " " + hash + " " +
                                 (System.currentTimeMillis() - time));
 
                         if (seq < last) {
                             abort.set(true);
                             return; // newest value already available
                         }
-                        if(!abort.get()) {
+                        if (!abort.get()) {
                             if (hash.startsWith(Content.IPFS_PATH)) {
                                 timeout.set(System.currentTimeMillis() + Settings.RESOLVE_TIMEOUT);
                                 setName(hash, seq);
