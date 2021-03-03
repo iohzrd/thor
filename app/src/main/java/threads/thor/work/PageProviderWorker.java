@@ -67,7 +67,6 @@ public class PageProviderWorker extends Worker {
 
         try {
 
-            final int timeout = Settings.PROVIDER_TIMEOUT;
             ipfs.dhtFindProviders(cid, pid -> {
                 try {
                     LogUtils.error(TAG, "Found Provider " + pid);
@@ -75,7 +74,7 @@ public class PageProviderWorker extends Worker {
                         Executors.newSingleThreadExecutor().execute(() -> {
 
                             boolean result = ipfs.swarmConnect(
-                                    Content.P2P_PATH + pid, timeout);
+                                    Content.P2P_PATH + pid, this::isStopped);
                             LogUtils.error(TAG, "Connect " + pid + " " + result);
                         });
                     }

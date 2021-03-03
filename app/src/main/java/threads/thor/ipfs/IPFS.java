@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import ipns.pb.IpnsEntryProtos;
-import thor.DhtClose;
+
 import thor.Listener;
 import thor.Loader;
 import thor.LsInfoClose;
@@ -340,7 +340,7 @@ public class IPFS implements Listener {
 
 
     public void dhtFindProviders(@NonNull String cid, @NonNull Provider provider, int numProvs,
-                                 @NonNull DhtClose closeable) {
+                                 @NonNull thor.Closeable closeable) {
         if (!isDaemonRunning()) {
             return;
         }
@@ -364,12 +364,25 @@ public class IPFS implements Listener {
         return false;
     }
 
+    public boolean swarmConnect(@NonNull String multiAddress, @NonNull thor.Closeable closeable) {
+        if (!isDaemonRunning()) {
+            return false;
+        }
+        try {
+            return node.swarmConnect(multiAddress, closeable);
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, multiAddress + " connection failed");
+        }
+        return false;
+    }
+
+
     public boolean swarmConnect(@NonNull String multiAddress, int timeout) {
         if (!isDaemonRunning()) {
             return false;
         }
         try {
-            return node.swarmConnect(multiAddress, timeout);
+            return node.swarmConnectTimeout(multiAddress, timeout);
         } catch (Throwable throwable) {
             LogUtils.error(TAG, multiAddress + " connection failed");
         }
