@@ -933,10 +933,6 @@ public class MainActivity extends AppCompatActivity implements
 
                     String title = mCustomWebChromeClient.getTitle(uri);
 
-                    if (title == null) {
-                        title = "" + mWebView.getTitle();
-                    }
-
                     bookmark = books.createBookmark(uri.toString(), title);
                     if (bitmap != null) {
                         bookmark.setBitmapIcon(bitmap);

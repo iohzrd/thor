@@ -126,8 +126,12 @@ public class CustomWebChromeClient extends WebChromeClient {
         return icons.get(uri.toString());
     }
 
-    @Nullable
+    @NonNull
     public String getTitle(@NonNull Uri uri) {
-        return titles.get(uri.toString());
+        String title =  titles.get(uri.toString());
+        if(title == null){
+            return "";
+        }
+        return title;
     }
 }
