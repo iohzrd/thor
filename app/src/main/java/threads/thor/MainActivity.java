@@ -1177,6 +1177,10 @@ public class MainActivity extends AppCompatActivity implements
                 try {
                     final String key = host.concat(realm);
 
+                    //TODO WebViewDatabase database = WebViewDatabase.getInstance(getApplicationContext());
+                    //TODO String[] data = database.getHttpAuthUsernamePassword(host, realm);
+
+
                     String storedName = sharedPref.getString(key + "_name", null);
                     String storedPass = sharedPref.getString(key + "_pass", null);
 

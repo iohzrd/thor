@@ -17,6 +17,7 @@ import java.util.Objects;
 
 import threads.thor.R;
 import threads.thor.Settings;
+import threads.thor.core.DOCS;
 import threads.thor.core.events.EVENTS;
 import threads.thor.ipfs.IPFS;
 
@@ -63,22 +64,18 @@ public class SettingsDialogFragment extends BottomSheetDialogFragment {
         Objects.requireNonNull(enableRedirectUrl);
         enableRedirectUrl.setChecked(Settings.isRedirectUrlEnabled(mContext));
         enableRedirectUrl.setOnCheckedChangeListener((buttonView, isChecked) -> {
-                    Settings.setRedirectUrlEnabled(mContext, isChecked);
-
-                    EVENTS.getInstance(mContext).exit(
-                            getString(R.string.restart_config_changed));
-                }
+            Settings.setRedirectUrlEnabled(mContext, isChecked);
+            DOCS.getInstance(mContext).refreshRedirectOptions(mContext);
+        }
         );
 
         SwitchMaterial enableRedirectIndex = dialog.findViewById(R.id.enable_redirect_index);
         Objects.requireNonNull(enableRedirectIndex);
         enableRedirectIndex.setChecked(Settings.isRedirectIndexEnabled(mContext));
         enableRedirectIndex.setOnCheckedChangeListener((buttonView, isChecked) -> {
-                    Settings.setRedirectIndexEnabled(mContext, isChecked);
-
-                    EVENTS.getInstance(mContext).exit(
-                            getString(R.string.restart_config_changed));
-                }
+            Settings.setRedirectIndexEnabled(mContext, isChecked);
+            DOCS.getInstance(mContext).refreshRedirectOptions(mContext);
+        }
         );
 
 

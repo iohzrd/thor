@@ -54,8 +54,8 @@ public class DOCS {
     private final IPFS ipfs;
     private final PAGES pages;
     private final BOOKS books;
-    private final boolean isRedirectIndex;
-    private final boolean isRedirectUrl;
+    private boolean isRedirectIndex;
+    private boolean isRedirectUrl;
     private final Hashtable<Uri, Uri> redirects = new Hashtable<>();
     private final Hashtable<String, String> resolves = new Hashtable<>();
 
@@ -65,10 +65,15 @@ public class DOCS {
         ipfs = IPFS.getInstance(context);
         pages = PAGES.getInstance(context);
         books = BOOKS.getInstance(context);
-        isRedirectIndex = Settings.isRedirectIndexEnabled(context);
-        isRedirectUrl = Settings.isRedirectUrlEnabled(context);
+        refreshRedirectOptions(context);
         LogUtils.info(InitApplication.TIME_TAG, "DOCS finish [" +
                 (System.currentTimeMillis() - start) + "]...");
+    }
+
+
+    public void refreshRedirectOptions(@NonNull Context context) {
+        isRedirectIndex = Settings.isRedirectIndexEnabled(context);
+        isRedirectUrl = Settings.isRedirectUrlEnabled(context);
     }
 
     public static DOCS getInstance(@NonNull Context context) {
