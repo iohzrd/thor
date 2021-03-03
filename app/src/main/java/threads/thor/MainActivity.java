@@ -243,7 +243,6 @@ public class MainActivity extends AppCompatActivity implements
     private long mLastClickTime = 0;
     private TextView mBrowserText;
     private ActionMode mActionMode;
-    private CustomWebChromeClient mCustomWebChromeClient;
     private SwipeRefreshLayout mSwipeRefreshLayout;
     private ProgressBar mProgressBar;
     private ImageButton mActionBookmark;
@@ -929,13 +928,9 @@ public class MainActivity extends AppCompatActivity implements
                     EVENTS.getInstance(getApplicationContext()).warning(
                             getString(R.string.bookmark_removed, msg));
                 } else {
-                    Bitmap bitmap = mCustomWebChromeClient.getFavicon(uri);
+                    Bitmap bitmap = mWebView.getFavicon();
 
-                    String title = mCustomWebChromeClient.getTitle(uri);
-
-                    if (title == null) {
-                        title = "" + mWebView.getTitle();
-                    }
+                    String title = "" + mWebView.getTitle();
 
                     bookmark = books.createBookmark(uri.toString(), title);
                     if (bitmap != null) {
@@ -945,7 +940,7 @@ public class MainActivity extends AppCompatActivity implements
                     books.storeBookmark(bookmark);
 
                     String msg = title;
-                    if(msg.isEmpty()){
+                    if (msg.isEmpty()) {
                         msg = uri.toString();
                     }
 
@@ -1123,7 +1118,7 @@ public class MainActivity extends AppCompatActivity implements
 
         });
 
-        mCustomWebChromeClient = new CustomWebChromeClient(this);
+        CustomWebChromeClient mCustomWebChromeClient = new CustomWebChromeClient(this);
         mWebView.setWebChromeClient(mCustomWebChromeClient);
 
 
