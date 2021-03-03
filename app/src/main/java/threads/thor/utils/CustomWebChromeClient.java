@@ -13,6 +13,9 @@ import android.webkit.WebView;
 import android.widget.FrameLayout;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
+import java.util.Hashtable;
 
 import threads.LogUtils;
 import threads.thor.MainActivity;
@@ -24,7 +27,8 @@ public class CustomWebChromeClient extends WebChromeClient {
             View.SYSTEM_UI_FLAG_IMMERSIVE;
     private static final String TAG = CustomWebChromeClient.class.getSimpleName();
     private final Activity mActivity;
-
+    private final Hashtable<String, String> titles = new Hashtable<>();
+    private final Hashtable<String, Bitmap> icons = new Hashtable<>();
     private View mCustomView;
     private WebChromeClient.CustomViewCallback mCustomViewCallback;
     private int mOriginalOrientation;
@@ -97,6 +101,7 @@ public class CustomWebChromeClient extends WebChromeClient {
         try {
             Uri uri = docs.getOriginalUri(Uri.parse(view.getUrl()));
             if (title != null && !title.isEmpty()) {
+                titles.put(uri.toString(), title);
                 docs.updateBookmarkTitle(uri, title);
             }
         } catch (Throwable throwable) {
@@ -108,6 +113,7 @@ public class CustomWebChromeClient extends WebChromeClient {
         try {
             Uri uri = docs.getOriginalUri(Uri.parse(view.getUrl()));
             if (icon != null) {
+                icons.put(uri.toString(), icon);
                 docs.updateBookmarkIcon(uri, icon);
             }
         } catch (Throwable throwable) {
@@ -115,4 +121,13 @@ public class CustomWebChromeClient extends WebChromeClient {
         }
     }
 
+    @Nullable
+    public Bitmap getFavicon(@NonNull Uri uri) {
+        return icons.get(uri.toString());
+    }
+
+    @Nullable
+    public String getTitle(@NonNull Uri uri) {
+        return titles.get(uri.toString());
+    }
 }
