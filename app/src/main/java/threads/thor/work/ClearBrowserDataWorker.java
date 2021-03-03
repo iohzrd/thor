@@ -8,6 +8,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.drawable.Icon;
 import android.webkit.CookieManager;
+import android.webkit.WebViewDatabase;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -58,7 +59,7 @@ public class ClearBrowserDataWorker extends Worker {
 
     }
 
-    public static void deleteCache(@NonNull Context context) {
+    private static void deleteCache(@NonNull Context context) {
         try {
             File dir = context.getCacheDir();
             deleteDir(dir);
@@ -190,6 +191,10 @@ public class ClearBrowserDataWorker extends Worker {
             // Clear all the cookies
             CookieManager.getInstance().removeAllCookies(null);
             CookieManager.getInstance().flush();
+
+
+            // clears passwords
+            WebViewDatabase.getInstance(getApplicationContext()).clearHttpAuthUsernamePassword();
 
             // Clear local data
             FileProvider fileProvider = FileProvider.getInstance(getApplicationContext());

@@ -7,7 +7,6 @@ import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
@@ -36,6 +35,7 @@ import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.webkit.WebViewDatabase;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -166,16 +166,40 @@ public class MainActivity extends AppCompatActivity implements
                     }
                 }
             });
-    private final ActivityResultLauncher<String> requestPermissionLauncher =
-            registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
-                if (isGranted) {
-                    invokeScan();
-                } else {
-                    EVENTS.getInstance(getApplicationContext()).permission(
-                            getString(R.string.permission_camera_denied));
+    private final ActivityResultLauncher<Intent> mContentForResult = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                if (result.getResultCode() == Activity.RESULT_OK) {
+                    Intent data = result.getData();
+                    try {
+                        Objects.requireNonNull(data);
+                        Uri uri = data.getData();
+                        Objects.requireNonNull(uri);
+                        if (!FileDocumentsProvider.hasWritePermission(getApplicationContext(), uri)) {
+                            EVENTS.getInstance(getApplicationContext()).error(
+                                    getString(R.string.file_has_no_write_permission));
+                            return;
+                        }
+                        Uri contentUri = ThorService.getContentUri(getApplicationContext());
+                        Objects.requireNonNull(contentUri);
+                        DownloadContentWorker.download(getApplicationContext(), uri, contentUri);
+
+
+                    } catch (Throwable throwable) {
+                        LogUtils.error(TAG, throwable);
+                    }
                 }
             });
-
+    private WebView mWebView;
+    private long mLastClickTime = 0;
+    private TextView mBrowserText;
+    private ActionMode mActionMode;
+    private CustomWebChromeClient mCustomWebChromeClient;
+    private SwipeRefreshLayout mSwipeRefreshLayout;
+    private ProgressBar mProgressBar;
+    private ImageButton mActionBookmark;
+    private DOCS docs;
+    private AppBarLayout mAppBar;
     private final ActivityResultLauncher<Intent> mScanRequestForResult = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
             result -> {
@@ -214,41 +238,16 @@ public class MainActivity extends AppCompatActivity implements
                 }
 
             });
-    private final ActivityResultLauncher<Intent> mContentForResult = registerForActivityResult(
-            new ActivityResultContracts.StartActivityForResult(),
-            result -> {
-                if (result.getResultCode() == Activity.RESULT_OK) {
-                    Intent data = result.getData();
-                    try {
-                        Objects.requireNonNull(data);
-                        Uri uri = data.getData();
-                        Objects.requireNonNull(uri);
-                        if (!FileDocumentsProvider.hasWritePermission(getApplicationContext(), uri)) {
-                            EVENTS.getInstance(getApplicationContext()).error(
-                                    getString(R.string.file_has_no_write_permission));
-                            return;
-                        }
-                        Uri contentUri = ThorService.getContentUri(getApplicationContext());
-                        Objects.requireNonNull(contentUri);
-                        DownloadContentWorker.download(getApplicationContext(), uri, contentUri);
-
-
-                    } catch (Throwable throwable) {
-                        LogUtils.error(TAG, throwable);
-                    }
+    private final ActivityResultLauncher<String> requestPermissionLauncher =
+            registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
+                if (isGranted) {
+                    invokeScan();
+                } else {
+                    EVENTS.getInstance(getApplicationContext()).permission(
+                            getString(R.string.permission_camera_denied));
                 }
             });
-
-    private WebView mWebView;
-    private long mLastClickTime = 0;
-    private TextView mBrowserText;
-    private ActionMode mActionMode;
-    private CustomWebChromeClient mCustomWebChromeClient;
-    private SwipeRefreshLayout mSwipeRefreshLayout;
-    private ProgressBar mProgressBar;
-    private ImageButton mActionBookmark;
-    private DOCS docs;
-    private AppBarLayout mAppBar;
+    private boolean hasCamera;
 
     private void contentDownloader(@NonNull Uri uri) {
 
@@ -344,6 +343,7 @@ public class MainActivity extends AppCompatActivity implements
             LogUtils.error(TAG, throwable);
         }
     }
+
     private ActionMode.Callback createFindActionModeCallback() {
         return new ActionMode.Callback() {
             @Override
@@ -496,9 +496,9 @@ public class MainActivity extends AppCompatActivity implements
                 Bookmark bookmark = books.getBookmark(uri.toString());
 
                 String title = uri.toString();
-                if(bookmark != null){
+                if (bookmark != null) {
                     String bookmarkTitle = bookmark.getTitle();
-                    if(!bookmarkTitle.isEmpty()) {
+                    if (!bookmarkTitle.isEmpty()) {
                         title = bookmarkTitle;
                     }
                 }
@@ -544,8 +544,6 @@ public class MainActivity extends AppCompatActivity implements
                 .getDisplayMetrics().density;
         return Math.round((float) 48 * density);
     }
-
-    private boolean hasCamera;
 
     @SuppressLint({"ClickableViewAccessibility"})
     @Override
@@ -633,7 +631,6 @@ public class MainActivity extends AppCompatActivity implements
 
             dialog.showAsDropDown(mActionOverflow, 0, -border(),
                     Gravity.TOP | Gravity.END);
-
 
 
             ImageButton actionNextPage = menuOverflow.findViewById(R.id.action_next_page);
@@ -941,7 +938,7 @@ public class MainActivity extends AppCompatActivity implements
                     books.storeBookmark(bookmark);
 
                     String msg = title;
-                    if(msg.isEmpty()){
+                    if (msg.isEmpty()) {
                         msg = uri.toString();
                     }
 
@@ -1147,7 +1144,6 @@ public class MainActivity extends AppCompatActivity implements
         mWebView.setWebViewClient(new WebViewClient() {
 
             private final Map<Uri, Boolean> loadedUrls = new HashMap<>();
-            private final SharedPreferences sharedPref = getPreferences(Context.MODE_PRIVATE);
             private final AtomicBoolean firstRun = new AtomicBoolean(true);
 
             @Override
@@ -1175,14 +1171,18 @@ public class MainActivity extends AppCompatActivity implements
             public void onReceivedHttpAuthRequest(WebView view, HttpAuthHandler handler, String host, String realm) {
 
                 try {
-                    final String key = host.concat(realm);
 
-                    //TODO WebViewDatabase database = WebViewDatabase.getInstance(getApplicationContext());
-                    //TODO String[] data = database.getHttpAuthUsernamePassword(host, realm);
+                    WebViewDatabase database = WebViewDatabase.getInstance(getApplicationContext());
+                    String[] data = database.getHttpAuthUsernamePassword(host, realm);
 
 
-                    String storedName = sharedPref.getString(key + "_name", null);
-                    String storedPass = sharedPref.getString(key + "_pass", null);
+                    String storedName = null;
+                    String storedPass = null;
+
+                    if(data != null){
+                        storedName = data[0];
+                        storedPass = data[1];
+                    }
 
                     LayoutInflater inflater = (LayoutInflater)
                             getSystemService(Context.LAYOUT_INFLATER_SERVICE);
@@ -1210,11 +1210,7 @@ public class MainActivity extends AppCompatActivity implements
                                 String username = usernameInput.getText().toString();
                                 String password = passwordInput.getText().toString();
 
-
-                                SharedPreferences.Editor editor = sharedPref.edit();
-                                editor.putString(key + "_name", username);
-                                editor.putString(key + "_pass", password);
-                                editor.apply();
+                                database.setHttpAuthUsernamePassword(host, realm, username, password);
 
                                 handler.proceed(username, password);
                                 dialog.dismiss();
@@ -1513,8 +1509,7 @@ public class MainActivity extends AppCompatActivity implements
     }
 
 
-
-    private void releaseActionMode(){
+    private void releaseActionMode() {
         try {
             if (mActionMode != null) {
                 mActionMode.finish();
@@ -1740,7 +1735,7 @@ public class MainActivity extends AppCompatActivity implements
                             BOOKS books = BOOKS.getInstance(getApplicationContext());
                             List<Bookmark> bookmarks = books.getBookmarksByQuery(newText);
 
-                            if(!bookmarks.isEmpty()) {
+                            if (!bookmarks.isEmpty()) {
                                 mPopupWindow.setAdapter(new BookmarksAdapter(getApplicationContext(),
                                         new ArrayList<>(bookmarks)) {
                                     @Override
