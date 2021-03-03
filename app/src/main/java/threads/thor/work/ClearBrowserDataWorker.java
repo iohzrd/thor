@@ -121,7 +121,7 @@ public class ClearBrowserDataWorker extends Worker {
 
         int requestID = (int) System.currentTimeMillis();
         PendingIntent pendingIntent = PendingIntent.getActivity(getApplicationContext(), requestID,
-                main, PendingIntent.FLAG_UPDATE_CURRENT);
+                main, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
         Notification.Action action = new Notification.Action.Builder(
                 Icon.createWithResource(getApplicationContext(), R.drawable.pause), cancel,
