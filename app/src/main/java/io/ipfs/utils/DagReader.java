@@ -23,12 +23,10 @@ import io.ipfs.unixfs.FSNode;
 
 public class DagReader {
     private static final String TAG = DagReader.class.getSimpleName();
-
+    public final AtomicInteger atomicLeft = new AtomicInteger(0);
     private final long size;
     private final Visitor visitor;
-
     private final Walker dagWalker;
-    public final AtomicInteger atomicLeft = new AtomicInteger(0);
 
     public DagReader(@NonNull Walker dagWalker, long size) {
         this.dagWalker = dagWalker;

@@ -4,1360 +4,1492 @@
 package io.protos.ipns;
 
 public final class IpnsProtos {
-  private IpnsProtos() {}
-  public static void registerAllExtensions(
-      com.google.protobuf.ExtensionRegistryLite registry) {
-  }
+    private static final com.google.protobuf.Descriptors.Descriptor
+            internal_static_io_protos_ipns_IpnsEntry_descriptor;
+    private static final
+    com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+            internal_static_io_protos_ipns_IpnsEntry_fieldAccessorTable;
+    private static com.google.protobuf.Descriptors.FileDescriptor
+            descriptor;
 
-  public static void registerAllExtensions(
-      com.google.protobuf.ExtensionRegistry registry) {
-    registerAllExtensions(
-        (com.google.protobuf.ExtensionRegistryLite) registry);
-  }
-  public interface IpnsEntryOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:io.protos.ipns.IpnsEntry)
-      com.google.protobuf.MessageOrBuilder {
-
-    /**
-     * <code>required bytes value = 1;</code>
-     * @return Whether the value field is set.
-     */
-    boolean hasValue();
-    /**
-     * <code>required bytes value = 1;</code>
-     * @return The value.
-     */
-    com.google.protobuf.ByteString getValue();
-
-    /**
-     * <code>required bytes signature = 2;</code>
-     * @return Whether the signature field is set.
-     */
-    boolean hasSignature();
-    /**
-     * <code>required bytes signature = 2;</code>
-     * @return The signature.
-     */
-    com.google.protobuf.ByteString getSignature();
-
-    /**
-     * <code>optional .io.protos.ipns.IpnsEntry.ValidityType validityType = 3;</code>
-     * @return Whether the validityType field is set.
-     */
-    boolean hasValidityType();
-    /**
-     * <code>optional .io.protos.ipns.IpnsEntry.ValidityType validityType = 3;</code>
-     * @return The validityType.
-     */
-    io.protos.ipns.IpnsProtos.IpnsEntry.ValidityType getValidityType();
-
-    /**
-     * <code>optional bytes validity = 4;</code>
-     * @return Whether the validity field is set.
-     */
-    boolean hasValidity();
-    /**
-     * <code>optional bytes validity = 4;</code>
-     * @return The validity.
-     */
-    com.google.protobuf.ByteString getValidity();
-
-    /**
-     * <code>optional uint64 sequence = 5;</code>
-     * @return Whether the sequence field is set.
-     */
-    boolean hasSequence();
-    /**
-     * <code>optional uint64 sequence = 5;</code>
-     * @return The sequence.
-     */
-    long getSequence();
-
-    /**
-     * <code>optional uint64 ttl = 6;</code>
-     * @return Whether the ttl field is set.
-     */
-    boolean hasTtl();
-    /**
-     * <code>optional uint64 ttl = 6;</code>
-     * @return The ttl.
-     */
-    long getTtl();
-
-    /**
-     * <pre>
-     * in order for nodes to properly validate a record upon receipt, they need the public
-     * key associated with it. For old RSA keys, its easiest if we just send this as part of
-     * the record itself. For newer ed25519 keys, the public key can be embedded in the
-     * peerID, making this field unnecessary.
-     * </pre>
-     *
-     * <code>optional bytes pubKey = 7;</code>
-     * @return Whether the pubKey field is set.
-     */
-    boolean hasPubKey();
-    /**
-     * <pre>
-     * in order for nodes to properly validate a record upon receipt, they need the public
-     * key associated with it. For old RSA keys, its easiest if we just send this as part of
-     * the record itself. For newer ed25519 keys, the public key can be embedded in the
-     * peerID, making this field unnecessary.
-     * </pre>
-     *
-     * <code>optional bytes pubKey = 7;</code>
-     * @return The pubKey.
-     */
-    com.google.protobuf.ByteString getPubKey();
-  }
-  /**
-   * Protobuf type {@code io.protos.ipns.IpnsEntry}
-   */
-  public static final class IpnsEntry extends
-      com.google.protobuf.GeneratedMessageV3 implements
-      // @@protoc_insertion_point(message_implements:io.protos.ipns.IpnsEntry)
-      IpnsEntryOrBuilder {
-  private static final long serialVersionUID = 0L;
-    // Use IpnsEntry.newBuilder() to construct.
-    private IpnsEntry(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
-      super(builder);
-    }
-    private IpnsEntry() {
-      value_ = com.google.protobuf.ByteString.EMPTY;
-      signature_ = com.google.protobuf.ByteString.EMPTY;
-      validityType_ = 0;
-      validity_ = com.google.protobuf.ByteString.EMPTY;
-      pubKey_ = com.google.protobuf.ByteString.EMPTY;
+    static {
+        java.lang.String[] descriptorData = {
+                "\n\nipns.proto\022\016io.protos.ipns\"\305\001\n\tIpnsEnt" +
+                        "ry\022\r\n\005value\030\001 \002(\014\022\021\n\tsignature\030\002 \002(\014\022<\n\014" +
+                        "validityType\030\003 \001(\0162&.io.protos.ipns.Ipns" +
+                        "Entry.ValidityType\022\020\n\010validity\030\004 \001(\014\022\020\n\010" +
+                        "sequence\030\005 \001(\004\022\013\n\003ttl\030\006 \001(\004\022\016\n\006pubKey\030\007 " +
+                        "\001(\014\"\027\n\014ValidityType\022\007\n\003EOL\020\000B\034\n\016io.proto" +
+                        "s.ipnsB\nIpnsProtos"
+        };
+        descriptor = com.google.protobuf.Descriptors.FileDescriptor
+                .internalBuildGeneratedFileFrom(descriptorData,
+                        new com.google.protobuf.Descriptors.FileDescriptor[]{
+                        });
+        internal_static_io_protos_ipns_IpnsEntry_descriptor =
+                getDescriptor().getMessageTypes().get(0);
+        internal_static_io_protos_ipns_IpnsEntry_fieldAccessorTable = new
+                com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
+                internal_static_io_protos_ipns_IpnsEntry_descriptor,
+                new java.lang.String[]{"Value", "Signature", "ValidityType", "Validity", "Sequence", "Ttl", "PubKey",});
     }
 
-    @java.lang.Override
-    @SuppressWarnings({"unused"})
-    protected java.lang.Object newInstance(
-        UnusedPrivateParameter unused) {
-      return new IpnsEntry();
+    private IpnsProtos() {
     }
 
-    @java.lang.Override
-    public final com.google.protobuf.UnknownFieldSet
-    getUnknownFields() {
-      return this.unknownFields;
-    }
-    private IpnsEntry(
-        com.google.protobuf.CodedInputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      this();
-      if (extensionRegistry == null) {
-        throw new java.lang.NullPointerException();
-      }
-      int mutable_bitField0_ = 0;
-      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
-          com.google.protobuf.UnknownFieldSet.newBuilder();
-      try {
-        boolean done = false;
-        while (!done) {
-          int tag = input.readTag();
-          switch (tag) {
-            case 0:
-              done = true;
-              break;
-            case 10: {
-              bitField0_ |= 0x00000001;
-              value_ = input.readBytes();
-              break;
-            }
-            case 18: {
-              bitField0_ |= 0x00000002;
-              signature_ = input.readBytes();
-              break;
-            }
-            case 24: {
-              int rawValue = input.readEnum();
-                @SuppressWarnings("deprecation")
-              io.protos.ipns.IpnsProtos.IpnsEntry.ValidityType value = io.protos.ipns.IpnsProtos.IpnsEntry.ValidityType.valueOf(rawValue);
-              if (value == null) {
-                unknownFields.mergeVarintField(3, rawValue);
-              } else {
-                bitField0_ |= 0x00000004;
-                validityType_ = rawValue;
-              }
-              break;
-            }
-            case 34: {
-              bitField0_ |= 0x00000008;
-              validity_ = input.readBytes();
-              break;
-            }
-            case 40: {
-              bitField0_ |= 0x00000010;
-              sequence_ = input.readUInt64();
-              break;
-            }
-            case 48: {
-              bitField0_ |= 0x00000020;
-              ttl_ = input.readUInt64();
-              break;
-            }
-            case 58: {
-              bitField0_ |= 0x00000040;
-              pubKey_ = input.readBytes();
-              break;
-            }
-            default: {
-              if (!parseUnknownField(
-                  input, unknownFields, extensionRegistry, tag)) {
-                done = true;
-              }
-              break;
-            }
-          }
-        }
-      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-        throw e.setUnfinishedMessage(this);
-      } catch (java.io.IOException e) {
-        throw new com.google.protobuf.InvalidProtocolBufferException(
-            e).setUnfinishedMessage(this);
-      } finally {
-        this.unknownFields = unknownFields.build();
-        makeExtensionsImmutable();
-      }
-    }
-    public static final com.google.protobuf.Descriptors.Descriptor
-        getDescriptor() {
-      return io.protos.ipns.IpnsProtos.internal_static_io_protos_ipns_IpnsEntry_descriptor;
+    public static void registerAllExtensions(
+            com.google.protobuf.ExtensionRegistryLite registry) {
     }
 
-    @java.lang.Override
-    protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-        internalGetFieldAccessorTable() {
-      return io.protos.ipns.IpnsProtos.internal_static_io_protos_ipns_IpnsEntry_fieldAccessorTable
-          .ensureFieldAccessorsInitialized(
-              io.protos.ipns.IpnsProtos.IpnsEntry.class, io.protos.ipns.IpnsProtos.IpnsEntry.Builder.class);
+    public static void registerAllExtensions(
+            com.google.protobuf.ExtensionRegistry registry) {
+        registerAllExtensions(
+                (com.google.protobuf.ExtensionRegistryLite) registry);
     }
 
-    /**
-     * Protobuf enum {@code io.protos.ipns.IpnsEntry.ValidityType}
-     */
-    public enum ValidityType
-        implements com.google.protobuf.ProtocolMessageEnum {
-      /**
-       * <pre>
-       * setting an EOL says "this record is valid until..."
-       * </pre>
-       *
-       * <code>EOL = 0;</code>
-       */
-      EOL(0),
-      ;
-
-      /**
-       * <pre>
-       * setting an EOL says "this record is valid until..."
-       * </pre>
-       *
-       * <code>EOL = 0;</code>
-       */
-      public static final int EOL_VALUE = 0;
-
-
-      public final int getNumber() {
-        return value;
-      }
-
-      /**
-       * @param value The numeric wire value of the corresponding enum entry.
-       * @return The enum associated with the given numeric wire value.
-       * @deprecated Use {@link #forNumber(int)} instead.
-       */
-      @java.lang.Deprecated
-      public static ValidityType valueOf(int value) {
-        return forNumber(value);
-      }
-
-      /**
-       * @param value The numeric wire value of the corresponding enum entry.
-       * @return The enum associated with the given numeric wire value.
-       */
-      public static ValidityType forNumber(int value) {
-        switch (value) {
-          case 0: return EOL;
-          default: return null;
-        }
-      }
-
-      public static com.google.protobuf.Internal.EnumLiteMap<ValidityType>
-          internalGetValueMap() {
-        return internalValueMap;
-      }
-      private static final com.google.protobuf.Internal.EnumLiteMap<
-          ValidityType> internalValueMap =
-            new com.google.protobuf.Internal.EnumLiteMap<ValidityType>() {
-              public ValidityType findValueByNumber(int number) {
-                return ValidityType.forNumber(number);
-              }
-            };
-
-      public final com.google.protobuf.Descriptors.EnumValueDescriptor
-          getValueDescriptor() {
-        return getDescriptor().getValues().get(ordinal());
-      }
-      public final com.google.protobuf.Descriptors.EnumDescriptor
-          getDescriptorForType() {
-        return getDescriptor();
-      }
-      public static final com.google.protobuf.Descriptors.EnumDescriptor
-          getDescriptor() {
-        return io.protos.ipns.IpnsProtos.IpnsEntry.getDescriptor().getEnumTypes().get(0);
-      }
-
-      private static final ValidityType[] VALUES = values();
-
-      public static ValidityType valueOf(
-          com.google.protobuf.Descriptors.EnumValueDescriptor desc) {
-        if (desc.getType() != getDescriptor()) {
-          throw new java.lang.IllegalArgumentException(
-            "EnumValueDescriptor is not for this type.");
-        }
-        return VALUES[desc.getIndex()];
-      }
-
-      private final int value;
-
-      private ValidityType(int value) {
-        this.value = value;
-      }
-
-      // @@protoc_insertion_point(enum_scope:io.protos.ipns.IpnsEntry.ValidityType)
+    public static com.google.protobuf.Descriptors.FileDescriptor
+    getDescriptor() {
+        return descriptor;
     }
 
-    private int bitField0_;
-    public static final int VALUE_FIELD_NUMBER = 1;
-    private com.google.protobuf.ByteString value_;
-    /**
-     * <code>required bytes value = 1;</code>
-     * @return Whether the value field is set.
-     */
-    @java.lang.Override
-    public boolean hasValue() {
-      return ((bitField0_ & 0x00000001) != 0);
-    }
-    /**
-     * <code>required bytes value = 1;</code>
-     * @return The value.
-     */
-    @java.lang.Override
-    public com.google.protobuf.ByteString getValue() {
-      return value_;
+    public interface IpnsEntryOrBuilder extends
+            // @@protoc_insertion_point(interface_extends:io.protos.ipns.IpnsEntry)
+            com.google.protobuf.MessageOrBuilder {
+
+        /**
+         * <code>required bytes value = 1;</code>
+         *
+         * @return Whether the value field is set.
+         */
+        boolean hasValue();
+
+        /**
+         * <code>required bytes value = 1;</code>
+         *
+         * @return The value.
+         */
+        com.google.protobuf.ByteString getValue();
+
+        /**
+         * <code>required bytes signature = 2;</code>
+         *
+         * @return Whether the signature field is set.
+         */
+        boolean hasSignature();
+
+        /**
+         * <code>required bytes signature = 2;</code>
+         *
+         * @return The signature.
+         */
+        com.google.protobuf.ByteString getSignature();
+
+        /**
+         * <code>optional .io.protos.ipns.IpnsEntry.ValidityType validityType = 3;</code>
+         *
+         * @return Whether the validityType field is set.
+         */
+        boolean hasValidityType();
+
+        /**
+         * <code>optional .io.protos.ipns.IpnsEntry.ValidityType validityType = 3;</code>
+         *
+         * @return The validityType.
+         */
+        io.protos.ipns.IpnsProtos.IpnsEntry.ValidityType getValidityType();
+
+        /**
+         * <code>optional bytes validity = 4;</code>
+         *
+         * @return Whether the validity field is set.
+         */
+        boolean hasValidity();
+
+        /**
+         * <code>optional bytes validity = 4;</code>
+         *
+         * @return The validity.
+         */
+        com.google.protobuf.ByteString getValidity();
+
+        /**
+         * <code>optional uint64 sequence = 5;</code>
+         *
+         * @return Whether the sequence field is set.
+         */
+        boolean hasSequence();
+
+        /**
+         * <code>optional uint64 sequence = 5;</code>
+         *
+         * @return The sequence.
+         */
+        long getSequence();
+
+        /**
+         * <code>optional uint64 ttl = 6;</code>
+         *
+         * @return Whether the ttl field is set.
+         */
+        boolean hasTtl();
+
+        /**
+         * <code>optional uint64 ttl = 6;</code>
+         *
+         * @return The ttl.
+         */
+        long getTtl();
+
+        /**
+         * <pre>
+         * in order for nodes to properly validate a record upon receipt, they need the public
+         * key associated with it. For old RSA keys, its easiest if we just send this as part of
+         * the record itself. For newer ed25519 keys, the public key can be embedded in the
+         * peerID, making this field unnecessary.
+         * </pre>
+         *
+         * <code>optional bytes pubKey = 7;</code>
+         *
+         * @return Whether the pubKey field is set.
+         */
+        boolean hasPubKey();
+
+        /**
+         * <pre>
+         * in order for nodes to properly validate a record upon receipt, they need the public
+         * key associated with it. For old RSA keys, its easiest if we just send this as part of
+         * the record itself. For newer ed25519 keys, the public key can be embedded in the
+         * peerID, making this field unnecessary.
+         * </pre>
+         *
+         * <code>optional bytes pubKey = 7;</code>
+         *
+         * @return The pubKey.
+         */
+        com.google.protobuf.ByteString getPubKey();
     }
 
-    public static final int SIGNATURE_FIELD_NUMBER = 2;
-    private com.google.protobuf.ByteString signature_;
-    /**
-     * <code>required bytes signature = 2;</code>
-     * @return Whether the signature field is set.
-     */
-    @java.lang.Override
-    public boolean hasSignature() {
-      return ((bitField0_ & 0x00000002) != 0);
-    }
-    /**
-     * <code>required bytes signature = 2;</code>
-     * @return The signature.
-     */
-    @java.lang.Override
-    public com.google.protobuf.ByteString getSignature() {
-      return signature_;
-    }
-
-    public static final int VALIDITYTYPE_FIELD_NUMBER = 3;
-    private int validityType_;
-    /**
-     * <code>optional .io.protos.ipns.IpnsEntry.ValidityType validityType = 3;</code>
-     * @return Whether the validityType field is set.
-     */
-    @java.lang.Override public boolean hasValidityType() {
-      return ((bitField0_ & 0x00000004) != 0);
-    }
-    /**
-     * <code>optional .io.protos.ipns.IpnsEntry.ValidityType validityType = 3;</code>
-     * @return The validityType.
-     */
-    @java.lang.Override public io.protos.ipns.IpnsProtos.IpnsEntry.ValidityType getValidityType() {
-      @SuppressWarnings("deprecation")
-      io.protos.ipns.IpnsProtos.IpnsEntry.ValidityType result = io.protos.ipns.IpnsProtos.IpnsEntry.ValidityType.valueOf(validityType_);
-      return result == null ? io.protos.ipns.IpnsProtos.IpnsEntry.ValidityType.EOL : result;
-    }
-
-    public static final int VALIDITY_FIELD_NUMBER = 4;
-    private com.google.protobuf.ByteString validity_;
-    /**
-     * <code>optional bytes validity = 4;</code>
-     * @return Whether the validity field is set.
-     */
-    @java.lang.Override
-    public boolean hasValidity() {
-      return ((bitField0_ & 0x00000008) != 0);
-    }
-    /**
-     * <code>optional bytes validity = 4;</code>
-     * @return The validity.
-     */
-    @java.lang.Override
-    public com.google.protobuf.ByteString getValidity() {
-      return validity_;
-    }
-
-    public static final int SEQUENCE_FIELD_NUMBER = 5;
-    private long sequence_;
-    /**
-     * <code>optional uint64 sequence = 5;</code>
-     * @return Whether the sequence field is set.
-     */
-    @java.lang.Override
-    public boolean hasSequence() {
-      return ((bitField0_ & 0x00000010) != 0);
-    }
-    /**
-     * <code>optional uint64 sequence = 5;</code>
-     * @return The sequence.
-     */
-    @java.lang.Override
-    public long getSequence() {
-      return sequence_;
-    }
-
-    public static final int TTL_FIELD_NUMBER = 6;
-    private long ttl_;
-    /**
-     * <code>optional uint64 ttl = 6;</code>
-     * @return Whether the ttl field is set.
-     */
-    @java.lang.Override
-    public boolean hasTtl() {
-      return ((bitField0_ & 0x00000020) != 0);
-    }
-    /**
-     * <code>optional uint64 ttl = 6;</code>
-     * @return The ttl.
-     */
-    @java.lang.Override
-    public long getTtl() {
-      return ttl_;
-    }
-
-    public static final int PUBKEY_FIELD_NUMBER = 7;
-    private com.google.protobuf.ByteString pubKey_;
-    /**
-     * <pre>
-     * in order for nodes to properly validate a record upon receipt, they need the public
-     * key associated with it. For old RSA keys, its easiest if we just send this as part of
-     * the record itself. For newer ed25519 keys, the public key can be embedded in the
-     * peerID, making this field unnecessary.
-     * </pre>
-     *
-     * <code>optional bytes pubKey = 7;</code>
-     * @return Whether the pubKey field is set.
-     */
-    @java.lang.Override
-    public boolean hasPubKey() {
-      return ((bitField0_ & 0x00000040) != 0);
-    }
-    /**
-     * <pre>
-     * in order for nodes to properly validate a record upon receipt, they need the public
-     * key associated with it. For old RSA keys, its easiest if we just send this as part of
-     * the record itself. For newer ed25519 keys, the public key can be embedded in the
-     * peerID, making this field unnecessary.
-     * </pre>
-     *
-     * <code>optional bytes pubKey = 7;</code>
-     * @return The pubKey.
-     */
-    @java.lang.Override
-    public com.google.protobuf.ByteString getPubKey() {
-      return pubKey_;
-    }
-
-    private byte memoizedIsInitialized = -1;
-    @java.lang.Override
-    public final boolean isInitialized() {
-      byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
-
-      if (!hasValue()) {
-        memoizedIsInitialized = 0;
-        return false;
-      }
-      if (!hasSignature()) {
-        memoizedIsInitialized = 0;
-        return false;
-      }
-      memoizedIsInitialized = 1;
-      return true;
-    }
-
-    @java.lang.Override
-    public void writeTo(com.google.protobuf.CodedOutputStream output)
-                        throws java.io.IOException {
-      if (((bitField0_ & 0x00000001) != 0)) {
-        output.writeBytes(1, value_);
-      }
-      if (((bitField0_ & 0x00000002) != 0)) {
-        output.writeBytes(2, signature_);
-      }
-      if (((bitField0_ & 0x00000004) != 0)) {
-        output.writeEnum(3, validityType_);
-      }
-      if (((bitField0_ & 0x00000008) != 0)) {
-        output.writeBytes(4, validity_);
-      }
-      if (((bitField0_ & 0x00000010) != 0)) {
-        output.writeUInt64(5, sequence_);
-      }
-      if (((bitField0_ & 0x00000020) != 0)) {
-        output.writeUInt64(6, ttl_);
-      }
-      if (((bitField0_ & 0x00000040) != 0)) {
-        output.writeBytes(7, pubKey_);
-      }
-      unknownFields.writeTo(output);
-    }
-
-    @java.lang.Override
-    public int getSerializedSize() {
-      int size = memoizedSize;
-      if (size != -1) return size;
-
-      size = 0;
-      if (((bitField0_ & 0x00000001) != 0)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeBytesSize(1, value_);
-      }
-      if (((bitField0_ & 0x00000002) != 0)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeBytesSize(2, signature_);
-      }
-      if (((bitField0_ & 0x00000004) != 0)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeEnumSize(3, validityType_);
-      }
-      if (((bitField0_ & 0x00000008) != 0)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeBytesSize(4, validity_);
-      }
-      if (((bitField0_ & 0x00000010) != 0)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeUInt64Size(5, sequence_);
-      }
-      if (((bitField0_ & 0x00000020) != 0)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeUInt64Size(6, ttl_);
-      }
-      if (((bitField0_ & 0x00000040) != 0)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeBytesSize(7, pubKey_);
-      }
-      size += unknownFields.getSerializedSize();
-      memoizedSize = size;
-      return size;
-    }
-
-    @java.lang.Override
-    public boolean equals(final java.lang.Object obj) {
-      if (obj == this) {
-       return true;
-      }
-      if (!(obj instanceof io.protos.ipns.IpnsProtos.IpnsEntry)) {
-        return super.equals(obj);
-      }
-      io.protos.ipns.IpnsProtos.IpnsEntry other = (io.protos.ipns.IpnsProtos.IpnsEntry) obj;
-
-      if (hasValue() != other.hasValue()) return false;
-      if (hasValue()) {
-        if (!getValue()
-            .equals(other.getValue())) return false;
-      }
-      if (hasSignature() != other.hasSignature()) return false;
-      if (hasSignature()) {
-        if (!getSignature()
-            .equals(other.getSignature())) return false;
-      }
-      if (hasValidityType() != other.hasValidityType()) return false;
-      if (hasValidityType()) {
-        if (validityType_ != other.validityType_) return false;
-      }
-      if (hasValidity() != other.hasValidity()) return false;
-      if (hasValidity()) {
-        if (!getValidity()
-            .equals(other.getValidity())) return false;
-      }
-      if (hasSequence() != other.hasSequence()) return false;
-      if (hasSequence()) {
-        if (getSequence()
-            != other.getSequence()) return false;
-      }
-      if (hasTtl() != other.hasTtl()) return false;
-      if (hasTtl()) {
-        if (getTtl()
-            != other.getTtl()) return false;
-      }
-      if (hasPubKey() != other.hasPubKey()) return false;
-      if (hasPubKey()) {
-        if (!getPubKey()
-            .equals(other.getPubKey())) return false;
-      }
-      if (!unknownFields.equals(other.unknownFields)) return false;
-      return true;
-    }
-
-    @java.lang.Override
-    public int hashCode() {
-      if (memoizedHashCode != 0) {
-        return memoizedHashCode;
-      }
-      int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
-      if (hasValue()) {
-        hash = (37 * hash) + VALUE_FIELD_NUMBER;
-        hash = (53 * hash) + getValue().hashCode();
-      }
-      if (hasSignature()) {
-        hash = (37 * hash) + SIGNATURE_FIELD_NUMBER;
-        hash = (53 * hash) + getSignature().hashCode();
-      }
-      if (hasValidityType()) {
-        hash = (37 * hash) + VALIDITYTYPE_FIELD_NUMBER;
-        hash = (53 * hash) + validityType_;
-      }
-      if (hasValidity()) {
-        hash = (37 * hash) + VALIDITY_FIELD_NUMBER;
-        hash = (53 * hash) + getValidity().hashCode();
-      }
-      if (hasSequence()) {
-        hash = (37 * hash) + SEQUENCE_FIELD_NUMBER;
-        hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
-            getSequence());
-      }
-      if (hasTtl()) {
-        hash = (37 * hash) + TTL_FIELD_NUMBER;
-        hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
-            getTtl());
-      }
-      if (hasPubKey()) {
-        hash = (37 * hash) + PUBKEY_FIELD_NUMBER;
-        hash = (53 * hash) + getPubKey().hashCode();
-      }
-      hash = (29 * hash) + unknownFields.hashCode();
-      memoizedHashCode = hash;
-      return hash;
-    }
-
-    public static io.protos.ipns.IpnsProtos.IpnsEntry parseFrom(
-        java.nio.ByteBuffer data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static io.protos.ipns.IpnsProtos.IpnsEntry parseFrom(
-        java.nio.ByteBuffer data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static io.protos.ipns.IpnsProtos.IpnsEntry parseFrom(
-        com.google.protobuf.ByteString data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static io.protos.ipns.IpnsProtos.IpnsEntry parseFrom(
-        com.google.protobuf.ByteString data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static io.protos.ipns.IpnsProtos.IpnsEntry parseFrom(byte[] data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static io.protos.ipns.IpnsProtos.IpnsEntry parseFrom(
-        byte[] data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static io.protos.ipns.IpnsProtos.IpnsEntry parseFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input);
-    }
-    public static io.protos.ipns.IpnsProtos.IpnsEntry parseFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input, extensionRegistry);
-    }
-    public static io.protos.ipns.IpnsProtos.IpnsEntry parseDelimitedFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseDelimitedWithIOException(PARSER, input);
-    }
-    public static io.protos.ipns.IpnsProtos.IpnsEntry parseDelimitedFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
-    }
-    public static io.protos.ipns.IpnsProtos.IpnsEntry parseFrom(
-        com.google.protobuf.CodedInputStream input)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input);
-    }
-    public static io.protos.ipns.IpnsProtos.IpnsEntry parseFrom(
-        com.google.protobuf.CodedInputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input, extensionRegistry);
-    }
-
-    @java.lang.Override
-    public Builder newBuilderForType() { return newBuilder(); }
-    public static Builder newBuilder() {
-      return DEFAULT_INSTANCE.toBuilder();
-    }
-    public static Builder newBuilder(io.protos.ipns.IpnsProtos.IpnsEntry prototype) {
-      return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
-    }
-    @java.lang.Override
-    public Builder toBuilder() {
-      return this == DEFAULT_INSTANCE
-          ? new Builder() : new Builder().mergeFrom(this);
-    }
-
-    @java.lang.Override
-    protected Builder newBuilderForType(
-        com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
-      Builder builder = new Builder(parent);
-      return builder;
-    }
     /**
      * Protobuf type {@code io.protos.ipns.IpnsEntry}
      */
-    public static final class Builder extends
-        com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:io.protos.ipns.IpnsEntry)
-        io.protos.ipns.IpnsProtos.IpnsEntryOrBuilder {
-      public static final com.google.protobuf.Descriptors.Descriptor
-          getDescriptor() {
-        return io.protos.ipns.IpnsProtos.internal_static_io_protos_ipns_IpnsEntry_descriptor;
-      }
+    public static final class IpnsEntry extends
+            com.google.protobuf.GeneratedMessageV3 implements
+            // @@protoc_insertion_point(message_implements:io.protos.ipns.IpnsEntry)
+            IpnsEntryOrBuilder {
+        public static final int VALUE_FIELD_NUMBER = 1;
+        public static final int SIGNATURE_FIELD_NUMBER = 2;
+        public static final int VALIDITYTYPE_FIELD_NUMBER = 3;
+        public static final int VALIDITY_FIELD_NUMBER = 4;
+        public static final int SEQUENCE_FIELD_NUMBER = 5;
+        public static final int TTL_FIELD_NUMBER = 6;
+        public static final int PUBKEY_FIELD_NUMBER = 7;
+        @java.lang.Deprecated
+        public static final com.google.protobuf.Parser<IpnsEntry>
+                PARSER = new com.google.protobuf.AbstractParser<IpnsEntry>() {
+            @java.lang.Override
+            public IpnsEntry parsePartialFrom(
+                    com.google.protobuf.CodedInputStream input,
+                    com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+                    throws com.google.protobuf.InvalidProtocolBufferException {
+                return new IpnsEntry(input, extensionRegistry);
+            }
+        };
+        private static final long serialVersionUID = 0L;
+        // @@protoc_insertion_point(class_scope:io.protos.ipns.IpnsEntry)
+        private static final io.protos.ipns.IpnsProtos.IpnsEntry DEFAULT_INSTANCE;
 
-      @java.lang.Override
-      protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-          internalGetFieldAccessorTable() {
-        return io.protos.ipns.IpnsProtos.internal_static_io_protos_ipns_IpnsEntry_fieldAccessorTable
-            .ensureFieldAccessorsInitialized(
-                io.protos.ipns.IpnsProtos.IpnsEntry.class, io.protos.ipns.IpnsProtos.IpnsEntry.Builder.class);
-      }
+        static {
+            DEFAULT_INSTANCE = new io.protos.ipns.IpnsProtos.IpnsEntry();
+        }
 
-      // Construct using io.protos.ipns.IpnsProtos.IpnsEntry.newBuilder()
-      private Builder() {
-        maybeForceBuilderInitialization();
-      }
+        private int bitField0_;
+        private com.google.protobuf.ByteString value_;
+        private com.google.protobuf.ByteString signature_;
+        private int validityType_;
+        private com.google.protobuf.ByteString validity_;
+        private long sequence_;
+        private long ttl_;
+        private com.google.protobuf.ByteString pubKey_;
+        private byte memoizedIsInitialized = -1;
 
-      private Builder(
-          com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
-        super(parent);
-        maybeForceBuilderInitialization();
-      }
-      private void maybeForceBuilderInitialization() {
-        if (com.google.protobuf.GeneratedMessageV3
-                .alwaysUseFieldBuilders) {
+        // Use IpnsEntry.newBuilder() to construct.
+        private IpnsEntry(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
+            super(builder);
         }
-      }
-      @java.lang.Override
-      public Builder clear() {
-        super.clear();
-        value_ = com.google.protobuf.ByteString.EMPTY;
-        bitField0_ = (bitField0_ & ~0x00000001);
-        signature_ = com.google.protobuf.ByteString.EMPTY;
-        bitField0_ = (bitField0_ & ~0x00000002);
-        validityType_ = 0;
-        bitField0_ = (bitField0_ & ~0x00000004);
-        validity_ = com.google.protobuf.ByteString.EMPTY;
-        bitField0_ = (bitField0_ & ~0x00000008);
-        sequence_ = 0L;
-        bitField0_ = (bitField0_ & ~0x00000010);
-        ttl_ = 0L;
-        bitField0_ = (bitField0_ & ~0x00000020);
-        pubKey_ = com.google.protobuf.ByteString.EMPTY;
-        bitField0_ = (bitField0_ & ~0x00000040);
-        return this;
-      }
 
-      @java.lang.Override
-      public com.google.protobuf.Descriptors.Descriptor
-          getDescriptorForType() {
-        return io.protos.ipns.IpnsProtos.internal_static_io_protos_ipns_IpnsEntry_descriptor;
-      }
+        private IpnsEntry() {
+            value_ = com.google.protobuf.ByteString.EMPTY;
+            signature_ = com.google.protobuf.ByteString.EMPTY;
+            validityType_ = 0;
+            validity_ = com.google.protobuf.ByteString.EMPTY;
+            pubKey_ = com.google.protobuf.ByteString.EMPTY;
+        }
 
-      @java.lang.Override
-      public io.protos.ipns.IpnsProtos.IpnsEntry getDefaultInstanceForType() {
-        return io.protos.ipns.IpnsProtos.IpnsEntry.getDefaultInstance();
-      }
+        private IpnsEntry(
+                com.google.protobuf.CodedInputStream input,
+                com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+                throws com.google.protobuf.InvalidProtocolBufferException {
+            this();
+            if (extensionRegistry == null) {
+                throw new java.lang.NullPointerException();
+            }
+            int mutable_bitField0_ = 0;
+            com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+                    com.google.protobuf.UnknownFieldSet.newBuilder();
+            try {
+                boolean done = false;
+                while (!done) {
+                    int tag = input.readTag();
+                    switch (tag) {
+                        case 0:
+                            done = true;
+                            break;
+                        case 10: {
+                            bitField0_ |= 0x00000001;
+                            value_ = input.readBytes();
+                            break;
+                        }
+                        case 18: {
+                            bitField0_ |= 0x00000002;
+                            signature_ = input.readBytes();
+                            break;
+                        }
+                        case 24: {
+                            int rawValue = input.readEnum();
+                            @SuppressWarnings("deprecation")
+                            io.protos.ipns.IpnsProtos.IpnsEntry.ValidityType value = io.protos.ipns.IpnsProtos.IpnsEntry.ValidityType.valueOf(rawValue);
+                            if (value == null) {
+                                unknownFields.mergeVarintField(3, rawValue);
+                            } else {
+                                bitField0_ |= 0x00000004;
+                                validityType_ = rawValue;
+                            }
+                            break;
+                        }
+                        case 34: {
+                            bitField0_ |= 0x00000008;
+                            validity_ = input.readBytes();
+                            break;
+                        }
+                        case 40: {
+                            bitField0_ |= 0x00000010;
+                            sequence_ = input.readUInt64();
+                            break;
+                        }
+                        case 48: {
+                            bitField0_ |= 0x00000020;
+                            ttl_ = input.readUInt64();
+                            break;
+                        }
+                        case 58: {
+                            bitField0_ |= 0x00000040;
+                            pubKey_ = input.readBytes();
+                            break;
+                        }
+                        default: {
+                            if (!parseUnknownField(
+                                    input, unknownFields, extensionRegistry, tag)) {
+                                done = true;
+                            }
+                            break;
+                        }
+                    }
+                }
+            } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+                throw e.setUnfinishedMessage(this);
+            } catch (java.io.IOException e) {
+                throw new com.google.protobuf.InvalidProtocolBufferException(
+                        e).setUnfinishedMessage(this);
+            } finally {
+                this.unknownFields = unknownFields.build();
+                makeExtensionsImmutable();
+            }
+        }
 
-      @java.lang.Override
-      public io.protos.ipns.IpnsProtos.IpnsEntry build() {
-        io.protos.ipns.IpnsProtos.IpnsEntry result = buildPartial();
-        if (!result.isInitialized()) {
-          throw newUninitializedMessageException(result);
+        public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+            return io.protos.ipns.IpnsProtos.internal_static_io_protos_ipns_IpnsEntry_descriptor;
         }
-        return result;
-      }
 
-      @java.lang.Override
-      public io.protos.ipns.IpnsProtos.IpnsEntry buildPartial() {
-        io.protos.ipns.IpnsProtos.IpnsEntry result = new io.protos.ipns.IpnsProtos.IpnsEntry(this);
-        int from_bitField0_ = bitField0_;
-        int to_bitField0_ = 0;
-        if (((from_bitField0_ & 0x00000001) != 0)) {
-          to_bitField0_ |= 0x00000001;
+        public static io.protos.ipns.IpnsProtos.IpnsEntry parseFrom(
+                java.nio.ByteBuffer data)
+                throws com.google.protobuf.InvalidProtocolBufferException {
+            return PARSER.parseFrom(data);
         }
-        result.value_ = value_;
-        if (((from_bitField0_ & 0x00000002) != 0)) {
-          to_bitField0_ |= 0x00000002;
-        }
-        result.signature_ = signature_;
-        if (((from_bitField0_ & 0x00000004) != 0)) {
-          to_bitField0_ |= 0x00000004;
-        }
-        result.validityType_ = validityType_;
-        if (((from_bitField0_ & 0x00000008) != 0)) {
-          to_bitField0_ |= 0x00000008;
-        }
-        result.validity_ = validity_;
-        if (((from_bitField0_ & 0x00000010) != 0)) {
-          result.sequence_ = sequence_;
-          to_bitField0_ |= 0x00000010;
-        }
-        if (((from_bitField0_ & 0x00000020) != 0)) {
-          result.ttl_ = ttl_;
-          to_bitField0_ |= 0x00000020;
-        }
-        if (((from_bitField0_ & 0x00000040) != 0)) {
-          to_bitField0_ |= 0x00000040;
-        }
-        result.pubKey_ = pubKey_;
-        result.bitField0_ = to_bitField0_;
-        onBuilt();
-        return result;
-      }
 
-      @java.lang.Override
-      public Builder clone() {
-        return super.clone();
-      }
-      @java.lang.Override
-      public Builder setField(
-          com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
-        return super.setField(field, value);
-      }
-      @java.lang.Override
-      public Builder clearField(
-          com.google.protobuf.Descriptors.FieldDescriptor field) {
-        return super.clearField(field);
-      }
-      @java.lang.Override
-      public Builder clearOneof(
-          com.google.protobuf.Descriptors.OneofDescriptor oneof) {
-        return super.clearOneof(oneof);
-      }
-      @java.lang.Override
-      public Builder setRepeatedField(
-          com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, java.lang.Object value) {
-        return super.setRepeatedField(field, index, value);
-      }
-      @java.lang.Override
-      public Builder addRepeatedField(
-          com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
-        return super.addRepeatedField(field, value);
-      }
-      @java.lang.Override
-      public Builder mergeFrom(com.google.protobuf.Message other) {
-        if (other instanceof io.protos.ipns.IpnsProtos.IpnsEntry) {
-          return mergeFrom((io.protos.ipns.IpnsProtos.IpnsEntry)other);
-        } else {
-          super.mergeFrom(other);
-          return this;
+        public static io.protos.ipns.IpnsProtos.IpnsEntry parseFrom(
+                java.nio.ByteBuffer data,
+                com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+                throws com.google.protobuf.InvalidProtocolBufferException {
+            return PARSER.parseFrom(data, extensionRegistry);
         }
-      }
 
-      public Builder mergeFrom(io.protos.ipns.IpnsProtos.IpnsEntry other) {
-        if (other == io.protos.ipns.IpnsProtos.IpnsEntry.getDefaultInstance()) return this;
-        if (other.hasValue()) {
-          setValue(other.getValue());
+        public static io.protos.ipns.IpnsProtos.IpnsEntry parseFrom(
+                com.google.protobuf.ByteString data)
+                throws com.google.protobuf.InvalidProtocolBufferException {
+            return PARSER.parseFrom(data);
         }
-        if (other.hasSignature()) {
-          setSignature(other.getSignature());
+
+        public static io.protos.ipns.IpnsProtos.IpnsEntry parseFrom(
+                com.google.protobuf.ByteString data,
+                com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+                throws com.google.protobuf.InvalidProtocolBufferException {
+            return PARSER.parseFrom(data, extensionRegistry);
         }
-        if (other.hasValidityType()) {
-          setValidityType(other.getValidityType());
+
+        public static io.protos.ipns.IpnsProtos.IpnsEntry parseFrom(byte[] data)
+                throws com.google.protobuf.InvalidProtocolBufferException {
+            return PARSER.parseFrom(data);
         }
-        if (other.hasValidity()) {
-          setValidity(other.getValidity());
+
+        public static io.protos.ipns.IpnsProtos.IpnsEntry parseFrom(
+                byte[] data,
+                com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+                throws com.google.protobuf.InvalidProtocolBufferException {
+            return PARSER.parseFrom(data, extensionRegistry);
         }
-        if (other.hasSequence()) {
-          setSequence(other.getSequence());
+
+        public static io.protos.ipns.IpnsProtos.IpnsEntry parseFrom(java.io.InputStream input)
+                throws java.io.IOException {
+            return com.google.protobuf.GeneratedMessageV3
+                    .parseWithIOException(PARSER, input);
         }
-        if (other.hasTtl()) {
-          setTtl(other.getTtl());
+
+        public static io.protos.ipns.IpnsProtos.IpnsEntry parseFrom(
+                java.io.InputStream input,
+                com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+                throws java.io.IOException {
+            return com.google.protobuf.GeneratedMessageV3
+                    .parseWithIOException(PARSER, input, extensionRegistry);
         }
-        if (other.hasPubKey()) {
-          setPubKey(other.getPubKey());
+
+        public static io.protos.ipns.IpnsProtos.IpnsEntry parseDelimitedFrom(java.io.InputStream input)
+                throws java.io.IOException {
+            return com.google.protobuf.GeneratedMessageV3
+                    .parseDelimitedWithIOException(PARSER, input);
         }
-        this.mergeUnknownFields(other.unknownFields);
-        onChanged();
-        return this;
-      }
 
-      @java.lang.Override
-      public final boolean isInitialized() {
-        if (!hasValue()) {
-          return false;
+        public static io.protos.ipns.IpnsProtos.IpnsEntry parseDelimitedFrom(
+                java.io.InputStream input,
+                com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+                throws java.io.IOException {
+            return com.google.protobuf.GeneratedMessageV3
+                    .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
         }
-        if (!hasSignature()) {
-          return false;
+
+        public static io.protos.ipns.IpnsProtos.IpnsEntry parseFrom(
+                com.google.protobuf.CodedInputStream input)
+                throws java.io.IOException {
+            return com.google.protobuf.GeneratedMessageV3
+                    .parseWithIOException(PARSER, input);
         }
-        return true;
-      }
 
-      @java.lang.Override
-      public Builder mergeFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws java.io.IOException {
-        io.protos.ipns.IpnsProtos.IpnsEntry parsedMessage = null;
-        try {
-          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
-        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-          parsedMessage = (io.protos.ipns.IpnsProtos.IpnsEntry) e.getUnfinishedMessage();
-          throw e.unwrapIOException();
-        } finally {
-          if (parsedMessage != null) {
-            mergeFrom(parsedMessage);
-          }
+        public static io.protos.ipns.IpnsProtos.IpnsEntry parseFrom(
+                com.google.protobuf.CodedInputStream input,
+                com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+                throws java.io.IOException {
+            return com.google.protobuf.GeneratedMessageV3
+                    .parseWithIOException(PARSER, input, extensionRegistry);
         }
-        return this;
-      }
-      private int bitField0_;
 
-      private com.google.protobuf.ByteString value_ = com.google.protobuf.ByteString.EMPTY;
-      /**
-       * <code>required bytes value = 1;</code>
-       * @return Whether the value field is set.
-       */
-      @java.lang.Override
-      public boolean hasValue() {
-        return ((bitField0_ & 0x00000001) != 0);
-      }
-      /**
-       * <code>required bytes value = 1;</code>
-       * @return The value.
-       */
-      @java.lang.Override
-      public com.google.protobuf.ByteString getValue() {
-        return value_;
-      }
-      /**
-       * <code>required bytes value = 1;</code>
-       * @param value The value to set.
-       * @return This builder for chaining.
-       */
-      public Builder setValue(com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000001;
-        value_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>required bytes value = 1;</code>
-       * @return This builder for chaining.
-       */
-      public Builder clearValue() {
-        bitField0_ = (bitField0_ & ~0x00000001);
-        value_ = getDefaultInstance().getValue();
-        onChanged();
-        return this;
-      }
-
-      private com.google.protobuf.ByteString signature_ = com.google.protobuf.ByteString.EMPTY;
-      /**
-       * <code>required bytes signature = 2;</code>
-       * @return Whether the signature field is set.
-       */
-      @java.lang.Override
-      public boolean hasSignature() {
-        return ((bitField0_ & 0x00000002) != 0);
-      }
-      /**
-       * <code>required bytes signature = 2;</code>
-       * @return The signature.
-       */
-      @java.lang.Override
-      public com.google.protobuf.ByteString getSignature() {
-        return signature_;
-      }
-      /**
-       * <code>required bytes signature = 2;</code>
-       * @param value The signature to set.
-       * @return This builder for chaining.
-       */
-      public Builder setSignature(com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000002;
-        signature_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>required bytes signature = 2;</code>
-       * @return This builder for chaining.
-       */
-      public Builder clearSignature() {
-        bitField0_ = (bitField0_ & ~0x00000002);
-        signature_ = getDefaultInstance().getSignature();
-        onChanged();
-        return this;
-      }
-
-      private int validityType_ = 0;
-      /**
-       * <code>optional .io.protos.ipns.IpnsEntry.ValidityType validityType = 3;</code>
-       * @return Whether the validityType field is set.
-       */
-      @java.lang.Override public boolean hasValidityType() {
-        return ((bitField0_ & 0x00000004) != 0);
-      }
-      /**
-       * <code>optional .io.protos.ipns.IpnsEntry.ValidityType validityType = 3;</code>
-       * @return The validityType.
-       */
-      @java.lang.Override
-      public io.protos.ipns.IpnsProtos.IpnsEntry.ValidityType getValidityType() {
-        @SuppressWarnings("deprecation")
-        io.protos.ipns.IpnsProtos.IpnsEntry.ValidityType result = io.protos.ipns.IpnsProtos.IpnsEntry.ValidityType.valueOf(validityType_);
-        return result == null ? io.protos.ipns.IpnsProtos.IpnsEntry.ValidityType.EOL : result;
-      }
-      /**
-       * <code>optional .io.protos.ipns.IpnsEntry.ValidityType validityType = 3;</code>
-       * @param value The validityType to set.
-       * @return This builder for chaining.
-       */
-      public Builder setValidityType(io.protos.ipns.IpnsProtos.IpnsEntry.ValidityType value) {
-        if (value == null) {
-          throw new NullPointerException();
+        public static Builder newBuilder() {
+            return DEFAULT_INSTANCE.toBuilder();
         }
-        bitField0_ |= 0x00000004;
-        validityType_ = value.getNumber();
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>optional .io.protos.ipns.IpnsEntry.ValidityType validityType = 3;</code>
-       * @return This builder for chaining.
-       */
-      public Builder clearValidityType() {
-        bitField0_ = (bitField0_ & ~0x00000004);
-        validityType_ = 0;
-        onChanged();
-        return this;
-      }
 
-      private com.google.protobuf.ByteString validity_ = com.google.protobuf.ByteString.EMPTY;
-      /**
-       * <code>optional bytes validity = 4;</code>
-       * @return Whether the validity field is set.
-       */
-      @java.lang.Override
-      public boolean hasValidity() {
-        return ((bitField0_ & 0x00000008) != 0);
-      }
-      /**
-       * <code>optional bytes validity = 4;</code>
-       * @return The validity.
-       */
-      @java.lang.Override
-      public com.google.protobuf.ByteString getValidity() {
-        return validity_;
-      }
-      /**
-       * <code>optional bytes validity = 4;</code>
-       * @param value The validity to set.
-       * @return This builder for chaining.
-       */
-      public Builder setValidity(com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000008;
-        validity_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>optional bytes validity = 4;</code>
-       * @return This builder for chaining.
-       */
-      public Builder clearValidity() {
-        bitField0_ = (bitField0_ & ~0x00000008);
-        validity_ = getDefaultInstance().getValidity();
-        onChanged();
-        return this;
-      }
+        public static Builder newBuilder(io.protos.ipns.IpnsProtos.IpnsEntry prototype) {
+            return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
+        }
 
-      private long sequence_ ;
-      /**
-       * <code>optional uint64 sequence = 5;</code>
-       * @return Whether the sequence field is set.
-       */
-      @java.lang.Override
-      public boolean hasSequence() {
-        return ((bitField0_ & 0x00000010) != 0);
-      }
-      /**
-       * <code>optional uint64 sequence = 5;</code>
-       * @return The sequence.
-       */
-      @java.lang.Override
-      public long getSequence() {
-        return sequence_;
-      }
-      /**
-       * <code>optional uint64 sequence = 5;</code>
-       * @param value The sequence to set.
-       * @return This builder for chaining.
-       */
-      public Builder setSequence(long value) {
-        bitField0_ |= 0x00000010;
-        sequence_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>optional uint64 sequence = 5;</code>
-       * @return This builder for chaining.
-       */
-      public Builder clearSequence() {
-        bitField0_ = (bitField0_ & ~0x00000010);
-        sequence_ = 0L;
-        onChanged();
-        return this;
-      }
+        public static io.protos.ipns.IpnsProtos.IpnsEntry getDefaultInstance() {
+            return DEFAULT_INSTANCE;
+        }
 
-      private long ttl_ ;
-      /**
-       * <code>optional uint64 ttl = 6;</code>
-       * @return Whether the ttl field is set.
-       */
-      @java.lang.Override
-      public boolean hasTtl() {
-        return ((bitField0_ & 0x00000020) != 0);
-      }
-      /**
-       * <code>optional uint64 ttl = 6;</code>
-       * @return The ttl.
-       */
-      @java.lang.Override
-      public long getTtl() {
-        return ttl_;
-      }
-      /**
-       * <code>optional uint64 ttl = 6;</code>
-       * @param value The ttl to set.
-       * @return This builder for chaining.
-       */
-      public Builder setTtl(long value) {
-        bitField0_ |= 0x00000020;
-        ttl_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>optional uint64 ttl = 6;</code>
-       * @return This builder for chaining.
-       */
-      public Builder clearTtl() {
-        bitField0_ = (bitField0_ & ~0x00000020);
-        ttl_ = 0L;
-        onChanged();
-        return this;
-      }
+        public static com.google.protobuf.Parser<IpnsEntry> parser() {
+            return PARSER;
+        }
 
-      private com.google.protobuf.ByteString pubKey_ = com.google.protobuf.ByteString.EMPTY;
-      /**
-       * <pre>
-       * in order for nodes to properly validate a record upon receipt, they need the public
-       * key associated with it. For old RSA keys, its easiest if we just send this as part of
-       * the record itself. For newer ed25519 keys, the public key can be embedded in the
-       * peerID, making this field unnecessary.
-       * </pre>
-       *
-       * <code>optional bytes pubKey = 7;</code>
-       * @return Whether the pubKey field is set.
-       */
-      @java.lang.Override
-      public boolean hasPubKey() {
-        return ((bitField0_ & 0x00000040) != 0);
-      }
-      /**
-       * <pre>
-       * in order for nodes to properly validate a record upon receipt, they need the public
-       * key associated with it. For old RSA keys, its easiest if we just send this as part of
-       * the record itself. For newer ed25519 keys, the public key can be embedded in the
-       * peerID, making this field unnecessary.
-       * </pre>
-       *
-       * <code>optional bytes pubKey = 7;</code>
-       * @return The pubKey.
-       */
-      @java.lang.Override
-      public com.google.protobuf.ByteString getPubKey() {
-        return pubKey_;
-      }
-      /**
-       * <pre>
-       * in order for nodes to properly validate a record upon receipt, they need the public
-       * key associated with it. For old RSA keys, its easiest if we just send this as part of
-       * the record itself. For newer ed25519 keys, the public key can be embedded in the
-       * peerID, making this field unnecessary.
-       * </pre>
-       *
-       * <code>optional bytes pubKey = 7;</code>
-       * @param value The pubKey to set.
-       * @return This builder for chaining.
-       */
-      public Builder setPubKey(com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000040;
-        pubKey_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * in order for nodes to properly validate a record upon receipt, they need the public
-       * key associated with it. For old RSA keys, its easiest if we just send this as part of
-       * the record itself. For newer ed25519 keys, the public key can be embedded in the
-       * peerID, making this field unnecessary.
-       * </pre>
-       *
-       * <code>optional bytes pubKey = 7;</code>
-       * @return This builder for chaining.
-       */
-      public Builder clearPubKey() {
-        bitField0_ = (bitField0_ & ~0x00000040);
-        pubKey_ = getDefaultInstance().getPubKey();
-        onChanged();
-        return this;
-      }
-      @java.lang.Override
-      public final Builder setUnknownFields(
-          final com.google.protobuf.UnknownFieldSet unknownFields) {
-        return super.setUnknownFields(unknownFields);
-      }
+        @java.lang.Override
+        @SuppressWarnings({"unused"})
+        protected java.lang.Object newInstance(
+                UnusedPrivateParameter unused) {
+            return new IpnsEntry();
+        }
 
-      @java.lang.Override
-      public final Builder mergeUnknownFields(
-          final com.google.protobuf.UnknownFieldSet unknownFields) {
-        return super.mergeUnknownFields(unknownFields);
-      }
+        @java.lang.Override
+        public final com.google.protobuf.UnknownFieldSet
+        getUnknownFields() {
+            return this.unknownFields;
+        }
+
+        @java.lang.Override
+        protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+            return io.protos.ipns.IpnsProtos.internal_static_io_protos_ipns_IpnsEntry_fieldAccessorTable
+                    .ensureFieldAccessorsInitialized(
+                            io.protos.ipns.IpnsProtos.IpnsEntry.class, io.protos.ipns.IpnsProtos.IpnsEntry.Builder.class);
+        }
+
+        /**
+         * <code>required bytes value = 1;</code>
+         *
+         * @return Whether the value field is set.
+         */
+        @java.lang.Override
+        public boolean hasValue() {
+            return ((bitField0_ & 0x00000001) != 0);
+        }
+
+        /**
+         * <code>required bytes value = 1;</code>
+         *
+         * @return The value.
+         */
+        @java.lang.Override
+        public com.google.protobuf.ByteString getValue() {
+            return value_;
+        }
+
+        /**
+         * <code>required bytes signature = 2;</code>
+         *
+         * @return Whether the signature field is set.
+         */
+        @java.lang.Override
+        public boolean hasSignature() {
+            return ((bitField0_ & 0x00000002) != 0);
+        }
+
+        /**
+         * <code>required bytes signature = 2;</code>
+         *
+         * @return The signature.
+         */
+        @java.lang.Override
+        public com.google.protobuf.ByteString getSignature() {
+            return signature_;
+        }
+
+        /**
+         * <code>optional .io.protos.ipns.IpnsEntry.ValidityType validityType = 3;</code>
+         *
+         * @return Whether the validityType field is set.
+         */
+        @java.lang.Override
+        public boolean hasValidityType() {
+            return ((bitField0_ & 0x00000004) != 0);
+        }
+
+        /**
+         * <code>optional .io.protos.ipns.IpnsEntry.ValidityType validityType = 3;</code>
+         *
+         * @return The validityType.
+         */
+        @java.lang.Override
+        public io.protos.ipns.IpnsProtos.IpnsEntry.ValidityType getValidityType() {
+            @SuppressWarnings("deprecation")
+            io.protos.ipns.IpnsProtos.IpnsEntry.ValidityType result = io.protos.ipns.IpnsProtos.IpnsEntry.ValidityType.valueOf(validityType_);
+            return result == null ? io.protos.ipns.IpnsProtos.IpnsEntry.ValidityType.EOL : result;
+        }
+
+        /**
+         * <code>optional bytes validity = 4;</code>
+         *
+         * @return Whether the validity field is set.
+         */
+        @java.lang.Override
+        public boolean hasValidity() {
+            return ((bitField0_ & 0x00000008) != 0);
+        }
+
+        /**
+         * <code>optional bytes validity = 4;</code>
+         *
+         * @return The validity.
+         */
+        @java.lang.Override
+        public com.google.protobuf.ByteString getValidity() {
+            return validity_;
+        }
+
+        /**
+         * <code>optional uint64 sequence = 5;</code>
+         *
+         * @return Whether the sequence field is set.
+         */
+        @java.lang.Override
+        public boolean hasSequence() {
+            return ((bitField0_ & 0x00000010) != 0);
+        }
+
+        /**
+         * <code>optional uint64 sequence = 5;</code>
+         *
+         * @return The sequence.
+         */
+        @java.lang.Override
+        public long getSequence() {
+            return sequence_;
+        }
+
+        /**
+         * <code>optional uint64 ttl = 6;</code>
+         *
+         * @return Whether the ttl field is set.
+         */
+        @java.lang.Override
+        public boolean hasTtl() {
+            return ((bitField0_ & 0x00000020) != 0);
+        }
+
+        /**
+         * <code>optional uint64 ttl = 6;</code>
+         *
+         * @return The ttl.
+         */
+        @java.lang.Override
+        public long getTtl() {
+            return ttl_;
+        }
+
+        /**
+         * <pre>
+         * in order for nodes to properly validate a record upon receipt, they need the public
+         * key associated with it. For old RSA keys, its easiest if we just send this as part of
+         * the record itself. For newer ed25519 keys, the public key can be embedded in the
+         * peerID, making this field unnecessary.
+         * </pre>
+         *
+         * <code>optional bytes pubKey = 7;</code>
+         *
+         * @return Whether the pubKey field is set.
+         */
+        @java.lang.Override
+        public boolean hasPubKey() {
+            return ((bitField0_ & 0x00000040) != 0);
+        }
+
+        /**
+         * <pre>
+         * in order for nodes to properly validate a record upon receipt, they need the public
+         * key associated with it. For old RSA keys, its easiest if we just send this as part of
+         * the record itself. For newer ed25519 keys, the public key can be embedded in the
+         * peerID, making this field unnecessary.
+         * </pre>
+         *
+         * <code>optional bytes pubKey = 7;</code>
+         *
+         * @return The pubKey.
+         */
+        @java.lang.Override
+        public com.google.protobuf.ByteString getPubKey() {
+            return pubKey_;
+        }
+
+        @java.lang.Override
+        public final boolean isInitialized() {
+            byte isInitialized = memoizedIsInitialized;
+            if (isInitialized == 1) return true;
+            if (isInitialized == 0) return false;
+
+            if (!hasValue()) {
+                memoizedIsInitialized = 0;
+                return false;
+            }
+            if (!hasSignature()) {
+                memoizedIsInitialized = 0;
+                return false;
+            }
+            memoizedIsInitialized = 1;
+            return true;
+        }
+
+        @java.lang.Override
+        public void writeTo(com.google.protobuf.CodedOutputStream output)
+                throws java.io.IOException {
+            if (((bitField0_ & 0x00000001) != 0)) {
+                output.writeBytes(1, value_);
+            }
+            if (((bitField0_ & 0x00000002) != 0)) {
+                output.writeBytes(2, signature_);
+            }
+            if (((bitField0_ & 0x00000004) != 0)) {
+                output.writeEnum(3, validityType_);
+            }
+            if (((bitField0_ & 0x00000008) != 0)) {
+                output.writeBytes(4, validity_);
+            }
+            if (((bitField0_ & 0x00000010) != 0)) {
+                output.writeUInt64(5, sequence_);
+            }
+            if (((bitField0_ & 0x00000020) != 0)) {
+                output.writeUInt64(6, ttl_);
+            }
+            if (((bitField0_ & 0x00000040) != 0)) {
+                output.writeBytes(7, pubKey_);
+            }
+            unknownFields.writeTo(output);
+        }
+
+        @java.lang.Override
+        public int getSerializedSize() {
+            int size = memoizedSize;
+            if (size != -1) return size;
+
+            size = 0;
+            if (((bitField0_ & 0x00000001) != 0)) {
+                size += com.google.protobuf.CodedOutputStream
+                        .computeBytesSize(1, value_);
+            }
+            if (((bitField0_ & 0x00000002) != 0)) {
+                size += com.google.protobuf.CodedOutputStream
+                        .computeBytesSize(2, signature_);
+            }
+            if (((bitField0_ & 0x00000004) != 0)) {
+                size += com.google.protobuf.CodedOutputStream
+                        .computeEnumSize(3, validityType_);
+            }
+            if (((bitField0_ & 0x00000008) != 0)) {
+                size += com.google.protobuf.CodedOutputStream
+                        .computeBytesSize(4, validity_);
+            }
+            if (((bitField0_ & 0x00000010) != 0)) {
+                size += com.google.protobuf.CodedOutputStream
+                        .computeUInt64Size(5, sequence_);
+            }
+            if (((bitField0_ & 0x00000020) != 0)) {
+                size += com.google.protobuf.CodedOutputStream
+                        .computeUInt64Size(6, ttl_);
+            }
+            if (((bitField0_ & 0x00000040) != 0)) {
+                size += com.google.protobuf.CodedOutputStream
+                        .computeBytesSize(7, pubKey_);
+            }
+            size += unknownFields.getSerializedSize();
+            memoizedSize = size;
+            return size;
+        }
+
+        @java.lang.Override
+        public boolean equals(final java.lang.Object obj) {
+            if (obj == this) {
+                return true;
+            }
+            if (!(obj instanceof io.protos.ipns.IpnsProtos.IpnsEntry)) {
+                return super.equals(obj);
+            }
+            io.protos.ipns.IpnsProtos.IpnsEntry other = (io.protos.ipns.IpnsProtos.IpnsEntry) obj;
+
+            if (hasValue() != other.hasValue()) return false;
+            if (hasValue()) {
+                if (!getValue()
+                        .equals(other.getValue())) return false;
+            }
+            if (hasSignature() != other.hasSignature()) return false;
+            if (hasSignature()) {
+                if (!getSignature()
+                        .equals(other.getSignature())) return false;
+            }
+            if (hasValidityType() != other.hasValidityType()) return false;
+            if (hasValidityType()) {
+                if (validityType_ != other.validityType_) return false;
+            }
+            if (hasValidity() != other.hasValidity()) return false;
+            if (hasValidity()) {
+                if (!getValidity()
+                        .equals(other.getValidity())) return false;
+            }
+            if (hasSequence() != other.hasSequence()) return false;
+            if (hasSequence()) {
+                if (getSequence()
+                        != other.getSequence()) return false;
+            }
+            if (hasTtl() != other.hasTtl()) return false;
+            if (hasTtl()) {
+                if (getTtl()
+                        != other.getTtl()) return false;
+            }
+            if (hasPubKey() != other.hasPubKey()) return false;
+            if (hasPubKey()) {
+                if (!getPubKey()
+                        .equals(other.getPubKey())) return false;
+            }
+            if (!unknownFields.equals(other.unknownFields)) return false;
+            return true;
+        }
+
+        @java.lang.Override
+        public int hashCode() {
+            if (memoizedHashCode != 0) {
+                return memoizedHashCode;
+            }
+            int hash = 41;
+            hash = (19 * hash) + getDescriptor().hashCode();
+            if (hasValue()) {
+                hash = (37 * hash) + VALUE_FIELD_NUMBER;
+                hash = (53 * hash) + getValue().hashCode();
+            }
+            if (hasSignature()) {
+                hash = (37 * hash) + SIGNATURE_FIELD_NUMBER;
+                hash = (53 * hash) + getSignature().hashCode();
+            }
+            if (hasValidityType()) {
+                hash = (37 * hash) + VALIDITYTYPE_FIELD_NUMBER;
+                hash = (53 * hash) + validityType_;
+            }
+            if (hasValidity()) {
+                hash = (37 * hash) + VALIDITY_FIELD_NUMBER;
+                hash = (53 * hash) + getValidity().hashCode();
+            }
+            if (hasSequence()) {
+                hash = (37 * hash) + SEQUENCE_FIELD_NUMBER;
+                hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+                        getSequence());
+            }
+            if (hasTtl()) {
+                hash = (37 * hash) + TTL_FIELD_NUMBER;
+                hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+                        getTtl());
+            }
+            if (hasPubKey()) {
+                hash = (37 * hash) + PUBKEY_FIELD_NUMBER;
+                hash = (53 * hash) + getPubKey().hashCode();
+            }
+            hash = (29 * hash) + unknownFields.hashCode();
+            memoizedHashCode = hash;
+            return hash;
+        }
+
+        @java.lang.Override
+        public Builder newBuilderForType() {
+            return newBuilder();
+        }
+
+        @java.lang.Override
+        public Builder toBuilder() {
+            return this == DEFAULT_INSTANCE
+                    ? new Builder() : new Builder().mergeFrom(this);
+        }
+
+        @java.lang.Override
+        protected Builder newBuilderForType(
+                com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+            Builder builder = new Builder(parent);
+            return builder;
+        }
+
+        @java.lang.Override
+        public com.google.protobuf.Parser<IpnsEntry> getParserForType() {
+            return PARSER;
+        }
+
+        @java.lang.Override
+        public io.protos.ipns.IpnsProtos.IpnsEntry getDefaultInstanceForType() {
+            return DEFAULT_INSTANCE;
+        }
+
+        /**
+         * Protobuf enum {@code io.protos.ipns.IpnsEntry.ValidityType}
+         */
+        public enum ValidityType
+                implements com.google.protobuf.ProtocolMessageEnum {
+            /**
+             * <pre>
+             * setting an EOL says "this record is valid until..."
+             * </pre>
+             *
+             * <code>EOL = 0;</code>
+             */
+            EOL(0),
+            ;
+
+            /**
+             * <pre>
+             * setting an EOL says "this record is valid until..."
+             * </pre>
+             *
+             * <code>EOL = 0;</code>
+             */
+            public static final int EOL_VALUE = 0;
+            private static final com.google.protobuf.Internal.EnumLiteMap<
+                    ValidityType> internalValueMap =
+                    new com.google.protobuf.Internal.EnumLiteMap<ValidityType>() {
+                        public ValidityType findValueByNumber(int number) {
+                            return ValidityType.forNumber(number);
+                        }
+                    };
+            private static final ValidityType[] VALUES = values();
+            private final int value;
+
+            private ValidityType(int value) {
+                this.value = value;
+            }
+
+            /**
+             * @param value The numeric wire value of the corresponding enum entry.
+             * @return The enum associated with the given numeric wire value.
+             * @deprecated Use {@link #forNumber(int)} instead.
+             */
+            @java.lang.Deprecated
+            public static ValidityType valueOf(int value) {
+                return forNumber(value);
+            }
+
+            /**
+             * @param value The numeric wire value of the corresponding enum entry.
+             * @return The enum associated with the given numeric wire value.
+             */
+            public static ValidityType forNumber(int value) {
+                switch (value) {
+                    case 0:
+                        return EOL;
+                    default:
+                        return null;
+                }
+            }
+
+            public static com.google.protobuf.Internal.EnumLiteMap<ValidityType>
+            internalGetValueMap() {
+                return internalValueMap;
+            }
+
+            public static final com.google.protobuf.Descriptors.EnumDescriptor
+            getDescriptor() {
+                return io.protos.ipns.IpnsProtos.IpnsEntry.getDescriptor().getEnumTypes().get(0);
+            }
+
+            public static ValidityType valueOf(
+                    com.google.protobuf.Descriptors.EnumValueDescriptor desc) {
+                if (desc.getType() != getDescriptor()) {
+                    throw new java.lang.IllegalArgumentException(
+                            "EnumValueDescriptor is not for this type.");
+                }
+                return VALUES[desc.getIndex()];
+            }
+
+            public final int getNumber() {
+                return value;
+            }
+
+            public final com.google.protobuf.Descriptors.EnumValueDescriptor
+            getValueDescriptor() {
+                return getDescriptor().getValues().get(ordinal());
+            }
+
+            public final com.google.protobuf.Descriptors.EnumDescriptor
+            getDescriptorForType() {
+                return getDescriptor();
+            }
+
+            // @@protoc_insertion_point(enum_scope:io.protos.ipns.IpnsEntry.ValidityType)
+        }
+
+        /**
+         * Protobuf type {@code io.protos.ipns.IpnsEntry}
+         */
+        public static final class Builder extends
+                com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
+                // @@protoc_insertion_point(builder_implements:io.protos.ipns.IpnsEntry)
+                io.protos.ipns.IpnsProtos.IpnsEntryOrBuilder {
+            private int bitField0_;
+            private com.google.protobuf.ByteString value_ = com.google.protobuf.ByteString.EMPTY;
+            private com.google.protobuf.ByteString signature_ = com.google.protobuf.ByteString.EMPTY;
+            private int validityType_ = 0;
+            private com.google.protobuf.ByteString validity_ = com.google.protobuf.ByteString.EMPTY;
+            private long sequence_;
+            private long ttl_;
+            private com.google.protobuf.ByteString pubKey_ = com.google.protobuf.ByteString.EMPTY;
+
+            // Construct using io.protos.ipns.IpnsProtos.IpnsEntry.newBuilder()
+            private Builder() {
+                maybeForceBuilderInitialization();
+            }
+
+            private Builder(
+                    com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+                super(parent);
+                maybeForceBuilderInitialization();
+            }
+
+            public static final com.google.protobuf.Descriptors.Descriptor
+            getDescriptor() {
+                return io.protos.ipns.IpnsProtos.internal_static_io_protos_ipns_IpnsEntry_descriptor;
+            }
+
+            @java.lang.Override
+            protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+            internalGetFieldAccessorTable() {
+                return io.protos.ipns.IpnsProtos.internal_static_io_protos_ipns_IpnsEntry_fieldAccessorTable
+                        .ensureFieldAccessorsInitialized(
+                                io.protos.ipns.IpnsProtos.IpnsEntry.class, io.protos.ipns.IpnsProtos.IpnsEntry.Builder.class);
+            }
+
+            private void maybeForceBuilderInitialization() {
+                if (com.google.protobuf.GeneratedMessageV3
+                        .alwaysUseFieldBuilders) {
+                }
+            }
+
+            @java.lang.Override
+            public Builder clear() {
+                super.clear();
+                value_ = com.google.protobuf.ByteString.EMPTY;
+                bitField0_ = (bitField0_ & ~0x00000001);
+                signature_ = com.google.protobuf.ByteString.EMPTY;
+                bitField0_ = (bitField0_ & ~0x00000002);
+                validityType_ = 0;
+                bitField0_ = (bitField0_ & ~0x00000004);
+                validity_ = com.google.protobuf.ByteString.EMPTY;
+                bitField0_ = (bitField0_ & ~0x00000008);
+                sequence_ = 0L;
+                bitField0_ = (bitField0_ & ~0x00000010);
+                ttl_ = 0L;
+                bitField0_ = (bitField0_ & ~0x00000020);
+                pubKey_ = com.google.protobuf.ByteString.EMPTY;
+                bitField0_ = (bitField0_ & ~0x00000040);
+                return this;
+            }
+
+            @java.lang.Override
+            public com.google.protobuf.Descriptors.Descriptor
+            getDescriptorForType() {
+                return io.protos.ipns.IpnsProtos.internal_static_io_protos_ipns_IpnsEntry_descriptor;
+            }
+
+            @java.lang.Override
+            public io.protos.ipns.IpnsProtos.IpnsEntry getDefaultInstanceForType() {
+                return io.protos.ipns.IpnsProtos.IpnsEntry.getDefaultInstance();
+            }
+
+            @java.lang.Override
+            public io.protos.ipns.IpnsProtos.IpnsEntry build() {
+                io.protos.ipns.IpnsProtos.IpnsEntry result = buildPartial();
+                if (!result.isInitialized()) {
+                    throw newUninitializedMessageException(result);
+                }
+                return result;
+            }
+
+            @java.lang.Override
+            public io.protos.ipns.IpnsProtos.IpnsEntry buildPartial() {
+                io.protos.ipns.IpnsProtos.IpnsEntry result = new io.protos.ipns.IpnsProtos.IpnsEntry(this);
+                int from_bitField0_ = bitField0_;
+                int to_bitField0_ = 0;
+                if (((from_bitField0_ & 0x00000001) != 0)) {
+                    to_bitField0_ |= 0x00000001;
+                }
+                result.value_ = value_;
+                if (((from_bitField0_ & 0x00000002) != 0)) {
+                    to_bitField0_ |= 0x00000002;
+                }
+                result.signature_ = signature_;
+                if (((from_bitField0_ & 0x00000004) != 0)) {
+                    to_bitField0_ |= 0x00000004;
+                }
+                result.validityType_ = validityType_;
+                if (((from_bitField0_ & 0x00000008) != 0)) {
+                    to_bitField0_ |= 0x00000008;
+                }
+                result.validity_ = validity_;
+                if (((from_bitField0_ & 0x00000010) != 0)) {
+                    result.sequence_ = sequence_;
+                    to_bitField0_ |= 0x00000010;
+                }
+                if (((from_bitField0_ & 0x00000020) != 0)) {
+                    result.ttl_ = ttl_;
+                    to_bitField0_ |= 0x00000020;
+                }
+                if (((from_bitField0_ & 0x00000040) != 0)) {
+                    to_bitField0_ |= 0x00000040;
+                }
+                result.pubKey_ = pubKey_;
+                result.bitField0_ = to_bitField0_;
+                onBuilt();
+                return result;
+            }
+
+            @java.lang.Override
+            public Builder clone() {
+                return super.clone();
+            }
+
+            @java.lang.Override
+            public Builder setField(
+                    com.google.protobuf.Descriptors.FieldDescriptor field,
+                    java.lang.Object value) {
+                return super.setField(field, value);
+            }
+
+            @java.lang.Override
+            public Builder clearField(
+                    com.google.protobuf.Descriptors.FieldDescriptor field) {
+                return super.clearField(field);
+            }
+
+            @java.lang.Override
+            public Builder clearOneof(
+                    com.google.protobuf.Descriptors.OneofDescriptor oneof) {
+                return super.clearOneof(oneof);
+            }
+
+            @java.lang.Override
+            public Builder setRepeatedField(
+                    com.google.protobuf.Descriptors.FieldDescriptor field,
+                    int index, java.lang.Object value) {
+                return super.setRepeatedField(field, index, value);
+            }
+
+            @java.lang.Override
+            public Builder addRepeatedField(
+                    com.google.protobuf.Descriptors.FieldDescriptor field,
+                    java.lang.Object value) {
+                return super.addRepeatedField(field, value);
+            }
+
+            @java.lang.Override
+            public Builder mergeFrom(com.google.protobuf.Message other) {
+                if (other instanceof io.protos.ipns.IpnsProtos.IpnsEntry) {
+                    return mergeFrom((io.protos.ipns.IpnsProtos.IpnsEntry) other);
+                } else {
+                    super.mergeFrom(other);
+                    return this;
+                }
+            }
+
+            public Builder mergeFrom(io.protos.ipns.IpnsProtos.IpnsEntry other) {
+                if (other == io.protos.ipns.IpnsProtos.IpnsEntry.getDefaultInstance()) return this;
+                if (other.hasValue()) {
+                    setValue(other.getValue());
+                }
+                if (other.hasSignature()) {
+                    setSignature(other.getSignature());
+                }
+                if (other.hasValidityType()) {
+                    setValidityType(other.getValidityType());
+                }
+                if (other.hasValidity()) {
+                    setValidity(other.getValidity());
+                }
+                if (other.hasSequence()) {
+                    setSequence(other.getSequence());
+                }
+                if (other.hasTtl()) {
+                    setTtl(other.getTtl());
+                }
+                if (other.hasPubKey()) {
+                    setPubKey(other.getPubKey());
+                }
+                this.mergeUnknownFields(other.unknownFields);
+                onChanged();
+                return this;
+            }
+
+            @java.lang.Override
+            public final boolean isInitialized() {
+                if (!hasValue()) {
+                    return false;
+                }
+                if (!hasSignature()) {
+                    return false;
+                }
+                return true;
+            }
+
+            @java.lang.Override
+            public Builder mergeFrom(
+                    com.google.protobuf.CodedInputStream input,
+                    com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+                    throws java.io.IOException {
+                io.protos.ipns.IpnsProtos.IpnsEntry parsedMessage = null;
+                try {
+                    parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
+                } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+                    parsedMessage = (io.protos.ipns.IpnsProtos.IpnsEntry) e.getUnfinishedMessage();
+                    throw e.unwrapIOException();
+                } finally {
+                    if (parsedMessage != null) {
+                        mergeFrom(parsedMessage);
+                    }
+                }
+                return this;
+            }
+
+            /**
+             * <code>required bytes value = 1;</code>
+             *
+             * @return Whether the value field is set.
+             */
+            @java.lang.Override
+            public boolean hasValue() {
+                return ((bitField0_ & 0x00000001) != 0);
+            }
+
+            /**
+             * <code>required bytes value = 1;</code>
+             *
+             * @return The value.
+             */
+            @java.lang.Override
+            public com.google.protobuf.ByteString getValue() {
+                return value_;
+            }
+
+            /**
+             * <code>required bytes value = 1;</code>
+             *
+             * @param value The value to set.
+             * @return This builder for chaining.
+             */
+            public Builder setValue(com.google.protobuf.ByteString value) {
+                if (value == null) {
+                    throw new NullPointerException();
+                }
+                bitField0_ |= 0x00000001;
+                value_ = value;
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>required bytes value = 1;</code>
+             *
+             * @return This builder for chaining.
+             */
+            public Builder clearValue() {
+                bitField0_ = (bitField0_ & ~0x00000001);
+                value_ = getDefaultInstance().getValue();
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>required bytes signature = 2;</code>
+             *
+             * @return Whether the signature field is set.
+             */
+            @java.lang.Override
+            public boolean hasSignature() {
+                return ((bitField0_ & 0x00000002) != 0);
+            }
+
+            /**
+             * <code>required bytes signature = 2;</code>
+             *
+             * @return The signature.
+             */
+            @java.lang.Override
+            public com.google.protobuf.ByteString getSignature() {
+                return signature_;
+            }
+
+            /**
+             * <code>required bytes signature = 2;</code>
+             *
+             * @param value The signature to set.
+             * @return This builder for chaining.
+             */
+            public Builder setSignature(com.google.protobuf.ByteString value) {
+                if (value == null) {
+                    throw new NullPointerException();
+                }
+                bitField0_ |= 0x00000002;
+                signature_ = value;
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>required bytes signature = 2;</code>
+             *
+             * @return This builder for chaining.
+             */
+            public Builder clearSignature() {
+                bitField0_ = (bitField0_ & ~0x00000002);
+                signature_ = getDefaultInstance().getSignature();
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>optional .io.protos.ipns.IpnsEntry.ValidityType validityType = 3;</code>
+             *
+             * @return Whether the validityType field is set.
+             */
+            @java.lang.Override
+            public boolean hasValidityType() {
+                return ((bitField0_ & 0x00000004) != 0);
+            }
+
+            /**
+             * <code>optional .io.protos.ipns.IpnsEntry.ValidityType validityType = 3;</code>
+             *
+             * @return The validityType.
+             */
+            @java.lang.Override
+            public io.protos.ipns.IpnsProtos.IpnsEntry.ValidityType getValidityType() {
+                @SuppressWarnings("deprecation")
+                io.protos.ipns.IpnsProtos.IpnsEntry.ValidityType result = io.protos.ipns.IpnsProtos.IpnsEntry.ValidityType.valueOf(validityType_);
+                return result == null ? io.protos.ipns.IpnsProtos.IpnsEntry.ValidityType.EOL : result;
+            }
+
+            /**
+             * <code>optional .io.protos.ipns.IpnsEntry.ValidityType validityType = 3;</code>
+             *
+             * @param value The validityType to set.
+             * @return This builder for chaining.
+             */
+            public Builder setValidityType(io.protos.ipns.IpnsProtos.IpnsEntry.ValidityType value) {
+                if (value == null) {
+                    throw new NullPointerException();
+                }
+                bitField0_ |= 0x00000004;
+                validityType_ = value.getNumber();
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>optional .io.protos.ipns.IpnsEntry.ValidityType validityType = 3;</code>
+             *
+             * @return This builder for chaining.
+             */
+            public Builder clearValidityType() {
+                bitField0_ = (bitField0_ & ~0x00000004);
+                validityType_ = 0;
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>optional bytes validity = 4;</code>
+             *
+             * @return Whether the validity field is set.
+             */
+            @java.lang.Override
+            public boolean hasValidity() {
+                return ((bitField0_ & 0x00000008) != 0);
+            }
+
+            /**
+             * <code>optional bytes validity = 4;</code>
+             *
+             * @return The validity.
+             */
+            @java.lang.Override
+            public com.google.protobuf.ByteString getValidity() {
+                return validity_;
+            }
+
+            /**
+             * <code>optional bytes validity = 4;</code>
+             *
+             * @param value The validity to set.
+             * @return This builder for chaining.
+             */
+            public Builder setValidity(com.google.protobuf.ByteString value) {
+                if (value == null) {
+                    throw new NullPointerException();
+                }
+                bitField0_ |= 0x00000008;
+                validity_ = value;
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>optional bytes validity = 4;</code>
+             *
+             * @return This builder for chaining.
+             */
+            public Builder clearValidity() {
+                bitField0_ = (bitField0_ & ~0x00000008);
+                validity_ = getDefaultInstance().getValidity();
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>optional uint64 sequence = 5;</code>
+             *
+             * @return Whether the sequence field is set.
+             */
+            @java.lang.Override
+            public boolean hasSequence() {
+                return ((bitField0_ & 0x00000010) != 0);
+            }
+
+            /**
+             * <code>optional uint64 sequence = 5;</code>
+             *
+             * @return The sequence.
+             */
+            @java.lang.Override
+            public long getSequence() {
+                return sequence_;
+            }
+
+            /**
+             * <code>optional uint64 sequence = 5;</code>
+             *
+             * @param value The sequence to set.
+             * @return This builder for chaining.
+             */
+            public Builder setSequence(long value) {
+                bitField0_ |= 0x00000010;
+                sequence_ = value;
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>optional uint64 sequence = 5;</code>
+             *
+             * @return This builder for chaining.
+             */
+            public Builder clearSequence() {
+                bitField0_ = (bitField0_ & ~0x00000010);
+                sequence_ = 0L;
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>optional uint64 ttl = 6;</code>
+             *
+             * @return Whether the ttl field is set.
+             */
+            @java.lang.Override
+            public boolean hasTtl() {
+                return ((bitField0_ & 0x00000020) != 0);
+            }
+
+            /**
+             * <code>optional uint64 ttl = 6;</code>
+             *
+             * @return The ttl.
+             */
+            @java.lang.Override
+            public long getTtl() {
+                return ttl_;
+            }
+
+            /**
+             * <code>optional uint64 ttl = 6;</code>
+             *
+             * @param value The ttl to set.
+             * @return This builder for chaining.
+             */
+            public Builder setTtl(long value) {
+                bitField0_ |= 0x00000020;
+                ttl_ = value;
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <code>optional uint64 ttl = 6;</code>
+             *
+             * @return This builder for chaining.
+             */
+            public Builder clearTtl() {
+                bitField0_ = (bitField0_ & ~0x00000020);
+                ttl_ = 0L;
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <pre>
+             * in order for nodes to properly validate a record upon receipt, they need the public
+             * key associated with it. For old RSA keys, its easiest if we just send this as part of
+             * the record itself. For newer ed25519 keys, the public key can be embedded in the
+             * peerID, making this field unnecessary.
+             * </pre>
+             *
+             * <code>optional bytes pubKey = 7;</code>
+             *
+             * @return Whether the pubKey field is set.
+             */
+            @java.lang.Override
+            public boolean hasPubKey() {
+                return ((bitField0_ & 0x00000040) != 0);
+            }
+
+            /**
+             * <pre>
+             * in order for nodes to properly validate a record upon receipt, they need the public
+             * key associated with it. For old RSA keys, its easiest if we just send this as part of
+             * the record itself. For newer ed25519 keys, the public key can be embedded in the
+             * peerID, making this field unnecessary.
+             * </pre>
+             *
+             * <code>optional bytes pubKey = 7;</code>
+             *
+             * @return The pubKey.
+             */
+            @java.lang.Override
+            public com.google.protobuf.ByteString getPubKey() {
+                return pubKey_;
+            }
+
+            /**
+             * <pre>
+             * in order for nodes to properly validate a record upon receipt, they need the public
+             * key associated with it. For old RSA keys, its easiest if we just send this as part of
+             * the record itself. For newer ed25519 keys, the public key can be embedded in the
+             * peerID, making this field unnecessary.
+             * </pre>
+             *
+             * <code>optional bytes pubKey = 7;</code>
+             *
+             * @param value The pubKey to set.
+             * @return This builder for chaining.
+             */
+            public Builder setPubKey(com.google.protobuf.ByteString value) {
+                if (value == null) {
+                    throw new NullPointerException();
+                }
+                bitField0_ |= 0x00000040;
+                pubKey_ = value;
+                onChanged();
+                return this;
+            }
+
+            /**
+             * <pre>
+             * in order for nodes to properly validate a record upon receipt, they need the public
+             * key associated with it. For old RSA keys, its easiest if we just send this as part of
+             * the record itself. For newer ed25519 keys, the public key can be embedded in the
+             * peerID, making this field unnecessary.
+             * </pre>
+             *
+             * <code>optional bytes pubKey = 7;</code>
+             *
+             * @return This builder for chaining.
+             */
+            public Builder clearPubKey() {
+                bitField0_ = (bitField0_ & ~0x00000040);
+                pubKey_ = getDefaultInstance().getPubKey();
+                onChanged();
+                return this;
+            }
+
+            @java.lang.Override
+            public final Builder setUnknownFields(
+                    final com.google.protobuf.UnknownFieldSet unknownFields) {
+                return super.setUnknownFields(unknownFields);
+            }
+
+            @java.lang.Override
+            public final Builder mergeUnknownFields(
+                    final com.google.protobuf.UnknownFieldSet unknownFields) {
+                return super.mergeUnknownFields(unknownFields);
+            }
 
 
-      // @@protoc_insertion_point(builder_scope:io.protos.ipns.IpnsEntry)
+            // @@protoc_insertion_point(builder_scope:io.protos.ipns.IpnsEntry)
+        }
+
     }
 
-    // @@protoc_insertion_point(class_scope:io.protos.ipns.IpnsEntry)
-    private static final io.protos.ipns.IpnsProtos.IpnsEntry DEFAULT_INSTANCE;
-    static {
-      DEFAULT_INSTANCE = new io.protos.ipns.IpnsProtos.IpnsEntry();
-    }
-
-    public static io.protos.ipns.IpnsProtos.IpnsEntry getDefaultInstance() {
-      return DEFAULT_INSTANCE;
-    }
-
-    @java.lang.Deprecated public static final com.google.protobuf.Parser<IpnsEntry>
-        PARSER = new com.google.protobuf.AbstractParser<IpnsEntry>() {
-      @java.lang.Override
-      public IpnsEntry parsePartialFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws com.google.protobuf.InvalidProtocolBufferException {
-        return new IpnsEntry(input, extensionRegistry);
-      }
-    };
-
-    public static com.google.protobuf.Parser<IpnsEntry> parser() {
-      return PARSER;
-    }
-
-    @java.lang.Override
-    public com.google.protobuf.Parser<IpnsEntry> getParserForType() {
-      return PARSER;
-    }
-
-    @java.lang.Override
-    public io.protos.ipns.IpnsProtos.IpnsEntry getDefaultInstanceForType() {
-      return DEFAULT_INSTANCE;
-    }
-
-  }
-
-  private static final com.google.protobuf.Descriptors.Descriptor
-    internal_static_io_protos_ipns_IpnsEntry_descriptor;
-  private static final 
-    com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-      internal_static_io_protos_ipns_IpnsEntry_fieldAccessorTable;
-
-  public static com.google.protobuf.Descriptors.FileDescriptor
-      getDescriptor() {
-    return descriptor;
-  }
-  private static  com.google.protobuf.Descriptors.FileDescriptor
-      descriptor;
-  static {
-    java.lang.String[] descriptorData = {
-      "\n\nipns.proto\022\016io.protos.ipns\"\305\001\n\tIpnsEnt" +
-      "ry\022\r\n\005value\030\001 \002(\014\022\021\n\tsignature\030\002 \002(\014\022<\n\014" +
-      "validityType\030\003 \001(\0162&.io.protos.ipns.Ipns" +
-      "Entry.ValidityType\022\020\n\010validity\030\004 \001(\014\022\020\n\010" +
-      "sequence\030\005 \001(\004\022\013\n\003ttl\030\006 \001(\004\022\016\n\006pubKey\030\007 " +
-      "\001(\014\"\027\n\014ValidityType\022\007\n\003EOL\020\000B\034\n\016io.proto" +
-      "s.ipnsB\nIpnsProtos"
-    };
-    descriptor = com.google.protobuf.Descriptors.FileDescriptor
-      .internalBuildGeneratedFileFrom(descriptorData,
-        new com.google.protobuf.Descriptors.FileDescriptor[] {
-        });
-    internal_static_io_protos_ipns_IpnsEntry_descriptor =
-      getDescriptor().getMessageTypes().get(0);
-    internal_static_io_protos_ipns_IpnsEntry_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
-        internal_static_io_protos_ipns_IpnsEntry_descriptor,
-        new java.lang.String[] { "Value", "Signature", "ValidityType", "Validity", "Sequence", "Ttl", "PubKey", });
-  }
-
-  // @@protoc_insertion_point(outer_class_scope)
+    // @@protoc_insertion_point(outer_class_scope)
 }

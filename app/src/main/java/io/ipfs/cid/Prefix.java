@@ -21,6 +21,30 @@ public class Prefix implements Builder {
         MhLength = mhLength;
     }
 
+    public static Prefix PrefixFromBytes(byte[] buf) {
+
+        try (InputStream inputStream = new ByteArrayInputStream(buf)) {
+            long version = Multihash.readVarint(inputStream);
+            if (version != 1 && version != 0) {
+                throw new Exception("invalid version");
+            }
+            long codec = Multihash.readVarint(inputStream);
+            if (!(codec == Cid.DagProtobuf || codec == Cid.Raw || codec == Cid.Libp2pKey)) {
+                throw new Exception("not supported codec");
+            }
+
+            long mhtype = Multihash.readVarint(inputStream);
+
+            long mhlen = Multihash.readVarint(inputStream);
+
+            return new Prefix(codec, mhlen, mhtype, version);
+
+
+        } catch (Throwable throwable) {
+            throw new RuntimeException(throwable);
+        }
+    }
+
     @Override
     public Cid Sum(byte[] data) {
 
@@ -80,30 +104,6 @@ public class Prefix implements Builder {
             Version = 1;
         }
         return this;
-    }
-
-    public static Prefix PrefixFromBytes(byte[] buf) {
-
-        try (InputStream inputStream = new ByteArrayInputStream(buf)) {
-            long version = Multihash.readVarint(inputStream);
-            if (version != 1 && version != 0) {
-                throw new Exception("invalid version");
-            }
-            long codec = Multihash.readVarint(inputStream);
-            if (!(codec == Cid.DagProtobuf || codec == Cid.Raw || codec == Cid.Libp2pKey)) {
-                throw new Exception("not supported codec");
-            }
-
-            long mhtype = Multihash.readVarint(inputStream);
-
-            long mhlen = Multihash.readVarint(inputStream);
-
-            return new Prefix(codec, mhlen, mhtype, version);
-
-
-        } catch (Throwable throwable) {
-            throw new RuntimeException(throwable);
-        }
     }
 
     public byte[] Bytes() {

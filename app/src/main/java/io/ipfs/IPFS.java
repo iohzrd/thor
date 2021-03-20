@@ -19,7 +19,6 @@ import java.net.ServerSocket;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.Callable;
@@ -40,10 +39,8 @@ import io.ipfs.bitswap.LiteHost;
 import io.ipfs.cid.Cid;
 import io.ipfs.exchange.Interface;
 import io.ipfs.format.BlockStore;
-import io.ipfs.format.Metrics;
 import io.ipfs.utils.Link;
 import io.ipfs.utils.LinkCloseable;
-import io.ipfs.utils.MetricsBlockStore;
 import io.ipfs.utils.Progress;
 import io.ipfs.utils.ProgressStream;
 import io.ipfs.utils.Reachable;
@@ -64,7 +61,6 @@ import lite.PeerInfo;
 import lite.Providers;
 import lite.ResolveInfo;
 import threads.thor.core.blocks.BLOCKS;
-import threads.thor.core.events.EVENTS;
 
 public class IPFS implements Listener, ContentRouting {
     public static final int WRITE_TIMEOUT = 60;
@@ -129,8 +125,8 @@ public class IPFS implements Listener, ContentRouting {
     private static final String PRIVATE_KEY = "privateKey";
     private static final String CONCURRENCY_KEY = "concurrencyKey";
     private static final String TAG = IPFS.class.getSimpleName();
+    private static final ExecutorService READER = Executors.newFixedThreadPool(4);
     private static IPFS INSTANCE = null;
-    final ExecutorService READER = Executors.newFixedThreadPool(4);
     private final Node node;
     private final Object locker = new Object();
     private final BLOCKS blocks;
@@ -140,20 +136,6 @@ public class IPFS implements Listener, ContentRouting {
     private Reachable reachable = Reachable.UNKNOWN;
     private StreamHandler handler;
 
-
-    public static int getConcurrencyValue(@NonNull Context context) {
-        Objects.requireNonNull(context);
-        SharedPreferences sharedPref = context.getSharedPreferences(PREF_KEY, Context.MODE_PRIVATE);
-        return sharedPref.getInt(CONCURRENCY_KEY, 25);
-    }
-
-    public static void setConcurrencyValue(@NonNull Context context, int timeout) {
-        Objects.requireNonNull(context);
-        SharedPreferences sharedPref = context.getSharedPreferences(PREF_KEY, Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPref.edit();
-        editor.putInt(CONCURRENCY_KEY, timeout);
-        editor.apply();
-    }
 
     private IPFS(@NonNull Context context) throws Exception {
 
@@ -197,6 +179,20 @@ public class IPFS implements Listener, ContentRouting {
         node.setEnableReachService(false);
         node.setEnableConnService(false);
 
+    }
+
+    public static int getConcurrencyValue(@NonNull Context context) {
+        Objects.requireNonNull(context);
+        SharedPreferences sharedPref = context.getSharedPreferences(PREF_KEY, Context.MODE_PRIVATE);
+        return sharedPref.getInt(CONCURRENCY_KEY, 25);
+    }
+
+    public static void setConcurrencyValue(@NonNull Context context, int timeout) {
+        Objects.requireNonNull(context);
+        SharedPreferences sharedPref = context.getSharedPreferences(PREF_KEY, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putInt(CONCURRENCY_KEY, timeout);
+        editor.apply();
     }
 
     public static int getSwarmPort(@NonNull Context context) {
@@ -1266,7 +1262,7 @@ public class IPFS implements Listener, ContentRouting {
 
         READER.execute(() -> {
             try {
-                handler.handle(new io.libp2p.network.Stream() {
+                handler.message(new io.libp2p.network.Stream() {
                     @NonNull
                     @Override
                     public Protocol Protocol() {
@@ -1296,11 +1292,19 @@ public class IPFS implements Listener, ContentRouting {
         });
     }
 
+
+    @Override
+    public boolean bitSwapGate(String pid) {
+        LogUtils.error(TAG, "BitSwapGate " + pid);
+        Objects.requireNonNull(handler);
+        return handler.gate(new PeerID(pid));
+    }
+
     @Override
     public void bitSwapError(String pid, String proto, String error) {
         LogUtils.error(TAG, "Receive error from " + pid + " proto " + proto + " error " + error);
         Objects.requireNonNull(handler);
-        handler.handle(new io.libp2p.network.Stream() {
+        handler.error(new io.libp2p.network.Stream() {
             @NonNull
             @Override
             public Protocol Protocol() {
@@ -1383,7 +1387,6 @@ public class IPFS implements Listener, ContentRouting {
             return false;
         }
     }
-
 
 
     public long numSwarmPeers() {

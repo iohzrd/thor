@@ -2,6 +2,8 @@ package io.ipfs.offline;
 
 import androidx.annotation.NonNull;
 
+import java.util.List;
+
 import io.Closeable;
 import io.ipfs.cid.Cid;
 import io.ipfs.exchange.Interface;
@@ -18,6 +20,11 @@ public class Exchange implements Interface {
     @Override
     public Block getBlock(@NonNull Closeable closeable, @NonNull Cid cid) {
         return blockstore.Get(cid);
+    }
+
+    @Override
+    public void loadBlocks(@NonNull Closeable closeable, @NonNull List<Cid> preload) {
+        // nothing to do here
     }
 
 

@@ -3,6 +3,9 @@ package io.ipfs.blockservice;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import io.Closeable;
 import io.ipfs.cid.Cid;
 import io.ipfs.exchange.Fetcher;
@@ -25,6 +28,19 @@ public interface BlockService extends BlockGetter {
             @Override
             public void AddBlock(@NonNull Block block) {
                 bs.Put(block);
+            }
+
+            @Override
+            public void LoadBlocks(@NonNull Closeable closeable, @NonNull List<Cid> cids) {
+                List<Cid> preload = new ArrayList<>();
+                for (Cid cid : cids) {
+                    if (!bs.Has(cid)) {
+                        preload.add(cid);
+                    }
+                }
+                if (!preload.isEmpty()) {
+                    rem.loadBlocks(closeable, preload);
+                }
             }
 
 

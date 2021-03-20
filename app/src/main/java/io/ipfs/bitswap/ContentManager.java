@@ -23,13 +23,13 @@ import io.libp2p.routing.Providers;
 
 public class ContentManager {
     public static final int PROVIDERS = 10;
-    private static final int TIMEOUT = 5000;
+    private static final int TIMEOUT = 3000;
     private static final String TAG = ContentManager.class.getSimpleName();
-    private static final ExecutorService WANTS = Executors.newFixedThreadPool(4);
+    private static final ExecutorService WANTS = Executors.newFixedThreadPool(8);
     private static final ExecutorService HAVES = Executors.newFixedThreadPool(4);
     private final ConcurrentSkipListSet<Cid> searches = new ConcurrentSkipListSet<>();
-    private final ConcurrentSkipListSet<Cid> valids = new ConcurrentSkipListSet<>();
     private final ConcurrentSkipListSet<PeerID> faulty = new ConcurrentSkipListSet<>();
+    private final ConcurrentSkipListSet<PeerID> peers = new ConcurrentSkipListSet<>();
     private final ConcurrentLinkedDeque<PeerID> priority = new ConcurrentLinkedDeque<>();
     private final BitSwapNetwork network;
     private final BlockStore blockStore;
@@ -56,6 +56,7 @@ public class ContentManager {
         searches.clear();
         priority.clear();
         notify.clear();
+        peers.clear();
     }
 
     public void runWantHaves(@NonNull Closeable closeable, @NonNull Cid cid) throws ClosedException {
@@ -74,21 +75,32 @@ public class ContentManager {
                         if (!wants.contains(peer)) {
                             wants.add(peer);
                             WANTS.execute(() -> {
+                                if (searches.contains(cid)) { // check still valid
+                                    long start = System.currentTimeMillis();
+                                    try {
 
-                                try {
-                                    if (network.ConnectTo(closeable, peer, true)) {
-                                        LogUtils.verbose(TAG, "Found New Provider " + pid);
-                                        MessageWriter.sendWantsMessage(closeable, network, peer,
-                                                Collections.singletonList(cid));
+                                        if (network.ConnectTo(() -> closeable.isClosed()
+                                                        || ((System.currentTimeMillis() - start) > TIMEOUT),
+                                                peer, true)) {
+                                            if (searches.contains(cid)) { // check still valid
+                                                LogUtils.verbose(TAG, "Found New Provider " + pid
+                                                        + " for " + cid.String());
+                                                peers.add(peer);
+                                                MessageWriter.sendWantsMessage(closeable, network, peer,
+                                                        Collections.singletonList(cid));
+                                            }
+                                        }
+                                    } catch (ClosedException ignore) {
+                                        // ignore
+                                    } catch (Throwable throwable) {
+                                        priority.remove(peer);
+                                        faulty.add(peer);
+                                        //LogUtils.error(TAG, throwable);
+                                    } finally {
+                                        LogUtils.error(TAG, "Provider Peer " +
+                                                peer.String() + " took " + (System.currentTimeMillis() - start));
                                     }
-                                } catch (ClosedException ignore) {
-                                    // ignore
-                                } catch (Throwable throwable) {
-                                    priority.remove(peer);
-                                    faulty.add(peer);
-                                    //LogUtils.error(TAG, throwable);
                                 }
-
                             });
 
                         }
@@ -117,19 +129,23 @@ public class ContentManager {
                 if (!wants.contains(peer)) {
                     wants.add(peer);
                     hasRun = true;
+                    long start = System.currentTimeMillis();
                     try {
-                        if (network.ConnectTo(closeable, peer, true)) {
+                        if (searches.contains(cid)) { // check still valid
+                            peers.add(peer);
                             MessageWriter.sendWantsMessage(closeable, network, peer,
                                     Collections.singletonList(cid));
-                        } else {
-                            priority.remove(peer);
                         }
                     } catch (ClosedException closedException) {
-                        throw closedException;
+                        // ignore
                     } catch (Throwable throwable) {
-                        //LogUtils.error(TAG, throwable);
+                        LogUtils.error(TAG, throwable);
                         priority.remove(peer);
                         faulty.add(peer);
+                        peers.remove(peer);
+                    } finally {
+                        LogUtils.error(TAG, "Priority Peer " +
+                                peer.String() + " took " + (System.currentTimeMillis() - start));
                     }
                     // check priority after each run
                     break;
@@ -140,6 +156,7 @@ public class ContentManager {
                 throw new ClosedException();
             }
 
+
             if (!hasRun) {
                 List<PeerID> cons = network.getPeers();
                 for (PeerID peer : cons) {
@@ -148,18 +165,21 @@ public class ContentManager {
                         haves.add(peer);
 
                         HAVES.execute(() -> {
+                            long start = System.currentTimeMillis();
                             try {
-                                long start = System.currentTimeMillis();
-                                if (network.ConnectTo(() -> closeable.isClosed()
-                                        || ((System.currentTimeMillis() - start) > TIMEOUT), peer, false)) {
-                                    MessageWriter.sendHaveMessage(closeable, network, peer,
-                                            Collections.singletonList(cid));
-                                }
+                                peers.add(peer);
+                                MessageWriter.sendHaveMessage(closeable, network, peer,
+                                        Collections.singletonList(cid));
+
                             } catch (ClosedException closedException) {
                                 // ignore
                             } catch (Throwable throwable) {
                                 //LogUtils.error(TAG, throwable);
+                                peers.remove(peer);
                                 faulty.add(peer);
+                            } finally {
+                                LogUtils.error(TAG, "Network Peer " +
+                                        peer.String() + " took " + (System.currentTimeMillis() - start));
                             }
                         });
                         // check priority after each run
@@ -176,21 +196,21 @@ public class ContentManager {
     public Block GetBlock(@NonNull Closeable closeable, @NonNull Cid cid) {
 
         try {
-            LogUtils.info(TAG, "GetBlock Start " + cid.String());
             if (!searches.contains(cid)) {
+                LogUtils.info(TAG, "BlockGet " + cid.String());
                 searches.add(cid);
-                valids.add(cid);
                 Executors.newSingleThreadExecutor().execute(() -> {
                     try {
                         runWantHaves(closeable, cid);
                     } catch (ClosedException closedException) {
+                        LogUtils.error(TAG, "BlockClosed " + cid.String());
                         notify.Release(cid);
                     }
                 });
             }
             return notify.Subscribe(cid);
         } finally {
-            LogUtils.info(TAG, "GetBlock Release " + cid.String());
+            LogUtils.info(TAG, "BlockRelease  " + cid.String());
             searches.remove(cid);
         }
 
@@ -198,29 +218,40 @@ public class ContentManager {
 
     public void BlockReceived(@NonNull PeerID peer, @NonNull Block block) {
 
-        Cid cid = block.Cid();
-
         try {
-            // TODO maybe the spam filter is not really necessary
-            if (valids.contains(cid)) {
-                blockStore.Put(block);
-            } else {
-                LogUtils.error(TAG, "!!! BlockReceived for not asked block (SPAM) !!!");
+            Cid cid = block.Cid();
+            LogUtils.info(TAG, "BlockReceived " + cid.String());
+            blockStore.Put(block);
+            if (searches.contains(cid)) {
+                faulty.remove(peer);
+                priority.remove(peer);
+                priority.add(peer);
             }
+            notify.Publish(block);
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         }
-
-        if (searches.contains(cid)) {
-
-            LogUtils.info(TAG, "BlockReceived " + cid.String());
-
-            notify.Publish(block);
-            faulty.remove(peer);
-            priority.remove(peer);
-            priority.add(peer);
-
-        }
     }
 
+    public boolean GatePeer(PeerID peerID) {
+        return !peers.contains(peerID);
+    }
+
+    public void LoadBlocks(@NonNull Closeable closeable, @NonNull List<Cid> cids) {
+
+        LogUtils.error(TAG, "LoadBlocks " + cids.size());
+
+        for (PeerID peer : priority) {
+            LogUtils.error(TAG, "LoadBlock " + peer.String());
+            long start = System.currentTimeMillis();
+            try {
+                MessageWriter.sendWantsMessage(closeable, network, peer, cids);
+            } catch (Throwable throwable) {
+                LogUtils.error(TAG, "LoadBlock Error " + throwable.getLocalizedMessage());
+            } finally {
+                LogUtils.error(TAG, "Load Peer " +
+                        peer.String() + " took " + (System.currentTimeMillis() - start));
+            }
+        }
+    }
 }

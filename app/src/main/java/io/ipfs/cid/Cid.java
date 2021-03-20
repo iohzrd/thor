@@ -22,19 +22,6 @@ public class Cid implements Comparable<Cid> {
 
     private final byte[] multihash;
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Cid cid = (Cid) o;
-        return Arrays.equals(multihash, cid.multihash);
-    }
-
-    @Override
-    public int hashCode() {
-        return Arrays.hashCode(multihash);
-    }
-
     public Cid(byte[] multihash) {
         this.multihash = multihash;
     }
@@ -115,6 +102,19 @@ public class Cid implements Comparable<Cid> {
         }
 
         return nil*/
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Cid cid = (Cid) o;
+        return Arrays.equals(multihash, cid.multihash);
+    }
+
+    @Override
+    public int hashCode() {
+        return Arrays.hashCode(multihash);
     }
 
     public String String() {

@@ -11,21 +11,21 @@ public class Protocol {
     public static final Protocol ProtocolBitswapOneOne = new Protocol("/ipfs/bitswap/1.1.0");
     private final String id;
 
+    public Protocol(@NonNull String id) {
+        this.id = id;
+    }
+
     public static Protocol create(@NonNull String protocol) {
 
-        if(Objects.equals(protocol, ProtocolLite.id)){
+        if (Objects.equals(protocol, ProtocolLite.id)) {
             return ProtocolLite;
-        } else  if(Objects.equals(protocol, ProtocolBitswap.id)) {
+        } else if (Objects.equals(protocol, ProtocolBitswap.id)) {
             return ProtocolBitswap;
-        } else  if(Objects.equals(protocol, ProtocolBitswapOneOne.id)) {
+        } else if (Objects.equals(protocol, ProtocolBitswapOneOne.id)) {
             return ProtocolBitswapOneOne;
         } else {
             throw new RuntimeException();
         }
-    }
-
-    public Protocol(@NonNull String id) {
-        this.id = id;
     }
 
     public String String() {

@@ -15,6 +15,7 @@ public class NavigableIPLDNode implements NavigableNode {
     private final Node node;
     private final NodeGetter nodeGetter;
     private final List<Cid> cids = new ArrayList<>();
+    private int preLoader = -1;
 
     private NavigableIPLDNode(@NonNull Node node, @NonNull NodeGetter nodeGetter) {
         this.node = node;
@@ -51,6 +52,20 @@ public class NavigableIPLDNode implements NavigableNode {
     public NavigableNode FetchChild(@NonNull Closeable ctx, int childIndex) {
         Node child = getPromiseValue(ctx, childIndex);
         Objects.requireNonNull(child);
+
+        int value = Math.floorMod(childIndex, 20);
+        if (value > preLoader) {
+            preLoader = value;
+            int min = Math.min((value * 20) + 1, cids.size());
+            int max = Math.min((value * 20) + 20, cids.size());
+            int dist = max - min;
+            if (dist > 2 && min < cids.size()) {
+                List<Cid> preload = (cids.subList(min, max));
+                nodeGetter.Load(ctx, preload);
+            }
+        }
+
+
         return NewNavigableIPLDNode(child, nodeGetter);
 
     }

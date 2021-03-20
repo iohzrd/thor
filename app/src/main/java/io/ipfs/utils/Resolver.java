@@ -25,7 +25,7 @@ import io.ipfs.unixfs.FSNode;
 public class Resolver {
 
     public static Node resolveNode(@NonNull Closeable closeable, @NonNull Storage storage,
-                                  @NonNull Interface exchange, @NonNull String path) {
+                                   @NonNull Interface exchange, @NonNull String path) {
         BlockStore bs = BlockStore.NewBlockstore(storage);
         BlockService blockservice = BlockService.New(bs, exchange);
         DagService dags = new DagService(blockservice);

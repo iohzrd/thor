@@ -14,6 +14,7 @@ import io.ipfs.cid.Cid;
 import io.ipfs.utils.Connector;
 import io.libp2p.host.Host;
 import io.libp2p.network.Stream;
+import io.libp2p.network.StreamHandler;
 import io.libp2p.peer.PeerID;
 import io.libp2p.protocol.Protocol;
 import io.libp2p.routing.ContentRouting;
@@ -61,7 +62,39 @@ public class LiteHost implements BitSwapNetwork {
         this.receiver = receiver;
 
         for (Protocol protocol : protocols) {
-            host.SetStreamHandler(protocol, this::handleNewStream);
+            host.SetStreamHandler(protocol, new StreamHandler() {
+                @Override
+                public boolean gate(@NonNull PeerID peerID) {
+                    return receiver.GatePeer(peerID);
+                }
+
+                @Override
+                public void error(@NonNull Stream stream) {
+                    PeerID peer = stream.RemotePeer();
+                    String error = stream.GetError();
+                    if (error != null) {
+                        receiver.ReceiveError(peer, stream.Protocol(), error);
+                    }
+                }
+
+                @Override
+                public void message(@NonNull Stream stream) {
+
+                    PeerID peer = stream.RemotePeer();
+                    try {
+                        byte[] data = stream.GetData();
+                        BitSwapMessage received = BitSwapMessage.fromData(data);
+
+                        if (connector.ShouldConnect(peer.String())) {
+                            receiver.ReceiveMessage(peer, stream.Protocol(), received);
+                        }
+
+                    } catch (Throwable throwable) {
+                        receiver.ReceiveError(peer, stream.Protocol(),
+                                "" + throwable.getMessage());
+                    }
+                }
+            });
         }
 
     }
@@ -75,32 +108,6 @@ public class LiteHost implements BitSwapNetwork {
     @Override
     public List<PeerID> getPeers() {
         return host.getPeers();
-    }
-
-    private void handleNewStream(@NonNull Stream stream) {
-
-        try {
-            if (receiver == null) {
-                return;
-            }
-
-            PeerID peer = stream.RemotePeer();
-            if (stream.GetError() == null) {
-                byte[] data = stream.GetData();
-                BitSwapMessage received = BitSwapMessage.fromData(data);
-
-                if (connector.ShouldConnect(peer.String())) {
-                    receiver.ReceiveMessage(peer, stream.Protocol(), received);
-                }
-            } else {
-                String error = stream.GetError();
-                if (error != null) {
-                    receiver.ReceiveError(peer, stream.Protocol(), error);
-                }
-            }
-        } catch (Throwable throwable) {
-            throw new RuntimeException(throwable); // TODO check
-        }
     }
 
 

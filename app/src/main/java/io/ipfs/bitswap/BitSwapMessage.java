@@ -181,10 +181,10 @@ public interface BitSwapMessage {
     class BitSwapMessageImpl implements BitSwapMessage {
 
         private static final String TAG = BitSwapMessage.class.getSimpleName();
-        boolean full;
         final HashMap<Cid, Entry> wantlist = new HashMap<>();
         final HashMap<Cid, Block> blocks = new HashMap<>();
         final HashMap<Cid, BitswapProtos.Message.BlockPresenceType> blockPresences = new HashMap<>();
+        boolean full;
         int pendingBytes;
 
         public BitSwapMessageImpl(boolean full) {

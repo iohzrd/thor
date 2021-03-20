@@ -40,6 +40,11 @@ public class BitSwap implements Interface, Receiver {
         return contentManager.GetBlock(closeable, cid);
     }
 
+    @Override
+    public void loadBlocks(@NonNull Closeable closeable, @NonNull List<Cid> cids) {
+        contentManager.LoadBlocks(closeable, cids);
+    }
+
     public void reset() {
         contentManager.reset();
     }
@@ -60,7 +65,7 @@ public class BitSwap implements Interface, Receiver {
             }
         }
 
-        // engine.MessageReceived(peer, protocol, incoming);
+        //engine.MessageReceived(peer, protocol, incoming);
     }
 
 
@@ -85,6 +90,11 @@ public class BitSwap implements Interface, Receiver {
 
         // TODO handle error
         LogUtils.error(TAG, "ReceiveError " + peer.String() + " " + protocol.String() + " " + error);
+    }
+
+    @Override
+    public boolean GatePeer(PeerID peerID) {
+        return contentManager.GatePeer(peerID);
     }
 
 
