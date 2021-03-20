@@ -63,6 +63,8 @@ import lite.ResolveInfo;
 import threads.thor.core.blocks.BLOCKS;
 
 public class IPFS implements Listener, ContentRouting {
+
+    public static final int PRELOAD = 20;
     public static final int WRITE_TIMEOUT = 60;
     public static final boolean SEND_DONT_HAVES = false;
     public static final String AGENT = "/go-ipfs/0.9.0-dev/thor";
