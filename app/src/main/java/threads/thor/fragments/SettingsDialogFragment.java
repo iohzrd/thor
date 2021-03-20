@@ -19,7 +19,7 @@ import threads.thor.R;
 import threads.thor.Settings;
 import threads.thor.core.DOCS;
 import threads.thor.core.events.EVENTS;
-import threads.thor.ipfs.IPFS;
+import io.ipfs.IPFS;
 
 public class SettingsDialogFragment extends BottomSheetDialogFragment {
     public static final String TAG = SettingsDialogFragment.class.getSimpleName();

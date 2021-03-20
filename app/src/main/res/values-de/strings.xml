@@ -21,9 +21,9 @@
     <string name="history">Verlauf</string>
 
     <string name="documentation">Dokumentation</string>
-    <string name="clear_cache_and_cookies">Lösche Cache, Cookies, Verlauf, Passwörter, etc…</string>
-    <string name="password">Password</string>
-    <string name="user_name">Username</string>
+    <string name="clear_browser_data">Lösche Cache, Cookies, Verlauf, Passwörter, etc…</string>
+    <string name="password">Passwort</string>
+    <string name="user_name">Benutzername</string>
     <string name="authentication">Authentication</string>
     <string name="downloads">Downloads</string>
 

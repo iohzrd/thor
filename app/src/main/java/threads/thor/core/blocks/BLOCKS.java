@@ -6,19 +6,24 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.room.Room;
 
-public class BLOCKS {
+import java.util.List;
 
+import io.ipfs.Storage;
+import threads.thor.Settings;
+
+public class BLOCKS implements Storage {
+    private static final String TAG = BLOCKS.class.getSimpleName();
     private static BLOCKS INSTANCE = null;
     private final BlocksDatabase blocksDatabase;
 
-    private BLOCKS(Builder builder) {
+    private BLOCKS(BLOCKS.Builder builder) {
         this.blocksDatabase = builder.blocksDatabase;
     }
 
     @NonNull
     private static BLOCKS createBlocks(@NonNull BlocksDatabase blocksDatabase) {
 
-        return new Builder()
+        return new BLOCKS.Builder()
                 .blocksDatabase(blocksDatabase)
                 .build();
     }
@@ -41,6 +46,11 @@ public class BLOCKS {
     }
 
 
+    public void clear() {
+        getBlocksDatabase().clearAllTables();
+    }
+
+
     @NonNull
     public BlocksDatabase getBlocksDatabase() {
         return blocksDatabase;
@@ -50,37 +60,44 @@ public class BLOCKS {
     @NonNull
     private Block createBlock(@NonNull String id, @NonNull byte[] data) {
 
-        return Block.createBlock(id, data);
+        return Block.createBlock(Settings.BLOCKS + id, data);
     }
 
     private void storeBlock(@NonNull Block block) {
-
         getBlocksDatabase().blockDao().insertBlock(block);
     }
 
     public void deleteBlock(@NonNull String id) {
-        getBlocksDatabase().blockDao().deleteBlock(id);
+        //LogUtils.error(TAG, "deleteBlock " +  id);
+        getBlocksDatabase().blockDao().deleteBlock(Settings.BLOCKS + id);
+    }
+
+    @Override
+    public int sizeBlock(@NonNull String id) {
+        return (int) getBlockSize(id);
     }
 
     public void insertBlock(@NonNull String id, @NonNull byte[] bytes) {
+        //LogUtils.error(TAG, "insertBlock " +  id);
         storeBlock(createBlock(id, bytes));
     }
 
     public boolean hasBlock(@NonNull String id) {
-        return getBlocksDatabase().blockDao().hasBlock(id);
+        return getBlocksDatabase().blockDao().hasBlock(Settings.BLOCKS + id);
     }
 
     public long getBlockSize(@NonNull String id) {
-        return getBlocksDatabase().blockDao().getBlockSize(id);
+        return getBlocksDatabase().blockDao().getBlockSize(Settings.BLOCKS + id);
+    }
+
+    public List<Block> getBlocks() {
+        return getBlocksDatabase().blockDao().getBlocks();
     }
 
     @Nullable
     public Block getBlock(@NonNull String id) {
-        return getBlocksDatabase().blockDao().getBlock(id);
-    }
-
-    public void clear() {
-        getBlocksDatabase().clearAllTables();
+        //LogUtils.error(TAG, "getBlock " +  id);
+        return getBlocksDatabase().blockDao().getBlock(Settings.BLOCKS + id);
     }
 
     static class Builder {

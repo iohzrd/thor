@@ -27,15 +27,16 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
+import io.ipfs.ClosedException;
+import io.ipfs.IPFS;
+import io.ipfs.utils.Link;
+import io.ipfs.utils.Progress;
 import threads.LogUtils;
 import threads.thor.MainActivity;
 import threads.thor.R;
 import threads.thor.core.Content;
 import threads.thor.core.DOCS;
-import threads.thor.ipfs.ClosedException;
-import threads.thor.ipfs.IPFS;
-import threads.thor.ipfs.Link;
-import threads.thor.ipfs.Progress;
+
 import threads.thor.services.MimeTypeService;
 import threads.thor.services.ThorService;
 import threads.thor.utils.MimeType;

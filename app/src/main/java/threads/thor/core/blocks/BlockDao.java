@@ -5,6 +5,8 @@ import androidx.room.Insert;
 import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
 
+import java.util.List;
+
 @Dao
 public interface BlockDao {
 
@@ -22,4 +24,7 @@ public interface BlockDao {
 
     @Query("SELECT size FROM Block WHERE id = :id")
     long getBlockSize(String id);
+
+    @Query("SELECT * FROM Block")
+    List<Block> getBlocks();
 }

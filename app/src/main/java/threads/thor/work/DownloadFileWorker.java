@@ -31,8 +31,8 @@ import threads.LogUtils;
 import threads.thor.MainActivity;
 import threads.thor.R;
 import threads.thor.core.Content;
-import threads.thor.ipfs.IPFS;
-import threads.thor.ipfs.ReaderProgress;
+import io.ipfs.IPFS;
+import io.ipfs.utils.ReaderProgress;
 import threads.thor.services.ThorService;
 
 public class DownloadFileWorker extends Worker {

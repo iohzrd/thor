@@ -25,7 +25,13 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import thor.Peer;
+import io.Closeable;
+import io.ipfs.ClosedException;
+import io.ipfs.DnsAddrResolver;
+import io.ipfs.IPFS;
+import io.ipfs.utils.Link;
+import io.libp2p.routing.Providers;
+import lite.Peer;
 import threads.LogUtils;
 import threads.thor.InitApplication;
 import threads.thor.Settings;
@@ -33,11 +39,7 @@ import threads.thor.core.books.BOOKS;
 import threads.thor.core.books.Bookmark;
 import threads.thor.core.pages.PAGES;
 import threads.thor.core.pages.Page;
-import threads.thor.ipfs.Closeable;
-import threads.thor.ipfs.ClosedException;
-import threads.thor.ipfs.DnsAddrResolver;
-import threads.thor.ipfs.IPFS;
-import threads.thor.ipfs.Link;
+
 import threads.thor.magic.ContentInfo;
 import threads.thor.magic.ContentInfoUtil;
 import threads.thor.services.MimeTypeService;
@@ -85,25 +87,36 @@ public class DOCS {
         Executors.newSingleThreadExecutor().execute(() -> {
             long start = System.currentTimeMillis();
             try {
-                ipfs.dhtFindProviders(cid, pid -> {
-                    try {
-                        LogUtils.error(TAG, "Found Provider " + pid);
-                        if (!ipfs.isConnected(pid)) {
-                            Executors.newSingleThreadExecutor().execute(() -> {
-                                try {
-                                    boolean result = ipfs.swarmConnect(
-                                            Content.P2P_PATH + pid, closeable);
-                                    LogUtils.error(TAG, "Connect " + pid + " " + result);
-                                } catch (Throwable throwable) {
-                                    LogUtils.error(TAG, throwable.getMessage());
-                                }
-                            });
-                        }
+                ipfs.dhtFindProviders(cid, 10, new Providers() {
+                    @Override
+                    public void Peer(@NonNull String pid) {
 
-                    } catch (Throwable throwable) {
-                        LogUtils.error(TAG, throwable);
+                        try {
+                            LogUtils.error(TAG, "Found Provider " + pid);
+                            if (!ipfs.isConnected(pid)) {
+                                Executors.newSingleThreadExecutor().execute(() -> {
+                                    try {
+                                        boolean result = ipfs.swarmConnect(
+                                                Content.P2P_PATH + pid, closeable);
+                                        LogUtils.error(TAG, "Connect " + pid + " " + result);
+                                    } catch (Throwable throwable) {
+                                        LogUtils.error(TAG, throwable.getMessage());
+                                    }
+                                });
+                            }
+
+                        } catch (Throwable throwable) {
+                            LogUtils.error(TAG, throwable);
+                        }
                     }
-                }, 10, closeable);
+
+                    @Override
+                    public boolean isClosed() {
+                        return false;
+                    }
+                });
+
+
 
             } catch (Throwable throwable) {
                 LogUtils.error(TAG, throwable.getMessage());
@@ -389,8 +402,7 @@ public class DOCS {
                         new ByteArrayInputStream(answer.getBytes()));
             } else {
                 String mimeType = getContentMimeType(context, root, closeable);
-                long size = ipfs.getSize(root, closeable);
-                return getContentResponse(root, mimeType, size, closeable);
+                return getContentResponse(root, mimeType, closeable);
             }
 
 
@@ -407,8 +419,7 @@ public class DOCS {
 
             } else {
                 String mimeType = getMimeType(context, uri, cid, closeable);
-                long size = ipfs.getSize(cid, closeable);
-                return getContentResponse(cid, mimeType, size, closeable);
+                return getContentResponse(cid, mimeType, closeable);
             }
         }
     }
@@ -416,22 +427,15 @@ public class DOCS {
 
     @NonNull
     private WebResourceResponse getContentResponse(@NonNull String content, @NonNull String mimeType,
-                                                   long size, @NonNull Closeable closeable)
+                                                   @NonNull Closeable closeable)
             throws ClosedException {
 
-        try {
-
-            InputStream in = ipfs.getLoaderStream(content, closeable);
-
+        try(InputStream in = ipfs.getLoaderStream(content, closeable)) {
             if (closeable.isClosed()) {
                 throw new ClosedException();
             }
 
             Map<String, String> responseHeaders = new HashMap<>();
-            if (size > 0) {
-                responseHeaders.put("Content-Length", "" + size);
-            }
-            responseHeaders.put("Content-Type", mimeType);
 
             return new WebResourceResponse(mimeType, Content.UTF8, 200,
                     "OK", responseHeaders, new BufferedInputStream(in));
@@ -841,7 +845,7 @@ public class DOCS {
         try {
             ipfs.bootstrap();
 
-            if (ipfs.swarmPeers() < Settings.MIN_PEERS) {
+            if (ipfs.numSwarmPeers() < IPFS.MIN_PEERS) {
                 List<Page> bootstraps = pages.getBootstraps(5);
                 List<String> addresses = new ArrayList<>();
                 for (Page bootstrap : bootstraps) {
@@ -855,7 +859,7 @@ public class DOCS {
                     List<Callable<Boolean>> tasks = new ArrayList<>();
                     ExecutorService executor = Executors.newFixedThreadPool(addresses.size());
                     for (String address : addresses) {
-                        tasks.add(() -> ipfs.swarmConnect(address, Settings.TIMEOUT_BOOTSTRAP));
+                        tasks.add(() -> ipfs.swarmConnect(address, IPFS.TIMEOUT_BOOTSTRAP));
                     }
                     List<Future<Boolean>> result = executor.invokeAll(tasks,
                             Settings.TIMEOUT_BOOTSTRAP, TimeUnit.SECONDS);

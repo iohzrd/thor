@@ -18,7 +18,7 @@
     <string name="history">History</string>
 
     <string name="documentation">Documentation</string>
-    <string name="clear_cache_and_cookies">Clear cache, cookies, history, passwords, etc…</string>
+    <string name="clear_browser_data">Clear cache, cookies, history, passwords, etc…</string>
     <string name="password">Password</string>
     <string name="user_name">Username</string>
     <string name="authentication">Authentication</string>

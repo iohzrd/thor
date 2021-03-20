@@ -4,8 +4,9 @@ import android.app.Application;
 
 import java.util.concurrent.Executors;
 
+import io.ipfs.IPFS;
 import threads.LogUtils;
-import threads.thor.ipfs.IPFS;
+
 import threads.thor.utils.AdBlocker;
 
 public class InitApplication extends Application {

@@ -6,7 +6,6 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.drawable.Icon;
 import android.webkit.CookieManager;
 import android.webkit.WebViewDatabase;
 
@@ -14,7 +13,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 import androidx.work.ExistingWorkPolicy;
-import androidx.work.ForegroundInfo;
 import androidx.work.OneTimeWorkRequest;
 import androidx.work.WorkManager;
 import androidx.work.Worker;
@@ -108,15 +106,9 @@ public class ClearBrowserDataWorker extends Worker {
         }
     }
 
-    private Notification createNotification() {
+    private void createNotification() {
 
-        Notification.Builder builder = new Notification.Builder(getApplicationContext(),
-                ThorService.CHANNEL_ID);
-
-
-        PendingIntent intent = WorkManager.getInstance(getApplicationContext())
-                .createCancelPendingIntent(getId());
-        String cancel = getApplicationContext().getString(android.R.string.cancel);
+        Notification.Builder builder = new Notification.Builder(getApplicationContext(), TAG);
 
         Intent main = new Intent(getApplicationContext(), MainActivity.class);
 
@@ -124,27 +116,21 @@ public class ClearBrowserDataWorker extends Worker {
         PendingIntent pendingIntent = PendingIntent.getActivity(getApplicationContext(), requestID,
                 main, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
-        Notification.Action action = new Notification.Action.Builder(
-                Icon.createWithResource(getApplicationContext(), R.drawable.pause), cancel,
-                intent).build();
-
-        builder.setContentTitle(getApplicationContext().getString(R.string.clear_cache_and_cookies))
+        builder.setContentTitle(getApplicationContext().getString(R.string.clear_browser_data))
                 .setContentIntent(pendingIntent)
                 .setOnlyAlertOnce(true)
                 .setSmallIcon(R.drawable.refresh)
-                .addAction(action)
                 .setColor(ContextCompat.getColor(getApplicationContext(), android.R.color.black))
                 .setCategory(Notification.CATEGORY_MESSAGE)
                 .setUsesChronometer(true);
 
-        return builder.build();
+        Notification notification = builder.build();
+
+        if (mNotificationManager != null) {
+            mNotificationManager.notify(getId().hashCode(), notification);
+        }
     }
 
-    @NonNull
-    private ForegroundInfo createForegroundInfo() {
-        Notification notification = createNotification();
-        return new ForegroundInfo(getId().hashCode(), notification);
-    }
 
     @Override
     public void onStopped() {
@@ -160,18 +146,15 @@ public class ClearBrowserDataWorker extends Worker {
     private void createChannel(@NonNull Context context) {
 
         try {
-            CharSequence name = context.getString(R.string.channel_name);
-            String description = context.getString(R.string.channel_description);
-            NotificationChannel mChannel = new NotificationChannel(ThorService.CHANNEL_ID, name,
-                    NotificationManager.IMPORTANCE_HIGH);
-            mChannel.setDescription(description);
+            NotificationChannel mChannel = new NotificationChannel(TAG,
+                    context.getString(R.string.app_name), NotificationManager.IMPORTANCE_LOW);
 
             if (mNotificationManager != null) {
                 mNotificationManager.createNotificationChannel(mChannel);
             }
 
-        } catch (Throwable e) {
-            LogUtils.error(TAG, e);
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable);
         }
 
     }
@@ -185,8 +168,7 @@ public class ClearBrowserDataWorker extends Worker {
         LogUtils.info(TAG, " start ...");
 
         try {
-            ForegroundInfo foregroundInfo = createForegroundInfo();
-            setForegroundAsync(foregroundInfo);
+            createNotification();
 
             // Clear all the cookies
             CookieManager.getInstance().removeAllCookies(null);
@@ -212,6 +194,7 @@ public class ClearBrowserDataWorker extends Worker {
             LogUtils.error(TAG, e);
 
         } finally {
+            closeNotification();
             LogUtils.info(TAG, " finish onStart [" + (System.currentTimeMillis() - start) + "]...");
         }
 
