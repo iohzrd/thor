@@ -325,8 +325,7 @@ public class DOCS {
 
 
     public String generateDirectoryHtml(@NonNull Uri uri, @NonNull String root,
-                                        @NonNull List<String> paths,
-                                        @Nullable List<Link> links) {
+                                        @NonNull List<String> paths, @Nullable List<Link> links) {
         String title = root;
 
         if (!paths.isEmpty()) {
@@ -355,7 +354,11 @@ public class DOCS {
 
                     answer.append("<tr>");
                     answer.append("<td>");
-                    answer.append(MimeTypeService.getSvgResource(link.getName()));
+                    if (!link.isDirectory()) {
+                        answer.append(MimeTypeService.getSvgResource(link.getName()));
+                    } else {
+                        answer.append(MimeTypeService.SVG_FOLDER);
+                    }
                     answer.append("</td>");
 
                     answer.append("<td width=\"100%\" style=\"word-break:break-word\">");
@@ -365,6 +368,12 @@ public class DOCS {
                     answer.append(link.getName());
                     answer.append("</a>");
                     answer.append("</td>");
+
+                    answer.append("<td>");
+                    answer.append(getFileSize(link.getSize()));
+                    answer.append("</td>");
+
+
                     answer.append("<td align=\"center\">");
                     String text = "<button style=\"float:none!important;display:inline;\" name=\"download\" value=\"1\" formenctype=\"text/plain\" formmethod=\"get\" type=\"submit\" formaction=\"" +
                             linkUri + "\">" + MimeTypeService.getSvgDownload() + "</button>";
@@ -382,6 +391,22 @@ public class DOCS {
         return answer.toString();
     }
 
+
+    private String getFileSize(long size) {
+
+        String fileSize;
+
+        if (size < 1000) {
+            fileSize = String.valueOf(size);
+            return fileSize.concat(" B");
+        } else if (size < 1000 * 1000) {
+            fileSize = String.valueOf((double) (size / 1000));
+            return fileSize.concat(" KB");
+        } else {
+            fileSize = String.valueOf((double) (size / (1000 * 1000)));
+            return fileSize.concat(" MB");
+        }
+    }
     public void connectUri(@NonNull Uri uri, @NonNull Closeable closeable) {
         try {
             String host = getHost(uri);
