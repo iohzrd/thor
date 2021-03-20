@@ -865,7 +865,7 @@ public class DOCS {
                         tasks.add(() -> ipfs.swarmConnect(address, IPFS.TIMEOUT_BOOTSTRAP));
                     }
                     List<Future<Boolean>> result = executor.invokeAll(tasks,
-                            Settings.TIMEOUT_BOOTSTRAP, TimeUnit.SECONDS);
+                            IPFS.TIMEOUT_BOOTSTRAP, TimeUnit.SECONDS);
                     for (Future<Boolean> future : result) {
                         LogUtils.error(TAG, "Bootstrap done " + future.isDone());
                     }

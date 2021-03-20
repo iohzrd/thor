@@ -60,7 +60,6 @@ public class BitSwap implements Interface, Receiver {
             }
         }
 
-        // not required here (TODO)
         // engine.MessageReceived(peer, protocol, incoming);
     }
 
