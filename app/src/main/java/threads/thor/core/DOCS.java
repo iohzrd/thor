@@ -221,11 +221,16 @@ public class DOCS {
         }
     }
 
+    public void releaseContent(){
+        ipfs.reset();
+    }
+
     public void releaseThreads() {
         synchronized (TAG.intern()) {
             threads.clear();
         }
     }
+
 
     public boolean shouldRun(@NonNull Long thread) {
         synchronized (TAG.intern()) {

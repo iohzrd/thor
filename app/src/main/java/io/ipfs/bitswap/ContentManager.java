@@ -23,10 +23,10 @@ import io.libp2p.routing.Providers;
 
 public class ContentManager {
     public static final int PROVIDERS = 10;
-    private static final int TIMEOUT = 3000;
+    private static final int TIMEOUT = 10000;
     private static final String TAG = ContentManager.class.getSimpleName();
     private static final ExecutorService WANTS = Executors.newFixedThreadPool(8);
-    private static final ExecutorService HAVES = Executors.newFixedThreadPool(4);
+    private static final ExecutorService HAVES = Executors.newFixedThreadPool(2);
     private final ConcurrentSkipListSet<Cid> searches = new ConcurrentSkipListSet<>();
     private final ConcurrentSkipListSet<PeerID> faulty = new ConcurrentSkipListSet<>();
     private final ConcurrentSkipListSet<PeerID> peers = new ConcurrentSkipListSet<>();
@@ -53,10 +53,14 @@ public class ContentManager {
     }
 
     public void reset() {
-        searches.clear();
-        priority.clear();
-        notify.clear();
-        peers.clear();
+        try {
+            searches.clear();
+            priority.clear();
+            notify.clear();
+            peers.clear();
+        } catch (Throwable throwable){
+            LogUtils.error(TAG, throwable);
+        }
     }
 
     public void runWantHaves(@NonNull Closeable closeable, @NonNull Cid cid) throws ClosedException {

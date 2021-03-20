@@ -1619,6 +1619,7 @@ public class MainActivity extends AppCompatActivity implements
             }
 
             docs.releaseThreads();
+            docs.releaseContent();
 
             mWebView.stopLoading();
 
