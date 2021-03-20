@@ -99,6 +99,7 @@ public class DOCS {
                                         boolean result = ipfs.swarmConnect(
                                                 Content.P2P_PATH + pid, closeable);
                                         LogUtils.error(TAG, "Connect " + pid + " " + result);
+                                    } catch (ClosedException ignore) {
                                     } catch (Throwable throwable) {
                                         LogUtils.error(TAG, throwable.getMessage());
                                     }
@@ -118,6 +119,7 @@ public class DOCS {
 
 
 
+            } catch (ClosedException ignore) {
             } catch (Throwable throwable) {
                 LogUtils.error(TAG, throwable.getMessage());
             } finally {
@@ -181,7 +183,8 @@ public class DOCS {
                 }
 
                 LogUtils.error(TAG, "Connect " + pid + " " + connected);
-            } catch (Throwable throwable) {
+            } catch (ClosedException ignore) {
+            }  catch (Throwable throwable) {
                 LogUtils.error(TAG, throwable.getMessage());
             } finally {
                 LogUtils.info(TAG, " finish onStart ...");
