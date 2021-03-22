@@ -32,4 +32,9 @@ public class Exchange implements Interface {
     public void reset() {
         // nothing to do here
     }
+
+    @Override
+    public void load(@NonNull Closeable closeable, @NonNull Cid cid) {
+        // nothing to do here
+    }
 }

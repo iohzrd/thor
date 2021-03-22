@@ -7,11 +7,12 @@ import java.util.List;
 import java.util.Objects;
 
 import io.Closeable;
+import io.LogUtils;
 import io.ipfs.IPFS;
 import io.ipfs.cid.Cid;
 
 public class NavigableIPLDNode implements NavigableNode {
-
+    private static final String TAG = NavigableIPLDNode.class.getSimpleName();
 
     private final Node node;
     private final NodeGetter nodeGetter;
@@ -54,18 +55,22 @@ public class NavigableIPLDNode implements NavigableNode {
         Node child = getPromiseValue(ctx, childIndex);
         Objects.requireNonNull(child);
 
-        int value = Math.floorMod(childIndex, IPFS.PRELOAD);
-        if (value > preLoader) {
-            preLoader = value;
-            int min = Math.min((value * IPFS.PRELOAD) + 1, cids.size());
-            int max = Math.min((value * IPFS.PRELOAD) + IPFS.PRELOAD + 1, cids.size());
-            int dist = max - min;
-            if (dist > 2 && min < cids.size()) {
-                List<Cid> preload = (cids.subList(min, max));
-                nodeGetter.Load(ctx, preload);
+        try {
+            int value = childIndex / IPFS.PRELOAD;
+            if (value > preLoader) {
+                preLoader = value;
+                int min = Math.min((value * IPFS.PRELOAD) + 1, cids.size());
+                int max = Math.min((value * IPFS.PRELOAD) + IPFS.PRELOAD + 1, cids.size());
+                int dist = max - min;
+                if (dist > 1 && min < cids.size()) {
+                    LogUtils.error(TAG, "min " + min + " max " + max +
+                            " childIndex " + childIndex + " length " + cids.size());
+                    nodeGetter.Load(ctx, cids.subList(min, max));
+                }
             }
+        } catch (Throwable throwable){
+            LogUtils.error(TAG, throwable);
         }
-
 
         return NewNavigableIPLDNode(child, nodeGetter);
 

@@ -45,8 +45,14 @@ public class BitSwap implements Interface, Receiver {
         contentManager.LoadBlocks(closeable, cids);
     }
 
+    @Override
     public void reset() {
         contentManager.reset();
+    }
+
+    @Override
+    public void load(@NonNull Closeable closeable, @NonNull Cid cid) {
+        contentManager.Load(closeable, cid);
     }
 
     @Override

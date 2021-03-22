@@ -1426,6 +1426,16 @@ public class IPFS implements Listener, ContentRouting {
         }
     }
 
+    public void load(Closeable closeable, String cid) {
+        try {
+            if (exchange != null) {
+                exchange.load(closeable, Cid.Decode(cid));
+            }
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable);
+        }
+    }
+
 
     public interface Pusher {
         void push(@NonNull String pid, @NonNull String cid);
