@@ -76,7 +76,7 @@ public class ContentManager {
                     public void Peer(@NonNull String pid) {
                         PeerID peer = new PeerID(pid);
 
-                        if (!wants.contains(peer)) {
+                        if (!wants.contains(peer) && !priority.contains(peer) && !faulty.contains(peer)) {
                             wants.add(peer);
                             WANTS.execute(() -> {
                                 if (searches.contains(cid)) { // check still valid
