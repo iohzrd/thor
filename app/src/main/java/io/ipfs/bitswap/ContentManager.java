@@ -46,7 +46,6 @@ public class ContentManager {
             if (searches.contains(cid)) {
                 LogUtils.info(TAG, "HaveReceived " + cid.String());
                 faulty.remove(peer);
-                priority.remove(peer);
                 priority.push(peer); // top
             }
         }
@@ -161,7 +160,7 @@ public class ContentManager {
             }
 
 
-            if (!hasRun) {
+            if (!hasRun && false) {
                 List<PeerID> cons = network.getPeers();
                 for (PeerID peer : cons) {
                     if (!faulty.contains(peer) && !wants.contains(peer)
@@ -228,8 +227,7 @@ public class ContentManager {
             blockStore.Put(block);
             if (searches.contains(cid)) {
                 faulty.remove(peer);
-                priority.remove(peer);
-                priority.add(peer);
+                priority.push(peer);
             }
             notify.Publish(block);
         } catch (Throwable throwable) {
@@ -244,18 +242,19 @@ public class ContentManager {
     public void LoadBlocks(@NonNull Closeable closeable, @NonNull List<Cid> cids) {
 
         LogUtils.error(TAG, "LoadBlocks " + cids.size());
-
-        for (PeerID peer : priority) {
-            LogUtils.error(TAG, "LoadBlock " + peer.String());
-            long start = System.currentTimeMillis();
-            try {
-                MessageWriter.sendWantsMessage(closeable, network, peer, cids);
-            } catch (Throwable throwable) {
-                LogUtils.error(TAG, "LoadBlock Error " + throwable.getLocalizedMessage());
-            } finally {
-                LogUtils.error(TAG, "Load Peer " +
-                        peer.String() + " took " + (System.currentTimeMillis() - start));
+        Executors.newSingleThreadExecutor().execute(() -> {
+            for (PeerID peer : priority) {
+                LogUtils.error(TAG, "LoadBlock " + peer.String());
+                long start = System.currentTimeMillis();
+                try {
+                    MessageWriter.sendWantsMessage(closeable, network, peer, cids);
+                } catch (Throwable throwable) {
+                    LogUtils.error(TAG, "LoadBlock Error " + throwable.getLocalizedMessage());
+                } finally {
+                    LogUtils.error(TAG, "Load Peer " +
+                            peer.String() + " took " + (System.currentTimeMillis() - start));
+                }
             }
-        }
+        });
     }
 }
