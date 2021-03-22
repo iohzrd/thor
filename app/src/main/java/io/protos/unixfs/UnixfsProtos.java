@@ -64,6 +64,7 @@ public final class UnixfsProtos {
     getDescriptor() {
         return descriptor;
     }
+
     public interface DataOrBuilder extends
             // @@protoc_insertion_point(interface_extends:io.protos.unixfs.Data)
             com.google.protobuf.MessageOrBuilder {
@@ -233,6 +234,7 @@ public final class UnixfsProtos {
         private Data(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
             super(builder);
         }
+
         private Data() {
             type_ = 0;
             data_ = com.google.protobuf.ByteString.EMPTY;
@@ -1515,9 +1517,11 @@ public final class UnixfsProtos {
         private Metadata(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
             super(builder);
         }
+
         private Metadata() {
             mimeType_ = "";
         }
+
         private Metadata(
                 com.google.protobuf.CodedInputStream input,
                 com.google.protobuf.ExtensionRegistryLite extensionRegistry)

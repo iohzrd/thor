@@ -102,6 +102,10 @@ public class FSNode {
         UpdateFilesize(bytes.length - Data().length);
         data = data.toBuilder().setData(ByteString.copyFrom(bytes)).build();
     }
+
+    public long Fanout() {
+        return data.getFanout();
+    }
 }
 
 

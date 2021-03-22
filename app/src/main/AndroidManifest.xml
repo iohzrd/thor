@@ -69,6 +69,18 @@
             android:screenOrientation="fullSensor"
             tools:replace="screenOrientation" />
 
+
+        <provider
+            android:name=".provider.FileDocumentsProvider"
+            android:authorities="${documentsAuthority}"
+            android:exported="true"
+            android:grantUriPermissions="true"
+            android:permission="android.permission.MANAGE_DOCUMENTS">
+            <intent-filter>
+                <action android:name="android.content.action.DOCUMENTS_PROVIDER" />
+            </intent-filter>
+        </provider>
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}"

@@ -1,4 +1,4 @@
-package threads.thor;
+package threads.thor.utils;
 
 import android.content.Context;
 import android.util.AttributeSet;

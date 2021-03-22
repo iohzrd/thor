@@ -14,32 +14,53 @@ import io.ipfs.format.Node;
 import io.ipfs.format.NodeAdder;
 import io.ipfs.format.NodeGetter;
 
-public class DagService implements NodeGetter, NodeAdder {
-    private final BlockService blockservice;
+public interface DagService extends NodeGetter, NodeAdder {
 
-    public DagService(@NonNull BlockService blockService) {
-        this.blockservice = blockService;
+    static DagService createReadOnlyDagService(@NonNull NodeGetter nodeGetter) {
+        return new DagService() {
+            @Nullable
+
+            @Override
+            public Node Get(@NonNull Closeable closeable, @NonNull Cid cid) {
+                return nodeGetter.Get(closeable, cid);
+            }
+
+            @Override
+            public void Load(@NonNull Closeable ctx, @NonNull List<Cid> cids) {
+                // nothing to do here
+            }
+
+            @Override
+            public void Add(@NonNull Node nd) {
+                // nothing to do here
+            }
+        };
     }
 
-    @Override
-    @Nullable
-    public Node Get(@NonNull Closeable closeable, @NonNull Cid cid) {
+    static DagService createDagService(@NonNull BlockService blockService) {
+        return new DagService() {
 
-        Block b = blockservice.GetBlock(closeable, cid);
-        if (b == null) {
-            return null;
-        }
-        return Decoder.Decode(b);
+            @Override
+            @Nullable
+            public Node Get(@NonNull Closeable closeable, @NonNull Cid cid) {
+
+                Block b = blockService.GetBlock(closeable, cid);
+                if (b == null) {
+                    return null;
+                }
+                return Decoder.Decode(b);
+            }
+
+            @Override
+            public void Load(@NonNull Closeable closeable, @NonNull List<Cid> cids) {
+                blockService.LoadBlocks(closeable, cids);
+            }
+
+            public void Add(@NonNull Node nd) {
+                blockService.AddBlock(nd);
+            }
+        };
     }
 
-    @Override
-    public void Load(@NonNull Closeable closeable, @NonNull List<Cid> cids) {
-        blockservice.LoadBlocks(closeable, cids);
-    }
-
-
-    public void Add(@NonNull Node nd) {
-        blockservice.AddBlock(nd);
-    }
 
 }

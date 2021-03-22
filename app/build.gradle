@@ -11,6 +11,17 @@ android {
         versionCode 70
         versionName "0.7.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+
+        def documentsAuthorityValue = applicationId + ".provider"
+
+        // Now we can use ${documentsAuthority} in our Manifest
+        manifestPlaceholders =
+                [documentsAuthority: documentsAuthorityValue]
+        // Now we can use BuildConfig.DOCUMENTS_AUTHORITY in our code
+        buildConfigField "String",
+                "DOCUMENTS_AUTHORITY",
+                "\"${documentsAuthorityValue}\""
     }
 
 
@@ -85,7 +96,10 @@ dependencies {
 
     // API (LICENSE done)
     implementation 'com.google.protobuf:protobuf-java:3.15.6'
-    
+
+    // API (LICENSE done)
+    implementation 'commons-codec:commons-codec:1.15'
+
     // API (LICENSE done)
     implementation 'lite.ipfs:lite:1.2.1'
 

@@ -21,6 +21,9 @@ import io.ipfs.format.NodeGetter;
 import io.ipfs.format.ProtoNode;
 import io.ipfs.merkledag.DagService;
 import io.ipfs.unixfs.FSNode;
+import io.ipfs.unixfs.Hamt;
+import io.ipfs.unixfs.Shard;
+import io.protos.unixfs.UnixfsProtos;
 
 public class Resolver {
 
@@ -28,7 +31,7 @@ public class Resolver {
                                    @NonNull Interface exchange, @NonNull String path) {
         BlockStore bs = BlockStore.NewBlockstore(storage);
         BlockService blockservice = BlockService.New(bs, exchange);
-        DagService dags = new DagService(blockservice);
+        DagService dags = DagService.createDagService(blockservice);
         return Resolver.ResolveNode(closeable, dags, Path.New(path));
     }
 
@@ -62,7 +65,6 @@ public class Resolver {
 
         return nodeGetter.Get(closeable, cid);
     }
-
 
     public static Pair<Cid, List<String>> ResolveToLastNode(@NonNull Closeable ctx,
                                                             @NonNull NodeGetter dag,
@@ -123,27 +125,23 @@ public class Resolver {
     }
 
     private static Pair<Link, List<String>> ResolveOnce(@NonNull Closeable closeable,
-                                                        @NonNull NodeGetter nodeGetter, @NonNull Node nd, @NonNull List<String> names) {
+                                                        @NonNull NodeGetter nodeGetter,
+                                                        @NonNull Node nd,
+                                                        @NonNull List<String> names) {
 
         if (nd instanceof ProtoNode) {
             ProtoNode pn = (ProtoNode) nd;
             try {
                 FSNode fsn = FSNode.FSNodeFromBytes(pn.getData());
-                /*
-                if fsn.Type() == ft.THAMTShard {
-                    rods:=dag.NewReadOnlyDagService(ds)
-                    s, err :=hamt.NewHamtFromDag(rods, nd)
-                    if err != nil {
-                        return nil,nil, err
-                    }
 
-                    out, err :=s.Find(ctx, names[0])
-                    if err != nil {
-                        return nil,nil, err
-                    }
+                if (fsn.Type() == UnixfsProtos.Data.DataType.HAMTShard) {
 
-                    return out,names[1:],nil
-                }*/
+                    DagService rods = DagService.createReadOnlyDagService(nodeGetter);
+                    Shard s = Hamt.NewHamtFromDag(rods, nd);
+                    Link link = s.Find(closeable, names.get(0));
+                    return Pair.create(link, names.subList(1, names.size()));
+
+                }
             } catch (Throwable throwable) {
                 return nd.ResolveLink(names);
             }

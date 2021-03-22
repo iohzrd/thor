@@ -75,6 +75,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import io.Closeable;
+import io.ipfs.IPFS;
+import io.ipfs.utils.TimeoutProgress;
 import threads.LogUtils;
 import threads.thor.core.Content;
 import threads.thor.core.DOCS;
@@ -87,14 +90,12 @@ import threads.thor.fragments.BookmarksDialogFragment;
 import threads.thor.fragments.ContentDialogFragment;
 import threads.thor.fragments.HistoryDialogFragment;
 import threads.thor.fragments.SettingsDialogFragment;
-import io.Closeable;
-import io.ipfs.IPFS;
+import threads.thor.provider.FileDocumentsProvider;
 import threads.thor.services.QRCodeService;
 import threads.thor.services.ThorService;
 import threads.thor.utils.AdBlocker;
 import threads.thor.utils.BookmarksAdapter;
 import threads.thor.utils.CustomWebChromeClient;
-import threads.thor.utils.FileDocumentsProvider;
 import threads.thor.utils.MimeType;
 import threads.thor.utils.PermissionAction;
 import threads.thor.work.ClearBrowserDataWorker;
@@ -188,15 +189,6 @@ public class MainActivity extends AppCompatActivity implements
                     }
                 }
             });
-    private final ActivityResultLauncher<String> requestPermissionLauncher =
-            registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
-                if (isGranted) {
-                    invokeScan();
-                } else {
-                    EVENTS.getInstance(getApplicationContext()).permission(
-                            getString(R.string.permission_camera_denied));
-                }
-            });
     private WebView mWebView;
     private long mLastClickTime = 0;
     private TextView mBrowserText;
@@ -244,6 +236,15 @@ public class MainActivity extends AppCompatActivity implements
                     LogUtils.error(TAG, throwable);
                 }
 
+            });
+    private final ActivityResultLauncher<String> requestPermissionLauncher =
+            registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
+                if (isGranted) {
+                    invokeScan();
+                } else {
+                    EVENTS.getInstance(getApplicationContext()).permission(
+                            getString(R.string.permission_camera_denied));
+                }
             });
     private boolean hasCamera;
 
@@ -1127,7 +1128,25 @@ public class MainActivity extends AppCompatActivity implements
 
                 if (Objects.equals(uri.getScheme(), Content.IPFS) ||
                         Objects.equals(uri.getScheme(), Content.IPNS)) {
-                    contentDownloader(uri);
+                    String res = uri.getQueryParameter("download");
+                    if (Objects.equals(res, "0")) {
+                        try {
+                            String cid = docs.resolvePath(uri, new TimeoutProgress(1));
+                            Objects.requireNonNull(cid);
+                            Uri redirect = FileDocumentsProvider.getUriForIpfs(cid);
+                            Intent intent = new Intent(Intent.ACTION_VIEW);
+                            intent.putExtra(Intent.EXTRA_TITLE, filename);
+                            intent.setDataAndType(redirect, mimeType);
+                            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                            startActivity(intent);
+                        } catch (Throwable throwable) {
+                            contentDownloader(uri);
+                        } finally {
+                            mProgressBar.setVisibility(View.GONE);
+                        }
+                    } else {
+                        contentDownloader(uri);
+                    }
                 } else {
                     fileDownloader(uri, filename, mimeType, contentLength);
                 }

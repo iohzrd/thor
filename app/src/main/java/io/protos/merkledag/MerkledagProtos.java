@@ -60,6 +60,7 @@ public final class MerkledagProtos {
     getDescriptor() {
         return descriptor;
     }
+
     public interface PBLinkOrBuilder extends
             // @@protoc_insertion_point(interface_extends:io.protos.merkledag.PBLink)
             com.google.protobuf.MessageOrBuilder {
@@ -266,6 +267,7 @@ public final class MerkledagProtos {
             hash_ = com.google.protobuf.ByteString.EMPTY;
             name_ = "";
         }
+
         private PBLink(
                 com.google.protobuf.CodedInputStream input,
                 com.google.protobuf.ExtensionRegistryLite extensionRegistry)
@@ -1180,6 +1182,7 @@ public final class MerkledagProtos {
         private java.util.List<io.protos.merkledag.MerkledagProtos.PBLink> links_;
         private com.google.protobuf.ByteString data_;
         private byte memoizedIsInitialized = -1;
+
         // Use PBNode.newBuilder() to construct.
         private PBNode(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
             super(builder);

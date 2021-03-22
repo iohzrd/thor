@@ -176,7 +176,7 @@ public class ProtoNode implements Node {
         return encoded;
     }
 
-    private Builder CidBuilder() {
+    public Builder CidBuilder() {
         if (mBuilder == null) {
             mBuilder = v0CidPrefix;
         }
@@ -246,5 +246,9 @@ public class ProtoNode implements Node {
     public Pair<Object, List<String>> Resolve(@NonNull List<String> path) {
         Pair<Link, List<String>> res = ResolveLink(path);
         return Pair.create(res.first, res.second);
+    }
+
+    public List<Link> Links() {
+        return links;
     }
 }

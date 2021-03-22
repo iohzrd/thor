@@ -92,7 +92,7 @@
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
 
-        <threads.thor.NestedWebView
+        <threads.thor.utils.NestedWebView
             android:id="@+id/web_view"
             android:layout_width="match_parent"
             android:layout_height="match_parent"

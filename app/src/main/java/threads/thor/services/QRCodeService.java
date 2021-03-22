@@ -45,7 +45,7 @@ public class QRCodeService {
         byte[] bytes = stream.toByteArray();
         bitmap.recycle();
 
-        threads.thor.FileProvider fileProvider = threads.thor.FileProvider.getInstance(context);
+        threads.thor.provider.FileProvider fileProvider = threads.thor.provider.FileProvider.getInstance(context);
 
 
         File newFile = new File(fileProvider.getImageDir(), "img" + hash.hashCode() + ".png");

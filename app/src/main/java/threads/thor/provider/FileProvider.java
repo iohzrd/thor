@@ -1,4 +1,4 @@
-package threads.thor;
+package threads.thor.provider;
 
 import android.content.Context;
 

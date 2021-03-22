@@ -89,6 +89,7 @@ public final class BitswapProtos {
                 internal_static_io_protos_bitswap_Message_BlockPresence_descriptor,
                 new java.lang.String[]{"Cid", "Type",});
     }
+
     private BitswapProtos() {
     }
 
@@ -289,6 +290,7 @@ public final class BitswapProtos {
         private Message(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
             super(builder);
         }
+
         private Message() {
             blocks_ = java.util.Collections.emptyList();
             payload_ = java.util.Collections.emptyList();
@@ -1687,6 +1689,7 @@ public final class BitswapProtos {
                 private int wantType_;
                 private boolean sendDontHave_;
                 private byte memoizedIsInitialized = -1;
+
                 // Use Entry.newBuilder() to construct.
                 private Entry(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
                     super(builder);
@@ -3212,6 +3215,7 @@ public final class BitswapProtos {
             private com.google.protobuf.ByteString prefix_;
             private com.google.protobuf.ByteString data_;
             private byte memoizedIsInitialized = -1;
+
             // Use Block.newBuilder() to construct.
             private Block(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
                 super(builder);
@@ -3821,6 +3825,7 @@ public final class BitswapProtos {
             private com.google.protobuf.ByteString cid_;
             private int type_;
             private byte memoizedIsInitialized = -1;
+
             // Use BlockPresence.newBuilder() to construct.
             private BlockPresence(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
                 super(builder);

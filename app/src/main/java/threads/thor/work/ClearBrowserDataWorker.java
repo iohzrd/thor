@@ -22,12 +22,11 @@ import java.io.File;
 import java.util.concurrent.TimeUnit;
 
 import threads.LogUtils;
-import threads.thor.FileProvider;
 import threads.thor.MainActivity;
 import threads.thor.R;
 import threads.thor.core.blocks.BLOCKS;
 import threads.thor.core.pages.PAGES;
-import threads.thor.services.ThorService;
+import threads.thor.provider.FileProvider;
 
 public class ClearBrowserDataWorker extends Worker {
 

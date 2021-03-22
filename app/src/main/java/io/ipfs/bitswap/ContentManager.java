@@ -58,7 +58,7 @@ public class ContentManager {
             priority.clear();
             notify.clear();
             peers.clear();
-        } catch (Throwable throwable){
+        } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         }
     }

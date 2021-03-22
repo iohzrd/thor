@@ -31,7 +31,7 @@ public class Stream {
         BlockStore bs = BlockStore.NewBlockstore(storage);
         Interface exchange = new Exchange(bs);
         BlockService blockservice = BlockService.New(bs, exchange);
-        DagService dagService = new DagService(blockservice);
+        DagService dagService = DagService.createDagService(blockservice);
         Adder fileAdder = Adder.NewAdder(dagService);
 
         Prefix prefix = Node.PrefixForCidVersion(1);
@@ -52,9 +52,9 @@ public class Stream {
         BlockStore bs = BlockStore.NewBlockstore(storage);
         Interface exchange = new Exchange(bs);
         BlockService blockservice = BlockService.New(bs, exchange);
-        DagService dags = new DagService(blockservice);
+        DagService dags = DagService.createDagService(blockservice);
         io.ipfs.format.Node top = Resolver.ResolveNode(closeable, dags, Path.New(cid));
-
+        Objects.requireNonNull(top);
         List<Cid> cids = new ArrayList<>();
         if (recursively) {
             RefWriter rw = new RefWriter(true, -1);
@@ -75,7 +75,7 @@ public class Stream {
 
 
         BlockService blockservice = BlockService.New(blockstore, exchange);
-        DagService dagService = new DagService(blockservice);
+        DagService dagService = DagService.createDagService(blockservice);
 
         io.ipfs.format.Node node = Resolver.ResolveNode(closeable, dagService, Path.New(path));
         Objects.requireNonNull(node);
@@ -100,7 +100,7 @@ public class Stream {
         BlockStore bs = BlockStore.NewBlockstore(storage);
         Interface exchange = new Exchange(bs);
         BlockService blockservice = BlockService.New(bs, exchange);
-        DagService dagService = new DagService(blockservice);
+        DagService dagService = DagService.createDagService(blockservice);
 
         io.ipfs.format.Node dirNode = Resolver.ResolveNode(closeable, dagService, Path.New(dir));
         Objects.requireNonNull(dirNode);
@@ -119,7 +119,7 @@ public class Stream {
         BlockStore bs = BlockStore.NewBlockstore(storage);
         Interface exchange = new Exchange(bs);
         BlockService blockservice = BlockService.New(bs, exchange);
-        DagService dagService = new DagService(blockservice);
+        DagService dagService = DagService.createDagService(blockservice);
 
         io.ipfs.format.Node dirNode = Resolver.ResolveNode(closeable, dagService, Path.New(dir));
         Objects.requireNonNull(dirNode);
@@ -133,7 +133,7 @@ public class Stream {
                           @NonNull String path, boolean resolveChildren) {
 
         BlockService blockservice = BlockService.New(blockstore, exchange);
-        DagService dagService = new DagService(blockservice);
+        DagService dagService = DagService.createDagService(blockservice);
 
 
         io.ipfs.format.Node node = Resolver.ResolveNode(closeable, dagService, Path.New(path));

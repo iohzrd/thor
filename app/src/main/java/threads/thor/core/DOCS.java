@@ -39,7 +39,6 @@ import threads.thor.core.books.BOOKS;
 import threads.thor.core.books.Bookmark;
 import threads.thor.core.pages.PAGES;
 import threads.thor.core.pages.Page;
-
 import threads.thor.magic.ContentInfo;
 import threads.thor.magic.ContentInfoUtil;
 import threads.thor.services.MimeTypeService;
@@ -118,7 +117,6 @@ public class DOCS {
                 });
 
 
-
             } catch (ClosedException ignore) {
             } catch (Throwable throwable) {
                 LogUtils.error(TAG, throwable.getMessage());
@@ -184,7 +182,7 @@ public class DOCS {
 
                 LogUtils.error(TAG, "Connect " + pid + " " + connected);
             } catch (ClosedException ignore) {
-            }  catch (Throwable throwable) {
+            } catch (Throwable throwable) {
                 LogUtils.error(TAG, throwable.getMessage());
             } finally {
                 LogUtils.info(TAG, " finish onStart ...");
@@ -221,7 +219,7 @@ public class DOCS {
         }
     }
 
-    public void releaseContent(){
+    public void releaseContent() {
         ipfs.reset();
     }
 
@@ -283,6 +281,16 @@ public class DOCS {
             LogUtils.error(TAG, throwable);
         }
         return null;
+    }
+
+    public String resolvePath(@NonNull Uri uri, @NonNull Closeable closeable) throws
+            InvalidNameException, ClosedException, ResolveNameException {
+        List<String> paths = uri.getPathSegments();
+
+        String root = getRoot(uri, closeable);
+        Objects.requireNonNull(root);
+
+        return ipfs.resolve(root, paths, closeable);
     }
 
 
@@ -349,8 +357,16 @@ public class DOCS {
                 answer.append("<form><table  width=\"100%\" style=\"border-spacing: 4px;\">");
                 for (Link link : links) {
 
+                    Uri.Builder builder = new Uri.Builder();
+                    builder.scheme(uri.getScheme())
+                            .authority(uri.getAuthority());
+                    for (String path : paths) {
+                        builder.appendPath(path);
+                    }
+                    builder.appendPath(link.getName());
+                    builder.appendQueryParameter("download", "0");
+                    Uri linkUri = builder.build();
 
-                    String linkUri = uri + "/" + link.getName();
 
                     answer.append("<tr>");
                     answer.append("<td>");
@@ -363,7 +379,7 @@ public class DOCS {
 
                     answer.append("<td width=\"100%\" style=\"word-break:break-word\">");
                     answer.append("<a href=\"");
-                    answer.append(linkUri);
+                    answer.append(linkUri.toString());
                     answer.append("\">");
                     answer.append(link.getName());
                     answer.append("</a>");
@@ -407,6 +423,7 @@ public class DOCS {
             return fileSize.concat(" MB");
         }
     }
+
     public void connectUri(@NonNull Uri uri, @NonNull Closeable closeable) {
         try {
             String host = getHost(uri);
@@ -463,7 +480,7 @@ public class DOCS {
                                                    @NonNull Closeable closeable)
             throws ClosedException {
 
-        try(InputStream in = ipfs.getLoaderStream(content, closeable)) {
+        try (InputStream in = ipfs.getLoaderStream(content, closeable)) {
             if (closeable.isClosed()) {
                 throw new ClosedException();
             }

@@ -6,7 +6,6 @@ import java.util.concurrent.Executors;
 
 import io.ipfs.IPFS;
 import threads.LogUtils;
-
 import threads.thor.utils.AdBlocker;
 
 public class InitApplication extends Application {

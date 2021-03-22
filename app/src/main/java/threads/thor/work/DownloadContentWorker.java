@@ -36,7 +36,6 @@ import threads.thor.MainActivity;
 import threads.thor.R;
 import threads.thor.core.Content;
 import threads.thor.core.DOCS;
-
 import threads.thor.services.MimeTypeService;
 import threads.thor.services.ThorService;
 import threads.thor.utils.MimeType;

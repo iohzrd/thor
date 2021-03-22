@@ -25,7 +25,7 @@ public class Reader {
     public static Reader getReader(@NonNull Closeable closeable, @NonNull BlockStore blockstore,
                                    @NonNull Interface exchange, @NonNull String cid) {
         BlockService blockservice = BlockService.New(blockstore, exchange);
-        DagService dags = new DagService(blockservice);
+        DagService dags = DagService.createDagService(blockservice);
         io.ipfs.format.Node top = Resolver.ResolveNode(closeable, dags, Path.New(cid));
         Objects.requireNonNull(top);
         DagReader dagReader = DagReader.create(top, dags);

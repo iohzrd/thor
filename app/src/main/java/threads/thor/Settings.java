@@ -15,6 +15,7 @@ public class Settings {
 
     public static final String HOMEPAGE = "https://start.duckduckgo.com/";
 
+    public static final String BLOCKS = "/blocks";
     private static final String APP_KEY = "AppKey";
     private static final String JAVASCRIPT_KEY = "javascriptKey";
     private static final String REDIRECT_URL_KEY = "redirectUrlKey";
