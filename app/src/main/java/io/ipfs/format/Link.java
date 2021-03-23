@@ -5,6 +5,7 @@ import androidx.annotation.NonNull;
 import java.util.Objects;
 
 import io.Closeable;
+import io.ipfs.ClosedException;
 import io.ipfs.cid.Cid;
 
 public class Link {
@@ -59,7 +60,7 @@ public class Link {
                 '}';
     }
 
-    public Node GetNode(@NonNull Closeable ctx, @NonNull NodeGetter serv) {
+    public Node GetNode(@NonNull Closeable ctx, @NonNull NodeGetter serv) throws ClosedException {
         return serv.Get(ctx, getCid());
     }
 

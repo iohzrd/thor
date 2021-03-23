@@ -34,7 +34,7 @@ public class ContentManager {
     private final ConcurrentLinkedDeque<PeerID> priority = new ConcurrentLinkedDeque<>();
     private final BitSwapNetwork network;
     private final BlockStore blockStore;
-    private final Pubsub notify = new Pubsub();
+    private final ConcurrentSkipListSet<Cid> loads = new ConcurrentSkipListSet<>();
 
     public ContentManager(@NonNull BlockStore blockStore,
                           @NonNull BitSwapNetwork network) {
@@ -44,7 +44,7 @@ public class ContentManager {
 
     public void HaveReceived(@NonNull PeerID peer, @NonNull List<Cid> cids) {
         for (Cid cid : cids) {
-            if (searches.contains(cid)) {
+            if (!searches.contains(cid)) {
                 LogUtils.info(TAG, "HaveReceived " + cid.String());
                 faulty.remove(peer);
                 priority.push(peer); // top
@@ -59,82 +59,78 @@ public class ContentManager {
             searches.clear();
             loads.clear();
             priority.clear();
-            notify.clear();
             peers.clear();
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         }
     }
 
-    public void runWantHaves(@NonNull Closeable closeable, @NonNull Cid cid) throws ClosedException {
-
-        // TODO event for new connections add them to peers
+    public Block runWantHaves(@NonNull Closeable closeable, @NonNull Cid cid) throws ClosedException {
 
         CopyOnWriteArraySet<PeerID> wants = new CopyOnWriteArraySet<>();
         Set<PeerID> haves = new HashSet<>(); // ok, does not changed by threads
-        Executors.newSingleThreadExecutor().execute(() -> {
-            long begin = System.currentTimeMillis();
-            try {
-                network.FindProvidersAsync(new Providers() {
-                    @Override
-                    public void Peer(@NonNull String pid) {
-                        PeerID peer = new PeerID(pid);
-                        LogUtils.error(TAG, "Provider Peer Step " + peer.String() );
-                        if (!wants.contains(peer) && !faulty.contains(peer)) {
-                            wants.add(peer);
-                            WANTS.execute(() -> {
-                                if (searches.contains(cid)) { // check still valid
-                                    long start = System.currentTimeMillis();
-                                    try {
-                                        LogUtils.error(TAG, "Provider Peer " +
-                                                peer.String() + " cid " + cid.String());
+        if(!searches.contains(cid)) {
+            Executors.newSingleThreadExecutor().execute(() -> {
+                long begin = System.currentTimeMillis();
+                try {
+                    network.FindProvidersAsync(new Providers() {
+                        @Override
+                        public void Peer(@NonNull String pid) {
+                            PeerID peer = new PeerID(pid);
+                            LogUtils.error(TAG, "Provider Peer Step " + peer.String());
+                            if (!wants.contains(peer) && !faulty.contains(peer)) {
+                                wants.add(peer);
+                                WANTS.execute(() -> {
+                                    if (!searches.contains(cid)) { // check still valid
+                                        long start = System.currentTimeMillis();
+                                        try {
+                                            LogUtils.error(TAG, "Provider Peer " +
+                                                    peer.String() + " cid " + cid.String());
 
-                                        if (network.ConnectTo(() -> closeable.isClosed()
-                                                        || ((System.currentTimeMillis() - start) > TIMEOUT),
-                                                peer, true)) {
-                                            if (searches.contains(cid)) { // check still valid
-                                                LogUtils.error(TAG, "Found New Provider " + pid
-                                                        + " for " + cid.String());
-                                                peers.add(peer);
-                                                MessageWriter.sendWantsMessage(closeable, network, peer,
-                                                        Collections.singletonList(cid));
+                                            if (network.ConnectTo(() -> closeable.isClosed()
+                                                            || ((System.currentTimeMillis() - start) > TIMEOUT),
+                                                    peer, true)) {
+                                                if (!searches.contains(cid)) { // check still valid
+                                                    LogUtils.error(TAG, "Found New Provider " + pid
+                                                            + " for " + cid.String());
+                                                    peers.add(peer);
+                                                    MessageWriter.sendWantsMessage(closeable, network, peer,
+                                                            Collections.singletonList(cid));
+                                                }
+                                            } else {
+                                                LogUtils.error(TAG, "Provider Peer Connection Failed " +
+                                                        peer.String());
                                             }
-                                        } else {
-                                            LogUtils.error(TAG, "Provider Peer Connection Failed " +
-                                                    peer.String());
+                                        } catch (ClosedException ignore) {
+                                            // ignore
+                                        } catch (Throwable throwable) {
+                                            priority.remove(peer);
+                                            faulty.add(peer);
+                                            //LogUtils.error(TAG, throwable);
+                                        } finally {
+                                            LogUtils.error(TAG, "Provider Peer " +
+                                                    peer.String() + " took " + (System.currentTimeMillis() - start));
                                         }
-                                    } catch (ClosedException ignore) {
-                                        // ignore
-                                    } catch (Throwable throwable) {
-                                        priority.remove(peer);
-                                        faulty.add(peer);
-                                        //LogUtils.error(TAG, throwable);
-                                    } finally {
-                                        LogUtils.error(TAG, "Provider Peer " +
-                                                peer.String() + " took " + (System.currentTimeMillis() - start));
                                     }
-                                }
-                            });
+                                });
 
+                            }
                         }
-                    }
 
-                    @Override
-                    public boolean isClosed() {
-                        return closeable.isClosed();
-                    }
-                }, cid, PROVIDERS);
-            } catch (ClosedException closedException) {
-                // ignore here
-            } finally {
-                LogUtils.error(TAG, "Finish Provider Search " + (System.currentTimeMillis() - begin));
-            }
-        });
+                        @Override
+                        public boolean isClosed() {
+                            return closeable.isClosed();
+                        }
+                    }, cid, PROVIDERS);
+                } catch (ClosedException closedException) {
+                    // ignore here
+                } finally {
+                    LogUtils.error(TAG, "Finish Provider Search " + (System.currentTimeMillis() - begin));
+                }
+            });
+        }
 
-
-        boolean hasRun;
-        do {
-            hasRun = false;
+        while (!searches.contains(cid)) {
 
             if (closeable.isClosed()) {
                 throw new ClosedException();
@@ -143,10 +139,10 @@ public class ContentManager {
             for (PeerID peer : priority) {
                 if (!wants.contains(peer)) {
                     wants.add(peer);
-                    hasRun = true;
+
                     long start = System.currentTimeMillis();
                     try {
-                        if (searches.contains(cid)) { // check still valid
+                        if (!searches.contains(cid)) { // check still valid
                             peers.add(peer);
                             MessageWriter.sendWantsMessage(closeable, network, peer,
                                     Collections.singletonList(cid));
@@ -155,8 +151,6 @@ public class ContentManager {
                         // ignore
                     } catch (Throwable throwable) {
                         LogUtils.error(TAG, throwable);
-                        priority.remove(peer);
-                        faulty.add(peer);
                         peers.remove(peer);
                     } finally {
                         LogUtils.error(TAG, "Priority Peer " +
@@ -171,64 +165,53 @@ public class ContentManager {
                 throw new ClosedException();
             }
 
+            List<PeerID> cons = network.getPeers();
+            for (PeerID peer : cons) {
+                if (!faulty.contains(peer) && !wants.contains(peer)
+                        && !haves.contains(peer) && !priority.contains(peer)) {
+                    haves.add(peer);
 
-            if (!hasRun) {
-                List<PeerID> cons = network.getPeers();
-                for (PeerID peer : cons) {
-                    if (!faulty.contains(peer) && !wants.contains(peer)
-                            && !haves.contains(peer) && !priority.contains(peer)) {
-                        haves.add(peer);
-
-                        long start = System.currentTimeMillis();
-                        try {
-                            peers.add(peer);
-                            MessageWriter.sendHaveMessage(() -> closeable.isClosed()
-                                            || ((System.currentTimeMillis() - start) > 1000), network, peer,
-                                    Collections.singletonList(cid));
-                        } catch (ClosedException closedException) {
-                            // ignore
-                        } catch (Throwable throwable) {
-                            //LogUtils.error(TAG, throwable);
-                            peers.remove(peer);
-                            faulty.add(peer);
-                        } finally {
-                            LogUtils.error(TAG, "Network Peer " +
-                                    peer.String() + " took " + (System.currentTimeMillis() - start));
-                        }
-
-                        // check priority after each run
-                        break;
-
+                    long start = System.currentTimeMillis();
+                    try {
+                        peers.add(peer);
+                        MessageWriter.sendHaveMessage(() -> closeable.isClosed()
+                                        || ((System.currentTimeMillis() - start) > 1000), network, peer,
+                                Collections.singletonList(cid));
+                    } catch (ClosedException closedException) {
+                        // ignore
+                    } catch (Throwable throwable) {
+                        //LogUtils.error(TAG, throwable);
+                        peers.remove(peer);
+                        faulty.add(peer);
+                    } finally {
+                        LogUtils.error(TAG, "Network Peer " +
+                                peer.String() + " took " + (System.currentTimeMillis() - start));
                     }
+
+                    // check priority after each run
+                    break;
+
                 }
             }
+        }
 
-        } while (searches.contains(cid));
-
+        return blockStore.Get(cid);
     }
 
-    public Block GetBlock(@NonNull Closeable closeable, @NonNull Cid cid) {
+    public Block GetBlock(@NonNull Closeable closeable, @NonNull Cid cid) throws ClosedException {
 
         try {
-            if (!searches.contains(cid)) {
+            synchronized (cid.String().intern()) {
                 AtomicBoolean done = new AtomicBoolean(false);
                 LogUtils.info(TAG, "BlockGet " + cid.String());
-                searches.add(cid);
-                Executors.newSingleThreadExecutor().execute(() -> {
-                    try {
-                        runWantHaves(()-> closeable.isClosed() || done.get(), cid);
-                    } catch (ClosedException closedException) {
-                        LogUtils.error(TAG, "BlockClosed " + cid.String());
-                        notify.Release(cid);
-                    } finally {
-                        done.set(true);
-                    }
-                });
+                try {
+                    return runWantHaves(() -> closeable.isClosed() || done.get(), cid);
+                } finally {
+                    done.set(true);
+                }
             }
-            return notify.Subscribe(cid);
         } finally {
             LogUtils.info(TAG, "BlockRelease  " + cid.String());
-            searches.remove(cid);
         }
 
     }
@@ -239,11 +222,12 @@ public class ContentManager {
             Cid cid = block.Cid();
             LogUtils.info(TAG, "BlockReceived " + cid.String());
             blockStore.Put(block);
-            if (searches.contains(cid)) {
+
+            if (!searches.contains(cid)) {
                 faulty.remove(peer);
                 priority.push(peer);
             }
-            notify.Publish(block);
+            searches.add(cid);
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         }
@@ -271,9 +255,9 @@ public class ContentManager {
             }
         });
     }
-    private final ConcurrentSkipListSet<Cid> loads = new ConcurrentSkipListSet<>();
+
     public void Load(@NonNull Closeable closeable, @NonNull Cid cid) {
-        if(!loads.contains(cid)) {
+        if (!loads.contains(cid)) {
             loads.add(cid);
             LogUtils.error(TAG, "Load Provider Start " + cid.String());
             Executors.newSingleThreadExecutor().execute(() -> {
@@ -310,7 +294,7 @@ public class ContentManager {
                                     }
                                 });
                             } catch (Throwable throwable) {
-                                threads.LogUtils.error(TAG, throwable);
+                                LogUtils.error(TAG, throwable);
                             }
                         }
 

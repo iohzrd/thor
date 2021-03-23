@@ -11,6 +11,7 @@ import java.util.Locale;
 import java.util.Objects;
 
 import io.Closeable;
+import io.ipfs.ClosedException;
 import io.ipfs.cid.Builder;
 import io.ipfs.cid.Cid;
 import io.ipfs.format.Link;
@@ -63,14 +64,14 @@ public class Shard {
     }
 
     @NonNull
-    public Link Find(@NonNull Closeable closeable, @NonNull String name) {
+    public Link Find(@NonNull Closeable closeable, @NonNull String name) throws ClosedException {
 
         HashBits hv = new HashBits(hash(name));
         Shard out = getValue(closeable, hv, name);
         return out.val;
     }
 
-    public Shard getValue(@NonNull Closeable closeable, @NonNull HashBits hv, @NonNull String nkey) {
+    public Shard getValue(@NonNull Closeable closeable, @NonNull HashBits hv, @NonNull String nkey) throws ClosedException {
 
 
         int childIndex = hv.Next(tableSizeLg2);
@@ -177,7 +178,7 @@ public class Shard {
         // get returns the i'th child of this shard. If it is cached in the
 // children array, it will return it from there. Otherwise, it loads the child
 // node from disk.
-        Shard get(Closeable ctx, int sliceIndex) {
+        Shard get(Closeable ctx, int sliceIndex) throws ClosedException {
             check(sliceIndex);
 
             Shard c = child(sliceIndex);
@@ -198,7 +199,7 @@ public class Shard {
             links.set(i, null);
         }
 
-        private Shard loadChild(Closeable ctx, int sliceIndex) {
+        private Shard loadChild(Closeable ctx, int sliceIndex) throws ClosedException {
             Link lnk = link(sliceIndex);
             int lnkLinkType = sd.childLinkType(lnk);
 

@@ -9,6 +9,7 @@ import java.util.Objects;
 import java.util.Stack;
 
 import io.Closeable;
+import io.ipfs.ClosedException;
 import io.ipfs.unixfs.FSNode;
 
 public class Walker {
@@ -27,7 +28,7 @@ public class Walker {
 
 
     @Nullable
-    public NavigableNode Next(@NonNull Closeable closeable, @NonNull Visitor visitor) {
+    public NavigableNode Next(@NonNull Closeable closeable, @NonNull Visitor visitor) throws ClosedException {
 
 
         if (!visitor.isRootVisited(true)) {
@@ -88,7 +89,7 @@ public class Walker {
     }
 
 
-    public boolean down(@NonNull Closeable closeable, @NonNull Visitor visitor) {
+    public boolean down(@NonNull Closeable closeable, @NonNull Visitor visitor) throws ClosedException {
 
 
         NavigableNode child = fetchChild(closeable, visitor);
@@ -101,7 +102,7 @@ public class Walker {
 
 
     @Nullable
-    private NavigableNode fetchChild(@NonNull Closeable closeable, @NonNull Visitor visitor) {
+    private NavigableNode fetchChild(@NonNull Closeable closeable, @NonNull Visitor visitor) throws ClosedException {
         Stage stage = visitor.peekStage();
         NavigableNode activeNode = stage.getNode();
         int index = stage.index();
@@ -121,7 +122,7 @@ public class Walker {
 
     public Pair<Stack<Stage>, Long> Seek(@NonNull Closeable closeable,
                                          @NonNull Stack<Stage> stack,
-                                         long offset) {
+                                         long offset) throws ClosedException {
 
         if (offset < 0) {
             throw new RuntimeException("invalid offset");
@@ -172,7 +173,7 @@ public class Walker {
         return Pair.create(stack, left);
     }
 
-    public Pair<Stack<Stage>, Long> Seek(@NonNull Closeable closeable, long offset) {
+    public Pair<Stack<Stage>, Long> Seek(@NonNull Closeable closeable, long offset) throws ClosedException {
 
         Stack<Stage> stack = new Stack<>();
         stack.push(new Stage(getRoot()));

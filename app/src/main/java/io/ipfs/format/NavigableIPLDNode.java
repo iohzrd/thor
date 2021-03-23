@@ -8,6 +8,7 @@ import java.util.Objects;
 
 import io.Closeable;
 import io.LogUtils;
+import io.ipfs.ClosedException;
 import io.ipfs.IPFS;
 import io.ipfs.cid.Cid;
 
@@ -51,7 +52,7 @@ public class NavigableIPLDNode implements NavigableNode {
     }
 
     @Override
-    public NavigableNode FetchChild(@NonNull Closeable ctx, int childIndex) {
+    public NavigableNode FetchChild(@NonNull Closeable ctx, int childIndex) throws ClosedException {
         Node child = getPromiseValue(ctx, childIndex);
         Objects.requireNonNull(child);
 
@@ -82,7 +83,7 @@ public class NavigableIPLDNode implements NavigableNode {
         return GetIPLDNode().getLinks().size();
     }
 
-    private Node getPromiseValue(Closeable ctx, int childIndex) {
+    private Node getPromiseValue(Closeable ctx, int childIndex) throws ClosedException {
         return nodeGetter.Get(ctx, cids.get(childIndex));
 
     }

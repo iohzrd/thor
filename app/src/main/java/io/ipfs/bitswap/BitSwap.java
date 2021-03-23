@@ -7,6 +7,7 @@ import java.util.List;
 
 import io.Closeable;
 import io.LogUtils;
+import io.ipfs.ClosedException;
 import io.ipfs.cid.Cid;
 import io.ipfs.exchange.Interface;
 import io.ipfs.format.Block;
@@ -33,7 +34,7 @@ public class BitSwap implements Interface, Receiver {
 
     @Nullable
     @Override
-    public Block getBlock(@NonNull Closeable closeable, @NonNull Cid cid) {
+    public Block getBlock(@NonNull Closeable closeable, @NonNull Cid cid) throws ClosedException {
         return contentManager.GetBlock(closeable, cid);
     }
 

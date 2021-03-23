@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Objects;
 
 import io.Closeable;
+import io.ipfs.ClosedException;
 import io.ipfs.Storage;
 import io.ipfs.blockservice.BlockService;
 import io.ipfs.cid.Cid;
@@ -28,7 +29,7 @@ import io.protos.unixfs.UnixfsProtos;
 public class Resolver {
 
     public static Node resolveNode(@NonNull Closeable closeable, @NonNull Storage storage,
-                                   @NonNull Interface exchange, @NonNull String path) {
+                                   @NonNull Interface exchange, @NonNull String path) throws ClosedException {
         BlockStore bs = BlockStore.NewBlockstore(storage);
         BlockService blockservice = BlockService.New(bs, exchange);
         DagService dags = DagService.createDagService(blockservice);
@@ -36,13 +37,13 @@ public class Resolver {
     }
 
     public static String resolve(@NonNull Closeable closeable, @NonNull Storage storage,
-                                 @NonNull Interface exchange, @NonNull String path) {
+                                 @NonNull Interface exchange, @NonNull String path) throws ClosedException {
         Node resolved = resolveNode(closeable, storage, exchange, path);
         Objects.requireNonNull(resolved);
         return resolved.Cid().String();
     }
 
-    public static Cid ResolvePath(@NonNull Closeable ctx, @NonNull NodeGetter dag, @NonNull Path p) {
+    public static Cid ResolvePath(@NonNull Closeable ctx, @NonNull NodeGetter dag, @NonNull Path p) throws ClosedException {
         Path ipa = new Path(p.String());
 
         List<String> paths = ipa.Segments();
@@ -60,7 +61,7 @@ public class Resolver {
     @Nullable
     public static io.ipfs.format.Node ResolveNode(@NonNull Closeable closeable,
                                                   @NonNull NodeGetter nodeGetter,
-                                                  @NonNull Path path) {
+                                                  @NonNull Path path) throws ClosedException {
         Cid cid = ResolvePath(closeable, nodeGetter, path);
 
         return nodeGetter.Get(closeable, cid);
@@ -68,7 +69,7 @@ public class Resolver {
 
     public static Pair<Cid, List<String>> ResolveToLastNode(@NonNull Closeable ctx,
                                                             @NonNull NodeGetter dag,
-                                                            @NonNull Path path) {
+                                                            @NonNull Path path) throws ClosedException {
         Pair<Cid, List<String>> result = Path.SplitAbsPath(path);
         Cid c = result.first;
         List<String> p = result.second;

@@ -965,7 +965,7 @@ public class IPFS implements Listener, ContentRouting {
     }
 
     @NonNull
-    public io.ipfs.utils.Reader getReader(@NonNull String cid, @NonNull Closeable closeable) {
+    public io.ipfs.utils.Reader getReader(@NonNull String cid, @NonNull Closeable closeable) throws ClosedException {
         BlockStore blockstore = BlockStore.NewBlockstore(blocks);
         return io.ipfs.utils.Reader.getReader(closeable, blockstore, exchange, cid);
     }
@@ -1039,13 +1039,13 @@ public class IPFS implements Listener, ContentRouting {
     }
 
     @NonNull
-    public InputStream getLoaderStream(@NonNull String cid, @NonNull Closeable closeable) {
+    public InputStream getLoaderStream(@NonNull String cid, @NonNull Closeable closeable) throws ClosedException {
         io.ipfs.utils.Reader loader = getReader(cid, closeable);
         return new ReaderStream(loader);
     }
 
     @NonNull
-    public InputStream getLoaderStream(@NonNull String cid, @NonNull Progress progress) {
+    public InputStream getLoaderStream(@NonNull String cid, @NonNull Progress progress) throws ClosedException {
         io.ipfs.utils.Reader loader = getReader(cid, progress);
         return new ProgressStream(loader, progress);
 
@@ -1372,7 +1372,7 @@ public class IPFS implements Listener, ContentRouting {
     }
 
     @NonNull
-    public InputStream getInputStream(@NonNull String cid, @NonNull Closeable closeable) {
+    public InputStream getInputStream(@NonNull String cid, @NonNull Closeable closeable) throws ClosedException {
         io.ipfs.utils.Reader reader = getReader(cid, closeable);
         return new ReaderStream(reader);
 

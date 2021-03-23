@@ -10,6 +10,7 @@ import java.util.Stack;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.Closeable;
+import io.ipfs.ClosedException;
 import io.ipfs.format.NavigableIPLDNode;
 import io.ipfs.format.NavigableNode;
 import io.ipfs.format.Node;
@@ -64,14 +65,14 @@ public class DagReader {
     }
 
 
-    public void Seek(@NonNull Closeable closeable, long offset) {
+    public void Seek(@NonNull Closeable closeable, long offset) throws ClosedException {
         Pair<Stack<Stage>, Long> result = dagWalker.Seek(closeable, offset);
         this.atomicLeft.set(result.second.intValue());
         this.visitor.reset(result.first);
     }
 
     @Nullable
-    public byte[] loadNextData(@NonNull Closeable closeable) {
+    public byte[] loadNextData(@NonNull Closeable closeable) throws ClosedException {
 
 
         int left = atomicLeft.getAndSet(0);

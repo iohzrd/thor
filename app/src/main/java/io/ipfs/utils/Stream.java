@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Objects;
 
 import io.Closeable;
+import io.ipfs.ClosedException;
 import io.ipfs.Storage;
 import io.ipfs.blockservice.BlockService;
 import io.ipfs.cid.Cid;
@@ -47,7 +48,7 @@ public class Stream {
     }
 
 
-    public static void Rm(@NonNull Closeable closeable, @NonNull Storage storage, @NonNull String cid, boolean recursively) {
+    public static void Rm(@NonNull Closeable closeable, @NonNull Storage storage, @NonNull String cid, boolean recursively) throws ClosedException {
 
         BlockStore bs = BlockStore.NewBlockstore(storage);
         Interface exchange = new Exchange(bs);
@@ -71,7 +72,7 @@ public class Stream {
     public static boolean IsDir(@NonNull Closeable closeable,
                                 @NonNull BlockStore blockstore,
                                 @NonNull Interface exchange,
-                                @NonNull String path) {
+                                @NonNull String path) throws ClosedException {
 
 
         BlockService blockservice = BlockService.New(blockstore, exchange);
@@ -93,7 +94,7 @@ public class Stream {
 
 
     public static String AddLinkToDir(@NonNull Storage storage, @NonNull Closeable closeable,
-                                      @NonNull String dir, @NonNull String name, @NonNull String link) {
+                                      @NonNull String dir, @NonNull String name, @NonNull String link) throws ClosedException {
 
         Adder fileAdder = getFileAdder(storage);
 
@@ -112,7 +113,7 @@ public class Stream {
     }
 
     public static String RemoveLinkFromDir(@NonNull Storage storage, @NonNull Closeable closeable,
-                                           @NonNull String dir, @NonNull String name) {
+                                           @NonNull String dir, @NonNull String name) throws ClosedException {
 
         Adder fileAdder = getFileAdder(storage);
 
@@ -130,7 +131,7 @@ public class Stream {
 
     public static void Ls(@NonNull LinkCloseable closeable, @NonNull BlockStore blockstore,
                           @NonNull Interface exchange,
-                          @NonNull String path, boolean resolveChildren) {
+                          @NonNull String path, boolean resolveChildren) throws ClosedException {
 
         BlockService blockservice = BlockService.New(blockstore, exchange);
         DagService dagService = DagService.createDagService(blockservice);
@@ -160,7 +161,7 @@ public class Stream {
     private static void lsFromLinksAsync(@NonNull LinkCloseable closeable,
                                          @NonNull DagService dagService,
                                          @NonNull Directory dir,
-                                         boolean resolveChildren) {
+                                         boolean resolveChildren) throws ClosedException {
 
         List<Link> links = dir.GetNode().getLinks();
         for (Link link : links) {
@@ -171,7 +172,7 @@ public class Stream {
     private static void lsFromLinks(@NonNull LinkCloseable closeable,
                                     @NonNull DagService dagService,
                                     @NonNull List<Link> links,
-                                    boolean resolveChildren) {
+                                    boolean resolveChildren) throws ClosedException {
         for (Link link : links) {
             processLink(closeable, dagService, link, resolveChildren);
         }
@@ -180,7 +181,7 @@ public class Stream {
     private static void processLink(@NonNull LinkCloseable closeable,
                                     @NonNull DagService dagService,
                                     @NonNull Link link,
-                                    boolean resolveChildren) {
+                                    boolean resolveChildren) throws ClosedException {
 
         String name = link.getName();
         String hash = link.getCid().String();

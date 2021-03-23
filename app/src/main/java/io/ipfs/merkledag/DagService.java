@@ -6,6 +6,7 @@ import androidx.annotation.Nullable;
 import java.util.List;
 
 import io.Closeable;
+import io.ipfs.ClosedException;
 import io.ipfs.blockservice.BlockService;
 import io.ipfs.cid.Cid;
 import io.ipfs.format.Block;
@@ -21,7 +22,7 @@ public interface DagService extends NodeGetter, NodeAdder {
             @Nullable
 
             @Override
-            public Node Get(@NonNull Closeable closeable, @NonNull Cid cid) {
+            public Node Get(@NonNull Closeable closeable, @NonNull Cid cid) throws ClosedException {
                 return nodeGetter.Get(closeable, cid);
             }
 
@@ -42,7 +43,7 @@ public interface DagService extends NodeGetter, NodeAdder {
 
             @Override
             @Nullable
-            public Node Get(@NonNull Closeable closeable, @NonNull Cid cid) {
+            public Node Get(@NonNull Closeable closeable, @NonNull Cid cid) throws ClosedException {
 
                 Block b = blockService.GetBlock(closeable, cid);
                 if (b == null) {

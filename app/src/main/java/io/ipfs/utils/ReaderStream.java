@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import io.LogUtils;
+import io.ipfs.ClosedException;
 
 
 public class ReaderStream extends InputStream {
@@ -52,7 +53,6 @@ public class ReaderStream extends InputStream {
                 }
             }
         } catch (Throwable e) {
-            LogUtils.error(TAG, e);
             throw new IOException(e);
         }
     }
@@ -63,7 +63,7 @@ public class ReaderStream extends InputStream {
     }
 
 
-    private boolean preLoad() {
+    private boolean preLoad() throws ClosedException {
         data = reader.loadNextData();
         return data != null;
     }

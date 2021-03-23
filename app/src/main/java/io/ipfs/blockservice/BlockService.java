@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.Closeable;
+import io.ipfs.ClosedException;
 import io.ipfs.cid.Cid;
 import io.ipfs.exchange.Fetcher;
 import io.ipfs.exchange.Interface;
@@ -21,7 +22,7 @@ public interface BlockService extends BlockGetter {
 
             @Override
             @Nullable
-            public Block GetBlock(@NonNull Closeable closeable, @NonNull Cid cid) {
+            public Block GetBlock(@NonNull Closeable closeable, @NonNull Cid cid) throws ClosedException {
                 return getBlock(closeable, cid, bs, rem);
             }
 
@@ -46,7 +47,7 @@ public interface BlockService extends BlockGetter {
 
             @Nullable
             private Block getBlock(@NonNull Closeable closeable, @NonNull Cid cid,
-                                   @NonNull BlockStore bs, @NonNull Fetcher fetcher) {
+                                   @NonNull BlockStore bs, @NonNull Fetcher fetcher) throws ClosedException {
                 Block block = bs.Get(cid);
                 if (block != null) {
                     return block;
