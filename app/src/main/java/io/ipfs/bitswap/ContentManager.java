@@ -165,6 +165,7 @@ public class ContentManager {
                 throw new ClosedException();
             }
 
+
             List<PeerID> cons = network.getPeers();
             for (PeerID peer : cons) {
                 if (!faulty.contains(peer) && !wants.contains(peer)
