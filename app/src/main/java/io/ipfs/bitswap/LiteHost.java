@@ -10,7 +10,6 @@ import java.util.Objects;
 import io.Closeable;
 import io.ipfs.ClosedException;
 import io.ipfs.cid.Cid;
-import io.ipfs.utils.Connector;
 import io.libp2p.host.Host;
 import io.libp2p.network.Stream;
 import io.libp2p.network.StreamHandler;
@@ -23,35 +22,27 @@ public class LiteHost implements BitSwapNetwork {
 
     @NonNull
     private final Host host;
-    @NonNull
-    private final Connector connector;
     @Nullable
     private final ContentRouting contentRouting;
     private final List<Protocol> protocols = new ArrayList<>();
 
     private LiteHost(@NonNull Host host,
                      @Nullable ContentRouting contentRouting,
-                     @NonNull Connector connector,
                      @NonNull List<Protocol> protos) {
         this.host = host;
         this.contentRouting = contentRouting;
-        this.connector = connector;
         this.protocols.addAll(protos);
     }
 
     public static BitSwapNetwork NewLiteHost(@NonNull Host host,
                                              @Nullable ContentRouting contentRouting,
-                                             @NonNull Connector connector,
                                              @NonNull List<Protocol> protocols) {
-        return new LiteHost(host, contentRouting, connector, protocols);
+        return new LiteHost(host, contentRouting, protocols);
     }
 
     @Override
     public boolean ConnectTo(@NonNull Closeable closeable, @NonNull PeerID peer, boolean protect) throws ClosedException {
-        if (connector.ShouldConnect(peer.String())) {
-            return host.Connect(closeable, peer, protect);
-        }
-        return false;
+        return host.Connect(closeable, peer, protect);
     }
 
 
@@ -81,11 +72,7 @@ public class LiteHost implements BitSwapNetwork {
                     try {
                         byte[] data = stream.GetData();
                         BitSwapMessage received = BitSwapMessage.fromData(data);
-
-                        if (connector.ShouldConnect(peer.String())) {
-                            receiver.ReceiveMessage(peer, stream.Protocol(), received);
-                        }
-
+                        receiver.ReceiveMessage(peer, stream.Protocol(), received);
                     } catch (Throwable throwable) {
                         receiver.ReceiveError(peer, stream.Protocol(),
                                 "" + throwable.getMessage());
@@ -104,18 +91,14 @@ public class LiteHost implements BitSwapNetwork {
 
 
     @Override
-    public void WriteMessage(@NonNull Closeable closeable, @NonNull PeerID peer, @NonNull BitSwapMessage message) throws ClosedException {
-
-        if (!connector.ShouldConnect(peer.String())) {
-            throw new RuntimeException("Connection not allowed");
-        }
+    public void WriteMessage(@NonNull Closeable closeable, @NonNull PeerID peer,
+                             @NonNull BitSwapMessage message) throws ClosedException {
 
         byte[] data = message.ToNetV1();
         long res = host.WriteMessage(closeable, peer, protocols, data);
         if (Objects.equals(data.length, res)) {
             throw new RuntimeException("Message not fully written");
         }
-
     }
 
 
