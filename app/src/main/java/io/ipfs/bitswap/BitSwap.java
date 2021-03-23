@@ -17,13 +17,10 @@ import io.libp2p.protocol.Protocol;
 public class BitSwap implements Interface, Receiver {
 
     private static final String TAG = BitSwap.class.getSimpleName();
-
-    private final BitSwapEngine engine;
     private final ContentManager contentManager;
 
 
     public BitSwap(@NonNull BlockStore blockstore, @NonNull BitSwapNetwork network) {
-        engine = BitSwapEngine.NewEngine(blockstore, network, network.Self());
         contentManager = new ContentManager(blockstore, network);
     }
 
@@ -70,8 +67,6 @@ public class BitSwap implements Interface, Receiver {
                 LogUtils.error(TAG, throwable);
             }
         }
-
-        //engine.MessageReceived(peer, protocol, incoming);
     }
 
 

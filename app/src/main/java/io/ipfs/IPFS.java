@@ -1426,7 +1426,7 @@ public class IPFS implements Listener, ContentRouting {
         }
     }
 
-    public void load(Closeable closeable, String cid) {
+    public void load(@NonNull Closeable closeable, @NonNull String cid) {
         try {
             if (exchange != null) {
                 exchange.load(closeable, Cid.Decode(cid));
