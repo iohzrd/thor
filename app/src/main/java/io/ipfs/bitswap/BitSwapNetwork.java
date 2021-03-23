@@ -16,11 +16,7 @@ public interface BitSwapNetwork extends ContentRouting {
 
     void WriteMessage(@NonNull Closeable closeable, @NonNull PeerID peer, @NonNull BitSwapMessage message) throws ClosedException;
 
-    void WriteMessage(@NonNull Closeable closeable, @NonNull PeerID peer, @NonNull Protocol protocol, @NonNull BitSwapMessage message) throws ClosedException;
-
     void SetDelegate(@NonNull Receiver receiver);
-
-    PeerID Self();
 
     @NonNull
     List<PeerID> getPeers();

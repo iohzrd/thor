@@ -4,7 +4,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -29,7 +28,6 @@ public class LiteHost implements BitSwapNetwork {
     @Nullable
     private final ContentRouting contentRouting;
     private final List<Protocol> protocols = new ArrayList<>();
-    private Receiver receiver;
 
     private LiteHost(@NonNull Host host,
                      @Nullable ContentRouting contentRouting,
@@ -59,7 +57,6 @@ public class LiteHost implements BitSwapNetwork {
 
     @Override
     public void SetDelegate(@NonNull Receiver receiver) {
-        this.receiver = receiver;
 
         for (Protocol protocol : protocols) {
             host.SetStreamHandler(protocol, new StreamHandler() {
@@ -99,11 +96,6 @@ public class LiteHost implements BitSwapNetwork {
 
     }
 
-    @Override
-    public PeerID Self() {
-        return host.Self();
-    }
-
     @NonNull
     @Override
     public List<PeerID> getPeers() {
@@ -126,24 +118,6 @@ public class LiteHost implements BitSwapNetwork {
 
     }
 
-
-    @Override
-    public void WriteMessage(@NonNull Closeable closeable,
-                             @NonNull PeerID peer,
-                             @NonNull Protocol protocol,
-                             @NonNull BitSwapMessage message) throws ClosedException {
-
-        if (!connector.ShouldConnect(peer.String())) {
-            throw new RuntimeException("Connection not allowed");
-        }
-
-        byte[] data = message.ToNetV1();
-        long res = host.WriteMessage(closeable, peer, Collections.singletonList(protocol), data);
-        if (Objects.equals(data.length, res)) {
-            throw new RuntimeException("Message not fully written");
-        }
-
-    }
 
 
     @Override
