@@ -24,12 +24,15 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import java.io.FileNotFoundException;
+import java.util.Date;
+import java.util.Hashtable;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.Closeable;
 import io.LogUtils;
 import io.ipfs.IPFS;
+import io.ipfs.format.Node;
 import io.ipfs.utils.Reader;
 import threads.thor.BuildConfig;
 import threads.thor.R;
@@ -93,7 +96,6 @@ public class FileDocumentsProvider extends DocumentsProvider {
         return "0";
     }
 
-    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     public static boolean hasReadPermission(@NonNull Context context, @NonNull Uri uri) {
         int perm = context.checkUriPermission(uri, Binder.getCallingPid(), Binder.getCallingUid(),
                 Intent.FLAG_GRANT_READ_URI_PERMISSION);
@@ -167,13 +169,27 @@ public class FileDocumentsProvider extends DocumentsProvider {
         }
         return -1;
     }
+    private static class CidInfo {
+        private final String name;
+        private final String mimeType;
+        private final long size;
 
-    public static Uri getUriForIpfs(String cid) {
+        private CidInfo(String name, String mimeType, long size) {
+            this.name = name;
+            this.mimeType = mimeType;
+            this.size = size;
+        }
+    }
+    private static final Hashtable<String, CidInfo> CID_INFO_HASHTABLE = new Hashtable<>();
+    public static Uri getUriForIpfs(@NonNull Node node, @NonNull String name, @NonNull String mimeType) {
+
+        CID_INFO_HASHTABLE.put(node.Cid().String(), new CidInfo(name, mimeType, node.Size()));
+
         Uri.Builder builder = new Uri.Builder();
         builder.scheme(SCHEME)
                 .authority(BuildConfig.DOCUMENTS_AUTHORITY)
                 .appendPath(DOCUMENT)
-                .appendPath(cid);
+                .appendPath(node.Cid().String());
 
         return builder.build();
     }
@@ -197,7 +213,29 @@ public class FileDocumentsProvider extends DocumentsProvider {
 
     @Override
     public Cursor queryDocument(String documentId, String[] projection) throws FileNotFoundException {
-        return null;
+        LogUtils.info(TAG, "queryDocument : " + documentId);
+        MatrixCursor result = new MatrixCursor(resolveDocumentProjection(projection));
+
+        try {
+
+            if (ipfs.isValidCID(documentId)) {
+                CidInfo info = CID_INFO_HASHTABLE.get(documentId);
+                Objects.requireNonNull(info);
+
+                MatrixCursor.RowBuilder row = result.newRow();
+                row.add(Document.COLUMN_DOCUMENT_ID, documentId);
+                row.add(Document.COLUMN_DISPLAY_NAME, info.name);
+                row.add(Document.COLUMN_SIZE, info.size);
+                row.add(Document.COLUMN_MIME_TYPE, info.mimeType);
+                row.add(Document.COLUMN_LAST_MODIFIED, new Date());
+
+            }
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable);
+            throw new FileNotFoundException("" + throwable.getLocalizedMessage());
+        }
+
+        return result;
     }
 
     @Override
