@@ -9,6 +9,7 @@ import java.util.Objects;
 
 import io.Closeable;
 import io.ipfs.ClosedException;
+import io.ipfs.ProtocolNotSupported;
 import io.ipfs.cid.Cid;
 import io.libp2p.host.Host;
 import io.libp2p.network.Stream;
@@ -92,7 +93,7 @@ public class LiteHost implements BitSwapNetwork {
 
     @Override
     public void WriteMessage(@NonNull Closeable closeable, @NonNull PeerID peer,
-                             @NonNull BitSwapMessage message) throws ClosedException {
+                             @NonNull BitSwapMessage message) throws ClosedException, ProtocolNotSupported {
 
         byte[] data = message.ToNetV1();
         long res = host.WriteMessage(closeable, peer, protocols, data);

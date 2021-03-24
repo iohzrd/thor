@@ -6,6 +6,7 @@ import java.util.List;
 
 import io.Closeable;
 import io.ipfs.ClosedException;
+import io.ipfs.ProtocolNotSupported;
 import io.ipfs.cid.Cid;
 import io.libp2p.peer.PeerID;
 import io.protos.bitswap.BitswapProtos;
@@ -18,7 +19,8 @@ public class MessageWriter {
     public static void sendHaveMessage(@NonNull Closeable closeable,
                                        @NonNull BitSwapNetwork network,
                                        @NonNull PeerID peer,
-                                       @NonNull List<Cid> wantHaves) throws ClosedException {
+                                       @NonNull List<Cid> wantHaves)
+            throws ClosedException, ProtocolNotSupported {
         if (wantHaves.size() == 0) {
             return;
         }
@@ -50,7 +52,8 @@ public class MessageWriter {
     public static void sendWantsMessage(@NonNull Closeable closeable,
                                         @NonNull BitSwapNetwork network,
                                         @NonNull PeerID peer,
-                                        @NonNull List<Cid> wantBlocks) throws ClosedException {
+                                        @NonNull List<Cid> wantBlocks)
+            throws ClosedException, ProtocolNotSupported {
 
         if (wantBlocks.size() == 0) {
             return;

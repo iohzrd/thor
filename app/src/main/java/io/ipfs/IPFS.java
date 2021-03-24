@@ -1203,7 +1203,8 @@ public class IPFS implements Listener, ContentRouting {
                             public long WriteMessage(@NonNull Closeable closeable,
                                                      @NonNull PeerID peer,
                                                      @NonNull List<Protocol> protocols,
-                                                     @NonNull byte[] bytes) throws ClosedException {
+                                                     @NonNull byte[] bytes)
+                                    throws ClosedException, ProtocolNotSupported {
 
                                 try {
                                     String protos = "";
@@ -1219,7 +1220,12 @@ public class IPFS implements Listener, ContentRouting {
                                     if (closeable.isClosed()) {
                                         throw new ClosedException();
                                     } else {
-                                        throw new RuntimeException(throwable);
+                                        String msg = throwable.getMessage();
+                                        if(Objects.equals(msg, "protocol not supported")){
+                                            throw new ProtocolNotSupported();
+                                        } else {
+                                            throw new RuntimeException(throwable);
+                                        }
                                     }
                                 }
                             }

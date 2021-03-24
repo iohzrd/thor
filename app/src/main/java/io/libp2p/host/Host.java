@@ -6,6 +6,7 @@ import java.util.List;
 
 import io.Closeable;
 import io.ipfs.ClosedException;
+import io.ipfs.ProtocolNotSupported;
 import io.libp2p.network.StreamHandler;
 import io.libp2p.peer.PeerID;
 import io.libp2p.protocol.Protocol;
@@ -17,7 +18,7 @@ public interface Host {
     long WriteMessage(@NonNull Closeable closeable,
                       @NonNull PeerID peer,
                       @NonNull List<Protocol> protocols,
-                      @NonNull byte[] bytes) throws ClosedException;
+                      @NonNull byte[] bytes) throws ClosedException, ProtocolNotSupported;
 
 
     // SetStreamHandler sets the protocol handler on the Host's Mux.
