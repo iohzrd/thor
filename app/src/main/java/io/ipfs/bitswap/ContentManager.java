@@ -2,13 +2,13 @@ package io.ipfs.bitswap;
 
 import androidx.annotation.NonNull;
 
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentSkipListSet;
-import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -30,12 +30,15 @@ public class ContentManager {
     private static final ExecutorService LOADS = Executors.newFixedThreadPool(4);
     private static final ExecutorService WANTS = Executors.newFixedThreadPool(8);
     private final ConcurrentSkipListSet<Cid> searches = new ConcurrentSkipListSet<>();
+    private final ConcurrentSkipListSet<String> haves = new ConcurrentSkipListSet<>();
     private final ConcurrentSkipListSet<PeerID> faulty = new ConcurrentSkipListSet<>();
     private final ConcurrentSkipListSet<PeerID> peers = new ConcurrentSkipListSet<>();
     private final ConcurrentLinkedDeque<PeerID> priority = new ConcurrentLinkedDeque<>();
     private final BitSwapNetwork network;
     private final BlockStore blockStore;
     private final ConcurrentSkipListSet<Cid> loads = new ConcurrentSkipListSet<>();
+    private final ConcurrentHashMap<Cid, ConcurrentLinkedDeque<PeerID>> matches = new ConcurrentHashMap<>();
+
 
     public ContentManager(@NonNull BlockStore blockStore,
                           @NonNull BitSwapNetwork network) {
@@ -43,11 +46,24 @@ public class ContentManager {
         this.network = network;
     }
 
+
     public void HaveReceived(@NonNull PeerID peer, @NonNull List<Cid> cids) {
+
         for (Cid cid : cids) {
+
             if (!searches.contains(cid)) {
-                LogUtils.info(TAG, "HaveReceived " + cid.String());
-                priority.push(peer); // top
+                LogUtils.error(TAG, "HaveReceived " + cid.String() + " " + peer.String());
+
+                if (Objects.equals(peer, priority.peek())) {
+                    priority.push(peer); // top
+                }
+
+                ConcurrentLinkedDeque<PeerID> set = matches.get(cid);
+                if(set == null){
+                    set = new ConcurrentLinkedDeque<>();
+                    matches.put(cid, set);
+                }
+                set.add(peer);
             }
         }
     }
@@ -56,10 +72,12 @@ public class ContentManager {
 
         LogUtils.error(TAG, "Reset");
         try {
+            haves.clear();
             searches.clear();
             loads.clear();
             priority.clear();
             peers.clear();
+            matches.clear();
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         }
@@ -67,8 +85,7 @@ public class ContentManager {
 
     public Block runWantHaves(@NonNull Closeable closeable, @NonNull Cid cid) throws ClosedException {
 
-        CopyOnWriteArraySet<PeerID> wants = new CopyOnWriteArraySet<>();
-        Set<PeerID> haves = new HashSet<>(); // ok, does not changed by threads
+
         if(!searches.contains(cid)) {
             Executors.newSingleThreadExecutor().execute(() -> {
                 long begin = System.currentTimeMillis();
@@ -78,8 +95,7 @@ public class ContentManager {
                         public void Peer(@NonNull String pid) {
                             PeerID peer = new PeerID(pid);
                             LogUtils.error(TAG, "Provider Peer Step " + peer.String());
-                            if (!wants.contains(peer) && !faulty.contains(peer)) {
-                                wants.add(peer);
+                            if (!faulty.contains(peer)) {
                                 WANTS.execute(() -> {
                                     if (!searches.contains(cid)) { // check still valid
                                         long start = System.currentTimeMillis();
@@ -93,9 +109,7 @@ public class ContentManager {
                                                 if (!searches.contains(cid)) { // check still valid
                                                     LogUtils.error(TAG, "Found New Provider " + pid
                                                             + " for " + cid.String());
-                                                    peers.add(peer);
-                                                    MessageWriter.sendWantsMessage(closeable, network, peer,
-                                                            Collections.singletonList(cid));
+                                                    priority.push(peer);
                                                 }
                                             } else {
                                                 LogUtils.error(TAG, "Provider Peer Connection Failed " +
@@ -103,10 +117,6 @@ public class ContentManager {
                                             }
                                         } catch (ClosedException ignore) {
                                             // ignore
-                                        } catch (ProtocolNotSupported ignore) {
-                                            peers.remove(peer);
-                                            priority.remove(peer);
-                                            faulty.add(peer);
                                         } catch (Throwable throwable) {
                                             LogUtils.error(TAG, throwable);
                                         } finally {
@@ -138,31 +148,59 @@ public class ContentManager {
                 throw new ClosedException();
             }
 
-            for (PeerID peer : priority) {
-                if (!wants.contains(peer)) {
-                    wants.add(peer);
 
+            boolean hasRun = false;
+
+
+            ConcurrentLinkedDeque<PeerID> set = matches.get(cid);
+            if(set != null) {
+                PeerID peer = set.poll();
+                if(peer != null) {
                     long start = System.currentTimeMillis();
                     try {
-                        if (!searches.contains(cid)) { // check still valid
-                            peers.add(peer);
-                            MessageWriter.sendWantsMessage(closeable, network, peer,
-                                    Collections.singletonList(cid));
-                        }
+                        MessageWriter.sendWantsMessage(closeable, network, peer,
+                                Collections.singletonList(cid));
+                        hasRun = true;
                     } catch (ClosedException closedException) {
                         // ignore
                     } catch (ProtocolNotSupported ignore) {
-                        peers.remove(peer);
-                        priority.remove(peer);
                         faulty.add(peer);
                     } catch (Throwable throwable) {
                         LogUtils.error(TAG, throwable);
                     } finally {
-                        LogUtils.error(TAG, "Priority Peer " +
+                        LogUtils.error(TAG, "Match Peer " +
                                 peer.String() + " took " + (System.currentTimeMillis() - start));
                     }
-                    // check priority after each run
-                    break;
+                }
+            }
+
+
+            if (!hasRun) {
+                for (PeerID peer : priority) {
+                    String key = getKey(peer, cid);
+                    if (!faulty.contains(peer) && !haves.contains(key)) {
+                        long start = System.currentTimeMillis();
+                        try {
+                            peers.add(peer);
+                            MessageWriter.sendHaveMessage(closeable, network, peer,
+                                    Collections.singletonList(cid));
+                            haves.add(key);
+                            hasRun = true;
+                        } catch (ClosedException closedException) {
+                            // ignore
+                        } catch (ProtocolNotSupported ignore) {
+                            peers.remove(peer);
+                            priority.remove(peer);
+                            faulty.add(peer);
+                        } catch (Throwable throwable) {
+                            LogUtils.error(TAG, throwable);
+                        } finally {
+                            LogUtils.error(TAG, "Priority Peer " +
+                                    peer.String() + " took " + (System.currentTimeMillis() - start));
+                        }
+                        // check priority after each run
+                        break;
+                    }
                 }
             }
 
@@ -170,35 +208,35 @@ public class ContentManager {
                 throw new ClosedException();
             }
 
+            if (!hasRun) {
+                List<PeerID> cons = network.getPeers();
+                for (PeerID peer : cons) {
+                    String key = getKey(peer, cid);
+                    if (!faulty.contains(peer) && !haves.contains(key)) {
+                        long start = System.currentTimeMillis();
+                        try {
+                            peers.add(peer);
+                            MessageWriter.sendHaveMessage(() -> closeable.isClosed()
+                                            || ((System.currentTimeMillis() - start) > 1000), network, peer,
+                                    Collections.singletonList(cid));
+                            haves.add(key);
+                        } catch (ClosedException closedException) {
+                            // ignore
+                        } catch (ProtocolNotSupported ignore) {
+                            peers.remove(peer);
+                            priority.remove(peer);
+                            faulty.add(peer);
+                        } catch (Throwable throwable) {
+                            LogUtils.error(TAG, throwable);
+                        } finally {
+                            LogUtils.error(TAG, "Network Peer " +
+                                    peer.String() + " took " + (System.currentTimeMillis() - start));
+                        }
 
-            List<PeerID> cons = network.getPeers();
-            for (PeerID peer : cons) {
-                if (!faulty.contains(peer) && !wants.contains(peer)
-                        && !haves.contains(peer) && !priority.contains(peer)) {
-                    haves.add(peer);
+                        // check priority after each run
+                        break;
 
-                    long start = System.currentTimeMillis();
-                    try {
-                        peers.add(peer);
-                        MessageWriter.sendHaveMessage(() -> closeable.isClosed()
-                                        || ((System.currentTimeMillis() - start) > 1000), network, peer,
-                                Collections.singletonList(cid));
-                    } catch (ClosedException closedException) {
-                        // ignore
-                    } catch (ProtocolNotSupported ignore) {
-                        peers.remove(peer);
-                        priority.remove(peer);
-                        faulty.add(peer);
-                    } catch (Throwable throwable) {
-                        LogUtils.error(TAG, throwable);
-                    } finally {
-                        LogUtils.error(TAG, "Network Peer " +
-                                peer.String() + " took " + (System.currentTimeMillis() - start));
                     }
-
-                    // check priority after each run
-                    break;
-
                 }
             }
         }
@@ -228,13 +266,14 @@ public class ContentManager {
 
         try {
             Cid cid = block.Cid();
-            LogUtils.info(TAG, "BlockReceived " + cid.String());
+            LogUtils.info(TAG, "Block Received " + cid.String() + " " + peer);
             blockStore.Put(block);
 
             if (!searches.contains(cid)) {
                 priority.push(peer);
             }
             searches.add(cid);
+            matches.remove(cid);
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         }
@@ -244,21 +283,34 @@ public class ContentManager {
         return !peers.contains(peerID);
     }
 
+    public String getKey(@NonNull PeerID peer, @NonNull Cid cid) {
+        return peer.String().concat(cid.String());
+    }
+
     public void LoadBlocks(@NonNull Closeable closeable, @NonNull List<Cid> cids) {
 
+
         LogUtils.error(TAG, "LoadBlocks " + cids.size());
+
         Executors.newSingleThreadExecutor().execute(() -> {
+
             for (PeerID peer : priority) {
+                List<Cid> writes = new ArrayList<>();
+                for (Cid cid : cids) {
+                    if (!haves.contains(getKey(peer, cid))) {
+                        writes.add(cid);
+                    }
+                }
                 LogUtils.error(TAG, "LoadBlock " + peer.String());
                 long start = System.currentTimeMillis();
                 try {
-                    peers.add(peer);
-                    MessageWriter.sendWantsMessage(closeable, network, peer, cids);
-                } catch (ClosedException closedException) {
+                    MessageWriter.sendHaveMessage(closeable, network, peer, writes);
+                    for (Cid cid : cids) {
+                        haves.add(getKey(peer, cid));
+                    }
+                } catch (ClosedException ignore) {
                     // ignore
                 } catch (ProtocolNotSupported ignore) {
-                    peers.remove(peer);
-                    priority.remove(peer);
                     faulty.add(peer);
                 } catch (Throwable throwable) {
                     LogUtils.error(TAG, "LoadBlock Error " + throwable.getLocalizedMessage());
@@ -266,6 +318,7 @@ public class ContentManager {
                     LogUtils.error(TAG, "LoadBlock " +
                             peer.String() + " took " + (System.currentTimeMillis() - start));
                 }
+
             }
         });
     }
