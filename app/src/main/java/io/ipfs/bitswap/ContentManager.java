@@ -166,6 +166,7 @@ public class ContentManager {
                             MessageWriter.sendWantsMessage(closeable, network, peer,
                                     Collections.singletonList(cid), IPFS.WRITE_TIMEOUT);
                             wants.add(peer);
+                            handled.add(peer);
                             hasRun = true;
                         } catch (ClosedException closedException) {
                             // ignore
@@ -299,12 +300,12 @@ public class ContentManager {
 
 
         Executors.newSingleThreadExecutor().execute(() -> {
-            int writerCounter = 0;
+            boolean writerCounter = true;
             List<PeerID> handled = new ArrayList<>();
             for (PeerID peer : priority) {
                 if(!handled.contains(peer)) {
                     handled.add(peer);
-                    writerCounter++;
+
                     List<Cid> loads = new ArrayList<>();
                     for (Cid cid : cids) {
                         if(!matches.containsKey(cid)) {
@@ -315,9 +316,10 @@ public class ContentManager {
                     LogUtils.error(TAG, "LoadBlock " + peer.String());
                     long start = System.currentTimeMillis();
                     try {
-                        if(writerCounter < IPFS.PRELOAD_BLOCKS_WANTS_MESSAGE) {
+                        if(writerCounter) {
                             MessageWriter.sendWantsMessage(closeable, network, peer, loads,
                                     IPFS.WRITE_TIMEOUT);
+                            writerCounter = false;
                         } else {
                             MessageWriter.sendHaveMessage(closeable, network, peer, loads,
                                     IPFS.WRITE_TIMEOUT);
