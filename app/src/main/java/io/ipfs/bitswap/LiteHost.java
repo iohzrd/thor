@@ -12,7 +12,6 @@ import io.ipfs.ClosedException;
 import io.ipfs.ProtocolNotSupported;
 import io.ipfs.cid.Cid;
 import io.libp2p.host.Host;
-import io.libp2p.network.Stream;
 import io.libp2p.network.StreamHandler;
 import io.libp2p.peer.PeerID;
 import io.libp2p.protocol.Protocol;

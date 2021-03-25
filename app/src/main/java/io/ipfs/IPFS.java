@@ -1289,6 +1289,7 @@ public class IPFS implements Listener, ContentRouting {
         return true;
     }
 
+
     @Override
     public void bitSwapData(String pid, String proto, byte[] bytes) {
         LogUtils.verbose(TAG, "Receive message from " + pid + " proto " + proto + " data " + bytes.length);
@@ -1297,36 +1298,19 @@ public class IPFS implements Listener, ContentRouting {
 
         READER.execute(() -> {
             try {
-                handler.message(new io.libp2p.network.Stream() {
-                    @NonNull
-                    @Override
-                    public Protocol Protocol() {
-                        return Protocol.create(proto);
-                    }
-
-                    @NonNull
-                    @Override
-                    public PeerID RemotePeer() {
-                        return new PeerID(pid);
-                    }
-
-                    @Override
-                    public byte[] GetData() {
-                        return bytes;
-                    }
-
-                    @Nullable
-                    @Override
-                    public String GetError() {
-                        return null;
-                    }
-                });
+                handler.message(new PeerID(pid), Protocol.create(proto), bytes);
             } catch (Throwable throwable) {
                 LogUtils.error(TAG, throwable);
             }
         });
     }
 
+    @Override
+    public void bitSwapError(String pid, String proto, String error) {
+        LogUtils.error(TAG, "Receive error from " + pid + " proto " + proto + " error " + error);
+        Objects.requireNonNull(handler);
+        handler.error(new PeerID(pid), Protocol.create(proto), error);
+    }
 
     @Override
     public boolean bitSwapGate(String pid) {
@@ -1334,35 +1318,6 @@ public class IPFS implements Listener, ContentRouting {
         return handler.gate(new PeerID(pid));
     }
 
-    @Override
-    public void bitSwapError(String pid, String proto, String error) {
-        LogUtils.error(TAG, "Receive error from " + pid + " proto " + proto + " error " + error);
-        Objects.requireNonNull(handler);
-        handler.error(new io.libp2p.network.Stream() {
-            @NonNull
-            @Override
-            public Protocol Protocol() {
-                return Protocol.create(proto);
-            }
-
-            @NonNull
-            @Override
-            public PeerID RemotePeer() {
-                return new PeerID(pid);
-            }
-
-            @Override
-            public byte[] GetData() {
-                return null;
-            }
-
-            @Nullable
-            @Override
-            public String GetError() {
-                return error;
-            }
-        });
-    }
 
     @Override
     public void connected(String pretty) {
