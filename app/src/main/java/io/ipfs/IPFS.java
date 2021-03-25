@@ -58,6 +58,7 @@ import lite.Listener;
 import lite.Node;
 import lite.Peer;
 import lite.PeerInfo;
+import lite.PeerStream;
 import lite.Providers;
 import lite.ResolveInfo;
 import threads.thor.core.blocks.BLOCKS;
@@ -66,7 +67,7 @@ public class IPFS implements Listener, ContentRouting {
 
     public static final int PRELOAD = 20;
     public static final int PRELOAD_DIST = 5;
-    public static final int WRITE_TIMEOUT = 60;
+    public static final int WRITE_TIMEOUT = 30;
     public static final String AGENT = "/go-ipfs/0.9.0-dev/thor";
     public static final int TIMEOUT_BOOTSTRAP = 5;
     public static final int LOW_WATER = 50;
@@ -1207,8 +1208,12 @@ public class IPFS implements Listener, ContentRouting {
                             @Override
                             public List<PeerID> getPeers() {
                                 List<PeerID> peers = new ArrayList<>();
-                                for (String p : swarm_peers()) {
-                                    peers.add(new PeerID(p));
+                                if (isDaemonRunning()) {
+                                    try {
+                                        node.swarmPeers(ID -> peers.add(new PeerID(ID)));
+                                    } catch (Throwable e) {
+                                        LogUtils.error(TAG, e);
+                                    }
                                 }
                                 return peers;
                             }
@@ -1231,7 +1236,8 @@ public class IPFS implements Listener, ContentRouting {
                             public long WriteMessage(@NonNull Closeable closeable,
                                                      @NonNull PeerID peer,
                                                      @NonNull List<Protocol> protocols,
-                                                     @NonNull byte[] bytes)
+                                                     @NonNull byte[] bytes,
+                                                     int timeout)
                                     throws ClosedException, ProtocolNotSupported {
 
                                 try {
@@ -1243,7 +1249,7 @@ public class IPFS implements Listener, ContentRouting {
                                         protos = protos.concat(protocols.get(i).String());
                                     }
                                     return node.writeMessage(closeable::isClosed, peer.String(),
-                                            protos, bytes, IPFS.WRITE_TIMEOUT);
+                                            protos, bytes, timeout);
                                 } catch (Throwable throwable) {
                                     if (closeable.isClosed()) {
                                         throw new ClosedException();
@@ -1295,14 +1301,7 @@ public class IPFS implements Listener, ContentRouting {
         LogUtils.verbose(TAG, "Receive message from " + pid + " proto " + proto + " data " + bytes.length);
         Objects.requireNonNull(handler);
 
-
-        READER.execute(() -> {
-            try {
-                handler.message(new PeerID(pid), Protocol.create(proto), bytes);
-            } catch (Throwable throwable) {
-                LogUtils.error(TAG, throwable);
-            }
-        });
+        READER.execute(() -> handler.message(new PeerID(pid), Protocol.create(proto), bytes));
     }
 
     @Override

@@ -63,7 +63,6 @@ public class LiteHost implements BitSwapNetwork {
 
                 @Override
                 public void message(@NonNull PeerID peerID, @NonNull Protocol protocol, @NonNull byte[] data) {
-                    // TODO
                     try {
                         BitSwapMessage received = BitSwapMessage.fromData(data);
                         receiver.ReceiveMessage(peerID, protocol, received);
@@ -86,10 +85,10 @@ public class LiteHost implements BitSwapNetwork {
 
     @Override
     public void WriteMessage(@NonNull Closeable closeable, @NonNull PeerID peer,
-                             @NonNull BitSwapMessage message) throws ClosedException, ProtocolNotSupported {
+                             @NonNull BitSwapMessage message, int timeout) throws ClosedException, ProtocolNotSupported {
 
         byte[] data = message.ToNetV1();
-        long res = host.WriteMessage(closeable, peer, protocols, data);
+        long res = host.WriteMessage(closeable, peer, protocols, data, timeout);
         if (Objects.equals(data.length, res)) {
             throw new RuntimeException("Message not fully written");
         }

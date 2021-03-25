@@ -18,7 +18,8 @@ public interface Host {
     long WriteMessage(@NonNull Closeable closeable,
                       @NonNull PeerID peer,
                       @NonNull List<Protocol> protocols,
-                      @NonNull byte[] bytes) throws ClosedException, ProtocolNotSupported;
+                      @NonNull byte[] bytes,
+                      int timeout) throws ClosedException, ProtocolNotSupported;
 
 
     // SetStreamHandler sets the protocol handler on the Host's Mux.

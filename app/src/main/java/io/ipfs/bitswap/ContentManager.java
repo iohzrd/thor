@@ -18,6 +18,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import io.Closeable;
 import io.LogUtils;
 import io.ipfs.ClosedException;
+import io.ipfs.IPFS;
 import io.ipfs.ProtocolNotSupported;
 import io.ipfs.cid.Cid;
 import io.ipfs.format.Block;
@@ -163,7 +164,7 @@ public class ContentManager {
                         long start = System.currentTimeMillis();
                         try {
                             MessageWriter.sendWantsMessage(closeable, network, peer,
-                                    Collections.singletonList(cid));
+                                    Collections.singletonList(cid), IPFS.WRITE_TIMEOUT);
                             wants.add(peer);
                             hasRun = true;
                         } catch (ClosedException closedException) {
@@ -189,7 +190,7 @@ public class ContentManager {
                         try {
                             peers.add(peer);
                             MessageWriter.sendHaveMessage(closeable, network, peer,
-                                    Collections.singletonList(cid));
+                                    Collections.singletonList(cid), IPFS.WRITE_TIMEOUT);
                             handled.add(peer);
                             hasRun = true;
                         } catch (ClosedException closedException) {
@@ -224,7 +225,7 @@ public class ContentManager {
                             peers.add(peer);
                             MessageWriter.sendHaveMessage(() -> closeable.isClosed()
                                             || ((System.currentTimeMillis() - start) > 1000), network, peer,
-                                    Collections.singletonList(cid));
+                                    Collections.singletonList(cid), 1);
                             handled.add(peer);
                         } catch (ClosedException closedException) {
                             // ignore
@@ -315,9 +316,11 @@ public class ContentManager {
                     long start = System.currentTimeMillis();
                     try {
                         if(writerCounter < 3) {
-                            MessageWriter.sendWantsMessage(closeable, network, peer, loads);
+                            MessageWriter.sendWantsMessage(closeable, network, peer, loads,
+                                    IPFS.WRITE_TIMEOUT);
                         } else {
-                            MessageWriter.sendHaveMessage(closeable, network, peer, loads);
+                            MessageWriter.sendHaveMessage(closeable, network, peer, loads,
+                                    IPFS.WRITE_TIMEOUT);
                         }
                     } catch (ClosedException ignore) {
                         // ignore

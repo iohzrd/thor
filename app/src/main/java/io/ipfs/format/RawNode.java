@@ -60,7 +60,6 @@ public class RawNode implements Node {
 
     @Override
     public long Size() {
-        // TODO
         return getData().length;
     }
 

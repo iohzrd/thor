@@ -79,10 +79,7 @@ public class Resolver {
         }
 
         Node nd = dag.Get(ctx, c);
-        if (nd == null) {
-            throw new RuntimeException(); // maybe todo
-        }
-
+        Objects.requireNonNull(nd);
 
         while (p.size() > 0) {
 
