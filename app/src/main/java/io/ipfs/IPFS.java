@@ -65,6 +65,7 @@ import threads.thor.core.blocks.BLOCKS;
 public class IPFS implements Listener, ContentRouting {
 
     public static final int PRELOAD = 20;
+    public static final int PRELOAD_DIST = 5;
     public static final int WRITE_TIMEOUT = 60;
     public static final String AGENT = "/go-ipfs/0.9.0-dev/thor";
     public static final int TIMEOUT_BOOTSTRAP = 5;

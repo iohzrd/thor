@@ -61,9 +61,9 @@ public class NavigableIPLDNode implements NavigableNode {
             if (value > preLoader) {
                 preLoader = value;
                 int min = Math.min((value * IPFS.PRELOAD) + 1, cids.size());
-                int max = Math.min((value * IPFS.PRELOAD) + IPFS.PRELOAD + 1, cids.size());
+                int max = Math.min((value * IPFS.PRELOAD) + IPFS.PRELOAD + IPFS.PRELOAD_DIST, cids.size());
                 int dist = max - min;
-                if (dist > 1 && min < cids.size()) {
+                if (dist >= IPFS.PRELOAD_DIST && min < cids.size()) {
                     LogUtils.error(TAG, "min " + min + " max " + max +
                             " childIndex " + childIndex + " length " + cids.size());
                     nodeGetter.Load(ctx, cids.subList(min, max));
