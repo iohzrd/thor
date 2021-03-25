@@ -57,27 +57,21 @@ public class LiteHost implements BitSwapNetwork {
                 }
 
                 @Override
-                public void error(@NonNull Stream stream) {
-                    PeerID peer = stream.RemotePeer();
-                    String error = stream.GetError();
-                    if (error != null) {
-                        receiver.ReceiveError(peer, stream.Protocol(), error);
-                    }
+                public void error(@NonNull PeerID peerID, @NonNull Protocol protocol, @NonNull String error) {
+                    receiver.ReceiveError(peerID, protocol, error);
                 }
 
                 @Override
-                public void message(@NonNull Stream stream) {
-
-                    PeerID peer = stream.RemotePeer();
+                public void message(@NonNull PeerID peerID, @NonNull Protocol protocol, @NonNull byte[] data) {
+                    // TODO
                     try {
-                        byte[] data = stream.GetData();
                         BitSwapMessage received = BitSwapMessage.fromData(data);
-                        receiver.ReceiveMessage(peer, stream.Protocol(), received);
+                        receiver.ReceiveMessage(peerID, protocol, received);
                     } catch (Throwable throwable) {
-                        receiver.ReceiveError(peer, stream.Protocol(),
-                                "" + throwable.getMessage());
+                        receiver.ReceiveError(peerID, protocol, "" + throwable.getMessage());
                     }
                 }
+
             });
         }
 
