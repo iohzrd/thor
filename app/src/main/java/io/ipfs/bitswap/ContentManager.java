@@ -315,7 +315,7 @@ public class ContentManager {
                     LogUtils.error(TAG, "LoadBlock " + peer.String());
                     long start = System.currentTimeMillis();
                     try {
-                        if(writerCounter < 3) {
+                        if(writerCounter < IPFS.PRELOAD_BLOCKS_WANTS_MESSAGE) {
                             MessageWriter.sendWantsMessage(closeable, network, peer, loads,
                                     IPFS.WRITE_TIMEOUT);
                         } else {

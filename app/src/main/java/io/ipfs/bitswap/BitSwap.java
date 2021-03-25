@@ -76,9 +76,11 @@ public class BitSwap implements Interface, Receiver {
                                    @NonNull List<Cid> haves) {
 
 
-        LogUtils.error(TAG, "ReceiveBlocks " + peer.String());
+
 
         for (Block block : wanted) {
+            LogUtils.error(TAG, "ReceiveBlock " + peer.String() +
+                    " " + block.Cid().String());
             contentManager.BlockReceived(peer, block);
         }
 

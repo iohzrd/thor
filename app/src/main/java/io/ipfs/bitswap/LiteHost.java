@@ -67,7 +67,7 @@ public class LiteHost implements BitSwapNetwork {
                         BitSwapMessage received = BitSwapMessage.fromData(data);
                         receiver.ReceiveMessage(peerID, protocol, received);
                     } catch (Throwable throwable) {
-                        receiver.ReceiveError(peerID, protocol, "" + throwable.getMessage());
+                        receiver.ReceiveError(peerID, protocol, "Redirect : " + throwable.getMessage());
                     }
                 }
 
