@@ -300,12 +300,12 @@ public class ContentManager {
 
 
         Executors.newSingleThreadExecutor().execute(() -> {
-            boolean writerCounter = true;
+            int writerCounter = 0;
             List<PeerID> handled = new ArrayList<>();
             for (PeerID peer : priority) {
                 if(!handled.contains(peer)) {
                     handled.add(peer);
-
+                    writerCounter++;
                     List<Cid> loads = new ArrayList<>();
                     for (Cid cid : cids) {
                         if(!matches.containsKey(cid)) {
@@ -316,10 +316,9 @@ public class ContentManager {
                     LogUtils.error(TAG, "LoadBlock " + peer.String());
                     long start = System.currentTimeMillis();
                     try {
-                        if(writerCounter) {
+                        if(writerCounter < IPFS.PRELOAD_BLOCKS_WANTS_MESSAGE) {
                             MessageWriter.sendWantsMessage(closeable, network, peer, loads,
                                     IPFS.WRITE_TIMEOUT);
-                            writerCounter = false;
                         } else {
                             MessageWriter.sendHaveMessage(closeable, network, peer, loads,
                                     IPFS.WRITE_TIMEOUT);
@@ -327,8 +326,10 @@ public class ContentManager {
                     } catch (ClosedException ignore) {
                         // ignore
                     } catch (ProtocolNotSupported ignore) {
+                        writerCounter--;
                         faulty.add(peer);
                     } catch (Throwable throwable) {
+                        writerCounter--;
                         LogUtils.error(TAG, "LoadBlock Error " + throwable.getLocalizedMessage());
                     } finally {
                         LogUtils.error(TAG, "LoadBlock " +
@@ -352,7 +353,6 @@ public class ContentManager {
                         @Override
                         public void Peer(@NonNull String pid) {
                             PeerID peer = new PeerID(pid);
-
 
                             try {
                                 LogUtils.error(TAG, "Load Provider " + pid + " for " + cid.String());
