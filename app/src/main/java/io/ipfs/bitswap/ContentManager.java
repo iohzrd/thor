@@ -42,7 +42,7 @@ public class ContentManager {
 
     private final ConcurrentSkipListSet<Cid> loads = new ConcurrentSkipListSet<>();
     private final ConcurrentHashMap<Cid, ConcurrentLinkedDeque<PeerID>> matches = new ConcurrentHashMap<>();
-
+    private final Blocker blocker = new Blocker();
 
     public ContentManager(@NonNull BlockStore blockStore,
                           @NonNull BitSwapNetwork network) {
@@ -86,46 +86,47 @@ public class ContentManager {
         }
     }
 
+
     public Block runWantHaves(@NonNull Closeable closeable, @NonNull Cid cid) throws ClosedException {
 
 
         Executors.newSingleThreadExecutor().execute(() -> {
-                long begin = System.currentTimeMillis();
-                try {
-                    network.FindProvidersAsync(new Providers() {
-                        @Override
-                        public void Peer(@NonNull String pid) {
-                            PeerID peer = new PeerID(pid);
-                            LogUtils.error(TAG, "Provider Peer Step " + peer.String());
-                            if (!faulty.contains(peer)) {
-                                WANTS.execute(() -> {
-                                    if (matches.containsKey(cid)) { // check still valid
-                                        long start = System.currentTimeMillis();
-                                        try {
-                                            LogUtils.error(TAG, "Provider Peer " +
-                                                    peer.String() + " cid " + cid.String());
+            long begin = System.currentTimeMillis();
+            try {
+                network.FindProvidersAsync(new Providers() {
+                    @Override
+                    public void Peer(@NonNull String pid) {
+                        PeerID peer = new PeerID(pid);
+                        LogUtils.error(TAG, "Provider Peer Step " + peer.String());
+                        if (!faulty.contains(peer)) {
+                            WANTS.execute(() -> {
+                                if (matches.containsKey(cid)) { // check still valid
+                                    long start = System.currentTimeMillis();
+                                    try {
+                                        LogUtils.error(TAG, "Provider Peer " +
+                                                peer.String() + " cid " + cid.String());
 
-                                            if (network.ConnectTo(() -> closeable.isClosed()
-                                                            || ((System.currentTimeMillis() - start) > TIMEOUT),
-                                                    peer, true)) {
-                                                if (matches.containsKey(cid)) { // check still valid
-                                                    LogUtils.error(TAG, "Found New Provider " + pid
-                                                            + " for " + cid.String());
-                                                    peers.add(peer);
-                                                    matches.get(cid).add(peer);
-                                                }
-                                            } else {
-                                                LogUtils.error(TAG, "Provider Peer Connection Failed " +
-                                                        peer.String());
+                                        if (network.ConnectTo(() -> closeable.isClosed()
+                                                        || ((System.currentTimeMillis() - start) > TIMEOUT),
+                                                peer, true)) {
+                                            if (matches.containsKey(cid)) { // check still valid
+                                                LogUtils.error(TAG, "Found New Provider " + pid
+                                                        + " for " + cid.String());
+                                                peers.add(peer);
+                                                matches.get(cid).add(peer);
                                             }
-                                        } catch (ClosedException ignore) {
-                                            // ignore
-                                        } catch (Throwable throwable) {
-                                            LogUtils.error(TAG, throwable);
-                                        } finally {
-                                            LogUtils.error(TAG, "Provider Peer " +
-                                                    peer.String() + " took " + (System.currentTimeMillis() - start));
+                                        } else {
+                                            LogUtils.error(TAG, "Provider Peer Connection Failed " +
+                                                    peer.String());
                                         }
+                                    } catch (ClosedException ignore) {
+                                        // ignore
+                                    } catch (Throwable throwable) {
+                                        LogUtils.error(TAG, throwable);
+                                    } finally {
+                                        LogUtils.error(TAG, "Provider Peer " +
+                                                peer.String() + " took " + (System.currentTimeMillis() - start));
+                                    }
                                     }
                                 });
 
@@ -152,22 +153,22 @@ public class ContentManager {
                 throw new ClosedException();
             }
 
-
             boolean hasRun = false;
-
-
             ConcurrentLinkedDeque<PeerID> set = matches.get(cid);
-            if(set != null) {
+            if (set != null) {
                 PeerID peer = set.poll();
-                if(peer != null) {
-                    if(!wants.contains(peer)) {
+                if (peer != null) {
+                    if (!wants.contains(peer)) {
                         long start = System.currentTimeMillis();
                         try {
-                            MessageWriter.sendWantsMessage(closeable, network, peer,
-                                    Collections.singletonList(cid), IPFS.WRITE_TIMEOUT);
-                            wants.add(peer);
-                            handled.add(peer);
-                            hasRun = true;
+                            if (matches.containsKey(cid)) {
+                                MessageWriter.sendWantsMessage(closeable, network, peer,
+                                        Collections.singletonList(cid), IPFS.WRITE_TIMEOUT);
+                                wants.add(peer);
+                                handled.add(peer);
+                                hasRun = true;
+                                blocker.Subscribe(cid);
+                            }
                         } catch (ClosedException closedException) {
                             // ignore
                         } catch (ProtocolNotSupported ignore) {
@@ -182,6 +183,9 @@ public class ContentManager {
                 }
             }
 
+            if (closeable.isClosed()) {
+                throw new ClosedException();
+            }
 
             if (!hasRun) {
                 for (PeerID peer : priority) {
@@ -210,8 +214,8 @@ public class ContentManager {
                         break;
                     }
                 }
-            }
 
+            }
             if (closeable.isClosed()) {
                 throw new ClosedException();
             }
@@ -247,35 +251,38 @@ public class ContentManager {
                     }
                 }
             }
-        }
 
+        }
         return blockStore.Get(cid);
     }
 
     public Block GetBlock(@NonNull Closeable closeable, @NonNull Cid cid) throws ClosedException {
-
         try {
             synchronized (cid.String().intern()) {
-                createMatch(cid);
-                AtomicBoolean done = new AtomicBoolean(false);
-                LogUtils.info(TAG, "BlockGet " + cid.String());
-                try {
-                    return runWantHaves(() -> closeable.isClosed() || done.get(), cid);
-                } finally {
-                    done.set(true);
+                Block block = blockStore.Get(cid);
+                if (block == null) {
+                    createMatch(cid);
+                    AtomicBoolean done = new AtomicBoolean(false);
+                    LogUtils.info(TAG, "Block Get " + cid.String());
+                    try {
+                        return runWantHaves(() -> closeable.isClosed() || done.get(), cid);
+                    } finally {
+                        done.set(true);
+                    }
                 }
+                return block;
             }
         } finally {
-            LogUtils.info(TAG, "BlockRelease  " + cid.String());
+            blocker.Release(cid);
+            LogUtils.info(TAG, "Block Release  " + cid.String());
         }
-
     }
 
     public void BlockReceived(@NonNull PeerID peer, @NonNull Block block) {
 
         try {
             Cid cid = block.Cid();
-            LogUtils.info(TAG, "Block Received " + cid.String() + " " + peer);
+            LogUtils.info(TAG, "Block Received " + cid.String() + " " + peer.String());
             blockStore.Put(block);
 
             if (matches.containsKey(cid)) {
@@ -283,6 +290,7 @@ public class ContentManager {
             }
 
             matches.remove(cid);
+            blocker.Release(cid);
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         }
@@ -295,9 +303,7 @@ public class ContentManager {
 
     public void LoadBlocks(@NonNull Closeable closeable, @NonNull List<Cid> cids) {
 
-
         LogUtils.error(TAG, "LoadBlocks " + cids.size());
-
 
         Executors.newSingleThreadExecutor().execute(() -> {
             int writerCounter = 0;

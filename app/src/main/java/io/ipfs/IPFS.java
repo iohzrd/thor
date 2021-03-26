@@ -71,12 +71,13 @@ public class IPFS implements Listener, ContentRouting {
     public static final String AGENT = "/go-ipfs/0.9.0-dev/thor";
     public static final int TIMEOUT_BOOTSTRAP = 5;
     public static final int LOW_WATER = 50;
-    public static final int HIGH_WATER = 150;
+    public static final int HIGH_WATER = 300;
     public static final String GRACE_PERIOD = "10s";
     public static final int MIN_PEERS = 10;
     public static final long RESOLVE_MAX_TIME = 20000; // 20 sec
     public static final int RESOLVE_TIMEOUT = 3000; // 3 sec
     public static final int PRELOAD_BLOCKS_WANTS_MESSAGE = 3;
+    public static final long WANTS_WAIT_TIMEOUT = 2500; // 2.5 sec
     public static final int CHUNK_SIZE = 262144;
 
 
@@ -99,6 +100,7 @@ public class IPFS implements Listener, ContentRouting {
     public static final String LIB2P_DNS = "_dnsaddr.bootstrap.libp2p.io";
     public static final String DNS_ADDR = "dnsaddr=/dnsaddr/";
     public static final String DNS_LINK = "dnslink=";
+
 
     // rough estimates on expected sizes
     private static final int roughLinkBlockSize = 1 << 13; // 8KB
