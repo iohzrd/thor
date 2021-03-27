@@ -41,7 +41,7 @@ public class Seeker {
             // If there aren't enough size hints don't seek
             // (see the `io.EOF` handling error comment below).
             if (fsNode.NumChildren() != node.getLinks().size()) {
-                throw new RuntimeException("ErrSeekNotSupported");
+                return null;
             }
 
 
