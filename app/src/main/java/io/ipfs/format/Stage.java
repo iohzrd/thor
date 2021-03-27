@@ -6,9 +6,9 @@ public class Stage {
     private final NavigableNode node;
     private int index;
 
-    Stage(@NonNull NavigableNode node) {
+    Stage(@NonNull NavigableNode node, int index) {
         this.node = node;
-        this.index = 0;
+        this.index = index;
     }
 
     public NavigableNode getNode() {
@@ -25,6 +25,10 @@ public class Stage {
 
     public void setIndex(int value) {
         index = value;
+    }
+
+    public Stage copy() {
+        return new Stage(node, index);
     }
 
     @NonNull

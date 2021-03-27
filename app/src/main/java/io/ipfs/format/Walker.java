@@ -162,7 +162,7 @@ public class Walker {
                     stack.peek().setIndex(i);
 
                     NavigableNode fetched = visitedNode.FetchChild(closeable, i);
-                    stack.push(new Stage(fetched));
+                    stack.push(new Stage(fetched, 0));
 
                     return Seek(closeable, stack, left);
                 }
@@ -176,7 +176,7 @@ public class Walker {
     public Pair<Stack<Stage>, Long> Seek(@NonNull Closeable closeable, long offset) throws ClosedException {
 
         Stack<Stage> stack = new Stack<>();
-        stack.push(new Stage(getRoot()));
+        stack.push(new Stage(getRoot(), 0));
 
         return Seek(closeable, stack, offset);
 

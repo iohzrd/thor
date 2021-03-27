@@ -62,7 +62,11 @@ public class Reader {
 
     @Nullable
     public byte[] loadNextData() throws ClosedException {
-        return this.dagReader.loadNextData(closeable);
+        try {
+            return dagReader.loadNextData(closeable);
+        } finally {
+            dagReader.preloadData(closeable);
+        }
     }
 
     public long getSize() {

@@ -58,7 +58,6 @@ import lite.Listener;
 import lite.Node;
 import lite.Peer;
 import lite.PeerInfo;
-import lite.PeerStream;
 import lite.Providers;
 import lite.ResolveInfo;
 import threads.thor.core.blocks.BLOCKS;
@@ -76,7 +75,6 @@ public class IPFS implements Listener, ContentRouting {
     public static final int MIN_PEERS = 10;
     public static final long RESOLVE_MAX_TIME = 20000; // 20 sec
     public static final int RESOLVE_TIMEOUT = 3000; // 3 sec
-    public static final int PRELOAD_BLOCKS_WANTS_MESSAGE = 3;
     public static final long WANTS_WAIT_TIMEOUT = 2500; // 2.5 sec
     public static final int CHUNK_SIZE = 262144;
 

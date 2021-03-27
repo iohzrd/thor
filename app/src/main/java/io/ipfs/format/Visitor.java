@@ -19,8 +19,17 @@ public class Visitor {
         rootVisited = true;
     }
 
+    @NonNull
+    public Stack<Stage> copy() {
+        Stack<Stage> copy = new Stack<>();
+        for (Stage stage : stack) {
+            copy.add(stage.copy());
+        }
+        return copy;
+    }
+
     public void pushActiveNode(@NonNull NavigableNode node) {
-        stack.push(new Stage(node));
+        stack.push(new Stage(node, 0));
     }
 
 

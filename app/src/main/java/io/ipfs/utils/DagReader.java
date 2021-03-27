@@ -5,32 +5,42 @@ import android.util.Pair;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.Stack;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.Closeable;
 import io.ipfs.ClosedException;
+import io.ipfs.IPFS;
+import io.ipfs.cid.Cid;
 import io.ipfs.format.NavigableIPLDNode;
 import io.ipfs.format.NavigableNode;
 import io.ipfs.format.Node;
 import io.ipfs.format.NodeGetter;
 import io.ipfs.format.ProtoNode;
 import io.ipfs.format.RawNode;
+import io.ipfs.format.Seeker;
 import io.ipfs.format.Stage;
 import io.ipfs.format.Visitor;
 import io.ipfs.format.Walker;
 import io.ipfs.unixfs.FSNode;
 
 public class DagReader {
-    private static final String TAG = DagReader.class.getSimpleName();
+
     public final AtomicInteger atomicLeft = new AtomicInteger(0);
     private final long size;
     private final Visitor visitor;
     private final Walker dagWalker;
+    private final NodeGetter nodeGetter;
+    private final Set<Cid> cids = new HashSet<>();
 
-    public DagReader(@NonNull Walker dagWalker, long size) {
+    public DagReader(@NonNull Walker dagWalker, @NonNull NodeGetter nodeGetter, long size) {
         this.dagWalker = dagWalker;
+        this.nodeGetter = nodeGetter;
         this.size = size;
         this.visitor = new Visitor(dagWalker.getRoot());
 
@@ -56,14 +66,13 @@ public class DagReader {
         }
 
         Walker dagWalker = Walker.NewWalker(NavigableIPLDNode.NewNavigableIPLDNode(node, serv));
-        return new DagReader(dagWalker, size);
+        return new DagReader(dagWalker, serv, size);
 
     }
 
     public long getSize() {
         return size;
     }
-
 
     public void Seek(@NonNull Closeable closeable, long offset) throws ClosedException {
         Pair<Stack<Stage>, Long> result = dagWalker.Seek(closeable, offset);
@@ -101,6 +110,31 @@ public class DagReader {
             }
 
             return FSNode.ReadUnixFSNodeData(node);
+        }
+
+    }
+
+    public void preloadData(@NonNull Closeable closeable) throws ClosedException {
+
+        List<Cid> preloads = new ArrayList<>();
+        Seeker seeker = new Seeker();
+        Stack<Stage> stack = visitor.copy();
+        int runs = 0;
+
+        while (runs < IPFS.PRELOAD) {
+            Cid cid = seeker.Next(closeable, stack);
+            if (cid == null) {
+                break;
+            }
+            if (!cids.contains(cid)) {
+                preloads.add(cid);
+            }
+            runs++;
+        }
+
+        if (preloads.size() > IPFS.PRELOAD_DIST) {
+            cids.addAll(preloads);
+            nodeGetter.Load(closeable, preloads);
         }
 
     }
