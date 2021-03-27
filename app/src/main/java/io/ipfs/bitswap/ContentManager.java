@@ -44,8 +44,7 @@ public class ContentManager {
     private final ConcurrentHashMap<Cid, ConcurrentLinkedDeque<PeerID>> matches = new ConcurrentHashMap<>();
     private final Blocker blocker = new Blocker();
 
-    public ContentManager(@NonNull BlockStore blockStore,
-                          @NonNull BitSwapNetwork network) {
+    public ContentManager(@NonNull BlockStore blockStore, @NonNull BitSwapNetwork network) {
         this.blockStore = blockStore;
         this.network = network;
     }

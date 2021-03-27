@@ -64,9 +64,9 @@ import threads.thor.core.blocks.BLOCKS;
 
 public class IPFS implements Listener, ContentRouting {
 
-    public static final int PRELOAD = 20;
+    public static final int PRELOAD = 25;
     public static final int PRELOAD_DIST = 5;
-    public static final int WRITE_TIMEOUT = 60;
+    public static final int WRITE_TIMEOUT = 10;
     public static final String AGENT = "/go-ipfs/0.9.0-dev/thor";
     public static final int TIMEOUT_BOOTSTRAP = 5;
     public static final int LOW_WATER = 50;
@@ -75,7 +75,7 @@ public class IPFS implements Listener, ContentRouting {
     public static final int MIN_PEERS = 10;
     public static final long RESOLVE_MAX_TIME = 20000; // 20 sec
     public static final int RESOLVE_TIMEOUT = 3000; // 3 sec
-    public static final long WANTS_WAIT_TIMEOUT = 2500; // 2.5 sec
+    public static final long WANTS_WAIT_TIMEOUT = 2000; // 2 sec
     public static final int CHUNK_SIZE = 262144;
 
 

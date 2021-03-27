@@ -121,7 +121,11 @@ public class DagReader {
         Stack<Stage> stack = visitor.copy();
         int runs = 0;
 
-        while (runs < IPFS.PRELOAD) {
+        int min = (cids.size() / IPFS.PRELOAD) + IPFS.PRELOAD_DIST;
+
+        int maxRuns = Math.min(min, IPFS.PRELOAD);
+
+        while (runs < maxRuns) {
             Cid cid = seeker.Next(closeable, stack);
             if (cid == null) {
                 break;
@@ -132,7 +136,7 @@ public class DagReader {
             runs++;
         }
 
-        if (preloads.size() > IPFS.PRELOAD_DIST) {
+        if (preloads.size() >= IPFS.PRELOAD_DIST) {
             cids.addAll(preloads);
             nodeGetter.Load(closeable, preloads);
         }
