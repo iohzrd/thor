@@ -1,18 +1,21 @@
 package io.ipfs.format;
 
+import android.util.Log;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import java.util.Stack;
 
 import io.Closeable;
+import io.LogUtils;
 import io.ipfs.ClosedException;
 import io.ipfs.IPFS;
 import io.ipfs.cid.Cid;
 import io.ipfs.unixfs.FSNode;
 
 public class Seeker {
-
+    private static final String TAG = Seeker.class.getSimpleName();
 
     @Nullable
     public Cid Next(@NonNull Closeable closeable, @NonNull Stack<Stage> stack) throws ClosedException {
@@ -29,7 +32,7 @@ public class Seeker {
 
 
         if (!(node instanceof ProtoNode)) {
-            throw new RuntimeException();
+           return null;
         }
 
 
@@ -50,13 +53,11 @@ public class Seeker {
             // `dagWalker`) to find where we need to go down to next in
             // the search
 
-
             if (index < fsNode.NumChildren()) {
                 stack.peek().setIndex(index);
                 long childSize = fsNode.BlockSize(index);
 
-                if (childSize > IPFS.CHUNK_SIZE) {
-                    // TODO here maybe
+                if (childSize > IPFS.CHUNK_SIZE) { // this is just guessing and might be wrong
 
                     NavigableNode fetched = visitedNode.FetchChild(closeable, index);
                     stack.push(new Stage(fetched, 0));

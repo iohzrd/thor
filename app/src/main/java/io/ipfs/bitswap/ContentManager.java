@@ -308,6 +308,7 @@ public class ContentManager {
         Executors.newSingleThreadExecutor().execute(() -> {
 
             List<PeerID> handled = new ArrayList<>();
+            boolean wantsMessage = true;
             for (PeerID peer : priority) {
                 if(!handled.contains(peer)) {
                     handled.add(peer);
@@ -318,19 +319,25 @@ public class ContentManager {
                             createMatch(cid);
                         }
                     }
-                    LogUtils.error(TAG, "LoadBlock " + peer.String());
+                    LogUtils.error(TAG, "LoadBlocks " + peer.String());
                     long start = System.currentTimeMillis();
                     try {
-                        MessageWriter.sendHaveMessage(closeable, network, peer, loads,
-                                IPFS.WRITE_TIMEOUT);
+                        if(wantsMessage){
+                            MessageWriter.sendWantsMessage(closeable, network, peer, loads,
+                                    IPFS.WRITE_TIMEOUT);
+                            wantsMessage = false;
+                        } else {
+                            MessageWriter.sendHaveMessage(closeable, network, peer, loads,
+                                    IPFS.WRITE_TIMEOUT);
+                        }
                     } catch (ClosedException ignore) {
                         // ignore
                     } catch (ProtocolNotSupported ignore) {
                         faulty.add(peer);
                     } catch (Throwable throwable) {
-                        LogUtils.error(TAG, "LoadBlock Error " + throwable.getLocalizedMessage());
+                        LogUtils.error(TAG, "LoadBlocks Error " + throwable.getLocalizedMessage());
                     } finally {
-                        LogUtils.error(TAG, "LoadBlock " +
+                        LogUtils.error(TAG, "LoadBlocks " +
                                 peer.String() + " took " + (System.currentTimeMillis() - start));
                     }
                 }
