@@ -166,7 +166,7 @@ public class ContentManager {
                                 wants.add(peer);
                                 handled.add(peer);
                                 hasRun = true;
-                                blocker.Subscribe(cid);
+                                blocker.Subscribe(cid, closeable);
                             }
                         } catch (ClosedException closedException) {
                             // ignore
