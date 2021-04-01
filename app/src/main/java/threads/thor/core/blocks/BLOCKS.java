@@ -44,6 +44,15 @@ public class BLOCKS implements Storage {
         return INSTANCE;
     }
 
+    @Nullable
+    @Override
+    public byte[] getData(@NonNull String id) {
+        Block block = getBlock(id);
+        if( block != null){
+            return block.getData();
+        }
+        return null;
+    }
 
     public void clear() {
         getBlocksDatabase().clearAllTables();

@@ -8,7 +8,7 @@ public interface Storage {
     void insertBlock(@NonNull String id, @NonNull byte[] bytes);
 
     @Nullable
-    BlockData getBlock(@NonNull String id);
+    byte[] getData(@NonNull String id);
 
     void deleteBlock(@NonNull String id);
 
