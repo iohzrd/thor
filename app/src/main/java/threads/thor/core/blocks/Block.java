@@ -5,8 +5,10 @@ import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
+import io.ipfs.datastore.BlockData;
+
 @Entity
-public class Block {
+public class Block implements BlockData {
 
     @PrimaryKey
     @NonNull

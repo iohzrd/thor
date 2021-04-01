@@ -2,13 +2,17 @@ package io.ipfs.utils;
 
 import androidx.annotation.NonNull;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.Objects;
 
 import io.Closeable;
+import io.dht.Routing;
 import io.ipfs.ClosedException;
-import io.ipfs.Storage;
+import io.ipfs.datastore.Storage;
 import io.ipfs.blockservice.BlockService;
 import io.ipfs.cid.Cid;
 import io.ipfs.cid.Prefix;
@@ -22,8 +26,47 @@ import io.ipfs.multihash.Multihash;
 import io.ipfs.offline.Exchange;
 import io.ipfs.unixfs.Directory;
 import io.ipfs.unixfs.FSNode;
+import io.ipns.Ipns;
+import io.libp2p.core.crypto.PrivKey;
+import io.libp2p.core.crypto.PubKey;
+import io.libp2p.crypto.keys.Ed25519Kt;
+import io.libp2p.peer.PeerID;
 
 public class Stream {
+
+
+    private static Duration DefaultRecordEOL = Duration.ofHours(24);
+
+    public static void PublishName(@NonNull Closeable closable,
+                                   @NonNull Routing routing,
+                                   @NonNull String privateKey,
+                                   @NonNull String path,
+                                   int sequence) {
+
+        byte[] data = Base64.getDecoder().decode(privateKey);
+        PrivKey pkey = Ed25519Kt.unmarshalEd25519PrivateKey(data);
+
+
+        Instant eol = Instant.now().plusMillis(DefaultRecordEOL.toMillis());
+
+
+        io.protos.ipns.IpnsProtos.IpnsEntry
+                record = Ipns.Create(pkey, path.getBytes(), sequence, eol);
+
+
+        PubKey pk = pkey.publicKey();
+
+        Ipns.EmbedPublicKey(pk, record);
+
+        PeerID id = PeerID.IDFromPublicKey(pk);
+
+        byte[] bytes = record.toByteArray();
+
+        String rk = "/ipns/" + id.String();
+
+        routing.PutValue(closable, rk, bytes);
+    }
+
 
 
     public static Adder getFileAdder(@NonNull Storage storage) {

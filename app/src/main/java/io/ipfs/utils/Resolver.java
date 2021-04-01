@@ -11,7 +11,7 @@ import java.util.Objects;
 
 import io.Closeable;
 import io.ipfs.ClosedException;
-import io.ipfs.Storage;
+import io.ipfs.datastore.Storage;
 import io.ipfs.blockservice.BlockService;
 import io.ipfs.cid.Cid;
 import io.ipfs.exchange.Interface;

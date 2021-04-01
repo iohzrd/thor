@@ -2,7 +2,6 @@ package io.ipfs.cid;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.security.MessageDigest;
 
@@ -60,7 +59,7 @@ public class Prefix implements Builder {
         try {
 
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = Encode(digest.digest(data), MhType);
+            byte[] hash = Cid.Encode(digest.digest(data), MhType);
 
             switch ((int) Version) {
                 case 0:
@@ -77,17 +76,6 @@ public class Prefix implements Builder {
 
     }
 
-    byte[] Encode(byte[] buf, long code) {
-
-        try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-            Multihash.putUvarint(out, code);
-            Multihash.putUvarint(out, buf.length);
-            out.write(buf);
-            return out.toByteArray();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
 
     @Override
     public long GetCodec() {

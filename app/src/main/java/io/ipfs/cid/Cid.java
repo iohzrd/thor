@@ -197,4 +197,55 @@ public class Cid implements Comparable<Cid> {
     public int compareTo(Cid o) {
         return Integer.compare(this.hashCode(), o.hashCode());
     }
+
+
+    public static byte[] Encode(byte[] buf, long code) {
+
+        try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            Multihash.putUvarint(out, code);
+            Multihash.putUvarint(out, buf.length);
+            out.write(buf);
+            return out.toByteArray();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public Multihash Hash() {
+
+        try {
+            if (Version() == 0) {
+                return Multihash.deserialize(multihash);
+            } else {
+                byte[] data = Bytes();
+                try (InputStream inputStream = new ByteArrayInputStream(data)) {
+                    long version = Multihash.readVarint(inputStream);
+                    if (version != 1) {
+                        throw new Exception("invalid version");
+                    }
+                    long codec = Multihash.readVarint(inputStream);
+                    if (!(codec == Cid.DagProtobuf || codec == Cid.Raw || codec == Cid.Libp2pKey)) {
+                        throw new Exception("not supported codec");
+                    }
+
+
+                    try(ByteArrayOutputStream outputStream = new ByteArrayOutputStream()){
+                        byte[] buf = new byte[data.length];
+                        int n;
+                        while ((n = inputStream.read(buf)) > 0) {
+                            outputStream.write(buf, 0, n);
+                        }
+                        return Multihash.deserialize(outputStream.toByteArray());
+                    }
+
+
+
+                } catch (Throwable throwable) {
+                    throw new RuntimeException(throwable);
+                }
+            }
+        } catch (Throwable throwable){
+            throw new RuntimeException();
+        }
+    }
 }

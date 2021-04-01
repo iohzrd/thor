@@ -7,17 +7,14 @@ import android.util.Pair;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -33,6 +30,8 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import io.Closeable;
 import io.LogUtils;
+import io.dht.KadDHT;
+import io.dht.Routing;
 import io.ipfs.bitswap.BitSwap;
 import io.ipfs.bitswap.BitSwapNetwork;
 import io.ipfs.bitswap.LiteHost;
@@ -43,11 +42,15 @@ import io.ipfs.utils.Link;
 import io.ipfs.utils.LinkCloseable;
 import io.ipfs.utils.Progress;
 import io.ipfs.utils.ProgressStream;
-import io.ipfs.utils.Reachable;
 import io.ipfs.utils.ReaderProgress;
 import io.ipfs.utils.ReaderStream;
 import io.ipfs.utils.Resolver;
 import io.ipfs.utils.Stream;
+import io.libp2p.core.crypto.KEY_TYPE;
+import io.libp2p.core.crypto.KeyKt;
+import io.libp2p.core.crypto.PrivKey;
+import io.libp2p.core.crypto.PubKey;
+import io.libp2p.crypto.keys.Ed25519Kt;
 import io.libp2p.host.Host;
 import io.libp2p.network.StreamHandler;
 import io.libp2p.peer.PeerID;
@@ -57,7 +60,6 @@ import io.protos.ipns.IpnsProtos;
 import lite.Listener;
 import lite.Node;
 import lite.Peer;
-import lite.PeerInfo;
 import lite.Providers;
 import lite.ResolveInfo;
 import threads.thor.core.blocks.BLOCKS;
@@ -121,9 +123,6 @@ public class IPFS implements Listener, ContentRouting {
 
     private static final String PREF_KEY = "prefKey";
     private static final String PID_KEY = "pidKey";
-    private static final String PRIVATE_NETWORK_KEY = "privateNetworkKey";
-    private static final String PRIVATE_SHARING_KEY = "privateSharingKey";
-    private static final String SWARM_KEY = "swarmKey";
     private static final String SWARM_PORT_KEY = "swarmPortKey";
     private static final String PUBLIC_KEY = "publicKey";
     private static final String PRIVATE_KEY = "privateKey";
@@ -136,8 +135,8 @@ public class IPFS implements Listener, ContentRouting {
     private final BLOCKS blocks;
     private Pusher pusher;
     private Interface exchange;
-    @NonNull
-    private Reachable reachable = Reachable.UNKNOWN;
+    private final Routing routing;
+    private final Host host;
     private StreamHandler handler;
 
 
@@ -146,29 +145,50 @@ public class IPFS implements Listener, ContentRouting {
         blocks = BLOCKS.getInstance(context);
 
 
-        String peerID = getPeerID(context);
-
-        boolean init = peerID == null;
 
         node = new Node(this);
 
-        if (init) {
-            node.identity();
+        if (getPeerID(context) == null) {
+            kotlin.Pair<PrivKey, PubKey> keys = KeyKt.generateKeyPair(KEY_TYPE.ED25519);
+            java.util.Base64.Encoder encoder = java.util.Base64.getEncoder();
+            setPublicKey(context, encoder.encodeToString(keys.getSecond().bytes()));
+            setPrivateKey(context, encoder.encodeToString(keys.getFirst().bytes()));
 
-            setPeerID(context, node.getPeerID());
-            setPublicKey(context, node.getPublicKey());
-            setPrivateKey(context, node.getPrivateKey());
+            PeerID id = PeerID.IDFromPublicKey(keys.getSecond());
+            Objects.requireNonNull(id);
+            setPeerID(context, id.String());
         } else {
-            node.setPeerID(peerID);
-            node.setPrivateKey(IPFS.getPrivateKey(context));
-            node.setPublicKey(IPFS.getPublicKey(context));
+            String pk = IPFS.getPublicKey(context);
+
+            byte[] data = Base64.getDecoder().decode(pk);
+            PubKey pkwy = Ed25519Kt.unmarshalEd25519PublicKey(data);
+
+            PeerID id = PeerID.IDFromPublicKey(pkwy);
+            if(!Objects.equals(id.String(), IPFS.getPeerID(context))) {
+                LogUtils.error(TAG, id.String() + " " + IPFS.getPeerID(context));
+            }
+
+
+            String prk = IPFS.getPrivateKey(context);
+            byte[] kk = Base64.getDecoder().decode(prk);
+
+            PrivKey privKey = KeyKt.unmarshalPrivateKey(kk);
+
+            java.util.Base64.Encoder encoder = java.util.Base64.getEncoder();
+
+
+            String dddd = encoder.encodeToString(privKey.bytes());
+
+            if(!Objects.equals(dddd, prk)){
+                LogUtils.error(TAG, dddd + " " + prk);
+            }
         }
 
-        String swarmKey = getSwarmKey(context);
-        if (!swarmKey.isEmpty()) {
-            node.setSwarmKey(swarmKey.getBytes());
-            node.setEnablePrivateNetwork(isPrivateNetworkEnabled(context));
-        }
+        node.setPeerID(IPFS.getPeerID(context));
+        node.setPrivateKey(IPFS.getPrivateKey(context));
+        node.setPublicKey(IPFS.getPublicKey(context));
+
+
 
         node.setAgent(AGENT);
         node.setPushing(false);
@@ -183,6 +203,81 @@ public class IPFS implements Listener, ContentRouting {
         node.setEnableReachService(false);
         node.setEnableConnService(false);
 
+        this.host = new Host() {
+            @Override
+            public List<PeerID> getPeers() {
+                List<PeerID> peers = new ArrayList<>();
+                if (isDaemonRunning()) {
+                    try {
+                        node.swarmPeers(ID -> peers.add(new PeerID(ID)));
+                    } catch (Throwable e) {
+                        LogUtils.error(TAG, e);
+                    }
+                }
+                return peers;
+            }
+
+            @Override
+            public boolean Connect(@NonNull Closeable closeable,
+                                   @NonNull PeerID peer, boolean protect) throws ClosedException {
+                try {
+                    return node.swarmConnect(P2P_PATH + peer.String(),
+                            protect, closeable::isClosed);
+                } catch (Throwable throwable) {
+                    if (closeable.isClosed()) {
+                        throw new ClosedException();
+                    }
+                    return false;
+                }
+            }
+
+            @Override
+            public long WriteMessage(@NonNull Closeable closeable,
+                                     @NonNull PeerID peer,
+                                     @NonNull List<Protocol> protocols,
+                                     @NonNull byte[] bytes,
+                                     int timeout)
+                    throws ClosedException, ProtocolNotSupported {
+
+                try {
+                    String protos = "";
+                    for (int i = 0; i < protocols.size(); i++) {
+                        if (i > 1) {
+                            protos = protos.concat(";");
+                        }
+                        protos = protos.concat(protocols.get(i).String());
+                    }
+                    return node.writeMessage(closeable::isClosed, peer.String(),
+                            protos, bytes, timeout);
+                } catch (Throwable throwable) {
+                    if (closeable.isClosed()) {
+                        throw new ClosedException();
+                    } else {
+                        String msg = throwable.getMessage();
+                        if(Objects.equals(msg, "protocol not supported")){
+                            throw new ProtocolNotSupported();
+                        } else {
+                            throw new RuntimeException(throwable);
+                        }
+                    }
+                }
+            }
+
+
+            @Override
+            public void SetStreamHandler(@NonNull Protocol proto,
+                                         @NonNull StreamHandler handler) {
+                setStreamHandler(handler);
+                node.setStreamHandler(proto.String());
+
+            }
+
+            @Override
+            public PeerID Self() {
+                return new PeerID(getPeerID());
+            }
+        };
+        this.routing = new KadDHT(host);
     }
 
     public static int getConcurrencyValue(@NonNull Context context) {
@@ -255,22 +350,6 @@ public class IPFS implements Listener, ContentRouting {
     }
 
     @NonNull
-    public static String getSwarmKey(@NonNull Context context) {
-        SharedPreferences sharedPref = context.getSharedPreferences(
-                PREF_KEY, Context.MODE_PRIVATE);
-        return Objects.requireNonNull(sharedPref.getString(SWARM_KEY, ""));
-
-    }
-
-    public static void setSwarmKey(@NonNull Context context, @NonNull String key) {
-        SharedPreferences sharedPref = context.getSharedPreferences(
-                PREF_KEY, Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPref.edit();
-        editor.putString(SWARM_KEY, key);
-        editor.apply();
-    }
-
-    @NonNull
     private static String getPublicKey(@NonNull Context context) {
         SharedPreferences sharedPref = context.getSharedPreferences(
                 PREF_KEY, Context.MODE_PRIVATE);
@@ -301,37 +380,6 @@ public class IPFS implements Listener, ContentRouting {
         return sharedPref.getString(PID_KEY, null);
     }
 
-    public static void setPrivateNetworkEnabled(@NonNull Context context, boolean privateNetwork) {
-
-        SharedPreferences sharedPref = context.getSharedPreferences(
-                PREF_KEY, Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPref.edit();
-        editor.putBoolean(PRIVATE_NETWORK_KEY, privateNetwork);
-        editor.apply();
-    }
-
-    public static void setPrivateSharingEnabled(@NonNull Context context, boolean privateSharing) {
-
-        SharedPreferences sharedPref = context.getSharedPreferences(
-                PREF_KEY, Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPref.edit();
-        editor.putBoolean(PRIVATE_SHARING_KEY, privateSharing);
-        editor.apply();
-    }
-
-    public static boolean isPrivateNetworkEnabled(@NonNull Context context) {
-
-        SharedPreferences sharedPref = context.getSharedPreferences(
-                PREF_KEY, Context.MODE_PRIVATE);
-        return sharedPref.getBoolean(PRIVATE_NETWORK_KEY, false);
-    }
-
-    public static boolean isPrivateSharingEnabled(@NonNull Context context) {
-
-        SharedPreferences sharedPref = context.getSharedPreferences(
-                PREF_KEY, Context.MODE_PRIVATE);
-        return sharedPref.getBoolean(PRIVATE_SHARING_KEY, false);
-    }
 
     @NonNull
     public static IPFS getInstance(@NonNull Context context) {
@@ -374,24 +422,12 @@ public class IPFS implements Listener, ContentRouting {
         this.pusher = pusher;
     }
 
-    public boolean notify(@NonNull String pid, @NonNull String cid) {
-        if (!isDaemonRunning()) {
-            return false;
-        }
-        try {
-            synchronized (pid.intern()) {
-                return node.push(pid, cid.getBytes()) == cid.length();
-            }
-        } catch (Throwable throwable) {
-            LogUtils.error(TAG, throwable);
-        }
-        return false;
-    }
-
     @NonNull
     public String decodeName(@NonNull String name) {
         try {
-            return node.decodeName(name);
+            PeerID peerID = PeerID.decode(name);
+            Objects.requireNonNull(peerID);
+            return peerID.String();
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         }
@@ -419,10 +455,6 @@ public class IPFS implements Listener, ContentRouting {
         return node.getPeerID();
     }
 
-    @NonNull
-    public String getHost() {
-        return base32(node.getPeerID());
-    }
 
     public void shutdown() {
         try {
@@ -437,15 +469,6 @@ public class IPFS implements Listener, ContentRouting {
         this.handler = streamHandler;
     }
 
-    @NonNull
-    public Reachable getReachable() {
-        return reachable;
-    }
-
-    private void setReachable(@NonNull Reachable reachable) {
-        this.reachable = reachable;
-        // not active
-    }
 
     public void bootstrap() {
         if (isDaemonRunning()) {
@@ -531,30 +554,6 @@ public class IPFS implements Listener, ContentRouting {
         }
     }
 
-    @Nullable
-    public PeerInfo pidInfo(@NonNull String pid) {
-
-        if (!isDaemonRunning()) {
-            return null;
-        }
-        try {
-            return node.pidInfo(pid);
-        } catch (Throwable throwable) {
-            LogUtils.error(TAG, throwable);
-        }
-
-        return null;
-
-    }
-
-    @Nullable
-    public PeerInfo id() {
-        try {
-            return node.id();
-        } catch (Throwable e) {
-            throw new RuntimeException(e);
-        }
-    }
 
     public boolean swarmConnect(@NonNull String multiAddress,
                                 @NonNull Closeable closeable) throws ClosedException {
@@ -584,22 +583,6 @@ public class IPFS implements Listener, ContentRouting {
         return false;
     }
 
-    public boolean isPrivateNetwork() {
-        return node.getPrivateNetwork();
-    }
-
-    public boolean isConnected(@NonNull String pid) {
-
-        if (!isDaemonRunning()) {
-            return false;
-        }
-        try {
-            return node.isConnected(pid);
-        } catch (Throwable e) {
-            LogUtils.error(TAG, e);
-        }
-        return false;
-    }
 
     @Nullable
     public Peer swarmPeer(@NonNull String pid) {
@@ -614,72 +597,7 @@ public class IPFS implements Listener, ContentRouting {
         return null;
     }
 
-    @NonNull
-    public List<String> swarmPeers() {
-        if (!isDaemonRunning()) {
-            return Collections.emptyList();
-        }
-        return swarm_peers();
-    }
 
-    @NonNull
-    private List<String> swarm_peers() {
-
-        List<String> peers = new ArrayList<>();
-        if (isDaemonRunning()) {
-            try {
-                node.swarmPeers(peers::add);
-            } catch (Throwable e) {
-                LogUtils.error(TAG, e);
-            }
-        }
-        return peers;
-    }
-
-    public void publishName(@NonNull String cid, @NonNull Closeable closeable, int sequence)
-            throws ClosedException {
-        if (!isDaemonRunning()) {
-            return;
-        }
-        try {
-            node.publishName(cid, closeable::isClosed, sequence);
-        } catch (Throwable ignore) {
-        }
-
-        if (closeable.isClosed()) {
-            throw new ClosedException();
-        }
-    }
-
-    @NonNull
-    public String base32(@NonNull String pid) {
-        try {
-            return node.base32(pid);
-        } catch (Throwable e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-
-    public void swarmDisconnect(@NonNull String pid) {
-        if (!isDaemonRunning()) {
-            return;
-        }
-        try {
-            node.swarmDisconnect(P2P_PATH + pid);
-        } catch (Throwable e) {
-            LogUtils.error(TAG, "" + e.getLocalizedMessage());
-        }
-    }
-
-    @NonNull
-    public String base58(@NonNull String pid) {
-        try {
-            return node.base58(pid);
-        } catch (Throwable e) {
-            throw new RuntimeException(e);
-        }
-    }
 
 
     @Nullable
@@ -775,71 +693,6 @@ public class IPFS implements Listener, ContentRouting {
             throw new ClosedException();
         }
         return resolvedName.get();
-    }
-
-
-    public void rm(@NonNull String cid, boolean recursively) {
-        try {
-            Stream.Rm(() -> false, blocks, cid, recursively);
-        } catch (Throwable e) {
-            LogUtils.error(TAG, e);
-        }
-    }
-
-    public long getSwarmPort() {
-        return node.getPort();
-    }
-
-    @Nullable
-    public String storeData(@NonNull byte[] data) {
-
-        try (InputStream inputStream = new ByteArrayInputStream(data)) {
-            return storeInputStream(inputStream);
-        } catch (Throwable e) {
-            LogUtils.error(TAG, e);
-        }
-        return null;
-    }
-
-    @Nullable
-    public String storeText(@NonNull String content) {
-
-        try (InputStream inputStream = new ByteArrayInputStream(content.getBytes())) {
-            return storeInputStream(inputStream);
-        } catch (Throwable e) {
-            LogUtils.error(TAG, e);
-        }
-        return null;
-    }
-
-    @Nullable
-    public String rmLinkFromDir(String dir, String name) {
-        try {
-            return Stream.RemoveLinkFromDir(blocks, () -> false, dir, name);
-        } catch (Throwable throwable) {
-            LogUtils.error(TAG, throwable);
-        }
-        return null;
-    }
-
-    @Nullable
-    public String addLinkToDir(@NonNull String dir, @NonNull String name, @NonNull String link) {
-        try {
-            return Stream.AddLinkToDir(blocks, () -> false, dir, name, link);
-        } catch (Throwable e) {
-            LogUtils.error(TAG, e);
-        }
-        return null;
-    }
-
-    @Nullable
-    public String createEmptyDir() {
-        try {
-            return Stream.CreateEmptyDir(blocks);
-        } catch (Throwable e) {
-            LogUtils.error(TAG, e);
-        }
-        return null;
     }
 
 
@@ -983,15 +836,6 @@ public class IPFS implements Listener, ContentRouting {
         return infoList;
     }
 
-    @Nullable
-    public String storeFile(@NonNull File target) {
-        try (FileInputStream inputStream = new FileInputStream(target)) {
-            return storeInputStream(inputStream);
-        } catch (Throwable throwable) {
-            LogUtils.error(TAG, throwable);
-        }
-        return null;
-    }
 
     @NonNull
     public io.ipfs.utils.Reader getReader(@NonNull String cid, @NonNull Closeable closeable) throws ClosedException {
@@ -1006,66 +850,6 @@ public class IPFS implements Listener, ContentRouting {
         }
     }
 
-    public void storeToFile(@NonNull File file, @NonNull String cid, @NonNull Progress progress) {
-        if (!isDaemonRunning()) {
-            return;
-        }
-        try (FileOutputStream outputStream = new FileOutputStream(file)) {
-            storeToOutputStream(outputStream, progress, cid);
-        } catch (Throwable throwable) {
-            throw new RuntimeException(throwable);
-        }
-    }
-
-    public void storeToOutputStream(@NonNull OutputStream os, @NonNull Progress progress,
-                                    @NonNull String cid) throws Exception {
-
-        long totalRead = 0L;
-        int remember = 0;
-
-        io.ipfs.utils.Reader reader = getReader(cid, progress);
-        long size = reader.getSize();
-        byte[] buf = reader.loadNextData();
-        while (buf != null && buf.length > 0) {
-
-            if (progress.isClosed()) {
-                throw new RuntimeException("Progress closed");
-            }
-
-            // calculate progress
-            totalRead += buf.length;
-            if (progress.doProgress()) {
-                if (size > 0) {
-                    int percent = (int) ((totalRead * 100.0f) / size);
-                    if (remember < percent) {
-                        remember = percent;
-                        progress.setProgress(percent);
-                    }
-                }
-            }
-
-            os.write(buf, 0, buf.length);
-
-            buf = reader.loadNextData();
-
-        }
-
-
-    }
-
-    public void storeToOutputStream(@NonNull OutputStream os, @NonNull String cid, @NonNull Closeable closeable) throws Exception {
-
-
-        io.ipfs.utils.Reader reader = getReader(cid, closeable);
-        byte[] buf = reader.loadNextData();
-        while (buf != null && buf.length > 0) {
-
-            os.write(buf, 0, buf.length);
-            buf = reader.loadNextData();
-        }
-
-
-    }
 
     @NonNull
     public InputStream getLoaderStream(@NonNull String cid, @NonNull Closeable closeable) throws ClosedException {
@@ -1080,67 +864,6 @@ public class IPFS implements Listener, ContentRouting {
 
     }
 
-    public void storeToFile(@NonNull File file, @NonNull String cid, @NonNull Closeable closeable) throws Exception {
-
-        try (FileOutputStream fileOutputStream = new FileOutputStream(file)) {
-            storeToOutputStream(fileOutputStream, cid, closeable);
-        }
-    }
-
-    @Nullable
-    public String storeInputStream(@NonNull InputStream inputStream,
-                                   @NonNull Progress progress, long size) {
-
-
-        String res = "";
-        try {
-            res = Stream.Write(blocks, new io.ipfs.utils.WriterStream(inputStream, progress, size));
-        } catch (Throwable e) {
-            if (!progress.isClosed()) {
-                LogUtils.error(TAG, e);
-            }
-        }
-
-        if (!res.isEmpty()) {
-            return res;
-        }
-        return null;
-    }
-
-    @Nullable
-    public String storeInputStream(@NonNull InputStream inputStream) {
-
-        return storeInputStream(inputStream, new Progress() {
-            @Override
-            public boolean isClosed() {
-                return false;
-            }
-
-            @Override
-            public void setProgress(int progress) {
-            }
-
-            @Override
-            public boolean doProgress() {
-                return false;
-            }
-
-
-        }, 0);
-    }
-
-    @Nullable
-    public String getText(@NonNull String cid, @NonNull Closeable closeable) {
-
-        try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
-            getToOutputStream(outputStream, cid, closeable);
-            return new String(outputStream.toByteArray());
-        } catch (Throwable e) {
-            LogUtils.error(TAG, e);
-            return null;
-        }
-    }
-
     @Nullable
     public byte[] getData(@NonNull String cid, @NonNull Closeable closeable) {
 
@@ -1153,16 +876,6 @@ public class IPFS implements Listener, ContentRouting {
         }
     }
 
-    @Nullable
-    public byte[] loadData(@NonNull String cid, @NonNull Progress progress) throws Exception {
-        if (!isDaemonRunning()) {
-            return null;
-        }
-        try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
-            storeToOutputStream(outputStream, progress, cid);
-            return outputStream.toByteArray();
-        }
-    }
 
     public void startDaemon() {
         if (!node.getRunning()) {
@@ -1205,80 +918,7 @@ public class IPFS implements Listener, ContentRouting {
                         protocols.add(Protocol.ProtocolBitswap);
 
 
-                        BitSwapNetwork bsm = LiteHost.NewLiteHost(new Host() {
-                            @Override
-                            public List<PeerID> getPeers() {
-                                List<PeerID> peers = new ArrayList<>();
-                                if (isDaemonRunning()) {
-                                    try {
-                                        node.swarmPeers(ID -> peers.add(new PeerID(ID)));
-                                    } catch (Throwable e) {
-                                        LogUtils.error(TAG, e);
-                                    }
-                                }
-                                return peers;
-                            }
-
-                            @Override
-                            public boolean Connect(@NonNull Closeable closeable,
-                                                   @NonNull PeerID peer, boolean protect) throws ClosedException {
-                                try {
-                                    return node.swarmConnect(P2P_PATH + peer.String(),
-                                            protect, closeable::isClosed);
-                                } catch (Throwable throwable) {
-                                    if (closeable.isClosed()) {
-                                        throw new ClosedException();
-                                    }
-                                    return false;
-                                }
-                            }
-
-                            @Override
-                            public long WriteMessage(@NonNull Closeable closeable,
-                                                     @NonNull PeerID peer,
-                                                     @NonNull List<Protocol> protocols,
-                                                     @NonNull byte[] bytes,
-                                                     int timeout)
-                                    throws ClosedException, ProtocolNotSupported {
-
-                                try {
-                                    String protos = "";
-                                    for (int i = 0; i < protocols.size(); i++) {
-                                        if (i > 1) {
-                                            protos = protos.concat(";");
-                                        }
-                                        protos = protos.concat(protocols.get(i).String());
-                                    }
-                                    return node.writeMessage(closeable::isClosed, peer.String(),
-                                            protos, bytes, timeout);
-                                } catch (Throwable throwable) {
-                                    if (closeable.isClosed()) {
-                                        throw new ClosedException();
-                                    } else {
-                                        String msg = throwable.getMessage();
-                                        if(Objects.equals(msg, "protocol not supported")){
-                                            throw new ProtocolNotSupported();
-                                        } else {
-                                            throw new RuntimeException(throwable);
-                                        }
-                                    }
-                                }
-                            }
-
-
-                            @Override
-                            public void SetStreamHandler(@NonNull Protocol proto,
-                                                         @NonNull StreamHandler handler) {
-                                setStreamHandler(handler);
-                                node.setStreamHandler(proto.String());
-
-                            }
-
-                            @Override
-                            public PeerID Self() {
-                                return new PeerID(getPeerID());
-                            }
-                        }, contentRouting, protocols);
+                        BitSwapNetwork bsm = LiteHost.NewLiteHost(host, contentRouting, protocols);
 
 
                         BlockStore blockstore = BlockStore.NewBlockstore(blocks);
@@ -1340,17 +980,17 @@ public class IPFS implements Listener, ContentRouting {
 
     @Override
     public void reachablePrivate() {
-        setReachable(Reachable.PRIVATE);
+        // nothing to do
     }
 
     @Override
     public void reachablePublic() {
-        setReachable(Reachable.PUBLIC);
+        // nothing to do
     }
 
     @Override
     public void reachableUnknown() {
-        setReachable(Reachable.UNKNOWN);
+        // nothing to do
     }
 
     @Override

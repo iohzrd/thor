@@ -4,7 +4,8 @@ import androidx.annotation.NonNull;
 
 import java.util.List;
 
-import io.ipfs.Storage;
+import io.ipfs.datastore.BlockData;
+import io.ipfs.datastore.Storage;
 import io.ipfs.cid.Cid;
 import io.ipfs.datastore.Dshelp;
 
@@ -23,7 +24,7 @@ public interface BlockStore {
             public Block Get(@NonNull Cid cid) {
 
                 String key = Dshelp.CidToDsKey(cid).String();
-                threads.thor.core.blocks.Block bdata = storage.getBlock(key);
+                BlockData bdata = storage.getBlock(key);
                 if (bdata == null) {
                     return null;
                 }

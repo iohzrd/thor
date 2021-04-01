@@ -92,18 +92,16 @@ public class DOCS {
             try {
 
                 Page page = pages.getPage(pid);
-                boolean connected = ipfs.isConnected(pid);
-                if (!connected) {
-                    if (page != null) {
-                        String address = page.getAddress();
-                        if (!address.isEmpty()) {
-                            connected = ipfs.swarmConnect(
+                boolean connected = false;
+                if (page != null) {
+                    String address = page.getAddress();
+                    if (!address.isEmpty()) {
+                        connected = ipfs.swarmConnect(
                                     address.concat(Content.P2P_PATH).concat(page.getPid()), closeable);
-                        }
                     }
-                    if (!connected) {
-                        connected = ipfs.swarmConnect(Content.P2P_PATH + pid, closeable);
-                    }
+                }
+                if (!connected) {
+                    connected = ipfs.swarmConnect(Content.P2P_PATH + pid, closeable);
                 }
 
                 if (page != null) {
