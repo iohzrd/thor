@@ -32,16 +32,19 @@ import io.Closeable;
 import io.LogUtils;
 import io.dht.KadDHT;
 import io.dht.Routing;
+import io.ipfs.bitswap.BitSwap;
+import io.ipfs.bitswap.BitSwapNetwork;
+import io.ipfs.bitswap.LiteHost;
 import io.ipfs.cid.Cid;
 import io.ipfs.exchange.Interface;
 import io.ipfs.format.BlockStore;
-import io.ipfs.multihash.Multihash;
 import io.ipfs.utils.Link;
 import io.ipfs.utils.LinkCloseable;
 import io.ipfs.utils.Progress;
 import io.ipfs.utils.ProgressStream;
 import io.ipfs.utils.ReaderProgress;
 import io.ipfs.utils.ReaderStream;
+import io.dht.ResolveInfo;
 import io.ipfs.utils.Resolver;
 import io.ipfs.utils.Stream;
 import io.libp2p.core.PeerId;
@@ -51,6 +54,7 @@ import io.libp2p.core.crypto.PrivKey;
 import io.libp2p.core.crypto.PubKey;
 import io.libp2p.core.multiformats.Multiaddr;
 import io.libp2p.crypto.keys.Ed25519Kt;
+import io.protos.ipns.IpnsProtos;
 import threads.thor.core.blocks.BLOCKS;
 
 public class IPFS {
@@ -122,14 +126,13 @@ public class IPFS {
     private static final ExecutorService READER = Executors.newFixedThreadPool(4);
     private static IPFS INSTANCE = null;
     //private final Node node;
-    private final Object locker = new Object();
+
     private final BLOCKS blocks;
-    private Pusher pusher;
-    private Interface exchange;
+    private final Interface exchange;
     private final Routing routing;
     private final io.libp2p.core.Host host;
     private StreamHandler handler;
-    private boolean running = false;
+    private boolean running;
 
     private IPFS(@NonNull Context context) throws Exception {
 
@@ -283,6 +286,14 @@ public class IPFS {
             }
         };*/
         this.routing = new KadDHT(host);
+
+        List<String> protocols = new ArrayList<>();
+        protocols.add(ProtocolBitswap);
+
+        BitSwapNetwork bsm = LiteHost.NewLiteHost(host, routing, protocols);
+        BlockStore blockstore = BlockStore.NewBlockstore(blocks);
+
+        this.exchange = BitSwap.New(bsm, blockstore);
     }
 
     public static int getConcurrencyValue(@NonNull Context context) {
@@ -422,15 +433,6 @@ public class IPFS {
         }
     }
 
-    public static String base32(@NonNull PeerId peerId) {
-        try {
-            // only support fromBase58
-            Multihash multihash = Multihash.fromBase58(peerId.toBase58());
-            return Cid.NewCidV1(Cid.Libp2pKey, multihash.toBytes()).String();
-        } catch (Throwable throwable) {
-            throw new RuntimeException(throwable);
-        }
-    }
 
     @NonNull
     public String decodeName(@NonNull String name) {
@@ -494,56 +496,10 @@ public class IPFS {
     public void shutdown() {
         try {
             host.stop().get();
-            // node.setShutdown(true);
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         } finally {
             running = false;
-        }
-    }
-
-    public void dhtFindProviders(@NonNull String cid, int numProviders,
-                                 @NonNull io.dht.Providers providers) throws ClosedException {
-        if (!isDaemonRunning()) {
-            return;
-        }
-
-        if (numProviders < 1) {
-            throw new RuntimeException("number of providers must be greater than 0");
-        }
-
-        try {
-            /* TODO
-            node.dhtFindProviders(cid, numProviders, new Providers() {
-                @Override
-                public boolean close() {
-                    return providers.isClosed();
-                }
-
-                @Override
-                public void peer(@NonNull String id) {
-                    providers.Peer(id);
-                }
-            }); */
-        } catch (Throwable ignore) {
-        }
-        if (providers.isClosed()) {
-            throw new ClosedException();
-        }
-    }
-
-    public void dhtPublish(@NonNull Closeable closable, @NonNull String cid) throws ClosedException {
-
-        if (!isDaemonRunning()) {
-            return;
-        }
-
-        try {
-            // TODO node.dhtProvide(cid, closable::isClosed);
-        } catch (Throwable ignore) {
-        }
-        if (closable.isClosed()) {
-            throw new ClosedException();
         }
     }
 
@@ -623,7 +579,8 @@ public class IPFS {
 
 
     @NonNull
-    public String resolve(@NonNull String root, @NonNull List<String> path, @NonNull Closeable closeable) throws ClosedException {
+    public String resolve(@NonNull String root, @NonNull List<String> path,
+                          @NonNull Closeable closeable) throws ClosedException {
 
         String resultPath = IPFS_PATH + root;
         for (String name : path) {
@@ -816,10 +773,9 @@ public class IPFS {
         try {
             AtomicLong timeout = new AtomicLong(System.currentTimeMillis() + RESOLVE_MAX_TIME);
             AtomicBoolean abort = new AtomicBoolean(false);
-            /* TODO
-            node.resolveName(new ResolveInfo() {
+            Stream.ResolveName(routing, new ResolveInfo() {
                 @Override
-                public boolean close() {
+                public boolean isClosed() {
                     return (timeout.get() < System.currentTimeMillis()) || abort.get() || closeable.isClosed();
                 }
 
@@ -857,7 +813,7 @@ public class IPFS {
                     }
 
                 }
-            }, name, false, 8);*/
+            }, name, false, 8);
 
         } catch (Throwable e) {
             LogUtils.error(TAG, e);
@@ -869,12 +825,6 @@ public class IPFS {
             throw new ClosedException();
         }
         return resolvedName.get();
-    }
-
-    // TODO @Override
-    public boolean allowConnect(String peer) {
-        // everybody can push to you
-        return true;
     }
 
 
@@ -1045,10 +995,6 @@ public class IPFS {
         }
     }
 
-
-    public interface Pusher {
-        void push(@NonNull String pid, @NonNull String cid);
-    }
 
     public static class ResolvedName {
         private final long sequence;

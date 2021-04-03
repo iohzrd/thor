@@ -3,6 +3,7 @@ package io.ipfs.bitswap;
 import androidx.annotation.NonNull;
 
 import java.util.List;
+import java.util.Set;
 
 import io.Closeable;
 import io.dht.ContentRouting;
@@ -23,5 +24,5 @@ public interface BitSwapNetwork extends ContentRouting {
     void SetDelegate(@NonNull Receiver receiver);
 
     @NonNull
-    List<PeerId> getPeers();
+    Set<PeerId> getPeers();
 }

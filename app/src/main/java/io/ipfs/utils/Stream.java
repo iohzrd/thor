@@ -1,5 +1,6 @@
 package io.ipfs.utils;
 
+
 import androidx.annotation.NonNull;
 
 import java.time.Duration;
@@ -10,6 +11,9 @@ import java.util.List;
 import java.util.Objects;
 
 import io.Closeable;
+import io.dht.Offline;
+import io.dht.Quorum;
+import io.dht.ResolveInfo;
 import io.dht.Routing;
 import io.ipfs.ClosedException;
 import io.ipfs.blockservice.BlockService;
@@ -37,6 +41,33 @@ public class Stream {
 
 
     private static Duration DefaultRecordEOL = Duration.ofHours(24);
+
+
+    public static String base32(@NonNull PeerId peerId) {
+        try {
+            // only support fromBase58
+            Multihash multihash = Multihash.fromBase58(peerId.toBase58());
+            return Cid.NewCidV1(Cid.Libp2pKey, multihash.toBytes()).String();
+        } catch (Throwable throwable) {
+            throw new RuntimeException(throwable);
+        }
+    }
+
+    public static void ResolveName(@NonNull Routing routing, @NonNull ResolveInfo info,
+                                   @NonNull String pid, boolean offline, int dhtRecords) {
+
+        PeerId peerId = PeerId.fromBase58(pid);
+
+
+        // Use the routing system to get the name.
+        // Note that the DHT will call the ipns validator when retrieving
+        // the value, which in turn verifies the ipns record signature
+        String ipnsKey = "/ipns/" + peerId.toBase58();
+
+
+        routing.SearchValue(info, ipnsKey, new Quorum(dhtRecords), new Offline(offline));
+
+    }
 
     public static void PublishName(@NonNull Closeable closable,
                                    @NonNull Routing routing,

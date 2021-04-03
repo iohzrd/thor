@@ -214,4 +214,9 @@ public class KadDHT implements Routing {
       */
         return null;
     }
+
+    @Override
+    public void SearchValue(ResolveInfo resolveInfo, String key, Option... options) {
+
+    }
 }
