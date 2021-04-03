@@ -8,7 +8,7 @@ import io.Closeable;
 import io.ipfs.ClosedException;
 import io.ipfs.ProtocolNotSupported;
 import io.ipfs.cid.Cid;
-import io.libp2p.peer.PeerID;
+import io.libp2p.core.PeerId;
 import io.protos.bitswap.BitswapProtos;
 
 public class MessageWriter {
@@ -18,7 +18,7 @@ public class MessageWriter {
 
     public static void sendHaveMessage(@NonNull Closeable closeable,
                                        @NonNull BitSwapNetwork network,
-                                       @NonNull PeerID peer,
+                                       @NonNull PeerId peer,
                                        @NonNull List<Cid> wantHaves,
                                        int timeout)
             throws ClosedException, ProtocolNotSupported {
@@ -52,7 +52,7 @@ public class MessageWriter {
 
     public static void sendWantsMessage(@NonNull Closeable closeable,
                                         @NonNull BitSwapNetwork network,
-                                        @NonNull PeerID peer,
+                                        @NonNull PeerId peer,
                                         @NonNull List<Cid> wantBlocks,
                                         int timeout)
             throws ClosedException, ProtocolNotSupported {

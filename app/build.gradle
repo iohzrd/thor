@@ -91,7 +91,7 @@ dependencies {
     implementation 'commons-codec:commons-codec:1.15'
 
     // API (LICENSE done)
-    implementation 'lite.ipfs:lite:1.2.2'
+    // implementation 'lite.ipfs:lite:1.2.2'
 
     // API (LICENSE done)
     implementation 'com.google.guava:guava:30.1-android'

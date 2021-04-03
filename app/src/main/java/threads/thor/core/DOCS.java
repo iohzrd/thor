@@ -31,8 +31,7 @@ import io.ipfs.DnsAddrResolver;
 import io.ipfs.IPFS;
 import io.ipfs.format.Node;
 import io.ipfs.utils.Link;
-import io.libp2p.routing.Providers;
-import lite.Peer;
+import io.libp2p.core.multiformats.Multiaddr;
 import threads.LogUtils;
 import threads.thor.InitApplication;
 import threads.thor.Settings;
@@ -105,9 +104,9 @@ public class DOCS {
                 }
 
                 if (page != null) {
-                    Peer info = ipfs.swarmPeer(pid);
+                    Multiaddr info = ipfs.swarmPeer(pid); // TODO optimize here !!!
                     if (info != null) {
-                        String address = info.getAddress();
+                        String address = info.toString();
                         if (!address.isEmpty() && !address.contains(Content.CIRCUIT)) {
                             if (!Objects.equals(address, page.getAddress())) {
                                 pages.setPageAddress(pid, address);

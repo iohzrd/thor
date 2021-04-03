@@ -3,20 +3,27 @@ package io.ipfs.bitswap;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 
 import io.Closeable;
+import io.dht.ContentRouting;
+import io.dht.Providers;
 import io.ipfs.ClosedException;
 import io.ipfs.ProtocolNotSupported;
 import io.ipfs.cid.Cid;
-import io.libp2p.host.Host;
-import io.libp2p.network.StreamHandler;
-import io.libp2p.peer.PeerID;
-import io.libp2p.protocol.Protocol;
-import io.libp2p.routing.ContentRouting;
-import io.libp2p.routing.Providers;
+import io.libp2p.core.Connection;
+import io.libp2p.core.Host;
+import io.libp2p.core.P2PChannel;
+import io.libp2p.core.PeerId;
+import io.libp2p.core.Stream;
+import io.libp2p.core.StreamPromise;
+import io.libp2p.core.multistream.ProtocolBinding;
+import io.libp2p.core.multistream.ProtocolDescriptor;
+
 
 public class LiteHost implements BitSwapNetwork {
 
@@ -24,11 +31,11 @@ public class LiteHost implements BitSwapNetwork {
     private final Host host;
     @Nullable
     private final ContentRouting contentRouting;
-    private final List<Protocol> protocols = new ArrayList<>();
+    private final List<String> protocols = new ArrayList<>();
 
     private LiteHost(@NonNull Host host,
                      @Nullable ContentRouting contentRouting,
-                     @NonNull List<Protocol> protos) {
+                     @NonNull List<String> protos) {
         this.host = host;
         this.contentRouting = contentRouting;
         this.protocols.addAll(protos);
@@ -36,20 +43,44 @@ public class LiteHost implements BitSwapNetwork {
 
     public static BitSwapNetwork NewLiteHost(@NonNull Host host,
                                              @Nullable ContentRouting contentRouting,
-                                             @NonNull List<Protocol> protocols) {
+                                             @NonNull List<String> protocols) {
         return new LiteHost(host, contentRouting, protocols);
     }
 
     @Override
-    public boolean ConnectTo(@NonNull Closeable closeable, @NonNull PeerID peer, boolean protect) throws ClosedException {
-        return host.Connect(closeable, peer, protect);
+    public boolean ConnectTo(@NonNull Closeable closeable, @NonNull PeerId peer, boolean protect) throws ClosedException {
+        try {
+            CompletableFuture<Connection> future = host.getNetwork().connect(peer);
+            // TODO
+            return future.get() != null;
+        } catch (Throwable throwable) {
+            return false;
+        }
+
     }
 
 
     @Override
     public void SetDelegate(@NonNull Receiver receiver) {
 
-        for (Protocol protocol : protocols) {
+
+        host.addProtocolHandler(new ProtocolBinding<Object>() {
+            @NotNull
+            @Override
+            public CompletableFuture<?> initChannel(@NotNull P2PChannel p2PChannel, @NotNull String s) {
+
+                return null;
+            }
+
+            @NotNull
+            @Override
+            public ProtocolDescriptor getProtocolDescriptor() {
+                return new ProtocolDescriptor(protocols);
+            }
+        });
+
+
+            /* TODO
             host.SetStreamHandler(protocol, new StreamHandler() {
                 @Override
                 public boolean gate(@NonNull PeerID peerID) {
@@ -71,26 +102,37 @@ public class LiteHost implements BitSwapNetwork {
                     }
                 }
 
-            });
-        }
+            });*/
+
 
     }
 
     @NonNull
     @Override
-    public List<PeerID> getPeers() {
-        return host.getPeers();
+    public List<PeerId> getPeers() {
+        // TODO
+        return new ArrayList<>();//host.getPeers();
     }
 
 
     @Override
-    public void WriteMessage(@NonNull Closeable closeable, @NonNull PeerID peer,
+    public void WriteMessage(@NonNull Closeable closeable, @NonNull PeerId peer,
                              @NonNull BitSwapMessage message, int timeout) throws ClosedException, ProtocolNotSupported {
 
-        byte[] data = message.ToNetV1();
-        long res = host.WriteMessage(closeable, peer, protocols, data, timeout);
-        if (Objects.equals(data.length, res)) {
-            throw new RuntimeException("Message not fully written");
+        try {
+            byte[] data = message.ToNetV1();
+            StreamPromise<Object> stream = host.newStream(protocols, peer);
+            Stream st = stream.getStream().get();
+
+            st.writeAndFlush(data);
+            st.close();
+            /*
+            long res = host.WriteMessage(closeable, peer, protocols, data, timeout);
+            if (Objects.equals(data.length, res)) {
+                throw new RuntimeException("Message not fully written");
+            }*/
+        } catch (Throwable throwable) {
+
         }
     }
 

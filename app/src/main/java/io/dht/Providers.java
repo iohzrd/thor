@@ -1,4 +1,4 @@
-package io.libp2p.routing;
+package io.dht;
 
 import androidx.annotation.NonNull;
 

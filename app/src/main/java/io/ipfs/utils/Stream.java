@@ -12,10 +12,10 @@ import java.util.Objects;
 import io.Closeable;
 import io.dht.Routing;
 import io.ipfs.ClosedException;
-import io.ipfs.datastore.Storage;
 import io.ipfs.blockservice.BlockService;
 import io.ipfs.cid.Cid;
 import io.ipfs.cid.Prefix;
+import io.ipfs.datastore.Storage;
 import io.ipfs.exchange.Interface;
 import io.ipfs.format.BlockStore;
 import io.ipfs.format.Link;
@@ -27,10 +27,11 @@ import io.ipfs.offline.Exchange;
 import io.ipfs.unixfs.Directory;
 import io.ipfs.unixfs.FSNode;
 import io.ipns.Ipns;
+import io.libp2p.core.PeerId;
 import io.libp2p.core.crypto.PrivKey;
 import io.libp2p.core.crypto.PubKey;
 import io.libp2p.crypto.keys.Ed25519Kt;
-import io.libp2p.peer.PeerID;
+
 
 public class Stream {
 
@@ -58,11 +59,11 @@ public class Stream {
 
         Ipns.EmbedPublicKey(pk, record);
 
-        PeerID id = PeerID.IDFromPublicKey(pk);
+        PeerId id = PeerId.fromPubKey(pk);
 
         byte[] bytes = record.toByteArray();
 
-        String rk = "/ipns/" + id.String();
+        String rk = "/ipns/" + id.toBase58();
 
         routing.PutValue(closable, rk, bytes);
     }

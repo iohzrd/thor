@@ -11,23 +11,21 @@ import io.ipfs.ClosedException;
 import io.ipfs.cid.Cid;
 import io.ipfs.datastore.MapDataStore;
 import io.ipfs.multihash.Multihash;
-import io.libp2p.host.Host;
-import io.libp2p.peer.AddrInfo;
-import io.libp2p.peer.PeerID;
-import io.libp2p.protocol.Protocol;
-import io.libp2p.routing.Providers;
+import io.libp2p.core.Host;
+import io.libp2p.core.PeerId;
+
 
 public class KadDHT implements Routing {
-    public static final Protocol Protocol = new Protocol("/ipfs/kad/1.0.0");
+    public static final String Protocol = "/ipfs/kad/1.0.0";
     private static final String TAG = KadDHT.class.getSimpleName();
     private final Host host;
     private final ProviderManager providerManager;
     private boolean enableProviders = true;
-    public KadDHT(@NonNull Host host){
+
+    public KadDHT(@NonNull Host host) {
         this.host = host;
         this.providerManager = new ProviderManager(new MapDataStore());
     }
-
 
 
     @Override
@@ -57,7 +55,7 @@ public class KadDHT implements Routing {
 
 
         boolean findAll = count == 0;
-        Set<PeerID> ps;
+        Set<PeerId> ps;
         if(findAll) {
             ps = new HashSet<>(0);
         } else {
@@ -149,7 +147,7 @@ public class KadDHT implements Routing {
     }
 
     @Override
-    public AddrInfo FindPeer(@NonNull Closeable closeable, @NonNull PeerID id) {
+    public AddrInfo FindPeer(@NonNull Closeable closeable, @NonNull PeerId id) {
 
         /*
 

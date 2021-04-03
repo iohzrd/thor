@@ -12,8 +12,8 @@ import io.ipfs.cid.Cid;
 import io.ipfs.exchange.Interface;
 import io.ipfs.format.Block;
 import io.ipfs.format.BlockStore;
-import io.libp2p.peer.PeerID;
-import io.libp2p.protocol.Protocol;
+import io.libp2p.core.PeerId;
+
 
 public class BitSwap implements Interface, Receiver {
 
@@ -54,9 +54,9 @@ public class BitSwap implements Interface, Receiver {
     }
 
     @Override
-    public void ReceiveMessage(@NonNull PeerID peer, @NonNull Protocol protocol, @NonNull BitSwapMessage incoming) {
+    public void ReceiveMessage(@NonNull PeerId peer, @NonNull String protocol, @NonNull BitSwapMessage incoming) {
 
-        LogUtils.verbose(TAG, "ReceiveMessage " + peer.String() + " " + protocol.String());
+        LogUtils.verbose(TAG, "ReceiveMessage " + peer.toBase58() + " " + protocol);
 
         List<Block> blocks = incoming.Blocks();
         List<Cid> haves = incoming.Haves();
@@ -71,15 +71,13 @@ public class BitSwap implements Interface, Receiver {
     }
 
 
-    private void receiveBlocksFrom(@NonNull PeerID peer,
+    private void receiveBlocksFrom(@NonNull PeerId peer,
                                    @NonNull List<Block> wanted,
                                    @NonNull List<Cid> haves) {
 
 
-
-
         for (Block block : wanted) {
-            LogUtils.error(TAG, "ReceiveBlock " + peer.String() +
+            LogUtils.error(TAG, "ReceiveBlock " + peer.toBase58() +
                     " " + block.Cid().String());
             contentManager.BlockReceived(peer, block);
         }
@@ -90,14 +88,14 @@ public class BitSwap implements Interface, Receiver {
     }
 
     @Override
-    public void ReceiveError(@NonNull PeerID peer, @NonNull Protocol protocol, @NonNull String error) {
+    public void ReceiveError(@NonNull PeerId peer, @NonNull String protocol, @NonNull String error) {
 
         // TODO handle error
-        LogUtils.error(TAG, "ReceiveError " + peer.String() + " " + protocol.String() + " " + error);
+        LogUtils.error(TAG, "ReceiveError " + peer.toBase58() + " " + protocol + " " + error);
     }
 
     @Override
-    public boolean GatePeer(PeerID peerID) {
+    public boolean GatePeer(PeerId peerID) {
         return contentManager.GatePeer(peerID);
     }
 
