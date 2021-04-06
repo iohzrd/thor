@@ -5,7 +5,7 @@ import androidx.annotation.Nullable;
 
 import com.google.protobuf.ByteString;
 
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -16,12 +16,10 @@ import io.Closeable;
 import io.LogUtils;
 import io.ipfs.ClosedException;
 import io.ipfs.cid.Cid;
-import io.ipfs.datastore.MapDataStore;
-import io.ipfs.multihash.Multihash;
 import io.libp2p.core.Connection;
 import io.libp2p.core.Host;
 import io.libp2p.core.PeerId;
-import io.libp2p.core.PeerInfo;
+import io.libp2p.core.multiformats.Multiaddr;
 import io.protos.dht.DhtProtos;
 
 
@@ -29,13 +27,12 @@ public class KadDHT implements Routing {
     public static final String Protocol = "/ipfs/kad/1.0.0";
     private static final String TAG = KadDHT.class.getSimpleName();
     public final Host host;
-    private final ProviderManager providerManager;
+    private final ProviderManager providerManager = new ProviderManager();
     private boolean enableProviders = true;
     private boolean enableValues = true;
 
     public KadDHT(@NonNull Host host) {
         this.host = host;
-        this.providerManager = new ProviderManager(new MapDataStore());
     }
 
 
@@ -46,7 +43,8 @@ public class KadDHT implements Routing {
     }
 
     @Override
-    public void FindProvidersAsync(@NonNull Providers providers, @NonNull Cid cid, int count) throws ClosedException {
+    public void FindProvidersAsync(@NonNull Providers providers,
+                                   @NonNull Cid cid, int count) throws ClosedException {
         if(!enableProviders || !cid.Defined()) {
             return;
         }
@@ -56,103 +54,107 @@ public class KadDHT implements Routing {
             chSize = 1;
         }
 
-        Multihash keyMH = cid.Hash();
 
-
-        findProvidersAsyncRoutine(providers, keyMH, chSize);
+        findProvidersAsyncRoutine(providers, cid, chSize);
     }
 
-    private void findProvidersAsyncRoutine(@NonNull Providers providers, @NonNull Multihash key, int count) {
+    private void findProvidersAsyncRoutine(@NonNull Providers providers,
+                                           @NonNull Cid cid, int count) throws ClosedException {
 
 
         boolean findAll = count == 0;
-        Set<PeerId> ps;
-        if(findAll) {
-            ps = new HashSet<>(0);
-        } else {
-            ps = new HashSet<>(10);
-        }
+        Set<PeerId> ps = new HashSet<>();
 
 
-
-
-        // providerManager.GetProviders(providers, key);
-
-        /* TODO
-        provs := providerManager.GetProviders(providers, key);
-        for _, p := range provs {
+        Set<PeerId> provs = providerManager.GetProviders(cid);
+        for (PeerId p : provs) {
             // NOTE: Assuming that this list of peers is unique
-            if ps.TryAdd(p) {
-                pi := dht.peerstore.PeerInfo(p)
-                select {
-                    case peerOut <- pi:
-                    case <-ctx.Done():
-                        return
+            if (ps.add(p)) {
+                // TODO Providers should have AddrInfo
+                //  pi = peerstore.PeerInfo(p);
+
+                providers.Peer(p.toBase58());
+
+                if (providers.isClosed()) {
+                    return;
                 }
             }
 
             // If we have enough peers locally, don't bother with remote RPC
             // TODO: is this a DOS vector?
-            if !findAll && ps.Size() >= count {
-                return
+            if (!findAll && ps.size() >= count) {
+                return;
             }
         }
 
-        lookupRes, err := dht.runLookupWithFollowup(ctx, string(key),
-                func(ctx context.Context, p peer.ID) ([]*peer.AddrInfo, error) {
-            // For DHT query command
-            routing.PublishQueryEvent(ctx, &routing.QueryEvent{
-                Type: routing.SendingQuery,
-                        ID:   p,
-            })
+        // TODO cid.String()
+        final String key = cid.String();
+        LookupWithFollowupResult lookupRes = runLookupWithFollowup(providers, key,
+                new QueryFunc() {
 
-            pmes, err := dht.findProvidersSingle(ctx, p, key)
-            if err != nil {
-                return nil, err
-            }
+                    @NonNull
+                    @Override
+                    public List<AddrInfo> func(@NonNull Closeable ctx, @NonNull PeerId p) {
+                        // For DHT query command
 
-            logger.Debugf("%d provider entries", len(pmes.GetProviderPeers()))
-            provs := pb.PBPeersToPeerInfos(pmes.GetProviderPeers())
-            logger.Debugf("%d provider entries decoded", len(provs))
+                        /* TODO
+                        routing.PublishQueryEvent(ctx, &routing.QueryEvent{
+                            Type: routing.SendingQuery,
+                                    ID:   p,
+                        })
+                        */
+                        /*
+                        pmes = findProvidersSingle(ctx, p, key);
 
-            // Add unique providers from request, up to 'count'
-            for _, prov := range provs {
-                dht.maybeAddAddrs(prov.ID, prov.Addrs, peerstore.TempAddrTTL)
-                logger.Debugf("got provider: %s", prov)
-                if ps.TryAdd(prov.ID) {
-                    logger.Debugf("using provider: %s", prov)
-                    select {
-                        case peerOut <- *prov:
-                        case <-ctx.Done():
-                            logger.Debug("context timed out sending more providers")
-                            return nil, ctx.Err()
+                        logger.Debugf("%d provider entries", len(pmes.GetProviderPeers()))
+                        provs := pb.PBPeersToPeerInfos(pmes.GetProviderPeers())
+                        logger.Debugf("%d provider entries decoded", len(provs))
+
+                        // Add unique providers from request, up to 'count'
+                        for _, prov := range provs {
+                            dht.maybeAddAddrs(prov.ID, prov.Addrs, peerstore.TempAddrTTL)
+                            logger.Debugf("got provider: %s", prov)
+                            if ps.TryAdd(prov.ID) {
+                                logger.Debugf("using provider: %s", prov)
+                                select {
+                                    case peerOut <- *prov:
+                                    case <-ctx.Done():
+                                        logger.Debug("context timed out sending more providers")
+                                        return nil, ctx.Err()
+                                }
+                            }
+                            if !findAll && ps.Size() >= count {
+                                logger.Debugf("got enough providers (%d/%d)", ps.Size(), count)
+                                return nil, nil
+                            }
+                        }
+
+                        // Give closer peers back to the query to be queried
+                        closer := pmes.GetCloserPeers()
+                        peers := pb.PBPeersToPeerInfos(closer)
+                        logger.Debugf("got closer peers: %d %s", len(peers), peers)
+
+                        routing.PublishQueryEvent(ctx, &routing.QueryEvent{
+                            Type:      routing.PeerResponse,
+                                    ID:        p,
+                                    Responses: peers,
+                        })
+
+                        return peers;*/
+                        return null;
                     }
-                }
-                if !findAll && ps.Size() >= count {
-                    logger.Debugf("got enough providers (%d/%d)", ps.Size(), count)
-                    return nil, nil
-                }
-            }
+                }, new StopFunc() {
+                    @Override
+                    public boolean func() {
+                        return providers.isClosed() || (!findAll && ps.size() >= count);
+                    }
+                });
 
-            // Give closer peers back to the query to be queried
-            closer := pmes.GetCloserPeers()
-            peers := pb.PBPeersToPeerInfos(closer)
-            logger.Debugf("got closer peers: %d %s", len(peers), peers)
-
-            routing.PublishQueryEvent(ctx, &routing.QueryEvent{
-                Type:      routing.PeerResponse,
-                        ID:        p,
-                        Responses: peers,
-            })
-
-            return peers, nil
-        },
-        func() bool {
-            return !findAll && ps.Size() >= count
-        },
-	)
-
-        if err == nil && ctx.Err() == nil {
+        if(providers.isClosed()){
+            throw new ClosedException();
+        }
+        /*  TODO
+        if( err == nil && ctx.Err() == nil) {
             dht.refreshRTIfNoShortcut(kb.ConvertKey(string(key)), lookupRes)
         }*/
     }
@@ -205,7 +207,7 @@ public class KadDHT implements Routing {
 
         long start = System.currentTimeMillis();
 
-        DhtProtos.Message rpmes = ms.SendRequest(ctx, pmes);
+        DhtProtos.Message response = ms.SendRequest(ctx, pmes);
         /* TODO
         if err != nil {
             stats.Record(ctx,
@@ -223,7 +225,7 @@ public class KadDHT implements Routing {
                 metrics.OutboundRequestLatency.M(float64(time.Since(start))/float64(time.Millisecond)),
                 )*/
         // TODO peerstore.RecordLatency(p, time.Since(start))
-        return rpmes;
+        return response;
     }
 
     private final ConcurrentHashMap<PeerId, MessageSender> strmap = new ConcurrentHashMap<>();
@@ -323,7 +325,7 @@ public class KadDHT implements Routing {
                         @NonNull
                         @Override
                         public List<AddrInfo> func(@NonNull Closeable ctx, @NonNull PeerId p) {
-                            /*
+                            /* TODO
                             // For DHT query command
                             routing.PublishQueryEvent(ctx, &routing.QueryEvent{
                                 Type: routing.SendingQuery,
@@ -331,26 +333,36 @@ public class KadDHT implements Routing {
                             })*/
 
                             DhtProtos.Message pmes = findPeerSingle(ctx, p, id);
-                            /*
-                            peers := pb.PBPeersToPeerInfos(pmes.GetCloserPeers())
 
-                                    /*
+                            List<AddrInfo> peers = new ArrayList<>();
+                            List<DhtProtos.Message.Peer> list = pmes.getCloserPeersList();
+                            for (DhtProtos.Message.Peer entry : list) {
+                                PeerId peerId = new PeerId(entry.getId().toByteArray());
+                                List<Multiaddr> multiAddresses = new ArrayList<>();
+                                List<ByteString> addresses = entry.getAddrsList();
+                                for (ByteString address : addresses) {
+                                    multiAddresses.add(new Multiaddr(address.toByteArray()));
+                                }
+                                peers.add(new AddrInfo(peerId, multiAddresses));
+                            }
+
+
+                            /* TODO
                             // For DHT query command
                             routing.PublishQueryEvent(ctx, &routing.QueryEvent{
                                 Type:      routing.PeerResponse,
                                         ID:        p,
                                         Responses: peers,
-                            })
+                            })*/
 
-                            return peers*/
-                            return Collections.emptyList();
+                            return peers;
                         }
                     }, new StopFunc() {
                         @Override
                         public boolean func() {
                             try {
                                 // return dht.host.Network().Connectedness(id) == network.Connected
-                                return host.getNetwork().connect(id).get() != null;
+                                return closeable.isClosed() || host.getNetwork().connect(id).get() != null;
                             } catch (Throwable throwable){
                                 return false;
                             }

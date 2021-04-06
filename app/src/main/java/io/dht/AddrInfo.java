@@ -17,6 +17,12 @@ public class AddrInfo {
         this.ID = id;
         this.multiaddrList.add(remoteAddress);
     }
+
+    public AddrInfo(@NonNull PeerId id, @NonNull List<Multiaddr> remoteAddresses) {
+        this.ID = id;
+        this.multiaddrList.addAll(remoteAddresses);
+    }
+
     public AddrInfo(@NonNull PeerId id) {
         this.ID = id;
     }
