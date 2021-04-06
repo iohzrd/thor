@@ -1,9 +1,16 @@
 package io.dht;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
+import com.google.protobuf.ByteString;
+
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import io.Closeable;
 import io.LogUtils;
@@ -11,16 +18,20 @@ import io.ipfs.ClosedException;
 import io.ipfs.cid.Cid;
 import io.ipfs.datastore.MapDataStore;
 import io.ipfs.multihash.Multihash;
+import io.libp2p.core.Connection;
 import io.libp2p.core.Host;
 import io.libp2p.core.PeerId;
+import io.libp2p.core.PeerInfo;
+import io.protos.dht.DhtProtos;
 
 
 public class KadDHT implements Routing {
     public static final String Protocol = "/ipfs/kad/1.0.0";
     private static final String TAG = KadDHT.class.getSimpleName();
-    private final Host host;
+    public final Host host;
     private final ProviderManager providerManager;
     private boolean enableProviders = true;
+    private boolean enableValues = true;
 
     public KadDHT(@NonNull Host host) {
         this.host = host;
@@ -48,7 +59,7 @@ public class KadDHT implements Routing {
         Multihash keyMH = cid.Hash();
 
 
-        findProvidersAsyncRoutine(providers, keyMH, count);
+        findProvidersAsyncRoutine(providers, keyMH, chSize);
     }
 
     private void findProvidersAsyncRoutine(@NonNull Providers providers, @NonNull Multihash key, int count) {
@@ -61,7 +72,12 @@ public class KadDHT implements Routing {
         } else {
             ps = new HashSet<>(10);
         }
-        //providerManager.GetProviders(providers, key);
+
+
+
+
+        // providerManager.GetProviders(providers, key);
+
         /* TODO
         provs := providerManager.GetProviders(providers, key);
         for _, p := range provs {
@@ -146,53 +162,212 @@ public class KadDHT implements Routing {
 
     }
 
+
+    // getLocal attempts to retrieve the value from the datastore
+    /*
+    func (dht *IpfsDHT) getLocal(key string) (*recpb.Record, error) {
+        logger.Debugw("finding value in datastore", "key", loggableRecordKeyString(key))
+
+        rec, err := getRecordFromDatastore(mkDsKey(key))
+        if err != nil {
+            logger.Warnw("get local failed", "key", loggableRecordKeyString(key), "error", err)
+            return nil, err
+        }
+
+        // Double check the key. Can't hurt.
+        if rec != nil && string(rec.GetKey()) != key {
+            logger.Errorw("BUG: found a DHT record that didn't match it's key", "expected", loggableRecordKeyString(key), "got", rec.GetKey())
+            return nil, nil
+
+        }
+        return rec, nil
+    }*/
+
+
+
+    // sendRequest sends out a request, but also makes sure to
+// measure the RTT for latency measurements.
+    private DhtProtos.Message sendRequest(Closeable ctx, PeerId p, DhtProtos.Message pmes) {
+        //ctx, _ = tag.New(ctx, metrics.UpsertMessageType(pmes)) // TODO maybe
+
+        MessageSender ms = messageSenderForPeer(ctx, p);
+
+        /* TODO
+        if err != nil {
+            stats.Record(ctx,
+                    metrics.SentRequests.M(1),
+                    metrics.SentRequestErrors.M(1),
+                    )
+            logger.Debugw("request failed to open message sender", "error", err, "to", p)
+            return nil, err
+        }*/
+
+
+        long start = System.currentTimeMillis();
+
+        DhtProtos.Message rpmes = ms.SendRequest(ctx, pmes);
+        /* TODO
+        if err != nil {
+            stats.Record(ctx,
+                    metrics.SentRequests.M(1),
+                    metrics.SentRequestErrors.M(1),
+                    )
+            logger.Debugw("request failed", "error", err, "to", p)
+            return nil, err
+        }*/
+
+        /* TODO
+        stats.Record(ctx,
+                metrics.SentRequests.M(1),
+                metrics.SentBytes.M(int64(pmes.Size())),
+                metrics.OutboundRequestLatency.M(float64(time.Since(start))/float64(time.Millisecond)),
+                )*/
+        // TODO peerstore.RecordLatency(p, time.Since(start))
+        return rpmes;
+    }
+
+    private final ConcurrentHashMap<PeerId, MessageSender> strmap = new ConcurrentHashMap<>();
+
+    private MessageSender messageSenderForPeer(@NonNull Closeable ctx, @NonNull PeerId p) {
+        MessageSender ms = strmap.get(p);
+        if(ms != null) {
+            return ms;
+        }
+
+        ms = new MessageSender(p, this);
+        strmap.put(p, ms);
+
+        try {
+            ms.prepOrInvalidate(ctx);
+        } catch (Throwable throwable){
+
+            // Not changed, remove the now invalid stream from the
+            // map.
+            strmap.remove(p);
+            throw new RuntimeException(throwable);
+        }
+        /* TODO
+        if err := ms.prepOrInvalidate(ctx); err != nil {
+            dht.smlk.Lock()
+            defer dht.smlk.Unlock()
+
+            if msCur, ok := dht.strmap[p]; ok {
+                // Changed. Use the new one, old one is invalid and
+                // not in the map so we can just throw it away.
+                if ms != msCur {
+                    return msCur, nil
+                }
+                // Not changed, remove the now invalid stream from the
+                // map.
+                delete(dht.strmap, p)
+            }
+            // Invalid but not in map. Must have been removed by a disconnect.
+            return nil, err
+        }*/
+        // All ready to go.
+        return ms;
+    }
+
+    // findPeerSingle asks peer 'p' if they know where the peer with id 'id' is
+     private DhtProtos.Message findPeerSingle(Closeable ctx, PeerId p, PeerId id ){
+         DhtProtos.Message pmes = DhtProtos.Message.newBuilder()
+                 .setType(DhtProtos.Message.MessageType.FIND_NODE)
+                 .setKey(ByteString.copyFrom(id.getBytes())).build();
+
+        return sendRequest(ctx, p, pmes);
+    }
+
+
+    // FindLocal looks for a peer with a given ID connected to this dht and returns the peer and the table it was found in.
+    @Nullable
+    AddrInfo FindLocal(@NonNull PeerId id) {
+        // TODO optimize (also just one address)
+        /*
+        switch dht.host.Network().Connectedness(id) {
+	case network.Connected, network.CanConnect:
+		return dht.peerstore.PeerInfo(id)
+	default:
+		return peer.AddrInfo{}
+	}
+
+         */
+        List<Connection> cons = host.getNetwork().getConnections();
+        for (Connection con:cons) {
+            if(Objects.equals(con.secureSession().getRemoteId(), id)){
+                return new AddrInfo(id, con.remoteAddress());
+            }
+        }
+        return null;
+    }
+
     @Override
     public AddrInfo FindPeer(@NonNull Closeable closeable, @NonNull PeerId id) {
 
-        /*
+
 
 
             //logger.Debugw("finding peer", "peer", id)
 
             // Check if were already connected to them
+            AddrInfo pi = FindLocal(id);
+            if(pi != null){
+                return pi;
+            }
+            /*
             if pi := dht.FindLocal(id); pi.ID != "" {
                 return pi, nil
+            }*/
+
+            LookupWithFollowupResult lookupRes = runLookupWithFollowup(closeable, id.toBase58(),
+                    new QueryFunc() {
+                        @NonNull
+                        @Override
+                        public List<AddrInfo> func(@NonNull Closeable ctx, @NonNull PeerId p) {
+                            /*
+                            // For DHT query command
+                            routing.PublishQueryEvent(ctx, &routing.QueryEvent{
+                                Type: routing.SendingQuery,
+                                        ID:   p,
+                            })*/
+
+                            DhtProtos.Message pmes = findPeerSingle(ctx, p, id);
+                            /*
+                            peers := pb.PBPeersToPeerInfos(pmes.GetCloserPeers())
+
+                                    /*
+                            // For DHT query command
+                            routing.PublishQueryEvent(ctx, &routing.QueryEvent{
+                                Type:      routing.PeerResponse,
+                                        ID:        p,
+                                        Responses: peers,
+                            })
+
+                            return peers*/
+                            return Collections.emptyList();
+                        }
+                    }, new StopFunc() {
+                        @Override
+                        public boolean func() {
+                            try {
+                                // return dht.host.Network().Connectedness(id) == network.Connected
+                                return host.getNetwork().connect(id).get() != null;
+                            } catch (Throwable throwable){
+                                return false;
+                            }
+                        }
+                    });
+
+
+            boolean dialedPeerDuringQuery = false;
+            PeerState state = lookupRes.peers.get(id);
+            if(state != null){
+                // Note: we consider PeerUnreachable to be a valid state because the peer may not support the DHT protocol
+                // and therefore the peer would fail the query. The fact that a peer that is returned can be a non-DHT
+                // server peer and is not identified as such is a bug.
+                dialedPeerDuringQuery = (state == PeerState.PeerQueried || state == PeerState.PeerUnreachable || state == PeerState.PeerWaiting);
+
             }
-
-            lookupRes, err := dht.runLookupWithFollowup(ctx, string(id),
-                    func(ctx context.Context, p peer.ID) ([]*peer.AddrInfo, error) {
-                // For DHT query command
-                routing.PublishQueryEvent(ctx, &routing.QueryEvent{
-                    Type: routing.SendingQuery,
-                            ID:   p,
-                })
-
-                pmes, err := dht.findPeerSingle(ctx, p, id)
-                if err != nil {
-                    logger.Debugf("error getting closer peers: %s", err)
-                    return nil, err
-                }
-                peers := pb.PBPeersToPeerInfos(pmes.GetCloserPeers())
-
-                // For DHT query command
-                routing.PublishQueryEvent(ctx, &routing.QueryEvent{
-                    Type:      routing.PeerResponse,
-                            ID:        p,
-                            Responses: peers,
-                })
-
-                return peers, err
-            },
-            func() bool {
-                return dht.host.Network().Connectedness(id) == network.Connected
-            },
-	)
-
-            if err != nil {
-                return peer.AddrInfo{}, err
-            }
-
-            dialedPeerDuringQuery := false
+            /*
             for i, p := range lookupRes.peers {
                 if p == id {
                     // Note: we consider PeerUnreachable to be a valid state because the peer may not support the DHT protocol
@@ -201,22 +376,161 @@ public class KadDHT implements Routing {
                     dialedPeerDuringQuery = (lookupRes.state[i] == qpeerset.PeerQueried || lookupRes.state[i] == qpeerset.PeerUnreachable || lookupRes.state[i] == qpeerset.PeerWaiting)
                     break
                 }
-            }
-
+            }*/
+            
             // Return peer information if we tried to dial the peer during the query or we are (or recently were) connected
             // to the peer.
-            connectedness := dht.host.Network().Connectedness(id)
-            if dialedPeerDuringQuery || connectedness == network.Connected || connectedness == network.CanConnect {
-                return dht.peerstore.PeerInfo(id), nil
+            //connectedness := dht.host.Network().Connectedness(id)
+            try {
+                boolean connectedness = host.getNetwork().connect(id).get() != null;
+                /*if (dialedPeerDuringQuery || connectedness == network.Connected || connectedness == network.CanConnect) {
+                    return dht.peerstore.PeerInfo(id),nil
+                }*/
+                if(dialedPeerDuringQuery || connectedness){
+                    return new AddrInfo(id); // TODO shoud use peerstore
+                    //return new PeerInfo(id);
+                }
+            } catch (Throwable throwable){
+                LogUtils.error(TAG, throwable); // TODO
             }
 
-            return peer.AddrInfo{}, routing.ErrNotFound
-      */
         return null;
     }
 
-    @Override
-    public void SearchValue(ResolveInfo resolveInfo, String key, Option... options) {
 
+    // runLookupWithFollowup executes the lookup on the target using the given query function and stopping when either the
+// context is cancelled or the stop function returns true. Note: if the stop function is not sticky, i.e. it does not
+// return true every time after the first time it returns true, it is not guaranteed to cause a stop to occur just
+// because it momentarily returns true.
+//
+// After the lookup is complete the query function is run (unless stopped) against all of the top K peers from the
+// lookup that have not already been successfully queried.
+    private LookupWithFollowupResult runLookupWithFollowup(@NonNull Closeable ctx, @NonNull String target,
+                                                           @NonNull QueryFunc queryFn, @NonNull StopFunc stopFn) {
+        // run the query
+        /*
+        lookupRes, err := dht.runQuery(ctx, target, queryFn, stopFn)
+        if err != nil {
+            return nil, err
+        }
+
+        // query all of the top K peers we've either Heard about or have outstanding queries we're Waiting on.
+        // This ensures that all of the top K results have been queried which adds to resiliency against churn for query
+        // functions that carry state (e.g. FindProviders and GetValue) as well as establish connections that are needed
+        // by stateless query functions (e.g. GetClosestPeers and therefore Provide and PutValue)
+        queryPeers := make([]peer.ID, 0, len(lookupRes.peers))
+        for i, p := range lookupRes.peers {
+            if state := lookupRes.state[i]; state == qpeerset.PeerHeard || state == qpeerset.PeerWaiting {
+                queryPeers = append(queryPeers, p)
+            }
+        }
+
+        if len(queryPeers) == 0 {
+            return lookupRes, nil
+        }
+
+        // return if the lookup has been externally stopped
+        if ctx.Err() != nil || stopFn() {
+            lookupRes.completed = false
+            return lookupRes, nil
+        }
+
+        doneCh := make(chan struct{}, len(queryPeers))
+        followUpCtx, cancelFollowUp := context.WithCancel(ctx)
+        defer cancelFollowUp()
+        for _, p := range queryPeers {
+            qp := p
+            go func() {
+                _, _ = queryFn(followUpCtx, qp)
+                doneCh <- struct{}{}
+            }()
+        }
+
+        // wait for all queries to complete before returning, aborting ongoing queries if we've been externally stopped
+        followupsCompleted := 0
+        processFollowUp:
+        for i := 0; i < len(queryPeers); i++ {
+            select {
+                case <-doneCh:
+                    followupsCompleted++
+                    if stopFn() {
+                    cancelFollowUp()
+                    if i < len(queryPeers)-1 {
+                        lookupRes.completed = false
+                    }
+                    break processFollowUp
+                }
+                case <-ctx.Done():
+                    lookupRes.completed = false
+                    cancelFollowUp()
+                    break processFollowUp
+            }
+        }
+
+        if !lookupRes.completed {
+            for i := followupsCompleted; i < len(queryPeers); i++ {
+			<-doneCh
+            }
+        }
+
+        return lookupRes, nil*/
+        return null;
+    }
+
+    private static int defaultQuorum = 0;
+
+    @Override
+    public void SearchValue(@NonNull ResolveInfo resolveInfo, @NonNull String key, Option... options) {
+
+        if( !enableValues) {
+            throw new RuntimeException();
+        }
+
+        boolean offline = false;
+        int quorum = defaultQuorum;
+
+        for (Option option:options) {
+            if(option instanceof Offline){
+                offline = ((Offline) option).isOffline();
+            }
+            if(option instanceof Quorum){
+                quorum = ((Quorum) option).getQuorum();
+            }
+        }
+
+        int responsesNeeded = 0;
+        if(!offline) {
+            responsesNeeded = quorum;
+        }
+        /*
+        stopCh := make(chan struct{})
+        valCh, lookupRes := getValues(ctx, key, stopCh)
+
+        out := make(chan []byte)
+        go func() {
+            defer close(out)
+                    best, peersWithBest, aborted := searchValueQuorum(ctx, key, valCh, stopCh, out, responsesNeeded)
+            if best == nil || aborted {
+                return
+            }
+
+            updatePeers := make([]peer.ID, 0, dht.bucketSize)
+            select {
+                case l := <-lookupRes:
+                    if l == nil {
+                    return
+                }
+
+                for _, p := range l.peers {
+                    if _, ok := peersWithBest[p]; !ok {
+                        updatePeers = append(updatePeers, p)
+                    }
+                }
+                case <-ctx.Done():
+                    return
+            }
+
+            dht.updatePeerValues(dht.Context(), key, best, updatePeers)
+        }()*/
     }
 }

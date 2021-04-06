@@ -16,6 +16,7 @@ import io.dht.Quorum;
 import io.dht.ResolveInfo;
 import io.dht.Routing;
 import io.ipfs.ClosedException;
+import io.ipfs.IPFS;
 import io.ipfs.blockservice.BlockService;
 import io.ipfs.cid.Cid;
 import io.ipfs.cid.Prefix;
@@ -62,7 +63,7 @@ public class Stream {
         // Use the routing system to get the name.
         // Note that the DHT will call the ipns validator when retrieving
         // the value, which in turn verifies the ipns record signature
-        String ipnsKey = "/ipns/" + peerId.toBase58();
+        String ipnsKey = IPFS.IPNS_PATH + peerId.toBase58();
 
 
         routing.SearchValue(info, ipnsKey, new Quorum(dhtRecords), new Offline(offline));
@@ -94,7 +95,7 @@ public class Stream {
 
         byte[] bytes = record.toByteArray();
 
-        String rk = "/ipns/" + id.toBase58();
+        String rk = IPFS.IPNS_PATH + id.toBase58();
 
         routing.PutValue(closable, rk, bytes);
     }
