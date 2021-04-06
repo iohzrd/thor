@@ -7,21 +7,19 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.IOException;
-import java.io.PushbackReader;
-import java.io.Reader;
 import java.util.Collections;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import io.Closeable;
 import io.LogUtils;
+import io.ipfs.ClosedException;
 import io.libp2p.core.PeerId;
 import io.libp2p.core.Stream;
 import io.libp2p.core.StreamPromise;
 import io.libp2p.protocol.ProtocolMessageHandler;
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelHandlerContext;
 import io.protos.dht.DhtProtos;
 
 public class MessageSender {
@@ -75,79 +73,74 @@ public class MessageSender {
     }
 
 
-// streamReuseTries is the number of times we will try to reuse a stream to a
+    // streamReuseTries is the number of times we will try to reuse a stream to a
 // given peer before giving up and reverting to the old one-message-per-stream
 // behaviour.
-public static final int streamReuseTries = 3;
+    public static final int streamReuseTries = 3;
 
-    private int singleMes;
-    public DhtProtos.Message SendRequest(@NonNull Closeable ctx, @NonNull DhtProtos.Message pmes) {
-        
+    private int singleMes = 0;
+
+    public DhtProtos.Message SendRequest(@NonNull Closeable ctx, @NonNull DhtProtos.Message pmes) throws ClosedException {
+
         boolean retry = false;
-        while(true) {
+        while (true) {
+
             try {
                 prep(ctx);
-            } catch (Throwable throwable){
+            } catch (Throwable throwable) {
                 throw new RuntimeException(throwable);
             }
 
-            // TODO ctx is closed throw exception
-            
-            try {
-                writeMsg(pmes);
-            } catch (Throwable throwable){
-                try {
-                    s.reset().get();
-                } catch (Throwable ignore){
-                    // TOOD ignore
-                }
-                s = null;
-                if(retry){
-                    LogUtils.error(TAG, "error writing message error " + throwable.getMessage());
-                    return null;
-                }
-                LogUtils.error(TAG,"error writing message error " +
-                        throwable.getMessage()+ " retrying  true");
-                retry = true;
-                continue;
-            }
 
-
-            DhtProtos.Message mes = DhtProtos.Message.getDefaultInstance();
-            try {
-                ctxReadMsg(ctx, mes);
-            } catch (Throwable throwable){
-
-                try {
-                    s.reset().get();
-                } catch (Throwable ignore){
-                    // TOOD ignore
-                }
-                s = null;
-
-                if(retry) {
-                    LogUtils.error(TAG, "error reading message error " + throwable.getMessage());
-                    return null;
-                }
-                LogUtils.error(TAG,"error reading message error " +
-                        throwable.getMessage()+ " retrying  true");
-                retry = true;
-                continue;
-            }
-
-
-            if( singleMes > streamReuseTries) {
-                try {
-                    s.close().get();
-                } catch (Throwable ignore){
-                    // TODO
-                }
-                s = null;
-            } else if(retry) {
+            if (singleMes > streamReuseTries) {
                 singleMes++;
-            }
 
-            return mes;
+                if (ctx.isClosed()) {
+                    throw new ClosedException();
+                }
+
+                try {
+                    writeMsg(pmes);
+                } catch (Throwable throwable) {
+                    try {
+                        s.reset().get();
+                    } catch (Throwable ignore) {
+                        // TOOD ignore
+                    }
+                    s = null;
+                    if (retry) {
+                        LogUtils.error(TAG, "error writing message error " + throwable.getMessage());
+                        return null;
+                    }
+                    LogUtils.error(TAG, "error writing message error " +
+                            throwable.getMessage() + " retrying  true");
+                    retry = true;
+                    continue;
+                }
+
+
+                try {
+                    return ctxReadMsg(ctx);
+                } catch (ClosedException exception) {
+                    throw exception;
+                } catch (Throwable throwable) {
+
+                    try {
+                        s.reset().get();
+                    } catch (Throwable ignore) {
+                        // TOOD ignore
+                    }
+                    s = null;
+
+                    if (retry) {
+                        LogUtils.error(TAG, "error reading message error " + throwable.getMessage());
+                        return null;
+                    }
+                    LogUtils.error(TAG, "error reading message error " +
+                            throwable.getMessage() + " retrying  true");
+                    retry = true;
+                }
+            }
         }
     }
 
@@ -158,40 +151,59 @@ public static final int streamReuseTries = 3;
     }
 
 
-    private void ctxReadMsg(Closeable ctx, DhtProtos.Message mes) {
-
+    @NonNull
+    private DhtProtos.Message ctxReadMsg(Closeable ctx) throws ClosedException {
+        AtomicReference<DhtProtos.Message> messageAtomicReference = new AtomicReference<>();
+        AtomicBoolean done = new AtomicBoolean(false);
         // TODO
         s.pushHandler(new ProtocolMessageHandler<ByteBuf>() {
             @Override
             public void onMessage(@NotNull Stream stream, ByteBuf byteBuf) {
-                try{
+                try {
                     DhtProtos.Message message = DhtProtos.Message.parseFrom(byteBuf.array());
+                    messageAtomicReference.set(message);
                 } catch (InvalidProtocolBufferException e) {
-                    LogUtils.error(TAG, e);
+                    throw new RuntimeException(e);
+                } finally {
+                    done.set(true);
+                    // TODO s.close();
                 }
             }
 
 
             @Override
             public void onException(@Nullable Throwable throwable) {
-
+                LogUtils.error(TAG, throwable);
+                done.set(true);
             }
 
             @Override
             public void onClosed(@NotNull Stream stream) {
-
+                done.set(true);
             }
 
             @Override
             public void onActivated(@NotNull Stream stream) {
-
+                // TODO
             }
 
             @Override
             public void fireMessage(@NotNull Stream stream, @NotNull Object o) {
-
+                // TODO
             }
         });
+
+        while (!done.get()) {
+            if (ctx.isClosed()) {
+                throw new ClosedException();
+            }
+        }
+        DhtProtos.Message result = messageAtomicReference.get();
+        if (result == null) {
+            throw new RuntimeException();
+        }
+        return result;
+
         /* TODO
         errc := make(chan error, 1)
         go func(r msgio.ReadCloser) {

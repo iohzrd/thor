@@ -5,6 +5,7 @@ import androidx.annotation.Nullable;
 
 import com.google.protobuf.ByteString;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -25,9 +26,11 @@ import io.protos.dht.DhtProtos;
 
 public class KadDHT implements Routing {
     public static final String Protocol = "/ipfs/kad/1.0.0";
+    public static final Duration TempAddrTTL = Duration.ofMinutes(2);
     private static final String TAG = KadDHT.class.getSimpleName();
     public final Host host;
     private final ProviderManager providerManager = new ProviderManager();
+
     private boolean enableProviders = true;
     private boolean enableValues = true;
 
@@ -50,12 +53,24 @@ public class KadDHT implements Routing {
         }
 
         int chSize = count;
-        if(count == 0) {
+        if (count == 0) {
             chSize = 1;
         }
 
 
         findProvidersAsyncRoutine(providers, cid, chSize);
+    }
+
+
+    private void maybeAddAddrs(@NonNull PeerId p, @NonNull List<Multiaddr> addrs) {
+        // Don't add addresses for self or our connected peers. We have better ones.
+        /* TODO
+        if( Objects.equals(p,self) || host.getNetwork().Connectedness(p) == network.Connected ) {
+            return;
+        }*/
+        for (Multiaddr addr : addrs) {
+            host.getAddressBook().addAddrs(p, KadDHT.TempAddrTTL.toMillis(), addr);
+        }
     }
 
     private void findProvidersAsyncRoutine(@NonNull Providers providers,
@@ -67,19 +82,15 @@ public class KadDHT implements Routing {
 
 
         Set<PeerId> provs = providerManager.GetProviders(cid);
-        for (PeerId p : provs) {
+        for (PeerId prov : provs) {
             // NOTE: Assuming that this list of peers is unique
-            if (ps.add(p)) {
+            if (ps.add(prov)) {
                 // TODO Providers should have AddrInfo
                 //  pi = peerstore.PeerInfo(p);
 
-                providers.Peer(p.toBase58());
+                providers.Peer(prov.toBase58()); // TODO can be wrong
 
-                if (providers.isClosed()) {
-                    return;
-                }
             }
-
             // If we have enough peers locally, don't bother with remote RPC
             // TODO: is this a DOS vector?
             if (!findAll && ps.size() >= count) {
@@ -87,14 +98,14 @@ public class KadDHT implements Routing {
             }
         }
 
-        // TODO cid.String()
-        final String key = cid.String();
-        LookupWithFollowupResult lookupRes = runLookupWithFollowup(providers, key,
+        // TODO check if correct
+        io.ipfs.multihash.Multihash key = cid.Hash();
+        LookupWithFollowupResult lookupRes = runLookupWithFollowup(providers, key.toHex(),
                 new QueryFunc() {
 
                     @NonNull
                     @Override
-                    public List<AddrInfo> func(@NonNull Closeable ctx, @NonNull PeerId p) {
+                    public List<AddrInfo> func(@NonNull Closeable ctx, @NonNull PeerId p) throws ClosedException {
                         // For DHT query command
 
                         /* TODO
@@ -103,45 +114,65 @@ public class KadDHT implements Routing {
                                     ID:   p,
                         })
                         */
-                        /*
-                        pmes = findProvidersSingle(ctx, p, key);
 
-                        logger.Debugf("%d provider entries", len(pmes.GetProviderPeers()))
-                        provs := pb.PBPeersToPeerInfos(pmes.GetProviderPeers())
-                        logger.Debugf("%d provider entries decoded", len(provs))
+                        DhtProtos.Message pmes = findProvidersSingle(ctx, p, key);
+
+                        LogUtils.error(TAG, "" + pmes.getProviderPeersList().size()
+                                + " provider entries");
+
+                        List<AddrInfo> provs = new ArrayList<>();
+                        List<DhtProtos.Message.Peer> list = pmes.getProviderPeersList();
+                        for (DhtProtos.Message.Peer entry : list) {
+                            PeerId peerId = new PeerId(entry.getId().toByteArray());
+                            List<Multiaddr> multiAddresses = new ArrayList<>();
+                            List<ByteString> addresses = entry.getAddrsList();
+                            for (ByteString address : addresses) {
+                                multiAddresses.add(new Multiaddr(address.toByteArray()));
+                            }
+                            provs.add(new AddrInfo(peerId, multiAddresses));
+                        }
+
+                        LogUtils.error(TAG, "" + provs.size() + " provider entries decoded");
 
                         // Add unique providers from request, up to 'count'
-                        for _, prov := range provs {
-                            dht.maybeAddAddrs(prov.ID, prov.Addrs, peerstore.TempAddrTTL)
-                            logger.Debugf("got provider: %s", prov)
-                            if ps.TryAdd(prov.ID) {
-                                logger.Debugf("using provider: %s", prov)
-                                select {
-                                    case peerOut <- *prov:
-                                    case <-ctx.Done():
-                                        logger.Debug("context timed out sending more providers")
-                                        return nil, ctx.Err()
-                                }
+                        for (AddrInfo prov : provs) {
+
+                            maybeAddAddrs(prov.ID, prov.getAddresses());
+                            LogUtils.error(TAG, "got provider : " + prov.ID);
+                            if (ps.add(prov.ID)) {
+                                LogUtils.error(TAG, "using provider: " + prov.ID);
+
+                                providers.Peer(prov.ID.toBase58()); // TODO can be wrong
+
                             }
-                            if !findAll && ps.Size() >= count {
-                                logger.Debugf("got enough providers (%d/%d)", ps.Size(), count)
-                                return nil, nil
+                            if (!findAll && ps.size() >= count) {
+                                LogUtils.error(TAG, "got enough providers " + ps.size() + " " + count);
+                                break;
                             }
                         }
 
                         // Give closer peers back to the query to be queried
-                        closer := pmes.GetCloserPeers()
-                        peers := pb.PBPeersToPeerInfos(closer)
-                        logger.Debugf("got closer peers: %d %s", len(peers), peers)
+                        List<AddrInfo> peers = new ArrayList<>();
+                        List<DhtProtos.Message.Peer> closerPeersList = pmes.getCloserPeersList();
+                        for (DhtProtos.Message.Peer entry : closerPeersList) {
+                            PeerId peerId = new PeerId(entry.getId().toByteArray());
+                            List<Multiaddr> multiAddresses = new ArrayList<>();
+                            List<ByteString> addresses = entry.getAddrsList();
+                            for (ByteString address : addresses) {
+                                multiAddresses.add(new Multiaddr(address.toByteArray()));
+                            }
+                            peers.add(new AddrInfo(peerId, multiAddresses));
+                        }
 
+                        /*
                         routing.PublishQueryEvent(ctx, &routing.QueryEvent{
                             Type:      routing.PeerResponse,
                                     ID:        p,
                                     Responses: peers,
-                        })
+                        })*/
 
-                        return peers;*/
-                        return null;
+                        return peers;
+
                     }
                 }, new StopFunc() {
                     @Override
@@ -186,10 +217,9 @@ public class KadDHT implements Routing {
     }*/
 
 
-
     // sendRequest sends out a request, but also makes sure to
 // measure the RTT for latency measurements.
-    private DhtProtos.Message sendRequest(Closeable ctx, PeerId p, DhtProtos.Message pmes) {
+    private DhtProtos.Message sendRequest(Closeable ctx, PeerId p, DhtProtos.Message pmes) throws ClosedException {
         //ctx, _ = tag.New(ctx, metrics.UpsertMessageType(pmes)) // TODO maybe
 
         MessageSender ms = messageSenderForPeer(ctx, p);
@@ -271,11 +301,21 @@ public class KadDHT implements Routing {
     }
 
     // findPeerSingle asks peer 'p' if they know where the peer with id 'id' is
-     private DhtProtos.Message findPeerSingle(Closeable ctx, PeerId p, PeerId id ){
-         DhtProtos.Message pmes = DhtProtos.Message.newBuilder()
-                 .setType(DhtProtos.Message.MessageType.FIND_NODE)
-                 .setKey(ByteString.copyFrom(id.getBytes())).build();
+    private DhtProtos.Message findPeerSingle(Closeable ctx, PeerId p, PeerId id)
+            throws ClosedException {
+        DhtProtos.Message pmes = DhtProtos.Message.newBuilder()
+                .setType(DhtProtos.Message.MessageType.FIND_NODE)
+                .setKey(ByteString.copyFrom(id.getBytes())).build();
 
+        return sendRequest(ctx, p, pmes);
+    }
+
+
+    private DhtProtos.Message findProvidersSingle(Closeable ctx, PeerId p, io.ipfs.multihash.Multihash key)
+            throws ClosedException {
+        DhtProtos.Message pmes = DhtProtos.Message.newBuilder()
+                .setType(DhtProtos.Message.MessageType.GET_PROVIDERS)
+                .setKey(ByteString.copyFrom(key.getHash())).build();
         return sendRequest(ctx, p, pmes);
     }
 
@@ -306,15 +346,13 @@ public class KadDHT implements Routing {
     public AddrInfo FindPeer(@NonNull Closeable closeable, @NonNull PeerId id) {
 
 
+        LogUtils.error(TAG, "finding peer " + id.toBase58());
 
-
-            //logger.Debugw("finding peer", "peer", id)
-
-            // Check if were already connected to them
-            AddrInfo pi = FindLocal(id);
-            if(pi != null){
-                return pi;
-            }
+        // Check if were already connected to them
+        AddrInfo pi = FindLocal(id);
+        if (pi != null) {
+            return pi;
+        }
             /*
             if pi := dht.FindLocal(id); pi.ID != "" {
                 return pi, nil
@@ -324,7 +362,7 @@ public class KadDHT implements Routing {
                     new QueryFunc() {
                         @NonNull
                         @Override
-                        public List<AddrInfo> func(@NonNull Closeable ctx, @NonNull PeerId p) {
+                        public List<AddrInfo> func(@NonNull Closeable ctx, @NonNull PeerId p) throws ClosedException {
                             /* TODO
                             // For DHT query command
                             routing.PublishQueryEvent(ctx, &routing.QueryEvent{
