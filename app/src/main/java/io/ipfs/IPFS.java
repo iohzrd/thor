@@ -47,13 +47,18 @@ import io.ipfs.utils.ReaderStream;
 import io.dht.ResolveInfo;
 import io.ipfs.utils.Resolver;
 import io.ipfs.utils.Stream;
+import io.libp2p.HostBuilder;
 import io.libp2p.core.PeerId;
 import io.libp2p.core.crypto.KEY_TYPE;
 import io.libp2p.core.crypto.KeyKt;
 import io.libp2p.core.crypto.PrivKey;
 import io.libp2p.core.crypto.PubKey;
 import io.libp2p.core.multiformats.Multiaddr;
+import io.libp2p.core.mux.StreamMuxerProtocol;
 import io.libp2p.crypto.keys.Ed25519Kt;
+import io.libp2p.protocol.Identify;
+import io.libp2p.security.noise.NoiseXXSecureChannel;
+import io.libp2p.transport.tcp.TcpTransport;
 import io.protos.ipns.IpnsProtos;
 import threads.thor.core.blocks.BLOCKS;
 
@@ -200,13 +205,13 @@ public class IPFS {
 
         int port = nextFreePort();
 
-        host = null;/* new HostBuilder()
-                .protocol(new Ping(), new Identify())
+        host = new HostBuilder()
+                .protocol(new Identify())
                 .transport(TcpTransport::new)
                 .secureChannel(NoiseXXSecureChannel::new)
                 .muxer(StreamMuxerProtocol::getMplex)
                 .listen("/ip4/127.0.0.1/tcp/" + port)
-                .build();*/
+                .build();
 
         host.start().get();
         running = true;
