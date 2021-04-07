@@ -4,6 +4,7 @@ import androidx.annotation.NonNull;
 
 import io.libp2p.core.PeerId;
 
+
 // TODO remove
 public interface StreamHandler {
     boolean gate(@NonNull PeerId peerID);
