@@ -491,8 +491,11 @@ public class IPFS {
                             LogUtils.info(TAG, "\nConnect done " + future.isDone());
                         }
                     }
+
                 } catch (Throwable throwable) {
                     LogUtils.error(TAG, throwable);
+                } finally {
+                    LogUtils.error(TAG, "NumPeers " + numSwarmPeers() );
                 }
             }
         }

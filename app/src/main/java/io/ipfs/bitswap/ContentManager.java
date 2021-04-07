@@ -37,8 +37,10 @@ public class ContentManager {
     private static final ExecutorService LOADS = Executors.newFixedThreadPool(4);
     private static final ExecutorService WANTS = Executors.newFixedThreadPool(4);
 
-    private final ConcurrentSkipListSet<PeerId> faulty = new ConcurrentSkipListSet<>();
-    private final ConcurrentSkipListSet<PeerId> peers = new ConcurrentSkipListSet<>();
+    private final ConcurrentSkipListSet<PeerId> faulty = new ConcurrentSkipListSet<>(
+            (o1, o2) -> o1.toHex().compareTo(o2.toHex()));
+    private final ConcurrentSkipListSet<PeerId> peers = new ConcurrentSkipListSet<>(
+            (o1, o2) -> o1.toHex().compareTo(o2.toHex()));
     private final ConcurrentLinkedDeque<PeerId> priority = new ConcurrentLinkedDeque<>();
 
     private final ConcurrentSkipListSet<Cid> loads = new ConcurrentSkipListSet<>();
