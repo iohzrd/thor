@@ -5,12 +5,14 @@ import androidx.annotation.Nullable;
 
 import com.google.protobuf.ByteString;
 
+import java.security.MessageDigest;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import io.Closeable;
@@ -26,16 +28,25 @@ import io.protos.dht.DhtProtos;
 
 public class KadDHT implements Routing {
     public static final String Protocol = "/ipfs/kad/1.0.0";
+    public static final int defaultBucketSize = 20;
+
     public static final Duration TempAddrTTL = Duration.ofMinutes(2);
     private static final String TAG = KadDHT.class.getSimpleName();
     public final Host host;
     private final ProviderManager providerManager = new ProviderManager();
-
+    private final RoutingTable routingTable;
     private boolean enableProviders = true;
     private boolean enableValues = true;
 
+    private final int bucketSize;
+    int alpha; // The concurrency parameter per path
+    int beta; // The number of peers closest to a target that must have responded for a query path to terminate
+
+
     public KadDHT(@NonNull Host host) {
         this.host = host;
+        this.bucketSize = defaultBucketSize; // todo config
+        this.routingTable = new RoutingTable(); // TODO
     }
 
 
@@ -343,7 +354,7 @@ public class KadDHT implements Routing {
     }
 
     @Override
-    public AddrInfo FindPeer(@NonNull Closeable closeable, @NonNull PeerId id) {
+    public AddrInfo FindPeer(@NonNull Closeable closeable, @NonNull PeerId id) throws ClosedException {
 
 
         LogUtils.error(TAG, "finding peer " + id.toBase58());
@@ -431,22 +442,66 @@ public class KadDHT implements Routing {
             // Return peer information if we tried to dial the peer during the query or we are (or recently were) connected
             // to the peer.
             //connectedness := dht.host.Network().Connectedness(id)
-            try {
-                boolean connectedness = host.getNetwork().connect(id).get() != null;
+        try {
+            boolean connectedness = host.getNetwork().connect(id).get() != null;
                 /*if (dialedPeerDuringQuery || connectedness == network.Connected || connectedness == network.CanConnect) {
                     return dht.peerstore.PeerInfo(id),nil
                 }*/
-                if(dialedPeerDuringQuery || connectedness){
-                    return new AddrInfo(id); // TODO shoud use peerstore
-                    //return new PeerInfo(id);
-                }
-            } catch (Throwable throwable){
-                LogUtils.error(TAG, throwable); // TODO
+            if (dialedPeerDuringQuery || connectedness) {
+                return new AddrInfo(id); // TODO shoud use peerstore
+                //return new PeerInfo(id);
             }
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable); // TODO
+        }
 
         return null;
     }
 
+
+    // ConvertKey creates a DHT ID by hashing a local key (String)
+    private ID ConvertKey(String id) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            return new ID(digest.digest(id.getBytes()));
+        } catch (Throwable throwable) {
+            throw new RuntimeException(throwable);
+        }
+    }
+
+    private LookupWithFollowupResult runQuery(@NonNull Closeable ctx, @NonNull String target,
+                                              @NonNull QueryFunc queryFn, @NonNull StopFunc stopFn)
+            throws ClosedException {
+        // pick the K closest peers to the key in our Routing table.
+        ID targetKadID = ConvertKey(target);
+        List<PeerId> seedPeers = routingTable.NearestPeers(targetKadID, bucketSize);
+        if (seedPeers.size() == 0) {
+            /* TODO
+            routing.PublishQueryEvent(ctx, &routing.QueryEvent{
+                Type:  routing.QueryError,
+                        Extra: kb.ErrLookupFailure.Error(),
+            })
+            return nil, kb.ErrLookupFailure */
+            throw new RuntimeException(); // TODO ErrLookupFailure
+        }
+
+        Query q = new Query(this, UUID.randomUUID(), target, seedPeers,
+                QueryPeerset.create(target), queryFn, stopFn);
+
+        // run the query
+        q.run(ctx);
+
+
+        if (ctx.isClosed()) {
+            throw new ClosedException(); // TODO maybe not necessary
+        }
+
+        // TODO if( ctx.Err() == null) {
+        q.recordValuablePeers();
+        //}
+
+        return q.constructLookupResult(targetKadID);
+    }
 
     // runLookupWithFollowup executes the lookup on the target using the given query function and stopping when either the
 // context is cancelled or the stop function returns true. Note: if the stop function is not sticky, i.e. it does not
@@ -456,10 +511,11 @@ public class KadDHT implements Routing {
 // After the lookup is complete the query function is run (unless stopped) against all of the top K peers from the
 // lookup that have not already been successfully queried.
     private LookupWithFollowupResult runLookupWithFollowup(@NonNull Closeable ctx, @NonNull String target,
-                                                           @NonNull QueryFunc queryFn, @NonNull StopFunc stopFn) {
+                                                           @NonNull QueryFunc queryFn, @NonNull StopFunc stopFn) throws ClosedException {
         // run the query
+
+        LookupWithFollowupResult lookupRes = runQuery(ctx, target, queryFn, stopFn);
         /*
-        lookupRes, err := dht.runQuery(ctx, target, queryFn, stopFn)
         if err != nil {
             return nil, err
         }
