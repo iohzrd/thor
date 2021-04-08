@@ -1,11 +1,14 @@
 package io.dht;
 
+import android.util.Pair;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.google.protobuf.ByteString;
 
-import java.security.MessageDigest;
+import org.jetbrains.annotations.NotNull;
+
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -20,6 +23,7 @@ import io.LogUtils;
 import io.ipfs.ClosedException;
 import io.ipfs.cid.Cid;
 import io.libp2p.core.Connection;
+import io.libp2p.core.ConnectionHandler;
 import io.libp2p.core.Host;
 import io.libp2p.core.PeerId;
 import io.libp2p.core.multiformats.Multiaddr;
@@ -33,6 +37,8 @@ public class KadDHT implements Routing {
     public static final Duration TempAddrTTL = Duration.ofMinutes(2);
     private static final String TAG = KadDHT.class.getSimpleName();
     public final Host host;
+    public final PeerId self; // Local peer (yourself)
+    public final int beta; // The number of peers closest to a target that must have responded for a query path to terminate
     private final ProviderManager providerManager = new ProviderManager();
     private final RoutingTable routingTable;
     private boolean enableProviders = true;
@@ -40,15 +46,99 @@ public class KadDHT implements Routing {
 
     private final int bucketSize;
     int alpha; // The concurrency parameter per path
-    int beta; // The number of peers closest to a target that must have responded for a query path to terminate
+    private final ID selfKey;
 
 
     public KadDHT(@NonNull Host host) {
         this.host = host;
+        this.self = host.getPeerId();
+        this.selfKey = Util.ConvertPeerID(host.getPeerId());
         this.bucketSize = defaultBucketSize; // todo config
-        this.routingTable = new RoutingTable(); // TODO
+        this.routingTable = new RoutingTable(bucketSize, selfKey); // TODO
+        this.beta = 20; // TODO
+
+
+        host.addConnectionHandler(new ConnectionHandler() {
+            @Override
+            public void handleConnection(@NotNull Connection conn) {
+                peerFound(conn.secureSession().getRemoteId(), false);
+            }
+        });
+
+        // Fill routing table with currently connected peers that are DHT servers
+        for (Connection con : host.getNetwork().getConnections()) {
+            peerFound(con.secureSession().getRemoteId(), false);
+        }
     }
 
+
+    // validRTPeer returns true if the peer supports the DHT protocol and false otherwise. Supporting the DHT protocol means
+// supporting the primary protocols, we do not want to add peers that are speaking obsolete secondary protocols to our
+// routing table
+    boolean validRTPeer(PeerId p) {
+        /* TODO
+        b, err := dht.peerstore.FirstSupportedProtocol(p, dht.protocolsStrs...)
+        if len(b) == 0 || err != nil {
+            return false, err
+        }
+
+        return dht.routingTablePeerFilter == nil || dht.routingTablePeerFilter(dht, dht.Host().Network().ConnsToPeer(p)), nil*/
+        return true;
+    }
+
+    // peerFound signals the routingTable that we've found a peer that
+// might support the DHT protocol.
+// If we have a connection a peer but no exchange of a query RPC ->
+//    LastQueriedAt=time.Now (so we don't ping it for some time for a liveliness check)
+//    LastUsefulAt=0
+// If we connect to a peer and then exchange a query RPC ->
+//    LastQueriedAt=time.Now (same reason as above)
+//    LastUsefulAt=time.Now (so we give it some life in the RT without immediately evicting it)
+// If we query a peer we already have in our Routing Table ->
+//    LastQueriedAt=time.Now()
+//    LastUsefulAt remains unchanged
+// If we connect to a peer we already have in the RT but do not exchange a query (rare)
+//    Do Nothing.
+    private void peerFound(PeerId p, boolean queryPeer) {
+        /*
+        if c := baseLogger.Check(zap.DebugLevel, "peer found"); c != nil {
+            c.Write(zap.String("peer", p.String()))
+        }*/
+        try {
+            boolean b = validRTPeer(p);
+
+            if (b) {
+                Pair<PeerId, Boolean> entry = Pair.create(p, queryPeer);
+                addPeerToRTChan(entry);
+            }
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable);
+        }
+
+    }
+
+    private void addPeerToRTChan(Pair<PeerId, Boolean> entry) {
+        int prevSize = routingTable.size();
+        int bootstrapCount = 0;
+        boolean isBootsrapping = false;
+        if (prevSize == 0) {
+            isBootsrapping = true;
+            bootstrapCount = 0;
+        }
+        try {
+            boolean newlyAdded = routingTable.TryAddPeer(entry.first, entry.second, isBootsrapping);
+
+            if (!newlyAdded && entry.second) {
+                // the peer is already in our RT, but we just successfully queried it and so let's give it a
+                // bump on the query time so we don't ping it too soon for a liveliness check.
+                routingTable.UpdateLastSuccessfulOutboundQueryAt(entry.first, System.currentTimeMillis());
+            }
+
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable);
+        }
+
+    }
 
     @Override
     public void PutValue(@NonNull Closeable closable, String key, byte[] data) {
@@ -459,21 +549,12 @@ public class KadDHT implements Routing {
     }
 
 
-    // ConvertKey creates a DHT ID by hashing a local key (String)
-    private ID ConvertKey(String id) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            return new ID(digest.digest(id.getBytes()));
-        } catch (Throwable throwable) {
-            throw new RuntimeException(throwable);
-        }
-    }
 
     private LookupWithFollowupResult runQuery(@NonNull Closeable ctx, @NonNull String target,
                                               @NonNull QueryFunc queryFn, @NonNull StopFunc stopFn)
             throws ClosedException {
         // pick the K closest peers to the key in our Routing table.
-        ID targetKadID = ConvertKey(target);
+        ID targetKadID = Util.ConvertKey(target);
         List<PeerId> seedPeers = routingTable.NearestPeers(targetKadID, bucketSize);
         if (seedPeers.size() == 0) {
             /* TODO
@@ -486,7 +567,7 @@ public class KadDHT implements Routing {
         }
 
         Query q = new Query(this, UUID.randomUUID(), target, seedPeers,
-                QueryPeerset.create(target), queryFn, stopFn);
+                QueryPeerSet.create(target), queryFn, stopFn);
 
         // run the query
         q.run(ctx);

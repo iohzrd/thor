@@ -67,7 +67,8 @@ public class IPFS {
     public static final int PRELOAD = 25;
     public static final int PRELOAD_DIST = 5;
     public static final int WRITE_TIMEOUT = 10;
-    public static final String AGENT = "/go-ipfs/0.9.0-dev/thor";
+    public static final String AGENT = "/go-ipfs/0.9.0-dev/thor"; // todo rename
+    public static final String PROTOCOL_VERSION = "ipfs/0.1.0";  // todo rename
     public static final int TIMEOUT_BOOTSTRAP = 5;
     public static final int LOW_WATER = 50;
     public static final int HIGH_WATER = 300;
@@ -139,6 +140,8 @@ public class IPFS {
     private StreamHandler handler;
     private boolean running;
 
+
+
     private IPFS(@NonNull Context context) throws Exception {
 
         blocks = BLOCKS.getInstance(context);
@@ -165,21 +168,6 @@ public class IPFS {
             if (!Objects.equals(id.toBase58(), IPFS.getPeerID(context))) {
                 LogUtils.error(TAG, id.toBase58() + " " + IPFS.getPeerID(context));
             }
-
-
-            String prk = IPFS.getPrivateKey(context);
-            byte[] kk = Base64.getDecoder().decode(prk);
-
-            PrivKey privKey = KeyKt.unmarshalPrivateKey(kk);
-
-            java.util.Base64.Encoder encoder = java.util.Base64.getEncoder();
-
-
-            String dddd = encoder.encodeToString(privKey.bytes());
-
-            if (!Objects.equals(dddd, prk)) {
-                LogUtils.error(TAG, dddd + " " + prk);
-            }
         }
 
         /* TODO
@@ -205,8 +193,13 @@ public class IPFS {
 
         int port = nextFreePort();
 
+        String prk = IPFS.getPrivateKey(context);
+        byte[] kk = Base64.getDecoder().decode(prk);
+        PrivKey privKey = KeyKt.unmarshalPrivateKey(kk);
+
         host = new HostBuilder()
                 .protocol(new Identify())
+                .identity(privKey)
                 .transport(TcpTransport::new)
                 .secureChannel(NoiseXXSecureChannel::new)
                 .muxer(StreamMuxerProtocol::getMplex)

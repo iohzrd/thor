@@ -1,6 +1,7 @@
 package io.libp2p.core.dsl
 
 import identify.pb.IdentifyOuterClass
+import io.ipfs.IPFS
 import io.libp2p.core.AddressBook
 import io.libp2p.core.ChannelVisitor
 import io.libp2p.core.Connection
@@ -165,8 +166,8 @@ open class Builder {
         protocols.values.mapNotNull { (it as? IdentifyBinding) }.map { it.protocol }.find { it.idMessage == null }?.apply {
             // initializing Identify with appropriate values
             IdentifyOuterClass.Identify.newBuilder().apply {
-                agentVersion = "jvm/0.1"
-                protocolVersion = "p2p/0.1"
+                agentVersion = IPFS.AGENT
+                protocolVersion = IPFS.PROTOCOL_VERSION
                 publicKey = privKey.publicKey().bytes().toProtobuf()
                 addAllListenAddrs(network.listen.map { Multiaddr(it).getBytes().toProtobuf() })
                 addAllProtocols(protocols.flatMap { it.protocolDescriptor.announceProtocols })

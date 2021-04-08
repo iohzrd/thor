@@ -10,6 +10,7 @@ import io.libp2p.core.security.SecureChannel;
 import io.libp2p.core.transport.Transport;
 import io.libp2p.transport.ConnectionUpgrader;
 
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -66,13 +67,17 @@ public class HostBuilder {
         listenAddresses_.addAll(Arrays.asList(addresses));
         return this;
     }
-
+    public final HostBuilder identity(
+            PrivKey privKey) {
+        this.privKey = privKey;
+        return this;
+    }
 
     public Host build() {
         return BuilderJKt.hostJ(
             defaultMode_.asBuilderDefault(),
             b -> {
-                b.getIdentity().random();
+                b.getIdentity().setFactory(() -> privKey);
 
                 transports_.forEach(t ->
                     b.getTransports().add(t::apply)
@@ -97,4 +102,5 @@ public class HostBuilder {
     private List<Supplier<StreamMuxerProtocol>> muxers_ = new ArrayList<>();
     private List<ProtocolBinding<?>> protocols_ = new ArrayList<>();
     private List<String> listenAddresses_ = new ArrayList<>();
+    private PrivKey privKey;
 }
