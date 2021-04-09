@@ -1,5 +1,6 @@
 package io.libp2p.network
 
+import io.LogUtils
 import io.libp2p.core.Connection
 import io.libp2p.core.ConnectionHandler
 import io.libp2p.core.Network

@@ -3,6 +3,7 @@ package io.dht;
 import androidx.annotation.NonNull;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import io.libp2p.core.PeerId;
@@ -29,5 +30,13 @@ public class AddrInfo {
 
     public List<Multiaddr> getAddresses() {
         return new ArrayList<>(addresses);
+    }
+
+    public void addAddresses(@NonNull Collection<Multiaddr> addresses) {
+        for (Multiaddr address : addresses) {
+            if (!this.addresses.contains(address)) {
+                this.addresses.add(address);
+            }
+        }
     }
 }

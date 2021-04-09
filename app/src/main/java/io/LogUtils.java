@@ -47,9 +47,13 @@ public class LogUtils {
         }
     }
 
-    public static void error(final String tag, @NonNull Throwable throwable) {
+    public static void error(final String tag, @Nullable Throwable throwable) {
         if (isDebug()) {
-            Log.e(tag, "" + throwable.getLocalizedMessage(), throwable);
+            if(throwable != null) {
+                Log.e(tag, "" + throwable.getLocalizedMessage(), throwable);
+            } else {
+                Log.e(tag, "no throwable" );
+            }
         }
     }
 }

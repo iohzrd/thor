@@ -3,19 +3,26 @@ package io.ipfs.bitswap;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.google.protobuf.Any;
+
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 import io.Closeable;
 import io.LogUtils;
 import io.dht.ContentRouting;
+import io.dht.DhtProtocol;
+import io.dht.KadDHT;
 import io.dht.Providers;
 import io.ipfs.ClosedException;
+import io.ipfs.IPFS;
 import io.ipfs.ProtocolNotSupported;
 import io.ipfs.cid.Cid;
 import io.libp2p.core.Connection;
@@ -26,6 +33,10 @@ import io.libp2p.core.Stream;
 import io.libp2p.core.StreamPromise;
 import io.libp2p.core.multistream.ProtocolBinding;
 import io.libp2p.core.multistream.ProtocolDescriptor;
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.SimpleChannelInboundHandler;
 
 
 public class LiteHost implements BitSwapNetwork {
@@ -66,53 +77,6 @@ public class LiteHost implements BitSwapNetwork {
     }
 
 
-    @Override
-    public void SetDelegate(@NonNull Receiver receiver) {
-
-
-        host.addProtocolHandler(new ProtocolBinding<Object>() {
-            @NotNull
-            @Override
-            public CompletableFuture<?> initChannel(@NotNull P2PChannel p2PChannel, @NotNull String s) {
-
-                return null;
-            }
-
-            @NotNull
-            @Override
-            public ProtocolDescriptor getProtocolDescriptor() {
-                return new ProtocolDescriptor(protocols);
-            }
-        });
-
-
-            /* TODO
-            host.SetStreamHandler(protocol, new StreamHandler() {
-                @Override
-                public boolean gate(@NonNull PeerID peerID) {
-                    return receiver.GatePeer(peerID);
-                }
-
-                @Override
-                public void error(@NonNull PeerID peerID, @NonNull Protocol protocol, @NonNull String error) {
-                    receiver.ReceiveError(peerID, protocol, error);
-                }
-
-                @Override
-                public void message(@NonNull PeerID peerID, @NonNull Protocol protocol, @NonNull byte[] data) {
-                    try {
-                        BitSwapMessage received = BitSwapMessage.fromData(data);
-                        receiver.ReceiveMessage(peerID, protocol, received);
-                    } catch (Throwable throwable) {
-                        receiver.ReceiveError(peerID, protocol, "Redirect : " + throwable.getMessage());
-                    }
-                }
-
-            });*/
-
-
-    }
-
     @NonNull
     @Override
     public Set<PeerId> getPeers() {
@@ -130,12 +94,14 @@ public class LiteHost implements BitSwapNetwork {
                              @NonNull BitSwapMessage message, int timeout) throws ClosedException, ProtocolNotSupported {
 
         try {
-            byte[] data = message.ToNetV1();
-            StreamPromise<Object> promise = host.newStream(protocols, peer);
-            Stream stream = promise.getStream().get();
-            stream.writeAndFlush(data);
-            stream.close();
-            /*
+
+            CompletableFuture<Object> ctrl = host.newStream(
+                    Collections.singletonList(IPFS.ProtocolBitswap), peer).getController();
+            //Object object = ctrl.get(timeout, TimeUnit.SECONDS); // TODO timeout
+            Object object = ctrl.get();
+            BitSwapProtocol.BitSwapController controller = (BitSwapProtocol.BitSwapController) object;
+            controller.sendRequest(message);
+            /* TODO timout
             long res = host.WriteMessage(closeable, peer, protocols, data, timeout);
             if (Objects.equals(data.length, res)) {
                 throw new RuntimeException("Message not fully written");

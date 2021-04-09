@@ -4,23 +4,27 @@ import android.util.Pair;
 
 import androidx.annotation.NonNull;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import io.Closeable;
+import io.LogUtils;
 import io.ipfs.ClosedException;
 import io.libp2p.core.PeerId;
+import io.libp2p.core.multiformats.Multiaddr;
 
 public class Query {
 
+    private static final String TAG = Query.class.getSimpleName();
     private final UUID id;
 
     // target key for the lookup
@@ -35,7 +39,7 @@ public class Query {
     private final List<PeerId> seedPeers;
 
     // peerTimes contains the duration of each successful query to a peer
-    private final ConcurrentHashMap<PeerId, Duration> peerTimes = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<PeerId, Long> peerTimes = new ConcurrentHashMap<>();
 
     // queryPeers is the set of peers known by this query and their respective states.
     private final QueryPeerSet queryPeers;
@@ -63,12 +67,56 @@ public class Query {
     }
 
 
-    public LookupWithFollowupResult constructLookupResult(ID targetKadID) {
-        return null; // TODO
+    public LookupWithFollowupResult constructLookupResult(@NonNull ID target) {
+
+        // determine if the query terminated early
+        boolean completed = true;
+
+        // Lookup and starvation are both valid ways for a lookup to complete. (Starvation does not imply failure.)
+        // Lookup termination (as defined in isLookupTermination) is not possible in small networks.
+        // Starvation is a successful query termination in small networks.
+        if (!(isLookupTermination() || isStarvationTermination())) {
+            completed = false;
+        }
+
+        // extract the top K not unreachable peers
+
+
+        List<QueryPeerState> qp = queryPeers.GetClosestNInStates(dht.bucketSize,
+                Arrays.asList(PeerState.PeerHeard, PeerState.PeerWaiting, PeerState.PeerQueried));
+
+        LookupWithFollowupResult res = new LookupWithFollowupResult();
+        for (QueryPeerState p : qp) {
+            res.peers.put(p.id, p.state);
+        }
+        res.completed = completed;
+
+        // get the top K overall peers
+        /*
+        sortedPeers = kb.SortClosestPeers(peers, target);
+        if len(sortedPeers) > q.dht.bucketSize {
+            sortedPeers = sortedPeers[:q.dht.bucketSize]
+        }
+
+        // return the top K not unreachable peers as well as their states at the end of the query
+
+        res := &lookupWithFollowupResult{
+            peers:     sortedPeers,
+                    state:     make([]qpeerset.PeerState, len(sortedPeers)),
+            completed: completed,
+        }
+
+        for i, p := range sortedPeers {
+            res.state[i] = peerState[p]
+        }*/
+
+        return res;
+
+
     }
 
 
-    private void updateState(Closeable ctx, QueryUpdate up) {
+    private void updateState(@NonNull Closeable ctx, @NonNull QueryUpdate up) {
         if (terminated) {
             throw new RuntimeException("update should not be invoked after the logical lookup termination");
         }
@@ -94,7 +142,7 @@ public class Query {
             if (Objects.equals(p, dht.self)) { // don't add self.
                 continue;
             }
-            queryPeers.TryAdd(p, up.cause);
+            queryPeers.TryAdd(p, up.getCause());
         }
 
 
@@ -125,15 +173,16 @@ public class Query {
         }
     }
 
-    public void run(Closeable ctx) throws ClosedException {
+    public void run(Closeable ctx) throws ClosedException, InterruptedException {
 
         int alpha = dht.alpha; // TODO set alpha
 
 
-        ExecutorService executor = Executors.newFixedThreadPool(alpha);
+        BlockingQueue<QueryUpdate> queue = new ArrayBlockingQueue<>(alpha);
 
-
-        QueryUpdate update = new QueryUpdate(dht.self, seedPeers);
+        QueryUpdate update = new QueryUpdate(dht.self);
+        update.heard.addAll(seedPeers);
+        queue.offer(update);
         //ch := make(chan *queryUpdate, alpha)
         //ch <- &queryUpdate{cause: q.dht.self, heard: q.seedPeers}
 
@@ -141,8 +190,12 @@ public class Query {
         //defer q.waitGroup.Wait()
         while (true) {
 
-            updateState(ctx, update);
-            PeerId cause = update.cause;
+            QueryUpdate current = queue.take();
+
+            LogUtils.error(TAG, "run iteration " + update.getCause().toBase58());
+
+            updateState(ctx, current);
+            PeerId cause = current.getCause();
 
 
             // calculate the maximum number of queries we could be spawning.
@@ -163,7 +216,7 @@ public class Query {
 
             // try spawning the queries, if there are no available peers to query then we won't spawn them
             for (PeerId p : result.second) {
-                spawnQuery(ctx, cause, p);
+                spawnQuery(ctx, queue, cause, p);
             }
         }
         // TODO
@@ -171,7 +224,8 @@ public class Query {
 
 
     // spawnQuery starts one query, if an available heard peer is found
-    private void spawnQuery(@NonNull Closeable ctx, PeerId cause, PeerId queryPeer) {
+    private void spawnQuery(@NonNull Closeable ctx, @NonNull BlockingQueue<QueryUpdate> queue,
+                            @NonNull PeerId cause, @NonNull PeerId queryPeer) {
         /*
         PublishLookupEvent(ctx,
                 NewLookupEvent(
@@ -192,7 +246,95 @@ public class Query {
 	)*/
         queryPeers.SetState(queryPeer, PeerState.PeerWaiting);
         // TODO q.waitGroup.Add(1)
-        // TODO  go q.queryPeer(ctx, ch, queryPeer)
+        Executors.newSingleThreadExecutor().execute(() -> {
+            try {
+                queryPeer(ctx, queue, queryPeer);
+            } catch (Throwable throwable) {
+                // TODO
+                LogUtils.error(TAG, throwable);
+            }
+        });
+    }
+
+
+    // queryPeer queries a single peer and reports its findings on the channel.
+    // queryPeer does not access the query state in queryPeers!
+    private void queryPeer(@NonNull Closeable ctx, @NonNull BlockingQueue<QueryUpdate> queue,
+                           @NonNull PeerId p) throws ClosedException {
+
+
+        long startQuery = System.currentTimeMillis();
+        // dial the peer
+
+        try {
+            dht.dialPeer(ctx, p);
+        } catch (ClosedException closedException) {
+            throw closedException;
+        } catch (Throwable throwable) {
+            // remove the peer if there was a dial failure..but not because of a context cancellation
+            /* TODO if dialCtx.Err() == nil {
+                q.dht.peerStoppedDHT(q.dht.ctx, p)
+            }*/
+            QueryUpdate update = new QueryUpdate(p);
+            update.unreachable.add(p);
+            queue.offer(update);
+            // TODO  ch <- &queryUpdate{cause: p, unreachable: []peer.ID{p}}
+            return;
+        }
+
+
+        // send query RPC to the remote peer
+        try {
+            List<AddrInfo> newPeers = queryFn.func(ctx, p);
+
+
+            long queryDuration = startQuery - System.currentTimeMillis();
+
+            // query successful, try to add to RT
+            dht.peerFound(p, true);
+
+            // process new peers
+            List<PeerId> saw = new ArrayList<>();
+            for (AddrInfo next : newPeers) {
+                if (next.ID == dht.self) { // don't add self.
+                    LogUtils.error(TAG, "PEERS CLOSER -- worker for: found self " + p.toBase58());
+                    continue;
+                }
+
+                // add any other know addresses for the candidate peer.
+                Collection<Multiaddr> curInfo = dht.host.getAddressBook().getAddrs(next.ID).get();
+                if (curInfo != null && curInfo.isEmpty()) {
+                    next.addAddresses(curInfo);
+                }
+
+                // add their addresses to the dialer's peerstore
+                if (true /* TODO dht.queryPeerFilter(dht, next)*/) {
+                    dht.maybeAddAddrs(next.ID, next.getAddresses());
+                    saw.add(next.ID);
+                }
+            }
+            QueryUpdate update = new QueryUpdate(p);
+            update.heard.addAll(saw);
+            update.queried.add(p);
+            update.queryDuration = queryDuration;
+            queue.offer(update);
+            // TODO  ch <- &queryUpdate{cause: p, heard: saw, queried: []peer.ID{p}, queryDuration: queryDuration}
+
+        } catch (ClosedException closedException) {
+            throw closedException;
+        } catch (Throwable throwable) {
+
+            /*
+            if queryCtx.Err() == nil {
+                q.dht.peerStoppedDHT(q.dht.ctx, p)
+            }*/
+            QueryUpdate update = new QueryUpdate(p);
+            update.unreachable.add(p);
+            queue.offer(update);
+            // TODO ch <- &queryUpdate{cause: p, unreachable: []peer.ID{p}}
+        }
+
+
     }
 
     private void terminate(Closeable ctx) throws ClosedException {
@@ -221,7 +363,7 @@ public class Query {
 
 
     // From the set of all nodes that are not unreachable,
-// if the closest beta nodes are all queried, the lookup can terminate.
+    // if the closest beta nodes are all queried, the lookup can terminate.
     private boolean isLookupTermination() {
         List<QueryPeerState> peers = queryPeers.GetClosestNInStates(dht.beta, Arrays.asList(
                 PeerState.PeerHeard, PeerState.PeerWaiting, PeerState.PeerQueried));

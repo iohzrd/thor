@@ -2,74 +2,26 @@ package io.dht;
 
 import androidx.annotation.NonNull;
 
-import com.google.protobuf.InvalidProtocolBufferException;
-
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.Collections;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 
 import io.Closeable;
 import io.LogUtils;
 import io.ipfs.ClosedException;
 import io.libp2p.core.PeerId;
-import io.libp2p.core.Stream;
-import io.libp2p.core.StreamPromise;
-import io.libp2p.protocol.ProtocolMessageHandler;
-import io.netty.buffer.ByteBuf;
 import io.protos.dht.DhtProtos;
 
 public class MessageSender {
     private static final String TAG = MessageSender.class.getSimpleName();
     private final PeerId p;
     private final KadDHT dht;
-    private Stream s;
+
     private boolean invalid = false;
 
     public MessageSender(@NonNull PeerId p, @NonNull KadDHT dht) {
         this.p = p;
         this.dht = dht;
-    }
-
-    public void prepOrInvalidate(@NonNull Closeable ctx) {
-        try {
-            prep(ctx);
-        } catch (Throwable throwable){
-            invalidate();
-            throw new RuntimeException(throwable);
-        }
-    }
-
-    private void prep(@NonNull Closeable ctx) throws ExecutionException, InterruptedException {
-        if(invalid){
-            throw new RuntimeException("message sender has been invalidated");
-        }
-        if(s != null){
-            return;
-        }
-        StreamPromise<Object> promise = dht.host.newStream(Collections.singletonList(KadDHT.Protocol), p); // TODO
-        s = promise.getStream().get(); // TODO
-    }
-
-
-    // invalidate is called before this messageSender is removed from the strmap.
-// It prevents the messageSender from being reused/reinitialized and then
-// forgotten (leaving the stream open).
-    private void invalidate() {
-
-        invalid = true;
-        if( s != null) {
-            try {
-                s.reset().get();
-            } catch (ExecutionException | InterruptedException e) {
-                LogUtils.error(TAG, e);
-            }
-            s = null;
-        }
-
     }
 
 
@@ -80,25 +32,20 @@ public class MessageSender {
 
     private int singleMes = 0;
 
-    public DhtProtos.Message SendRequest(@NonNull Closeable ctx, @NonNull DhtProtos.Message pmes) throws ClosedException {
-
-        boolean retry = false;
-        while (true) {
-
-            try {
-                prep(ctx);
-            } catch (Throwable throwable) {
-                throw new RuntimeException(throwable);
-            }
+    public synchronized DhtProtos.Message SendRequest(@NonNull Closeable ctx,
+                                                      @NonNull DhtProtos.Message pmes)
+            throws ClosedException {
 
 
-            if (singleMes > streamReuseTries) {
-                singleMes++;
+        // while (singleMes < streamReuseTries) {
 
-                if (ctx.isClosed()) {
-                    throw new ClosedException();
-                }
+        //singleMes++;
 
+        if (ctx.isClosed()) {
+            throw new ClosedException();
+        }
+
+                /*
                 try {
                     writeMsg(pmes);
                 } catch (Throwable throwable) {
@@ -116,52 +63,78 @@ public class MessageSender {
                             throwable.getMessage() + " retrying  true");
                     retry = true;
                     continue;
-                }
+                }*/
 
 
-                try {
-                    return ctxReadMsg(ctx);
-                } catch (ClosedException exception) {
-                    throw exception;
-                } catch (Throwable throwable) {
+        try {
+            return ctxReadMsg(ctx, pmes);
+        } catch (ClosedException exception) {
+            throw exception;
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, "error reading message error " +
+                    throwable.getMessage());
 
-                    try {
-                        s.reset().get();
-                    } catch (Throwable ignore) {
-                        // TOOD ignore
-                    }
-                    s = null;
-
-                    if (retry) {
-                        LogUtils.error(TAG, "error reading message error " + throwable.getMessage());
-                        return null;
-                    }
-                    LogUtils.error(TAG, "error reading message error " +
-                            throwable.getMessage() + " retrying  true");
-                    retry = true;
-                }
-            }
         }
-    }
+        //}
 
-    private void writeMsg(DhtProtos.Message pmes) {
-        s.writeAndFlush(pmes.toByteArray()); // TODO probably not working
-        // TODO close writing evt. s.closeWrite().get()
-        // TODO  writeMsg(s, pmes);
+        throw new RuntimeException(); // TODO
     }
 
 
     @NonNull
-    private DhtProtos.Message ctxReadMsg(Closeable ctx) throws ClosedException {
+    private DhtProtos.Message ctxReadMsg(Closeable ctx, DhtProtos.Message pmes) throws ClosedException, ExecutionException, InterruptedException {
+
+        try {
+            CompletableFuture<Object> ctrl = dht.host.newStream(
+                    Collections.singletonList(KadDHT.Protocol), p).getController();
+            LogUtils.info(TAG, "Success 1 " + KadDHT.Protocol + " " + p.toBase58());
+            Object object = ctrl.get();
+            LogUtils.info(TAG, "Success 2 " + KadDHT.Protocol + " " + p.toBase58());
+            DhtProtocol.DhtController dhtController = (DhtProtocol.DhtController) object;
+            LogUtils.info(TAG, "Success 3 " + KadDHT.Protocol + " " + p.toBase58());
+            return dhtController.sendRequest(pmes).get();
+
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable);
+            throw throwable;
+        } finally {
+            LogUtils.error(TAG, "Success " + KadDHT.Protocol + " " + p.toBase58());
+        }
+        /*
+        Stream s = ctrl.getStream().get(); // TODO
+        LogUtils.error(TAG, "Success " + KadDHT.Protocol + " " + p.toBase58());
         AtomicReference<DhtProtos.Message> messageAtomicReference = new AtomicReference<>();
         AtomicBoolean done = new AtomicBoolean(false);
-        // TODO
+
+        s.pushHandler(new SimpleChannelInboundHandler<ByteBuf>() {
+            @Override
+            public void channelActive(ChannelHandlerContext ctx) throws Exception {
+                LogUtils.error(TAG, ctx.toString());
+            }
+
+            @Override
+            protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
+                LogUtils.error(TAG, msg.toString());
+            }
+            @Override
+            public boolean acceptInboundMessage(Object msg) throws Exception {
+                return super.acceptInboundMessage(msg);
+            }
+            @Override
+            public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
+                    throws Exception {
+                ctx.fireExceptionCaught(cause);
+            }
+        });
+        /*
         s.pushHandler(new ProtocolMessageHandler<ByteBuf>() {
             @Override
             public void onMessage(@NotNull Stream stream, ByteBuf byteBuf) {
                 try {
+                    LogUtils.error(TAG, "success onMessage ");
                     DhtProtos.Message message = DhtProtos.Message.parseFrom(byteBuf.array());
                     messageAtomicReference.set(message);
+                    LogUtils.error(TAG, "success pushHandler ");
                 } catch (InvalidProtocolBufferException e) {
                     throw new RuntimeException(e);
                 } finally {
@@ -179,6 +152,7 @@ public class MessageSender {
 
             @Override
             public void onClosed(@NotNull Stream stream) {
+                LogUtils.error(TAG, "Stream closed");
                 done.set(true);
             }
 
@@ -189,9 +163,13 @@ public class MessageSender {
 
             @Override
             public void fireMessage(@NotNull Stream stream, @NotNull Object o) {
+                LogUtils.error(TAG, "Fire message");
                 // TODO
             }
-        });
+        });*/
+        /*
+        s.writeAndFlush(pmes.toByteArray()); // TODO probably not working
+
 
         while (!done.get()) {
             if (ctx.isClosed()) {
@@ -200,9 +178,9 @@ public class MessageSender {
         }
         DhtProtos.Message result = messageAtomicReference.get();
         if (result == null) {
-            throw new RuntimeException();
+            //throw new RuntimeException();
         }
-        return result;
+        return result;*/
 
         /* TODO
         errc := make(chan error, 1)

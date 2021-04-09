@@ -3,6 +3,7 @@ package io.libp2p.host
 import io.libp2p.core.AddressBook
 import io.libp2p.core.PeerId
 import io.libp2p.core.multiformats.Multiaddr
+import java.util.*
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 

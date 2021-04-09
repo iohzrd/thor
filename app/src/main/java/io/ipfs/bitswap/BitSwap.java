@@ -15,7 +15,7 @@ import io.ipfs.format.BlockStore;
 import io.libp2p.core.PeerId;
 
 
-public class BitSwap implements Interface, Receiver {
+public class BitSwap implements Interface {
 
     private static final String TAG = BitSwap.class.getSimpleName();
     private final ContentManager contentManager;
@@ -26,10 +26,7 @@ public class BitSwap implements Interface, Receiver {
     }
 
     public static Interface New(@NonNull BitSwapNetwork bitSwapNetwork, @NonNull BlockStore blockstore) {
-
-        BitSwap bitSwap = new BitSwap(blockstore, bitSwapNetwork);
-        bitSwapNetwork.SetDelegate(bitSwap);
-        return bitSwap;
+        return new BitSwap(blockstore, bitSwapNetwork);
     }
 
     @Nullable

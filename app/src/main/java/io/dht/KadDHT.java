@@ -43,9 +43,9 @@ public class KadDHT implements Routing {
     private final RoutingTable routingTable;
     private boolean enableProviders = true;
     private boolean enableValues = true;
-
-    private final int bucketSize;
-    int alpha; // The concurrency parameter per path
+    public final int bucketSize;
+    public final int alpha; // The concurrency parameter per path
+    private final ConcurrentHashMap<PeerId, List<Multiaddr>> memoryBook = new ConcurrentHashMap<>();
     private final ID selfKey;
 
 
@@ -56,6 +56,7 @@ public class KadDHT implements Routing {
         this.bucketSize = defaultBucketSize; // todo config
         this.routingTable = new RoutingTable(bucketSize, selfKey); // TODO
         this.beta = 20; // TODO
+        this.alpha = 20; // TODO
 
 
         host.addConnectionHandler(new ConnectionHandler() {
@@ -69,6 +70,22 @@ public class KadDHT implements Routing {
         for (Connection con : host.getNetwork().getConnections()) {
             peerFound(con.secureSession().getRemoteId(), false);
         }
+
+
+        /*
+        host.addProtocolHandler(new ProtocolBinding<Void>() {
+            @NotNull
+            @Override
+            public CompletableFuture<Void> initChannel(@NotNull P2PChannel p2PChannel, @NotNull String s) {
+                return null;
+            }
+
+            @NotNull
+            @Override
+            public ProtocolDescriptor getProtocolDescriptor() {
+                return new ProtocolDescriptor(KadDHT.Protocol);
+            }
+        });*/
     }
 
 
@@ -99,7 +116,7 @@ public class KadDHT implements Routing {
 //    LastUsefulAt remains unchanged
 // If we connect to a peer we already have in the RT but do not exchange a query (rare)
 //    Do Nothing.
-    private void peerFound(PeerId p, boolean queryPeer) {
+    void peerFound(PeerId p, boolean queryPeer) {
         /*
         if c := baseLogger.Check(zap.DebugLevel, "peer found"); c != nil {
             c.Write(zap.String("peer", p.String()))
@@ -163,7 +180,7 @@ public class KadDHT implements Routing {
     }
 
 
-    private void maybeAddAddrs(@NonNull PeerId p, @NonNull List<Multiaddr> addrs) {
+    void maybeAddAddrs(@NonNull PeerId p, @NonNull List<Multiaddr> addrs) {
         // Don't add addresses for self or our connected peers. We have better ones.
         /* TODO
         if( Objects.equals(p,self) || host.getNetwork().Connectedness(p) == network.Connected ) {
@@ -319,7 +336,7 @@ public class KadDHT implements Routing {
 
 
     // sendRequest sends out a request, but also makes sure to
-// measure the RTT for latency measurements.
+    // measure the RTT for latency measurements.
     private DhtProtos.Message sendRequest(Closeable ctx, PeerId p, DhtProtos.Message pmes) throws ClosedException {
         //ctx, _ = tag.New(ctx, metrics.UpsertMessageType(pmes)) // TODO maybe
 
@@ -363,13 +380,13 @@ public class KadDHT implements Routing {
 
     private MessageSender messageSenderForPeer(@NonNull Closeable ctx, @NonNull PeerId p) {
         MessageSender ms = strmap.get(p);
-        if(ms != null) {
+        if (ms != null) {
             return ms;
         }
-
         ms = new MessageSender(p, this);
         strmap.put(p, ms);
-
+        return ms;
+        /*
         try {
             ms.prepOrInvalidate(ctx);
         } catch (Throwable throwable){
@@ -396,9 +413,9 @@ public class KadDHT implements Routing {
             }
             // Invalid but not in map. Must have been removed by a disconnect.
             return nil, err
-        }*/
+        }
         // All ready to go.
-        return ms;
+        return ms;*/
     }
 
     // findPeerSingle asks peer 'p' if they know where the peer with id 'id' is
@@ -447,7 +464,7 @@ public class KadDHT implements Routing {
     public AddrInfo FindPeer(@NonNull Closeable closeable, @NonNull PeerId id) throws ClosedException {
 
 
-        LogUtils.error(TAG, "finding peer " + id.toBase58());
+        LogUtils.error(TAG, "FindPeer " + id.toBase58());
 
         // Check if were already connected to them
         AddrInfo pi = FindLocal(id);
@@ -459,11 +476,11 @@ public class KadDHT implements Routing {
                 return pi, nil
             }*/
 
-            LookupWithFollowupResult lookupRes = runLookupWithFollowup(closeable, id.toBase58(),
-                    new QueryFunc() {
-                        @NonNull
-                        @Override
-                        public List<AddrInfo> func(@NonNull Closeable ctx, @NonNull PeerId p) throws ClosedException {
+        LookupWithFollowupResult lookupRes = runLookupWithFollowup(closeable, id.toBase58(),
+                new QueryFunc() {
+                    @NonNull
+                    @Override
+                    public List<AddrInfo> func(@NonNull Closeable ctx, @NonNull PeerId p) throws ClosedException {
                             /* TODO
                             // For DHT query command
                             routing.PublishQueryEvent(ctx, &routing.QueryEvent{
@@ -471,18 +488,22 @@ public class KadDHT implements Routing {
                                         ID:   p,
                             })*/
 
-                            DhtProtos.Message pmes = findPeerSingle(ctx, p, id);
+                        DhtProtos.Message pmes = findPeerSingle(ctx, p, id);
 
-                            List<AddrInfo> peers = new ArrayList<>();
-                            List<DhtProtos.Message.Peer> list = pmes.getCloserPeersList();
+                        List<AddrInfo> peers = new ArrayList<>();
+                        List<DhtProtos.Message.Peer> list = pmes.getCloserPeersList();
                             for (DhtProtos.Message.Peer entry : list) {
                                 PeerId peerId = new PeerId(entry.getId().toByteArray());
+
+                                LogUtils.error(TAG, "FindPeer Lookup " + peerId);
+
                                 List<Multiaddr> multiAddresses = new ArrayList<>();
                                 List<ByteString> addresses = entry.getAddrsList();
                                 for (ByteString address : addresses) {
                                     multiAddresses.add(new Multiaddr(address.toByteArray()));
                                 }
                                 peers.add(new AddrInfo(peerId, multiAddresses));
+                                memoryBook.put(peerId, multiAddresses); // todo append
                             }
 
 
@@ -538,7 +559,9 @@ public class KadDHT implements Routing {
                     return dht.peerstore.PeerInfo(id),nil
                 }*/
             if (dialedPeerDuringQuery || connectedness) {
-                return new AddrInfo(id); // TODO shoud use peerstore
+                List<Multiaddr> addr = memoryBook.get(id);
+                Objects.requireNonNull(addr);
+                return new AddrInfo(id, addr);
                 //return new PeerInfo(id);
             }
         } catch (Throwable throwable) {
@@ -549,10 +572,9 @@ public class KadDHT implements Routing {
     }
 
 
-
     private LookupWithFollowupResult runQuery(@NonNull Closeable ctx, @NonNull String target,
                                               @NonNull QueryFunc queryFn, @NonNull StopFunc stopFn)
-            throws ClosedException {
+            throws ClosedException, InterruptedException {
         // pick the K closest peers to the key in our Routing table.
         ID targetKadID = Util.ConvertKey(target);
         List<PeerId> seedPeers = routingTable.NearestPeers(targetKadID, bucketSize);
@@ -592,10 +614,12 @@ public class KadDHT implements Routing {
 // After the lookup is complete the query function is run (unless stopped) against all of the top K peers from the
 // lookup that have not already been successfully queried.
     private LookupWithFollowupResult runLookupWithFollowup(@NonNull Closeable ctx, @NonNull String target,
-                                                           @NonNull QueryFunc queryFn, @NonNull StopFunc stopFn) throws ClosedException {
+                                                           @NonNull QueryFunc queryFn, @NonNull StopFunc stopFn)
+            throws ClosedException {
         // run the query
 
-        LookupWithFollowupResult lookupRes = runQuery(ctx, target, queryFn, stopFn);
+        try {
+            LookupWithFollowupResult lookupRes = runQuery(ctx, target, queryFn, stopFn);
         /*
         if err != nil {
             return nil, err
@@ -659,8 +683,13 @@ public class KadDHT implements Routing {
 			<-doneCh
             }
         }
-
-        return lookupRes, nil*/
+        */
+            return lookupRes;
+        } catch (ClosedException closedException) {
+            throw closedException;
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable); // TODO
+        }
         return null;
     }
 
@@ -719,5 +748,45 @@ public class KadDHT implements Routing {
 
             dht.updatePeerValues(dht.Context(), key, best, updatePeers)
         }()*/
+    }
+
+    public void dialPeer(Closeable ctx, PeerId p) throws ClosedException {
+        // short-circuit if we're already connected.
+        /* TODO
+        if( host.getNetwork().Connectedness(p) == network.Connected) {
+            return;
+        }*/
+
+        LogUtils.error(TAG, "Dial Peer Dialing " + p.toBase58());
+        /*
+        routing.PublishQueryEvent(ctx, &routing.QueryEvent{
+            Type: routing.DialingPeer,
+                    ID:   p,
+        })*/
+        try {
+            // TODO  closeable and timeout
+            if (ctx.isClosed()) {
+                throw new ClosedException();
+            }
+            List<Multiaddr> maddr = memoryBook.get(p);
+            if (maddr != null && !maddr.isEmpty()) {
+                host.getNetwork().connect(p, maddr.toArray(new Multiaddr[maddr.size()])).get();
+            } else {
+                host.getNetwork().connect(p).get();
+            }
+            LogUtils.error(TAG, "Dial Peer Success : " + p.toBase58());
+        } catch (ClosedException closedException) {
+            throw closedException;
+        } catch (Throwable throwable) {
+            // LogUtils.error(TAG, throwable);
+            /*
+            routing.PublishQueryEvent(ctx, &routing.QueryEvent{
+                Type:  routing.QueryError,
+                        Extra: err.Error(),
+                        ID:    p,
+            })*/
+            // TODO throw new RuntimeException(throwable);
+
+        }
     }
 }

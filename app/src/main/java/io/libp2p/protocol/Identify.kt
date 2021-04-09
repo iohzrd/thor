@@ -1,6 +1,7 @@
 package io.libp2p.protocol
 
 import identify.pb.IdentifyOuterClass
+import io.ipfs.IPFS
 import io.libp2p.core.ConnectionClosedException
 import io.libp2p.core.Libp2pException
 import io.libp2p.core.Stream
@@ -64,7 +65,7 @@ class IdentifyProtocol(var idMessage: IdentifyOuterClass.Identify? = null) :
     inner class IdentifyResponderChannelHandler(val remoteAddr: Multiaddr) : IdentifyHandler {
         override fun onActivated(stream: Stream) {
             val msg = idMessage ?: IdentifyOuterClass.Identify.newBuilder()
-                .setAgentVersion("jvm/0.1")
+                .setAgentVersion(IPFS.AGENT)
                 .build()
 
             val msgWithAddr = msg.toBuilder()

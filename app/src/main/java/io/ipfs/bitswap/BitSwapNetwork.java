@@ -21,8 +21,6 @@ public interface BitSwapNetwork extends ContentRouting {
                       @NonNull BitSwapMessage message, int timeout)
             throws ClosedException, ProtocolNotSupported;
 
-    void SetDelegate(@NonNull Receiver receiver);
-
     @NonNull
     Set<PeerId> getPeers();
 }

@@ -30,11 +30,17 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import io.Closeable;
 import io.LogUtils;
+import io.dht.AddrInfo;
+import io.dht.DhtProtocol;
 import io.dht.KadDHT;
+import io.dht.ResolveInfo;
 import io.dht.Routing;
 import io.ipfs.bitswap.BitSwap;
+import io.ipfs.bitswap.BitSwapMessage;
 import io.ipfs.bitswap.BitSwapNetwork;
+import io.ipfs.bitswap.BitSwapProtocol;
 import io.ipfs.bitswap.LiteHost;
+import io.ipfs.bitswap.Receiver;
 import io.ipfs.cid.Cid;
 import io.ipfs.exchange.Interface;
 import io.ipfs.format.BlockStore;
@@ -44,7 +50,6 @@ import io.ipfs.utils.Progress;
 import io.ipfs.utils.ProgressStream;
 import io.ipfs.utils.ReaderProgress;
 import io.ipfs.utils.ReaderStream;
-import io.dht.ResolveInfo;
 import io.ipfs.utils.Resolver;
 import io.ipfs.utils.Stream;
 import io.libp2p.HostBuilder;
@@ -54,15 +59,17 @@ import io.libp2p.core.crypto.KeyKt;
 import io.libp2p.core.crypto.PrivKey;
 import io.libp2p.core.crypto.PubKey;
 import io.libp2p.core.multiformats.Multiaddr;
+import io.libp2p.core.multiformats.Protocol;
 import io.libp2p.core.mux.StreamMuxerProtocol;
 import io.libp2p.crypto.keys.Ed25519Kt;
+import io.libp2p.etc.types.NothingToCompleteException;
 import io.libp2p.protocol.Identify;
 import io.libp2p.security.noise.NoiseXXSecureChannel;
 import io.libp2p.transport.tcp.TcpTransport;
 import io.protos.ipns.IpnsProtos;
 import threads.thor.core.blocks.BLOCKS;
 
-public class IPFS {
+public class IPFS implements Receiver {
 
     public static final int PRELOAD = 25;
     public static final int PRELOAD_DIST = 5;
@@ -197,17 +204,26 @@ public class IPFS {
         byte[] kk = Base64.getDecoder().decode(prk);
         PrivKey privKey = KeyKt.unmarshalPrivateKey(kk);
 
+
         host = new HostBuilder()
-                .protocol(new Identify())
+                .protocol(new Identify(), new DhtProtocol(),
+                        new BitSwapProtocol(this, ProtocolBitswap))
                 .identity(privKey)
                 .transport(TcpTransport::new)
                 .secureChannel(NoiseXXSecureChannel::new)
                 .muxer(StreamMuxerProtocol::getMplex)
                 .listen("/ip4/127.0.0.1/tcp/" + port)
                 .build();
+        this.routing = new KadDHT(host);
 
-        host.start().get();
-        running = true;
+        List<String> protocols = new ArrayList<>();
+        protocols.add(ProtocolBitswap);
+
+        BitSwapNetwork bsm = LiteHost.NewLiteHost(host, routing, protocols);
+        BlockStore blockstore = BlockStore.NewBlockstore(blocks);
+
+        this.exchange = BitSwap.New(bsm, blockstore);
+
         /*
         this.host = new Host() {
             @Override
@@ -283,15 +299,25 @@ public class IPFS {
                 return new PeerID(getPeerID());
             }
         };*/
-        this.routing = new KadDHT(host);
 
-        List<String> protocols = new ArrayList<>();
-        protocols.add(ProtocolBitswap);
 
-        BitSwapNetwork bsm = LiteHost.NewLiteHost(host, routing, protocols);
-        BlockStore blockstore = BlockStore.NewBlockstore(blocks);
 
-        this.exchange = BitSwap.New(bsm, blockstore);
+        host.start().get();
+        running = true;
+    }
+    @Override
+    public void ReceiveMessage(@NonNull PeerId peer, @NonNull String protocol, @NonNull BitSwapMessage incoming) {
+        exchange.ReceiveMessage(peer, protocol, incoming);
+    }
+
+    @Override
+    public void ReceiveError(@NonNull PeerId peer, @NonNull String protocol, @NonNull String error) {
+        exchange.ReceiveError(peer, protocol, error);
+    }
+
+    @Override
+    public boolean GatePeer(PeerId peerID) {
+        return exchange.GatePeer(peerID);
     }
 
     public static int getConcurrencyValue(@NonNull Context context) {
@@ -511,9 +537,13 @@ public class IPFS {
         }
         try {
             // TODO closeable
+            Multiaddr multiaddr = new Multiaddr(multiAddress);
 
-            return host.getNetwork().connect(new Multiaddr(multiAddress)).get() != null;
+            return host.getNetwork().connect(multiaddr).get() != null;
             //return node.swarmConnect(multiAddress, true, closeable::isClosed);
+        } catch (NothingToCompleteException exception) {
+            // routing.FindPeer(closeable, )
+
         } catch (Throwable throwable) {
             LogUtils.error(TAG, multiAddress + " connection failed");
         }
@@ -527,11 +557,25 @@ public class IPFS {
         if (!isDaemonRunning()) {
             return false;
         }
+        Multiaddr multiaddr = new Multiaddr(multiAddress);
         try {
-            return host.getNetwork().connect(new Multiaddr(multiAddress))
+            return host.getNetwork().connect(multiaddr)
                     .get(timeout, TimeUnit.SECONDS) != null;
         } catch (Throwable e) {
             LogUtils.error(TAG, multiAddress + " " + e.getLocalizedMessage());
+            try {
+                if (multiAddress.startsWith(IPFS.P2P_PATH)) {
+                    String pid = multiaddr.getStringComponent(Protocol.P2P);
+                    Objects.requireNonNull(pid);
+                    AddrInfo addr = routing.FindPeer(() -> false, PeerId.fromBase58(pid));
+                    List<Multiaddr> addresses = addr.getAddresses();
+                    return host.getNetwork().connect(
+                            addresses.toArray(new Multiaddr[addresses.size()]))
+                            .get() != null;
+                }
+            } catch (Throwable throwable) {
+                LogUtils.error(TAG, multiAddress + " " + throwable.getLocalizedMessage());
+            }
         }
         return false;
     }

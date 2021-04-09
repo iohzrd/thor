@@ -2,22 +2,23 @@ package io.dht;
 
 import androidx.annotation.NonNull;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
 import io.libp2p.core.PeerId;
 
 public class QueryUpdate {
-    public final PeerId cause;
+    private final PeerId cause;
+    public List<PeerId> queried = new ArrayList<>();
     public List<PeerId> heard = new ArrayList<>();
-    List<PeerId> queried = new ArrayList<>();
-    List<PeerId> unreachable = new ArrayList<>();
+    public List<PeerId> unreachable = new ArrayList<>();
+    long queryDuration;
 
-    Duration queryDuration;
-
-    public QueryUpdate(@NonNull PeerId cause, @NonNull List<PeerId> peers) {
+    public QueryUpdate(@NonNull PeerId cause) {
         this.cause = cause;
-        this.heard.addAll((peers));
+    }
+
+    public PeerId getCause() {
+        return cause;
     }
 }

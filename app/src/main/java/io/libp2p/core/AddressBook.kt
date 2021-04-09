@@ -1,7 +1,9 @@
 package io.libp2p.core
 
 import io.libp2p.core.multiformats.Multiaddr
+import java.util.*
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * The address book holds known addresses for peers.
