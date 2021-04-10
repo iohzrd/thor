@@ -4,6 +4,7 @@ import androidx.annotation.NonNull;
 
 import io.Closeable;
 import io.ipfs.ClosedException;
+import io.libp2p.AddrInfo;
 import io.libp2p.core.PeerId;
 
 

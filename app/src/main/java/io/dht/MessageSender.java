@@ -2,14 +2,18 @@ package io.dht;
 
 import androidx.annotation.NonNull;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 
 import io.Closeable;
+import io.LogUtils;
 import io.ipfs.ClosedException;
 import io.ipfs.ProtocolNotSupported;
 import io.libp2p.core.NoSuchRemoteProtocolException;
 import io.libp2p.core.PeerId;
+import io.libp2p.core.multiformats.Multiaddr;
+import io.libp2p.etc.types.NothingToCompleteException;
 import io.protos.dht.DhtProtos;
 
 public class MessageSender {
@@ -44,10 +48,26 @@ public class MessageSender {
             return dhtController.sendRequest(message).get(); // TODO timeout
 
         } catch (Throwable throwable) {
+            if (ctx.isClosed()) {
+                throw new ClosedException();
+            }
             Throwable cause = throwable.getCause();
             if (cause instanceof NoSuchRemoteProtocolException) {
                 throw new ProtocolNotSupported(); // TODO do not introduce extra exception use NoSuchRemoteProtocolException
             }
+            if (cause instanceof NothingToCompleteException) {
+                try {
+                    Collection<Multiaddr> cols = dht.host.getAddressBook().get(p).get();
+                    for (Multiaddr col :
+                            cols) {
+                        LogUtils.error(TAG, col.toString());
+                    }
+                } catch (Throwable throwable1) {
+                    LogUtils.error(TAG, throwable1);
+                }
+
+            }
+            LogUtils.error(TAG, throwable);
             throw new RuntimeException(throwable); // TODO
         }
 

@@ -1,4 +1,4 @@
-package io.dht;
+package io.libp2p;
 
 import androidx.annotation.NonNull;
 
@@ -11,25 +11,27 @@ import io.libp2p.core.multiformats.Multiaddr;
 
 
 public class AddrInfo {
-    public final PeerId ID;
+    @NonNull
+    private final PeerId peerId;
     private final List<Multiaddr> addresses = new ArrayList<>();
 
     public AddrInfo(@NonNull PeerId id, @NonNull Multiaddr remoteAddress) {
-        this.ID = id;
+        this.peerId = id;
         this.addresses.add(remoteAddress);
     }
 
     public AddrInfo(@NonNull PeerId id, @NonNull List<Multiaddr> remoteAddresses) {
-        this.ID = id;
+        this.peerId = id;
         this.addresses.addAll(remoteAddresses);
     }
 
-    public AddrInfo(@NonNull PeerId id) {
-        this.ID = id;
+    @NonNull
+    public PeerId getPeerId() {
+        return peerId;
     }
 
-    public List<Multiaddr> getAddresses() {
-        return new ArrayList<>(addresses);
+    public Multiaddr[] getAddresses() {
+        return addresses.toArray(new Multiaddr[addresses.size()]);
     }
 
     public void addAddresses(@NonNull Collection<Multiaddr> addresses) {

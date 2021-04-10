@@ -7,6 +7,7 @@ import java.util.List;
 import io.Closeable;
 import io.ipfs.ClosedException;
 import io.ipfs.ProtocolNotSupported;
+import io.libp2p.AddrInfo;
 import io.libp2p.core.PeerId;
 
 public interface QueryFunc {

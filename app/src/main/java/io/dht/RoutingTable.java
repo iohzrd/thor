@@ -259,7 +259,7 @@ public class RoutingTable {
     }
 
 
-    public boolean UpdateLastSuccessfulOutboundQueryAt(@NonNull PeerId p, long t) {
+    public boolean UpdateLastSuccessfulOutboundQueryAt(@NonNull PeerId p, long time) {
 
 
         int bucketID = bucketIdForPeer(p);
@@ -267,10 +267,21 @@ public class RoutingTable {
 
         Bucket.PeerInfo peer = bucket.getPeer(p);
         if (peer != null) {
-            peer.LastSuccessfulOutboundQueryAt = t;
+            peer.LastSuccessfulOutboundQueryAt = time;
             return true;
         }
 
+        return false;
+    }
+
+    public boolean UpdateLastUsefulAt(@NonNull PeerId p, long time) {
+        int bucketID = bucketIdForPeer(p);
+        Bucket bucket = buckets.get(bucketID);
+        Bucket.PeerInfo peer = bucket.getPeer(p);
+        if (peer != null) {
+            peer.LastUsefulAt = time;
+            return true;
+        }
         return false;
     }
 }

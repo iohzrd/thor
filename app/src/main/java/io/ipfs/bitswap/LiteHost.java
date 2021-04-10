@@ -10,6 +10,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 import io.Closeable;
+import io.libp2p.AddrInfo;
 import io.dht.ContentRouting;
 import io.dht.Providers;
 import io.ipfs.ClosedException;
@@ -45,10 +46,11 @@ public class LiteHost implements BitSwapNetwork {
     }
 
     @Override
-    public boolean ConnectTo(@NonNull Closeable closeable, @NonNull PeerId peer, boolean protect) throws ClosedException {
+    public boolean ConnectTo(@NonNull Closeable closeable, @NonNull AddrInfo addrInfo, boolean protect) throws ClosedException {
         try {
-            CompletableFuture<Connection> future = host.getNetwork().connect(peer);
-            // TODO closeable
+            CompletableFuture<Connection> future = host.getNetwork().connect(
+                    addrInfo.getPeerId(), addrInfo.getAddresses());
+            // TODO closeable and timeout
             return future.get() != null;
         } catch (Throwable throwable) {
             if(closeable.isClosed()){

@@ -23,6 +23,7 @@ import io.LogUtils;
 import io.ipfs.ClosedException;
 import io.ipfs.ProtocolNotSupported;
 import io.ipfs.cid.Cid;
+import io.libp2p.AddrInfo;
 import io.libp2p.core.Connection;
 import io.libp2p.core.ConnectionHandler;
 import io.libp2p.core.Host;
@@ -41,7 +42,7 @@ public class KadDHT implements Routing {
     public final PeerId self; // Local peer (yourself)
     public final int beta; // The number of peers closest to a target that must have responded for a query path to terminate
     private final ProviderManager providerManager = new ProviderManager();
-    private final RoutingTable routingTable;
+    public final RoutingTable routingTable;
     private boolean enableProviders = true;
     private boolean enableValues = true;
     public final int bucketSize;
@@ -103,10 +104,7 @@ public class KadDHT implements Routing {
 // If we connect to a peer we already have in the RT but do not exchange a query (rare)
 //    Do Nothing.
     void peerFound(PeerId p, boolean queryPeer) {
-        /*
-        if c := baseLogger.Check(zap.DebugLevel, "peer found"); c != nil {
-            c.Write(zap.String("peer", p.String()))
-        }*/
+
         try {
             boolean b = validRTPeer(p);
 
@@ -146,7 +144,8 @@ public class KadDHT implements Routing {
     @Override
     public void PutValue(@NonNull Closeable closable, String key, byte[] data) {
 
-        LogUtils.error(TAG, key);
+        throw new RuntimeException("TODO");
+
     }
 
     @Override
@@ -166,17 +165,6 @@ public class KadDHT implements Routing {
     }
 
 
-    void maybeAddAddrs(@NonNull PeerId p, @NonNull List<Multiaddr> addrs) {
-        // Don't add addresses for self or our connected peers. We have better ones.
-        /* TODO
-        if( Objects.equals(p,self) || host.getNetwork().Connectedness(p) == network.Connected ) {
-            return;
-        }*/
-        for (Multiaddr addr : addrs) {
-            host.getAddressBook().addAddrs(p, KadDHT.TempAddrTTL.toMillis(), addr);
-        }
-    }
-
     private void findProvidersAsyncRoutine(@NonNull Providers providers,
                                            @NonNull Cid cid, int count) throws ClosedException {
 
@@ -185,18 +173,13 @@ public class KadDHT implements Routing {
         Set<PeerId> ps = new HashSet<>();
 
 
-        Set<PeerId> provs = providerManager.GetProviders(cid);
-        for (PeerId prov : provs) {
+        Set<AddrInfo> provs = providerManager.GetProviders(cid);
+        for (AddrInfo prov : provs) {
             // NOTE: Assuming that this list of peers is unique
-            if (ps.add(prov)) {
-                // TODO Providers should have AddrInfo
-                //  pi = peerstore.PeerInfo(p);
-
-                providers.Peer(prov.toBase58()); // TODO can be wrong
-
+            if (ps.add(prov.getPeerId())) {
+                providers.Peer(prov);
             }
             // If we have enough peers locally, don't bother with remote RPC
-            // TODO: is this a DOS vector?
             if (!findAll && ps.size() >= count) {
                 return;
             }
@@ -241,14 +224,12 @@ public class KadDHT implements Routing {
 
                         // Add unique providers from request, up to 'count'
                         for (AddrInfo prov : provs) {
+                            providerManager.addProvider(cid, prov);
 
-                            maybeAddAddrs(prov.ID, prov.getAddresses());
-                            LogUtils.error(TAG, "got provider : " + prov.ID);
-                            if (ps.add(prov.ID)) {
-                                LogUtils.error(TAG, "using provider: " + prov.ID);
-
-                                providers.Peer(prov.ID.toBase58()); // TODO can be wrong
-
+                            LogUtils.error(TAG, "got provider : " + prov.getPeerId());
+                            if (ps.add(prov.getPeerId())) {
+                                LogUtils.error(TAG, "using provider: " + prov.getPeerId());
+                                providers.Peer(prov);
                             }
                             if (!findAll && ps.size() >= count) {
                                 LogUtils.error(TAG, "got enough providers " + ps.size() + " " + count);
@@ -297,7 +278,7 @@ public class KadDHT implements Routing {
 
     @Override
     public void Provide(@NonNull Closeable closeable, @NonNull Cid cid) {
-
+        throw new RuntimeException("TODO");
     }
 
 
@@ -327,7 +308,7 @@ public class KadDHT implements Routing {
     private DhtProtos.Message sendRequest(Closeable ctx, PeerId p, DhtProtos.Message pmes) throws ClosedException, ProtocolNotSupported {
         //ctx, _ = tag.New(ctx, metrics.UpsertMessageType(pmes)) // TODO maybe
 
-        MessageSender ms = messageSenderForPeer(ctx, p);
+        MessageSender ms = messageSenderForPeer(p);
 
         /* TODO
         if err != nil {
@@ -365,7 +346,7 @@ public class KadDHT implements Routing {
 
     private final ConcurrentHashMap<PeerId, MessageSender> strmap = new ConcurrentHashMap<>();
 
-    private MessageSender messageSenderForPeer(@NonNull Closeable ctx, @NonNull PeerId p) {
+    private MessageSender messageSenderForPeer(@NonNull PeerId p) {
         MessageSender ms = strmap.get(p);
         if (ms != null) {
             return ms;
@@ -373,36 +354,6 @@ public class KadDHT implements Routing {
         ms = new MessageSender(p, this);
         strmap.put(p, ms);
         return ms;
-        /*
-        try {
-            ms.prepOrInvalidate(ctx);
-        } catch (Throwable throwable){
-
-            // Not changed, remove the now invalid stream from the
-            // map.
-            strmap.remove(p);
-            throw new RuntimeException(throwable);
-        }
-        /* TODO
-        if err := ms.prepOrInvalidate(ctx); err != nil {
-            dht.smlk.Lock()
-            defer dht.smlk.Unlock()
-
-            if msCur, ok := dht.strmap[p]; ok {
-                // Changed. Use the new one, old one is invalid and
-                // not in the map so we can just throw it away.
-                if ms != msCur {
-                    return msCur, nil
-                }
-                // Not changed, remove the now invalid stream from the
-                // map.
-                delete(dht.strmap, p)
-            }
-            // Invalid but not in map. Must have been removed by a disconnect.
-            return nil, err
-        }
-        // All ready to go.
-        return ms;*/
     }
 
     // findPeerSingle asks peer 'p' if they know where the peer with id 'id' is
@@ -586,20 +537,20 @@ public class KadDHT implements Routing {
             throw new ClosedException(); // TODO maybe not necessary
         }
 
-        // TODO if( ctx.Err() == null) {
+
         q.recordValuablePeers();
-        //}
+
 
         return q.constructLookupResult(targetKadID);
     }
 
     // runLookupWithFollowup executes the lookup on the target using the given query function and stopping when either the
-// context is cancelled or the stop function returns true. Note: if the stop function is not sticky, i.e. it does not
-// return true every time after the first time it returns true, it is not guaranteed to cause a stop to occur just
-// because it momentarily returns true.
-//
-// After the lookup is complete the query function is run (unless stopped) against all of the top K peers from the
-// lookup that have not already been successfully queried.
+    // context is cancelled or the stop function returns true. Note: if the stop function is not sticky, i.e. it does not
+    // return true every time after the first time it returns true, it is not guaranteed to cause a stop to occur just
+    // because it momentarily returns true.
+    //
+    // After the lookup is complete the query function is run (unless stopped) against all of the top K peers from the
+    // lookup that have not already been successfully queried.
     private LookupWithFollowupResult runLookupWithFollowup(@NonNull Closeable ctx, @NonNull String target,
                                                            @NonNull QueryFunc queryFn, @NonNull StopFunc stopFn)
             throws ClosedException {
@@ -607,25 +558,28 @@ public class KadDHT implements Routing {
 
         try {
             LookupWithFollowupResult lookupRes = runQuery(ctx, target, queryFn, stopFn);
-        /*
-        if err != nil {
-            return nil, err
-        }
 
-        // query all of the top K peers we've either Heard about or have outstanding queries we're Waiting on.
-        // This ensures that all of the top K results have been queried which adds to resiliency against churn for query
-        // functions that carry state (e.g. FindProviders and GetValue) as well as establish connections that are needed
-        // by stateless query functions (e.g. GetClosestPeers and therefore Provide and PutValue)
-        queryPeers := make([]peer.ID, 0, len(lookupRes.peers))
-        for i, p := range lookupRes.peers {
-            if state := lookupRes.state[i]; state == qpeerset.PeerHeard || state == qpeerset.PeerWaiting {
-                queryPeers = append(queryPeers, p)
+
+            // query all of the top K peers we've either Heard about or have outstanding queries we're Waiting on.
+            // This ensures that all of the top K results have been queried which adds to resiliency against churn for query
+            // functions that carry state (e.g. FindProviders and GetValue) as well as establish connections that are needed
+            // by stateless query functions (e.g. GetClosestPeers and therefore Provide and PutValue)
+
+            /* TODO maybe
+
+            List<PeerId> queryPeers = new ArrayList<>();
+            for (Map.Entry<PeerId, PeerState> entry : lookupRes.peers.entrySet()) {
+                PeerState state = entry.getValue();
+                if (state == PeerState.PeerHeard || state == PeerState.PeerWaiting) {
+                    queryPeers.add(entry.getKey());
+                }
             }
-        }
 
-        if len(queryPeers) == 0 {
-            return lookupRes, nil
-        }
+            if (queryPeers.size() == 0) {
+                return lookupRes;
+            }
+
+
 
         // return if the lookup has been externally stopped
         if ctx.Err() != nil || stopFn() {
@@ -705,6 +659,7 @@ public class KadDHT implements Routing {
         if(!offline) {
             responsesNeeded = quorum;
         }
+        throw new RuntimeException("TODO");
         /*
         stopCh := make(chan struct{})
         valCh, lookupRes := getValues(ctx, key, stopCh)
@@ -738,11 +693,6 @@ public class KadDHT implements Routing {
     }
 
     public void dialPeer(Closeable ctx, PeerId p) throws ClosedException {
-        // short-circuit if we're already connected.
-        /* TODO
-        if( host.getNetwork().Connectedness(p) == network.Connected) {
-            return;
-        }*/
 
         LogUtils.error(TAG, "Dial Peer Dialing " + p.toBase58());
         /*

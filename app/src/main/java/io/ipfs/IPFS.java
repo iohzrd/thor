@@ -30,7 +30,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import io.Closeable;
 import io.LogUtils;
-import io.dht.AddrInfo;
+import io.libp2p.AddrInfo;
 import io.dht.DhtProtocol;
 import io.dht.KadDHT;
 import io.dht.ResolveInfo;
@@ -505,7 +505,7 @@ public class IPFS implements Receiver {
                             tasks.add(() -> swarmConnect(address, TIMEOUT_BOOTSTRAP));
                         }
                         futures.clear();
-                        futures = executor.invokeAll(tasks, TIMEOUT_BOOTSTRAP, TimeUnit.SECONDS);
+                        futures = executor.invokeAll(tasks, TIMEOUT_BOOTSTRAP * 5, TimeUnit.SECONDS);
                         for (Future<Boolean> future : futures) {
                             LogUtils.info(TAG, "\nConnect done " + future.isDone());
                         }
@@ -543,7 +543,7 @@ public class IPFS implements Receiver {
             //return node.swarmConnect(multiAddress, true, closeable::isClosed);
         } catch (NothingToCompleteException exception) {
             // routing.FindPeer(closeable, )
-
+            // TODO
         } catch (Throwable throwable) {
             LogUtils.error(TAG, multiAddress + " connection failed");
         }
@@ -568,9 +568,8 @@ public class IPFS implements Receiver {
                     String pid = multiaddr.getStringComponent(Protocol.P2P);
                     Objects.requireNonNull(pid);
                     AddrInfo addr = routing.FindPeer(() -> false, PeerId.fromBase58(pid));
-                    List<Multiaddr> addresses = addr.getAddresses();
                     return host.getNetwork().connect(
-                            addresses.toArray(new Multiaddr[addresses.size()]))
+                            addr.getAddresses())
                             .get() != null;
                 }
             } catch (Throwable throwable) {

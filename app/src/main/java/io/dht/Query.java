@@ -6,7 +6,6 @@ import androidx.annotation.NonNull;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -20,8 +19,8 @@ import io.Closeable;
 import io.LogUtils;
 import io.ipfs.ClosedException;
 import io.ipfs.ProtocolNotSupported;
+import io.libp2p.AddrInfo;
 import io.libp2p.core.PeerId;
-import io.libp2p.core.multiformats.Multiaddr;
 
 public class Query {
 
@@ -265,7 +264,6 @@ public class Query {
 
 
         long startQuery = System.currentTimeMillis();
-        // dial the peer
 
         try {
             dht.dialPeer(ctx, p);
@@ -284,8 +282,9 @@ public class Query {
         }
 
 
-        // send query RPC to the remote peer
+
         try {
+            // send query RPC to the remote peer
             List<AddrInfo> newPeers = queryFn.func(ctx, p);
 
 
@@ -297,23 +296,14 @@ public class Query {
             // process new peers
             List<PeerId> saw = new ArrayList<>();
             for (AddrInfo next : newPeers) {
-                if (next.ID == dht.self) { // don't add self.
+                if (Objects.equals(next.getPeerId(), dht.self)) { // don't add self.
                     LogUtils.error(TAG, "PEERS CLOSER -- worker for: found self " + p.toBase58());
                     continue;
                 }
 
-                // add any other know addresses for the candidate peer.
-                Collection<Multiaddr> curInfo = dht.host.getAddressBook().getAddrs(next.ID).get();
-                if (curInfo != null && curInfo.isEmpty()) {
-                    next.addAddresses(curInfo);
-                }
-
-                // add their addresses to the dialer's peerstore
-                if (true /* TODO dht.queryPeerFilter(dht, next)*/) {
-                    dht.maybeAddAddrs(next.ID, next.getAddresses());
-                    saw.add(next.ID);
-                }
+                saw.add(next.getPeerId());
             }
+
             QueryUpdate update = new QueryUpdate(p);
             update.heard.addAll(saw);
             update.queried.add(p);
@@ -329,7 +319,7 @@ public class Query {
             queue.offer(update);
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
-            /*
+            /* TODO
             if queryCtx.Err() == nil {
                 q.dht.peerStoppedDHT(q.dht.ctx, p)
             }*/
@@ -415,7 +405,33 @@ public class Query {
         return Pair.create(false, peersToQuery);
     }
 
+
+    private void recordPeerIsValuable(@NonNull PeerId p) {
+        dht.routingTable.UpdateLastUsefulAt(p, System.currentTimeMillis());
+    }
+
     public void recordValuablePeers() {
-        // TODO
+        // Valuable peers algorithm:
+        // Label the seed peer that responded to a query in the shortest amount of time as the "most valuable peer" (MVP)
+        // Each seed peer that responded to a query within some range (i.e. 2x) of the MVP's time is a valuable peer
+        // Mark the MVP and all the other valuable peers as valuable
+        long mvpDuration = Long.MAX_VALUE;
+
+        for (PeerId p : seedPeers) {
+            Long queryTime = peerTimes.get(p);
+            if (queryTime != null) {
+                if (queryTime < mvpDuration) {
+                    mvpDuration = queryTime;
+                }
+            }
+        }
+        for (PeerId p : seedPeers) {
+            Long queryTime = peerTimes.get(p);
+            if (queryTime != null) {
+                if (queryTime < (mvpDuration * 2)) {
+                    recordPeerIsValuable(p);
+                }
+            }
+        }
     }
 }

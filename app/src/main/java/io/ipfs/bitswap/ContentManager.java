@@ -17,6 +17,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.Closeable;
 import io.LogUtils;
+import io.libp2p.AddrInfo;
 import io.dht.Providers;
 import io.ipfs.ClosedException;
 import io.ipfs.IPFS;
@@ -97,8 +98,8 @@ public class ContentManager {
             try {
                 network.FindProvidersAsync(new Providers() {
                     @Override
-                    public void Peer(@NonNull String pid) {
-                        PeerId peer = PeerId.fromBase58(pid);
+                    public void Peer(@NonNull AddrInfo addrInfo) {
+                        PeerId peer = addrInfo.getPeerId();
                         LogUtils.error(TAG, "Provider Peer Step " + peer.toBase58());
                         if (!faulty.contains(peer)) {
                             WANTS.execute(() -> {
@@ -110,9 +111,9 @@ public class ContentManager {
 
                                         if (network.ConnectTo(() -> closeable.isClosed()
                                                         || ((System.currentTimeMillis() - start) > TIMEOUT),
-                                                peer, true)) {
+                                                addrInfo, true)) {
                                             if (matches.containsKey(cid)) { // check still valid
-                                                LogUtils.error(TAG, "Found New Provider " + pid
+                                                LogUtils.error(TAG, "Found New Provider " + peer.toBase58()
                                                         + " for " + cid.String());
                                                 peers.add(peer);
                                                 matches.get(cid).add(peer);
@@ -358,18 +359,17 @@ public class ContentManager {
                     network.FindProvidersAsync(new Providers() {
 
                         @Override
-                        public void Peer(@NonNull String pid) {
-                            PeerId peer = PeerId.fromBase58(pid);
-
+                        public void Peer(@NonNull AddrInfo addrInfo) {
+                            PeerId peer = addrInfo.getPeerId();
                             try {
-                                LogUtils.error(TAG, "Load Provider " + pid + " for " + cid.String());
+                                LogUtils.error(TAG, "Load Provider " + peer.toBase58() + " for " + cid.String());
 
                                 LOADS.execute(() -> {
                                     try {
                                         if (network.ConnectTo(() -> closeable.isClosed()
                                                         || ((System.currentTimeMillis() - start) > TIMEOUT),
-                                                peer, true)) {
-                                            LogUtils.error(TAG, "Load Provider Found " + pid
+                                                addrInfo, true)) {
+                                            LogUtils.error(TAG, "Load Provider Found " + peer.toBase58()
                                                     + " for " + cid.String());
                                             peers.add(peer);
                                             priority.add(peer);

@@ -8,16 +8,16 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import io.ipfs.cid.Cid;
-import io.libp2p.core.PeerId;
+import io.libp2p.AddrInfo;
 
 
 public class ProviderManager {
-    private final ConcurrentHashMap<Cid, HashSet<PeerId>> providers = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Cid, Set<AddrInfo>> providers = new ConcurrentHashMap<>();
 
 
     @NonNull
-    public Set<PeerId> GetProviders(@NonNull Cid cid) {
-        HashSet<PeerId> res = providers.get(cid);
+    public Set<AddrInfo> GetProviders(@NonNull Cid cid) {
+        Set<AddrInfo> res = providers.get(cid);
         if (res == null) {
             return Collections.emptySet();
         }
@@ -25,4 +25,15 @@ public class ProviderManager {
     }
 
 
+    public void addProvider(@NonNull Cid cid, @NonNull AddrInfo prov) {
+        Set<AddrInfo> info = providers.get(cid);
+        if (info == null) {
+            info = new HashSet<>();
+            info.add(prov);
+            providers.put(cid, info);
+        } else {
+            // not correct should be done a merge of addresses
+            info.add(prov);
+        }
+    }
 }

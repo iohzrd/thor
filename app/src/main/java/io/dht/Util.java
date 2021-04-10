@@ -54,7 +54,7 @@ public class Util {
         byte[] out = new byte[x1.length];
 
         for (int i = 0; i < x1.length; i++) {
-            out[i] = (byte) (x1[i] ^ x2[i]);
+            out[i] = (byte) (0xff & ((int) x1[i]) ^ ((int) x2[i]));
         }
         return out;
     }
