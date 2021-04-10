@@ -568,9 +568,14 @@ public class IPFS implements Receiver {
                     String pid = multiaddr.getStringComponent(Protocol.P2P);
                     Objects.requireNonNull(pid);
                     AddrInfo addr = routing.FindPeer(() -> false, PeerId.fromBase58(pid));
-                    return host.getNetwork().connect(
+
+                    LogUtils.error(TAG, addr.toString());
+
+                    boolean result = host.getNetwork().connect(
                             addr.getAddresses())
                             .get() != null;
+                    LogUtils.error(TAG, "Success " + result + " " + multiAddress);
+                    return result;
                 }
             } catch (Throwable throwable) {
                 LogUtils.error(TAG, multiAddress + " " + throwable.getLocalizedMessage());

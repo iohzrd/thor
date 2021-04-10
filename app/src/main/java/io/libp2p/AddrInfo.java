@@ -2,6 +2,8 @@ package io.libp2p;
 
 import androidx.annotation.NonNull;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -23,6 +25,15 @@ public class AddrInfo {
     public AddrInfo(@NonNull PeerId id, @NonNull Collection<Multiaddr> remoteAddresses) {
         this.peerId = id;
         this.addresses.addAll(remoteAddresses);
+    }
+
+    @NotNull
+    @Override
+    public String toString() {
+        return "AddrInfo{" +
+                "peerId=" + peerId +
+                ", addresses=" + addresses +
+                '}';
     }
 
     @NonNull

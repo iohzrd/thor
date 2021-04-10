@@ -6,6 +6,7 @@ import androidx.annotation.NonNull;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -18,9 +19,11 @@ import java.util.concurrent.Executors;
 import io.Closeable;
 import io.LogUtils;
 import io.ipfs.ClosedException;
+import io.ipfs.ConnectionNotSupported;
 import io.ipfs.ProtocolNotSupported;
 import io.libp2p.AddrInfo;
 import io.libp2p.core.PeerId;
+import io.libp2p.core.multiformats.Multiaddr;
 
 public class Query {
 
@@ -218,6 +221,7 @@ public class Query {
             for (PeerId p : result.second) {
                 spawnQuery(ctx, queue, cause, p);
             }
+
         }
         // TODO
     }
@@ -265,20 +269,32 @@ public class Query {
 
         long startQuery = System.currentTimeMillis();
 
+        if (ctx.isClosed()) {
+            throw new ClosedException();
+        }
         try {
-            dht.dialPeer(ctx, p);
-        } catch (ClosedException closedException) {
-            throw closedException;
+            LogUtils.error(TAG, "Dial Peer Dialing " + p.toBase58());
+            // TODO   and timeout
+            Collection<Multiaddr> collections = dht.host.getAddressBook().getAddrs(p).get();
+            dht.host.getNetwork().connect(p, collections.toArray(new Multiaddr[collections.size()])).get();
+            LogUtils.error(TAG, "Dial Peer Success : " + p.toBase58());
+
         } catch (Throwable throwable) {
+            if (ctx.isClosed()) {
+                throw new ClosedException();
+            }
+
+
             // remove the peer if there was a dial failure..but not because of a context cancellation
             /* TODO if dialCtx.Err() == nil {
                 q.dht.peerStoppedDHT(q.dht.ctx, p)
             }*/
+            /*
             QueryUpdate update = new QueryUpdate(p);
             update.unreachable.add(p);
-            queue.offer(update);
+            queue.offer(update);*/
             // TODO  ch <- &queryUpdate{cause: p, unreachable: []peer.ID{p}}
-            return;
+            //return;
         }
 
 
@@ -312,7 +328,7 @@ public class Query {
 
         } catch (ClosedException closedException) {
             throw closedException;
-        } catch (ProtocolNotSupported ignore) {
+        } catch (ProtocolNotSupported | ConnectionNotSupported ignore) {
             QueryUpdate update = new QueryUpdate(p);
             update.unreachable.add(p);
             queue.offer(update);

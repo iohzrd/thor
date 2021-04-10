@@ -22,6 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import io.Closeable;
 import io.LogUtils;
 import io.ipfs.ClosedException;
+import io.ipfs.ConnectionNotSupported;
 import io.ipfs.ProtocolNotSupported;
 import io.ipfs.cid.Cid;
 import io.libp2p.AddrInfo;
@@ -213,7 +214,7 @@ public class KadDHT implements Routing {
                     @NonNull
                     @Override
                     public List<AddrInfo> func(@NonNull Closeable ctx, @NonNull PeerId p)
-                            throws ClosedException, ProtocolNotSupported {
+                            throws ClosedException, ProtocolNotSupported, ConnectionNotSupported {
                         // For DHT query command
 
                         /* TODO
@@ -223,13 +224,13 @@ public class KadDHT implements Routing {
                         })
                         */
 
-                        DhtProtos.Message pmes = findProvidersSingle(ctx, p, key);
+                        DhtProtos.Message message = findProvidersSingle(ctx, p, key);
 
-                        LogUtils.error(TAG, "" + pmes.getProviderPeersList().size()
+                        LogUtils.error(TAG, "" + message.getProviderPeersList().size()
                                 + " provider entries");
 
                         List<AddrInfo> provs = new ArrayList<>();
-                        List<DhtProtos.Message.Peer> list = pmes.getProviderPeersList();
+                        List<DhtProtos.Message.Peer> list = message.getProviderPeersList();
                         for (DhtProtos.Message.Peer entry : list) {
                             PeerId peerId = new PeerId(entry.getId().toByteArray());
                             List<Multiaddr> multiAddresses = new ArrayList<>();
@@ -264,7 +265,7 @@ public class KadDHT implements Routing {
 
                         // Give closer peers back to the query to be queried
                         List<AddrInfo> peers = new ArrayList<>();
-                        List<DhtProtos.Message.Peer> closerPeersList = pmes.getCloserPeersList();
+                        List<DhtProtos.Message.Peer> closerPeersList = message.getCloserPeersList();
                         for (DhtProtos.Message.Peer entry : closerPeersList) {
                             PeerId peerId = new PeerId(entry.getId().toByteArray());
                             List<Multiaddr> multiAddresses = new ArrayList<>();
@@ -313,10 +314,13 @@ public class KadDHT implements Routing {
 
     // sendRequest sends out a request, but also makes sure to
     // measure the RTT for latency measurements.
-    private DhtProtos.Message sendRequest(Closeable ctx, PeerId p, DhtProtos.Message pmes) throws ClosedException, ProtocolNotSupported {
+    private DhtProtos.Message sendRequest(@NonNull Closeable ctx,
+                                          @NonNull PeerId peerId,
+                                          @NonNull DhtProtos.Message message)
+            throws ClosedException, ProtocolNotSupported, ConnectionNotSupported {
         //ctx, _ = tag.New(ctx, metrics.UpsertMessageType(pmes)) // TODO maybe
 
-        MessageSender ms = messageSenderForPeer(p);
+        MessageSender ms = messageSenderForPeer(peerId);
 
         /* TODO
         if err != nil {
@@ -331,7 +335,7 @@ public class KadDHT implements Routing {
 
         long start = System.currentTimeMillis();
 
-        DhtProtos.Message response = ms.SendRequest(ctx, pmes);
+        DhtProtos.Message response = ms.SendRequest(ctx, message);
         /* TODO
         if err != nil {
             stats.Record(ctx,
@@ -364,7 +368,7 @@ public class KadDHT implements Routing {
 
     // findPeerSingle asks peer 'p' if they know where the peer with id 'id' is
     private DhtProtos.Message findPeerSingle(Closeable ctx, PeerId p, PeerId id)
-            throws ClosedException, ProtocolNotSupported {
+            throws ClosedException, ProtocolNotSupported, ConnectionNotSupported {
         DhtProtos.Message pmes = DhtProtos.Message.newBuilder()
                 .setType(DhtProtos.Message.MessageType.FIND_NODE)
                 .setKey(ByteString.copyFrom(id.getBytes())).build();
@@ -373,7 +377,7 @@ public class KadDHT implements Routing {
     }
 
     private DhtProtos.Message findProvidersSingle(Closeable ctx, PeerId p, io.ipfs.multihash.Multihash key)
-            throws ClosedException, ProtocolNotSupported {
+            throws ClosedException, ProtocolNotSupported, ConnectionNotSupported {
         DhtProtos.Message pmes = DhtProtos.Message.newBuilder()
                 .setType(DhtProtos.Message.MessageType.GET_PROVIDERS)
                 .setKey(ByteString.copyFrom(key.getHash())).build();
@@ -422,7 +426,8 @@ public class KadDHT implements Routing {
                 new QueryFunc() {
                     @NonNull
                     @Override
-                    public List<AddrInfo> func(@NonNull Closeable ctx, @NonNull PeerId p) throws ClosedException, ProtocolNotSupported {
+                    public List<AddrInfo> func(@NonNull Closeable ctx, @NonNull PeerId p)
+                            throws ClosedException, ProtocolNotSupported, ConnectionNotSupported {
                             /* TODO
                             // For DHT query command
                             routing.PublishQueryEvent(ctx, &routing.QueryEvent{
@@ -477,7 +482,11 @@ public class KadDHT implements Routing {
                 });
 
 
+        if (closeable.isClosed()) {
+            throw new ClosedException();
+        }
         boolean dialedPeerDuringQuery = false;
+        Objects.requireNonNull(lookupRes);
         PeerState state = lookupRes.peers.get(id);
         if (state != null) {
             // Note: we consider PeerUnreachable to be a valid state because the peer may not support the DHT protocol
@@ -501,15 +510,16 @@ public class KadDHT implements Routing {
         // to the peer.
         //connectedness := dht.host.Network().Connectedness(id)
         try {
-            boolean connectedness = host.getNetwork().connect(id).get() != null;
+            Collection<Multiaddr> addr = host.getAddressBook().getAddrs(id).get();
+            Objects.requireNonNull(addr);
+            AddrInfo addrInfo = new AddrInfo(id, addr);
+            boolean connectedness = host.getNetwork().connect(id, addrInfo.getAddresses()).get() != null;
                 /*if (dialedPeerDuringQuery || connectedness == network.Connected || connectedness == network.CanConnect) {
                     return dht.peerstore.PeerInfo(id),nil
                 }*/
             if (dialedPeerDuringQuery || connectedness) {
 
-                Collection<Multiaddr> addr = host.getAddressBook().getAddrs(id).get();
-                Objects.requireNonNull(addr);
-                return new AddrInfo(id, addr);
+                return addrInfo;
                 //return new PeerInfo(id);
             }
         } catch (Throwable throwable) {
@@ -635,12 +645,10 @@ public class KadDHT implements Routing {
         }
         */
             return lookupRes;
-        } catch (ClosedException closedException) {
-            throw closedException;
-        } catch (Throwable throwable) {
-            LogUtils.error(TAG, throwable); // TODO
+        } catch (InterruptedException ignore) {
+            throw new ClosedException();
         }
-        return null;
+
     }
 
     @Override
@@ -699,34 +707,4 @@ public class KadDHT implements Routing {
         }()*/
     }
 
-    public void dialPeer(Closeable ctx, PeerId p) throws ClosedException {
-
-        LogUtils.error(TAG, "Dial Peer Dialing " + p.toBase58());
-        /*
-        routing.PublishQueryEvent(ctx, &routing.QueryEvent{
-            Type: routing.DialingPeer,
-                    ID:   p,
-        })*/
-        try {
-            // TODO  closeable and timeout
-            if (ctx.isClosed()) {
-                throw new ClosedException();
-            }
-            Collection<Multiaddr> collections = host.getAddressBook().getAddrs(p).get();
-            host.getNetwork().connect(p, collections.toArray(new Multiaddr[collections.size()])).get();
-            LogUtils.error(TAG, "Dial Peer Success : " + p.toBase58());
-        } catch (ClosedException closedException) {
-            throw closedException;
-        } catch (Throwable throwable) {
-            LogUtils.error(TAG, "Dial Peer failure " + throwable);
-            /*
-            routing.PublishQueryEvent(ctx, &routing.QueryEvent{
-                Type:  routing.QueryError,
-                        Extra: err.Error(),
-                        ID:    p,
-            })*/
-            // TODO throw new RuntimeException(throwable);
-
-        }
-    }
 }

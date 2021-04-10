@@ -2,17 +2,16 @@ package io.dht;
 
 import androidx.annotation.NonNull;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 
 import io.Closeable;
 import io.LogUtils;
 import io.ipfs.ClosedException;
+import io.ipfs.ConnectionNotSupported;
 import io.ipfs.ProtocolNotSupported;
 import io.libp2p.core.NoSuchRemoteProtocolException;
 import io.libp2p.core.PeerId;
-import io.libp2p.core.multiformats.Multiaddr;
 import io.libp2p.etc.types.NothingToCompleteException;
 import io.protos.dht.DhtProtos;
 
@@ -27,7 +26,8 @@ public class MessageSender {
     }
 
     public synchronized DhtProtos.Message SendRequest(
-            @NonNull Closeable ctx, @NonNull DhtProtos.Message message) throws ClosedException, ProtocolNotSupported {
+            @NonNull Closeable ctx, @NonNull DhtProtos.Message message)
+            throws ClosedException, ProtocolNotSupported, ConnectionNotSupported {
 
 
         if (ctx.isClosed()) {
@@ -55,22 +55,10 @@ public class MessageSender {
             }
             Throwable cause = throwable.getCause();
             if (cause instanceof NoSuchRemoteProtocolException) {
-                throw new ProtocolNotSupported(); // TODO do not introduce extra exception use NoSuchRemoteProtocolException
+                throw new ProtocolNotSupported();
             }
-            // TODO
             if (cause instanceof NothingToCompleteException) {
-                try {
-                    Collection<Multiaddr> cols = dht.host.getAddressBook().get(p).get();
-                    if (cols != null) {
-                        for (Multiaddr col :
-                                cols) {
-                            LogUtils.error(TAG, col.toString());
-                        }
-                    }
-                } catch (Throwable throwable1) {
-                    LogUtils.error(TAG, throwable1);
-                }
-
+                throw new ConnectionNotSupported();
             }
             LogUtils.error(TAG, throwable);
             throw new RuntimeException(throwable); // TODO
