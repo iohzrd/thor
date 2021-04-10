@@ -61,18 +61,17 @@ public class DhtProtocol implements ProtocolBinding<DhtProtocol.DhtController> {
 
         @Override
         public CompletableFuture<DhtProtos.Message> sendRequest(@NonNull DhtProtos.Message pmes) throws NotImplementedError {
-            LogUtils.error(TAG, "sendRequest");
             throw new NotImplementedError();
-            //return null;
         }
 
         @Override
         protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
 
-            LogUtils.error(TAG, "channelRead0");
+            throw new Exception("NOT YET IMPLEMENTED");
+            /*
             DhtProtos.Message pmes = null; // TODO
             ctx.writeAndFlush(Unpooled.buffer().writeBytes(pmes.toByteArray()));
-            ctx.close();
+            ctx.close();*/
         }
     }
 
@@ -123,18 +122,19 @@ public class DhtProtocol implements ProtocolBinding<DhtProtocol.DhtController> {
         protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
 
             // TODO when not all data is in the msg
-            byte[] data = new byte[msg.readableBytes()];
-            int readerIndex = msg.readerIndex();
-            msg.getBytes(readerIndex, data);
+            try {
+                byte[] data = new byte[msg.readableBytes()];
+                int readerIndex = msg.readerIndex();
+                msg.getBytes(readerIndex, data);
 
-            try (InputStream inputStream = new ByteArrayInputStream(data)) {
-                long length = Multihash.readVarint(inputStream);
+                try (InputStream inputStream = new ByteArrayInputStream(data)) {
+                    long length = Multihash.readVarint(inputStream);
 
-                byte[] content = new byte[(int) length];
-                int res = inputStream.read(content);
-                DhtProtos.Message message = DhtProtos.Message.parseFrom(content);
-                resFuture.complete(message);
-
+                    byte[] content = new byte[(int) length];
+                    int res = inputStream.read(content);
+                    DhtProtos.Message message = DhtProtos.Message.parseFrom(content);
+                    resFuture.complete(message);
+                }
             } catch (Throwable throwable) {
                 LogUtils.error(TAG, throwable);
                 throw new RuntimeException(throwable);

@@ -21,6 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import io.Closeable;
 import io.LogUtils;
 import io.ipfs.ClosedException;
+import io.ipfs.ProtocolNotSupported;
 import io.ipfs.cid.Cid;
 import io.libp2p.core.Connection;
 import io.libp2p.core.ConnectionHandler;
@@ -71,21 +72,6 @@ public class KadDHT implements Routing {
             peerFound(con.secureSession().getRemoteId(), false);
         }
 
-
-        /*
-        host.addProtocolHandler(new ProtocolBinding<Void>() {
-            @NotNull
-            @Override
-            public CompletableFuture<Void> initChannel(@NotNull P2PChannel p2PChannel, @NotNull String s) {
-                return null;
-            }
-
-            @NotNull
-            @Override
-            public ProtocolDescriptor getProtocolDescriptor() {
-                return new ProtocolDescriptor(KadDHT.Protocol);
-            }
-        });*/
     }
 
 
@@ -223,7 +209,8 @@ public class KadDHT implements Routing {
 
                     @NonNull
                     @Override
-                    public List<AddrInfo> func(@NonNull Closeable ctx, @NonNull PeerId p) throws ClosedException {
+                    public List<AddrInfo> func(@NonNull Closeable ctx, @NonNull PeerId p)
+                            throws ClosedException, ProtocolNotSupported {
                         // For DHT query command
 
                         /* TODO
@@ -337,7 +324,7 @@ public class KadDHT implements Routing {
 
     // sendRequest sends out a request, but also makes sure to
     // measure the RTT for latency measurements.
-    private DhtProtos.Message sendRequest(Closeable ctx, PeerId p, DhtProtos.Message pmes) throws ClosedException {
+    private DhtProtos.Message sendRequest(Closeable ctx, PeerId p, DhtProtos.Message pmes) throws ClosedException, ProtocolNotSupported {
         //ctx, _ = tag.New(ctx, metrics.UpsertMessageType(pmes)) // TODO maybe
 
         MessageSender ms = messageSenderForPeer(ctx, p);
@@ -420,7 +407,7 @@ public class KadDHT implements Routing {
 
     // findPeerSingle asks peer 'p' if they know where the peer with id 'id' is
     private DhtProtos.Message findPeerSingle(Closeable ctx, PeerId p, PeerId id)
-            throws ClosedException {
+            throws ClosedException, ProtocolNotSupported {
         DhtProtos.Message pmes = DhtProtos.Message.newBuilder()
                 .setType(DhtProtos.Message.MessageType.FIND_NODE)
                 .setKey(ByteString.copyFrom(id.getBytes())).build();
@@ -430,7 +417,7 @@ public class KadDHT implements Routing {
 
 
     private DhtProtos.Message findProvidersSingle(Closeable ctx, PeerId p, io.ipfs.multihash.Multihash key)
-            throws ClosedException {
+            throws ClosedException, ProtocolNotSupported {
         DhtProtos.Message pmes = DhtProtos.Message.newBuilder()
                 .setType(DhtProtos.Message.MessageType.GET_PROVIDERS)
                 .setKey(ByteString.copyFrom(key.getHash())).build();
@@ -480,7 +467,7 @@ public class KadDHT implements Routing {
                 new QueryFunc() {
                     @NonNull
                     @Override
-                    public List<AddrInfo> func(@NonNull Closeable ctx, @NonNull PeerId p) throws ClosedException {
+                    public List<AddrInfo> func(@NonNull Closeable ctx, @NonNull PeerId p) throws ClosedException, ProtocolNotSupported {
                             /* TODO
                             // For DHT query command
                             routing.PublishQueryEvent(ctx, &routing.QueryEvent{

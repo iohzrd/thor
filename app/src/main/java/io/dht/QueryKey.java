@@ -2,8 +2,6 @@ package io.dht;
 
 import androidx.annotation.NonNull;
 
-import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
-
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 
@@ -35,7 +33,7 @@ public class QueryKey {
 
     public long Distance(@NonNull QueryKey key) {
         // XOR the keys
-        byte[] k3 = ByteUtils.xor(this.Bytes, key.Bytes);
+        byte[] k3 = Util.xor(this.Bytes, key.Bytes);
 
         ByteBuffer wrapped = ByteBuffer.wrap(k3); // big-endian by default
         return wrapped.getLong(); // TODO check if correct

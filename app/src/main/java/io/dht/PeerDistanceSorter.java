@@ -14,7 +14,7 @@ public class PeerDistanceSorter extends ArrayList<PeerDistanceSorter.PeerDistanc
     }
 
     public void appendPeer(@NonNull PeerId peerId, @NonNull ID id) {
-        this.add(new PeerDistance(peerId, RoutingTable.xor(target, id)));
+        this.add(new PeerDistance(peerId, Util.xor(target, id)));
     }
 
     public void appendPeersFromList(@NonNull Bucket bucket) {

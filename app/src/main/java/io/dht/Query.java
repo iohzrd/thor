@@ -19,6 +19,7 @@ import java.util.concurrent.Executors;
 import io.Closeable;
 import io.LogUtils;
 import io.ipfs.ClosedException;
+import io.ipfs.ProtocolNotSupported;
 import io.libp2p.core.PeerId;
 import io.libp2p.core.multiformats.Multiaddr;
 
@@ -322,8 +323,12 @@ public class Query {
 
         } catch (ClosedException closedException) {
             throw closedException;
+        } catch (ProtocolNotSupported ignore) {
+            QueryUpdate update = new QueryUpdate(p);
+            update.unreachable.add(p);
+            queue.offer(update);
         } catch (Throwable throwable) {
-
+            LogUtils.error(TAG, throwable);
             /*
             if queryCtx.Err() == nil {
                 q.dht.peerStoppedDHT(q.dht.ctx, p)

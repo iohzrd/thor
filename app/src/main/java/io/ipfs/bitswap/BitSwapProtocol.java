@@ -9,7 +9,6 @@ import java.io.InputStream;
 import java.util.concurrent.CompletableFuture;
 
 import io.LogUtils;
-
 import io.ipfs.multihash.Multihash;
 import io.libp2p.core.ConnectionClosedException;
 import io.libp2p.core.P2PChannel;
@@ -106,14 +105,14 @@ public class BitSwapProtocol implements ProtocolBinding<BitSwapProtocol.BitSwapC
                 long length = Multihash.readVarint(inputStream);
 
                 byte[] content = new byte[(int) length];
-                int res = inputStream.read(content);
+                int res = inputStream.read(content); // TODO improve
                 BitSwapMessage received = BitSwapMessage.fromData(content);
                 receiver.ReceiveMessage(stream.remotePeerId(),
                         stream.getProtocol().get(), received);
 
             } catch (Throwable throwable) {
                 LogUtils.error(TAG, throwable);
-                throw new RuntimeException(throwable);
+                throw throwable;
             }
         }
     }

@@ -4,25 +4,80 @@ import androidx.annotation.NonNull;
 
 import org.jetbrains.annotations.Nullable;
 
-import java.util.LinkedList;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentSkipListSet;
 
+import io.LogUtils;
 import io.libp2p.core.PeerId;
 
-public class Bucket extends LinkedList<Bucket.PeerInfo> {
-
+public class Bucket extends ConcurrentSkipListSet<Bucket.PeerInfo> {
+    private static final String TAG = Bucket.class.getSimpleName();
 
     @Nullable
-    public PeerInfo getPeer(PeerId p) {
+    public PeerInfo getPeer(@NonNull PeerId p) {
         for (PeerInfo peerInfo : this) {
-            if (Objects.equals(peerInfo.peerId, p)) {
+            if (Objects.equals(peerInfo.getPeerId(), p)) {
                 return peerInfo;
             }
         }
         return null;
     }
 
-    public static class PeerInfo {
+    public PeerInfo min(@NonNull MinFunc func) {
+        if (size() == 0) {
+            return null;
+        }
+
+        PeerInfo minVal = first();
+        for (PeerInfo e : this) {
+            if (func.less(e, minVal)) {
+                minVal = e;
+            }
+        }
+
+        return minVal;
+    }
+
+    // splits a buckets peers into two buckets, the methods receiver will have
+    // peers with CPL equal to cpl, the returned bucket will have peers with CPL
+    // greater than cpl (returned bucket has closer peers)
+    public Bucket split(int cpl, @NonNull ID target) {
+
+        LogUtils.error(TAG, "cpl " + cpl);
+        Bucket newbuck = new Bucket();
+
+        for (PeerInfo e : this) {
+            ID pDhtId = e.getID();
+            int peerCPL = Util.CommonPrefixLen(pDhtId, target);
+            if (peerCPL > cpl) {
+                newbuck.add(e);
+                this.remove(e);
+            }
+        }
+        LogUtils.error(TAG, "Old Bucket Size : " + this.size());
+        LogUtils.error(TAG, "New Bucket Size : " + newbuck.size());
+        return newbuck;
+    }
+
+
+    // removes the peer with the given Id from the bucket.
+    // returns true if successful, false otherwise.
+    public boolean removePeerInfo(@NonNull PeerId p) {
+
+        for (PeerInfo e : this) {
+            if (Objects.equals(e.getPeerId(), p)) {
+                return remove(e);
+            }
+        }
+        return false;
+
+    }
+
+    public interface MinFunc {
+        boolean less(@NonNull PeerInfo p1, @NonNull PeerInfo p2);
+    }
+
+    public static class PeerInfo implements Comparable<PeerInfo> {
         @NonNull
         private final PeerId peerId;
         // Id of the peer in the DHT XOR keyspace
@@ -52,6 +107,11 @@ public class Bucket extends LinkedList<Bucket.PeerInfo> {
 
         public ID getID() {
             return id;
+        }
+
+        @Override
+        public int compareTo(PeerInfo o) {
+            return this.peerId.toHex().compareTo(o.getPeerId().toHex());
         }
     }
 }

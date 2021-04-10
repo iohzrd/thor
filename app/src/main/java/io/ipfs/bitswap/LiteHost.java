@@ -1,11 +1,6 @@
 package io.ipfs.bitswap;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
-import com.google.protobuf.Any;
-
-import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -13,13 +8,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 
 import io.Closeable;
-import io.LogUtils;
 import io.dht.ContentRouting;
-import io.dht.DhtProtocol;
-import io.dht.KadDHT;
 import io.dht.Providers;
 import io.ipfs.ClosedException;
 import io.ipfs.IPFS;
@@ -27,16 +18,8 @@ import io.ipfs.ProtocolNotSupported;
 import io.ipfs.cid.Cid;
 import io.libp2p.core.Connection;
 import io.libp2p.core.Host;
-import io.libp2p.core.P2PChannel;
+import io.libp2p.core.NoSuchRemoteProtocolException;
 import io.libp2p.core.PeerId;
-import io.libp2p.core.Stream;
-import io.libp2p.core.StreamPromise;
-import io.libp2p.core.multistream.ProtocolBinding;
-import io.libp2p.core.multistream.ProtocolDescriptor;
-import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.SimpleChannelInboundHandler;
 
 
 public class LiteHost implements BitSwapNetwork {
@@ -99,15 +82,24 @@ public class LiteHost implements BitSwapNetwork {
                     Collections.singletonList(IPFS.ProtocolBitswap), peer).getController();
             //Object object = ctrl.get(timeout, TimeUnit.SECONDS); // TODO timeout
             Object object = ctrl.get();
+
+            if (closeable.isClosed()) {
+                throw new ClosedException();
+            }
+
             BitSwapProtocol.BitSwapController controller = (BitSwapProtocol.BitSwapController) object;
             controller.sendRequest(message);
-            /* TODO timout
+            /* TODO timeout
             long res = host.WriteMessage(closeable, peer, protocols, data, timeout);
             if (Objects.equals(data.length, res)) {
                 throw new RuntimeException("Message not fully written");
             }*/
         } catch (Throwable throwable) {
-           throw new RuntimeException(throwable);
+            Throwable cause = throwable.getCause();
+            if (cause instanceof NoSuchRemoteProtocolException) {
+                throw new ProtocolNotSupported(); // TODO do not introduce extra exception use NoSuchRemoteProtocolException
+            }
+            throw new RuntimeException(throwable);
         }
     }
 
