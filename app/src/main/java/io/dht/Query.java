@@ -195,8 +195,6 @@ public class Query {
 
             QueryUpdate current = queue.take();
 
-            LogUtils.error(TAG, "run iteration " + update.getCause().toBase58());
-
             updateState(ctx, current);
             PeerId cause = current.getCause();
 
@@ -223,7 +221,7 @@ public class Query {
             }
 
         }
-        // TODO
+
     }
 
 
@@ -249,7 +247,9 @@ public class Query {
 		),
 	)*/
         queryPeers.SetState(queryPeer, PeerState.PeerWaiting);
-        // TODO q.waitGroup.Add(1)
+
+
+        // TODO executor
         Executors.newSingleThreadExecutor().execute(() -> {
             try {
                 queryPeer(ctx, queue, queryPeer);
@@ -273,11 +273,11 @@ public class Query {
             throw new ClosedException();
         }
         try {
-            LogUtils.error(TAG, "Dial Peer Dialing " + p.toBase58());
+            LogUtils.info(TAG, "Dial Peer Dialing " + p.toBase58());
             // TODO   and timeout
             Collection<Multiaddr> collections = dht.host.getAddressBook().getAddrs(p).get();
             dht.host.getNetwork().connect(p, collections.toArray(new Multiaddr[collections.size()])).get();
-            LogUtils.error(TAG, "Dial Peer Success : " + p.toBase58());
+            LogUtils.info(TAG, "Dial Peer Success : " + p.toBase58());
 
         } catch (Throwable throwable) {
             if (ctx.isClosed()) {

@@ -46,7 +46,7 @@ public class MessageSender {
 
             DhtProtocol.DhtController dhtController = (DhtProtocol.DhtController) object;
             DhtProtos.Message result = dhtController.sendRequest(message).get(); // TODO timeout
-            LogUtils.error(TAG, "success " + p.toBase58());
+            LogUtils.info(TAG, "success " + p.toBase58());
             return result;
 
         } catch (Throwable throwable) {

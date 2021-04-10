@@ -6,6 +6,7 @@ import java.util.List;
 
 import io.Closeable;
 import io.ipfs.ClosedException;
+import io.ipfs.ConnectionNotSupported;
 import io.ipfs.ProtocolNotSupported;
 import io.ipfs.cid.Cid;
 import io.libp2p.core.PeerId;
@@ -21,7 +22,7 @@ public class MessageWriter {
                                        @NonNull PeerId peer,
                                        @NonNull List<Cid> wantHaves,
                                        int timeout)
-            throws ClosedException, ProtocolNotSupported {
+            throws ClosedException, ProtocolNotSupported, ConnectionNotSupported {
         if (wantHaves.size() == 0) {
             return;
         }
@@ -55,7 +56,7 @@ public class MessageWriter {
                                         @NonNull PeerId peer,
                                         @NonNull List<Cid> wantBlocks,
                                         int timeout)
-            throws ClosedException, ProtocolNotSupported {
+            throws ClosedException, ProtocolNotSupported, ConnectionNotSupported {
 
         if (wantBlocks.size() == 0) {
             return;

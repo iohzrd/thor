@@ -10,6 +10,8 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 import io.Closeable;
+import io.LogUtils;
+import io.ipfs.ConnectionNotSupported;
 import io.libp2p.AddrInfo;
 import io.dht.ContentRouting;
 import io.dht.Providers;
@@ -21,28 +23,26 @@ import io.libp2p.core.Connection;
 import io.libp2p.core.Host;
 import io.libp2p.core.NoSuchRemoteProtocolException;
 import io.libp2p.core.PeerId;
+import io.libp2p.etc.types.NothingToCompleteException;
 
 
 public class LiteHost implements BitSwapNetwork {
-
+    private static final String TAG = LiteHost.class.getSimpleName();
     @NonNull
     private final Host host;
     @NonNull
     private final ContentRouting contentRouting;
-    private final List<String> protocols = new ArrayList<>();
+
 
     private LiteHost(@NonNull Host host,
-                     @NonNull ContentRouting contentRouting,
-                     @NonNull List<String> protos) {
+                     @NonNull ContentRouting contentRouting) {
         this.host = host;
         this.contentRouting = contentRouting;
-        this.protocols.addAll(protos);
     }
 
     public static BitSwapNetwork NewLiteHost(@NonNull Host host,
-                                             @NonNull ContentRouting contentRouting,
-                                             @NonNull List<String> protocols) {
-        return new LiteHost(host, contentRouting, protocols);
+                                             @NonNull ContentRouting contentRouting) {
+        return new LiteHost(host, contentRouting);
     }
 
     @Override
@@ -76,7 +76,7 @@ public class LiteHost implements BitSwapNetwork {
 
     @Override
     public void WriteMessage(@NonNull Closeable closeable, @NonNull PeerId peer,
-                             @NonNull BitSwapMessage message, int timeout) throws ClosedException, ProtocolNotSupported {
+                             @NonNull BitSwapMessage message, int timeout) throws ClosedException, ProtocolNotSupported, ConnectionNotSupported {
 
         try {
 
@@ -91,15 +91,26 @@ public class LiteHost implements BitSwapNetwork {
 
             BitSwapProtocol.BitSwapController controller = (BitSwapProtocol.BitSwapController) object;
             controller.sendRequest(message);
+
             /* TODO timeout
             long res = host.WriteMessage(closeable, peer, protocols, data, timeout);
             if (Objects.equals(data.length, res)) {
                 throw new RuntimeException("Message not fully written");
             }*/
+
+            LogUtils.error(TAG, "messsage done");
+        } catch(ClosedException closedException){
+            throw new ClosedException();
         } catch (Throwable throwable) {
+            if (closeable.isClosed()) {
+                throw new ClosedException();
+            }
             Throwable cause = throwable.getCause();
             if (cause instanceof NoSuchRemoteProtocolException) {
-                throw new ProtocolNotSupported(); // TODO do not introduce extra exception use NoSuchRemoteProtocolException
+                throw new ProtocolNotSupported();
+            }
+            if (cause instanceof NothingToCompleteException) {
+                throw new ConnectionNotSupported();
             }
             throw new RuntimeException(throwable);
         }

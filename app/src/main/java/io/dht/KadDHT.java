@@ -236,8 +236,10 @@ public class KadDHT implements Routing {
                             List<Multiaddr> multiAddresses = new ArrayList<>();
                             List<ByteString> addresses = entry.getAddrsList();
                             for (ByteString address : addresses) {
-                                // TODO filter addresses
-                                multiAddresses.add(new Multiaddr(address.toByteArray()));
+                                Multiaddr multiaddr = filterAddress(address);
+                                if(multiaddr != null){
+                                    multiAddresses.add(multiaddr);
+                                }
                             }
                             AddrInfo addrInfo = new AddrInfo(peerId, multiAddresses);
                             provs.add(addrInfo);
@@ -271,8 +273,10 @@ public class KadDHT implements Routing {
                             List<Multiaddr> multiAddresses = new ArrayList<>();
                             List<ByteString> addresses = entry.getAddrsList();
                             for (ByteString address : addresses) {
-                                // TODO filter addresses
-                                multiAddresses.add(new Multiaddr(address.toByteArray()));
+                                Multiaddr multiaddr = filterAddress(address);
+                                if(multiaddr != null){
+                                    multiAddresses.add(multiaddr);
+                                }
                             }
                             AddrInfo addrInfo = new AddrInfo(peerId, multiAddresses);
                             peers.add(addrInfo);
@@ -406,11 +410,19 @@ public class KadDHT implements Routing {
         return null;
     }
 
+    @Nullable
+    private Multiaddr filterAddress(@NonNull ByteString address) {
+        try {
+            // TODO filter address
+           return  new Multiaddr(address.toByteArray());
+        } catch (Throwable ignore){
+            // nothing to do
+        }
+        return null;
+    }
+
     @Override
     public AddrInfo FindPeer(@NonNull Closeable closeable, @NonNull PeerId id) throws ClosedException {
-
-
-        LogUtils.error(TAG, "FindPeer " + id.toBase58());
 
         // Check if were already connected to them
         AddrInfo pi = FindLocal(id);
@@ -442,13 +454,14 @@ public class KadDHT implements Routing {
                         for (DhtProtos.Message.Peer entry : list) {
                             PeerId peerId = new PeerId(entry.getId().toByteArray());
 
-                            LogUtils.error(TAG, "FindPeer Lookup " + peerId);
 
                             List<Multiaddr> multiAddresses = new ArrayList<>();
                             List<ByteString> addresses = entry.getAddrsList();
                             for (ByteString address : addresses) {
-                                // TODO filter addresses
-                                multiAddresses.add(new Multiaddr(address.toByteArray()));
+                                Multiaddr multiaddr = filterAddress(address);
+                                if(multiaddr != null){
+                                    multiAddresses.add(multiaddr);
+                                }
                             }
                             AddrInfo addrInfo = new AddrInfo(peerId, multiAddresses);
                             peers.add(addrInfo);

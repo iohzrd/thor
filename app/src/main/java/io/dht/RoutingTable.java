@@ -224,8 +224,8 @@ public class RoutingTable {
 
             */
 
-        LogUtils.error(TAG, "Buckets Size :" + buckets.size());
-        LogUtils.error(TAG, "Total Size : " + size());
+        LogUtils.info(TAG, "Buckets Size :" + buckets.size());
+        LogUtils.info(TAG, "Total Size : " + size());
 
         // TODO check again should always add elements
         return false; //throw new RuntimeException("ErrPeerRejectedNoCapacity");// TODO

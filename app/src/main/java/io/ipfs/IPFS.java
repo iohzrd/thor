@@ -216,10 +216,8 @@ public class IPFS implements Receiver {
                 .build();
         this.routing = new KadDHT(host);
 
-        List<String> protocols = new ArrayList<>();
-        protocols.add(ProtocolBitswap);
 
-        BitSwapNetwork bsm = LiteHost.NewLiteHost(host, routing, protocols);
+        BitSwapNetwork bsm = LiteHost.NewLiteHost(host, routing);
         BlockStore blockstore = BlockStore.NewBlockstore(blocks);
 
         this.exchange = BitSwap.New(bsm, blockstore);
@@ -505,7 +503,7 @@ public class IPFS implements Receiver {
                             tasks.add(() -> swarmConnect(address, TIMEOUT_BOOTSTRAP));
                         }
                         futures.clear();
-                        futures = executor.invokeAll(tasks, TIMEOUT_BOOTSTRAP * 5, TimeUnit.SECONDS);
+                        futures = executor.invokeAll(tasks, TIMEOUT_BOOTSTRAP * 5, TimeUnit.SECONDS); // TODO back without 5
                         for (Future<Boolean> future : futures) {
                             LogUtils.info(TAG, "\nConnect done " + future.isDone());
                         }

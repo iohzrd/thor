@@ -74,7 +74,7 @@ public class BitSwapProtocol implements ProtocolBinding<BitSwapProtocol.BitSwapC
 
         public boolean acceptInboundMessage(Object msg) throws Exception {
             try {
-                return !receiver.GatePeer(stream.remotePeerId());
+                return true; //!receiver.GatePeer(stream.remotePeerId()); // TODO
             } catch (Throwable ignore) {
                 return super.acceptInboundMessage(msg);
             }
@@ -151,8 +151,6 @@ public class BitSwapProtocol implements ProtocolBinding<BitSwapProtocol.BitSwapC
             } catch (Throwable throwable) {
                 LogUtils.error(TAG, throwable);
                 throw new NotImplementedError("" + throwable.getMessage());
-            } finally {
-                stream.close(); // TODO check (better first writer close
             }
         }
 
