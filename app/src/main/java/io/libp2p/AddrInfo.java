@@ -20,7 +20,7 @@ public class AddrInfo {
         this.addresses.add(remoteAddress);
     }
 
-    public AddrInfo(@NonNull PeerId id, @NonNull List<Multiaddr> remoteAddresses) {
+    public AddrInfo(@NonNull PeerId id, @NonNull Collection<Multiaddr> remoteAddresses) {
         this.peerId = id;
         this.addresses.addAll(remoteAddresses);
     }

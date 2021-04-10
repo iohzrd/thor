@@ -11,6 +11,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -47,7 +48,7 @@ public class KadDHT implements Routing {
     private boolean enableValues = true;
     public final int bucketSize;
     public final int alpha; // The concurrency parameter per path
-    private final ConcurrentHashMap<PeerId, List<Multiaddr>> memoryBook = new ConcurrentHashMap<>();
+
     private final ID selfKey;
 
 
@@ -215,9 +216,14 @@ public class KadDHT implements Routing {
                             List<Multiaddr> multiAddresses = new ArrayList<>();
                             List<ByteString> addresses = entry.getAddrsList();
                             for (ByteString address : addresses) {
+                                // TODO filter addresses
                                 multiAddresses.add(new Multiaddr(address.toByteArray()));
                             }
-                            provs.add(new AddrInfo(peerId, multiAddresses));
+                            AddrInfo addrInfo = new AddrInfo(peerId, multiAddresses);
+                            provs.add(addrInfo);
+
+                            host.getAddressBook().addAddrs(peerId, Long.MAX_VALUE,
+                                    addrInfo.getAddresses());
                         }
 
                         LogUtils.error(TAG, "" + provs.size() + " provider entries decoded");
@@ -245,9 +251,14 @@ public class KadDHT implements Routing {
                             List<Multiaddr> multiAddresses = new ArrayList<>();
                             List<ByteString> addresses = entry.getAddrsList();
                             for (ByteString address : addresses) {
+                                // TODO filter addresses
                                 multiAddresses.add(new Multiaddr(address.toByteArray()));
                             }
-                            peers.add(new AddrInfo(peerId, multiAddresses));
+                            AddrInfo addrInfo = new AddrInfo(peerId, multiAddresses);
+                            peers.add(addrInfo);
+
+                            host.getAddressBook().addAddrs(peerId, Long.MAX_VALUE,
+                                    addrInfo.getAddresses());
                         }
 
                         /*
@@ -438,10 +449,15 @@ public class KadDHT implements Routing {
                                 List<Multiaddr> multiAddresses = new ArrayList<>();
                                 List<ByteString> addresses = entry.getAddrsList();
                                 for (ByteString address : addresses) {
+                                    // TODO filter addresses
                                     multiAddresses.add(new Multiaddr(address.toByteArray()));
                                 }
-                                peers.add(new AddrInfo(peerId, multiAddresses));
-                                memoryBook.put(peerId, multiAddresses); // todo append
+                                AddrInfo addrInfo = new AddrInfo(peerId, multiAddresses);
+                                peers.add(addrInfo);
+
+                                host.getAddressBook().addAddrs(peerId, Long.MAX_VALUE,
+                                        addrInfo.getAddresses());
+
                             }
 
 
@@ -497,7 +513,8 @@ public class KadDHT implements Routing {
                     return dht.peerstore.PeerInfo(id),nil
                 }*/
             if (dialedPeerDuringQuery || connectedness) {
-                List<Multiaddr> addr = memoryBook.get(id);
+
+                Collection<Multiaddr> addr = host.getAddressBook().getAddrs(id).get();
                 Objects.requireNonNull(addr);
                 return new AddrInfo(id, addr);
                 //return new PeerInfo(id);
@@ -705,17 +722,13 @@ public class KadDHT implements Routing {
             if (ctx.isClosed()) {
                 throw new ClosedException();
             }
-            List<Multiaddr> maddr = memoryBook.get(p);
-            if (maddr != null && !maddr.isEmpty()) {
-                host.getNetwork().connect(p, maddr.toArray(new Multiaddr[maddr.size()])).get();
-            } else {
-                host.getNetwork().connect(p).get();
-            }
+            Collection<Multiaddr> collections = host.getAddressBook().getAddrs(p).get();
+            host.getNetwork().connect(p, collections.toArray(new Multiaddr[collections.size()])).get();
             LogUtils.error(TAG, "Dial Peer Success : " + p.toBase58());
         } catch (ClosedException closedException) {
             throw closedException;
         } catch (Throwable throwable) {
-            // LogUtils.error(TAG, throwable);
+            LogUtils.error(TAG, "Dial Peer failure " + throwable);
             /*
             routing.PublishQueryEvent(ctx, &routing.QueryEvent{
                 Type:  routing.QueryError,

@@ -35,6 +35,8 @@ class Multiaddr(val components: List<Pair<Protocol, ByteArray>>) {
      */
     constructor(bytes: ByteArray) : this(parseBytes(bytes.toByteBuf()))
 
+
+
     constructor(parentAddr: Multiaddr, childAddr: Multiaddr) :
         this(concatProtocols(parentAddr, childAddr))
 
@@ -150,6 +152,7 @@ class Multiaddr(val components: List<Pair<Protocol, ByteArray>>) {
         return toString().hashCode()
     }
 
+
     companion object {
         @JvmStatic
         fun fromString(addr: String): Multiaddr { // helper method for Java access
@@ -204,7 +207,7 @@ class Multiaddr(val components: List<Pair<Protocol, ByteArray>>) {
             return parentAddr.components + childAddr.components
         }
 
-        private fun concatPeerId(addr: Multiaddr, peerId: PeerId): List<Pair<Protocol, ByteArray>> {
+        fun concatPeerId(addr: Multiaddr, peerId: PeerId): List<Pair<Protocol, ByteArray>> {
             if (addr.has(Protocol.P2P))
                 throw IllegalArgumentException("Multiaddr already has peer id")
             val protocols = addr.components.toMutableList()

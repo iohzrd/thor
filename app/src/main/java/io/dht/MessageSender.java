@@ -45,7 +45,9 @@ public class MessageSender {
             }
 
             DhtProtocol.DhtController dhtController = (DhtProtocol.DhtController) object;
-            return dhtController.sendRequest(message).get(); // TODO timeout
+            DhtProtos.Message result = dhtController.sendRequest(message).get(); // TODO timeout
+            LogUtils.error(TAG, "success " + p.toBase58());
+            return result;
 
         } catch (Throwable throwable) {
             if (ctx.isClosed()) {
@@ -55,12 +57,15 @@ public class MessageSender {
             if (cause instanceof NoSuchRemoteProtocolException) {
                 throw new ProtocolNotSupported(); // TODO do not introduce extra exception use NoSuchRemoteProtocolException
             }
+            // TODO
             if (cause instanceof NothingToCompleteException) {
                 try {
                     Collection<Multiaddr> cols = dht.host.getAddressBook().get(p).get();
-                    for (Multiaddr col :
-                            cols) {
-                        LogUtils.error(TAG, col.toString());
+                    if(cols != null) {
+                        for (Multiaddr col :
+                                cols) {
+                            LogUtils.error(TAG, col.toString());
+                        }
                     }
                 } catch (Throwable throwable1) {
                     LogUtils.error(TAG, throwable1);
