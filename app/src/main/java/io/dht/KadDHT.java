@@ -39,18 +39,18 @@ public class KadDHT implements Routing {
 
     public static final Duration TempAddrTTL = Duration.ofMinutes(2);
     private static final String TAG = KadDHT.class.getSimpleName();
+    private static final int defaultQuorum = 0;
     public final Host host;
     public final PeerId self; // Local peer (yourself)
     public final int beta; // The number of peers closest to a target that must have responded for a query path to terminate
-    private final ProviderManager providerManager = new ProviderManager();
     public final RoutingTable routingTable;
-    private boolean enableProviders = true;
-    private boolean enableValues = true;
     public final int bucketSize;
     public final int alpha; // The concurrency parameter per path
-
+    private final ProviderManager providerManager = new ProviderManager();
     private final ID selfKey;
-
+    private final ConcurrentHashMap<PeerId, MessageSender> strmap = new ConcurrentHashMap<>();
+    private final boolean enableProviders = true;
+    private final boolean enableValues = true;
 
     public KadDHT(@NonNull Host host) {
         this.host = host;
@@ -75,7 +75,6 @@ public class KadDHT implements Routing {
         }
 
     }
-
 
     // validRTPeer returns true if the peer supports the DHT protocol and false otherwise. Supporting the DHT protocol means
 // supporting the primary protocols, we do not want to add peers that are speaking obsolete secondary protocols to our
@@ -152,7 +151,7 @@ public class KadDHT implements Routing {
     @Override
     public void FindProvidersAsync(@NonNull Providers providers,
                                    @NonNull Cid cid, int count) throws ClosedException {
-        if(!enableProviders || !cid.Defined()) {
+        if (!enableProviders || !cid.Defined()) {
             return;
         }
 
@@ -165,6 +164,26 @@ public class KadDHT implements Routing {
         findProvidersAsyncRoutine(providers, cid, chSize);
     }
 
+
+    // getLocal attempts to retrieve the value from the datastore
+    /*
+    func (dht *IpfsDHT) getLocal(key string) (*recpb.Record, error) {
+        logger.Debugw("finding value in datastore", "key", loggableRecordKeyString(key))
+
+        rec, err := getRecordFromDatastore(mkDsKey(key))
+        if err != nil {
+            logger.Warnw("get local failed", "key", loggableRecordKeyString(key), "error", err)
+            return nil, err
+        }
+
+        // Double check the key. Can't hurt.
+        if rec != nil && string(rec.GetKey()) != key {
+            logger.Errorw("BUG: found a DHT record that didn't match it's key", "expected", loggableRecordKeyString(key), "got", rec.GetKey())
+            return nil, nil
+
+        }
+        return rec, nil
+    }*/
 
     private void findProvidersAsyncRoutine(@NonNull Providers providers,
                                            @NonNull Cid cid, int count) throws ClosedException {
@@ -278,7 +297,7 @@ public class KadDHT implements Routing {
                     }
                 });
 
-        if(providers.isClosed()){
+        if (providers.isClosed()) {
             throw new ClosedException();
         }
         /*  TODO
@@ -291,28 +310,6 @@ public class KadDHT implements Routing {
     public void Provide(@NonNull Closeable closeable, @NonNull Cid cid) {
         throw new RuntimeException("TODO");
     }
-
-
-    // getLocal attempts to retrieve the value from the datastore
-    /*
-    func (dht *IpfsDHT) getLocal(key string) (*recpb.Record, error) {
-        logger.Debugw("finding value in datastore", "key", loggableRecordKeyString(key))
-
-        rec, err := getRecordFromDatastore(mkDsKey(key))
-        if err != nil {
-            logger.Warnw("get local failed", "key", loggableRecordKeyString(key), "error", err)
-            return nil, err
-        }
-
-        // Double check the key. Can't hurt.
-        if rec != nil && string(rec.GetKey()) != key {
-            logger.Errorw("BUG: found a DHT record that didn't match it's key", "expected", loggableRecordKeyString(key), "got", rec.GetKey())
-            return nil, nil
-
-        }
-        return rec, nil
-    }*/
-
 
     // sendRequest sends out a request, but also makes sure to
     // measure the RTT for latency measurements.
@@ -355,8 +352,6 @@ public class KadDHT implements Routing {
         return response;
     }
 
-    private final ConcurrentHashMap<PeerId, MessageSender> strmap = new ConcurrentHashMap<>();
-
     private MessageSender messageSenderForPeer(@NonNull PeerId p) {
         MessageSender ms = strmap.get(p);
         if (ms != null) {
@@ -377,7 +372,6 @@ public class KadDHT implements Routing {
         return sendRequest(ctx, p, pmes);
     }
 
-
     private DhtProtos.Message findProvidersSingle(Closeable ctx, PeerId p, io.ipfs.multihash.Multihash key)
             throws ClosedException, ProtocolNotSupported {
         DhtProtos.Message pmes = DhtProtos.Message.newBuilder()
@@ -385,7 +379,6 @@ public class KadDHT implements Routing {
                 .setKey(ByteString.copyFrom(key.getHash())).build();
         return sendRequest(ctx, p, pmes);
     }
-
 
     // FindLocal looks for a peer with a given ID connected to this dht and returns the peer and the table it was found in.
     @Nullable
@@ -401,8 +394,8 @@ public class KadDHT implements Routing {
 
          */
         List<Connection> cons = host.getNetwork().getConnections();
-        for (Connection con:cons) {
-            if(Objects.equals(con.secureSession().getRemoteId(), id)){
+        for (Connection con : cons) {
+            if (Objects.equals(con.secureSession().getRemoteId(), id)) {
                 return new AddrInfo(id, con.remoteAddress());
             }
         }
@@ -441,24 +434,24 @@ public class KadDHT implements Routing {
 
                         List<AddrInfo> peers = new ArrayList<>();
                         List<DhtProtos.Message.Peer> list = pmes.getCloserPeersList();
-                            for (DhtProtos.Message.Peer entry : list) {
-                                PeerId peerId = new PeerId(entry.getId().toByteArray());
+                        for (DhtProtos.Message.Peer entry : list) {
+                            PeerId peerId = new PeerId(entry.getId().toByteArray());
 
-                                LogUtils.error(TAG, "FindPeer Lookup " + peerId);
+                            LogUtils.error(TAG, "FindPeer Lookup " + peerId);
 
-                                List<Multiaddr> multiAddresses = new ArrayList<>();
-                                List<ByteString> addresses = entry.getAddrsList();
-                                for (ByteString address : addresses) {
-                                    // TODO filter addresses
-                                    multiAddresses.add(new Multiaddr(address.toByteArray()));
-                                }
-                                AddrInfo addrInfo = new AddrInfo(peerId, multiAddresses);
-                                peers.add(addrInfo);
-
-                                host.getAddressBook().addAddrs(peerId, Long.MAX_VALUE,
-                                        addrInfo.getAddresses());
-
+                            List<Multiaddr> multiAddresses = new ArrayList<>();
+                            List<ByteString> addresses = entry.getAddrsList();
+                            for (ByteString address : addresses) {
+                                // TODO filter addresses
+                                multiAddresses.add(new Multiaddr(address.toByteArray()));
                             }
+                            AddrInfo addrInfo = new AddrInfo(peerId, multiAddresses);
+                            peers.add(addrInfo);
+
+                            host.getAddressBook().addAddrs(peerId, Long.MAX_VALUE,
+                                    addrInfo.getAddresses());
+
+                        }
 
 
                             /* TODO
@@ -469,30 +462,30 @@ public class KadDHT implements Routing {
                                         Responses: peers,
                             })*/
 
-                            return peers;
+                        return peers;
+                    }
+                }, new StopFunc() {
+                    @Override
+                    public boolean func() {
+                        try {
+                            // return dht.host.Network().Connectedness(id) == network.Connected
+                            return closeable.isClosed() || host.getNetwork().connect(id).get() != null;
+                        } catch (Throwable throwable) {
+                            return false;
                         }
-                    }, new StopFunc() {
-                        @Override
-                        public boolean func() {
-                            try {
-                                // return dht.host.Network().Connectedness(id) == network.Connected
-                                return closeable.isClosed() || host.getNetwork().connect(id).get() != null;
-                            } catch (Throwable throwable){
-                                return false;
-                            }
-                        }
-                    });
+                    }
+                });
 
 
-            boolean dialedPeerDuringQuery = false;
-            PeerState state = lookupRes.peers.get(id);
-            if(state != null){
-                // Note: we consider PeerUnreachable to be a valid state because the peer may not support the DHT protocol
-                // and therefore the peer would fail the query. The fact that a peer that is returned can be a non-DHT
-                // server peer and is not identified as such is a bug.
-                dialedPeerDuringQuery = (state == PeerState.PeerQueried || state == PeerState.PeerUnreachable || state == PeerState.PeerWaiting);
+        boolean dialedPeerDuringQuery = false;
+        PeerState state = lookupRes.peers.get(id);
+        if (state != null) {
+            // Note: we consider PeerUnreachable to be a valid state because the peer may not support the DHT protocol
+            // and therefore the peer would fail the query. The fact that a peer that is returned can be a non-DHT
+            // server peer and is not identified as such is a bug.
+            dialedPeerDuringQuery = (state == PeerState.PeerQueried || state == PeerState.PeerUnreachable || state == PeerState.PeerWaiting);
 
-            }
+        }
             /*
             for i, p := range lookupRes.peers {
                 if p == id {
@@ -503,10 +496,10 @@ public class KadDHT implements Routing {
                     break
                 }
             }*/
-            
-            // Return peer information if we tried to dial the peer during the query or we are (or recently were) connected
-            // to the peer.
-            //connectedness := dht.host.Network().Connectedness(id)
+
+        // Return peer information if we tried to dial the peer during the query or we are (or recently were) connected
+        // to the peer.
+        //connectedness := dht.host.Network().Connectedness(id)
         try {
             boolean connectedness = host.getNetwork().connect(id).get() != null;
                 /*if (dialedPeerDuringQuery || connectedness == network.Connected || connectedness == network.CanConnect) {
@@ -525,7 +518,6 @@ public class KadDHT implements Routing {
 
         return null;
     }
-
 
     private LookupWithFollowupResult runQuery(@NonNull Closeable ctx, @NonNull String target,
                                               @NonNull QueryFunc queryFn, @NonNull StopFunc stopFn)
@@ -651,29 +643,27 @@ public class KadDHT implements Routing {
         return null;
     }
 
-    private static int defaultQuorum = 0;
-
     @Override
     public void SearchValue(@NonNull ResolveInfo resolveInfo, @NonNull String key, Option... options) {
 
-        if( !enableValues) {
+        if (!enableValues) {
             throw new RuntimeException();
         }
 
         boolean offline = false;
         int quorum = defaultQuorum;
 
-        for (Option option:options) {
-            if(option instanceof Offline){
+        for (Option option : options) {
+            if (option instanceof Offline) {
                 offline = ((Offline) option).isOffline();
             }
-            if(option instanceof Quorum){
+            if (option instanceof Quorum) {
                 quorum = ((Quorum) option).getQuorum();
             }
         }
 
         int responsesNeeded = 0;
-        if(!offline) {
+        if (!offline) {
             responsesNeeded = quorum;
         }
         throw new RuntimeException("TODO");

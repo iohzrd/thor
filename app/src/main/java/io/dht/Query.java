@@ -282,7 +282,6 @@ public class Query {
         }
 
 
-
         try {
             // send query RPC to the remote peer
             List<AddrInfo> newPeers = queryFn.func(ctx, p);

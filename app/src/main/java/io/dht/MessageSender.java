@@ -61,7 +61,7 @@ public class MessageSender {
             if (cause instanceof NothingToCompleteException) {
                 try {
                     Collection<Multiaddr> cols = dht.host.getAddressBook().get(p).get();
-                    if(cols != null) {
+                    if (cols != null) {
                         for (Multiaddr col :
                                 cols) {
                             LogUtils.error(TAG, col.toString());
