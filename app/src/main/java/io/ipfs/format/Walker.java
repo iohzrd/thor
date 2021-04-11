@@ -8,8 +8,8 @@ import androidx.annotation.Nullable;
 import java.util.Objects;
 import java.util.Stack;
 
-import io.Closeable;
-import io.ipfs.ClosedException;
+import io.core.Closeable;
+import io.core.ClosedException;
 import io.ipfs.unixfs.FSNode;
 
 public class Walker {

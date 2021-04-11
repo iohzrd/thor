@@ -5,8 +5,7 @@ import androidx.annotation.NonNull;
 import java.io.IOException;
 import java.io.InputStream;
 
-import io.LogUtils;
-import io.ipfs.ClosedException;
+import io.core.ClosedException;
 
 
 public class ReaderStream extends InputStream {

@@ -19,11 +19,12 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-import io.Closeable;
 import io.LogUtils;
-import io.ipfs.ClosedException;
-import io.ipfs.ConnectionNotSupported;
-import io.ipfs.ProtocolNotSupported;
+import io.core.Closeable;
+import io.core.ClosedException;
+import io.core.ConnectionFailure;
+import io.core.ConnectionTimeout;
+import io.core.ProtocolNotSupported;
 import io.ipfs.cid.Cid;
 import io.libp2p.AddrInfo;
 import io.libp2p.core.Connection;
@@ -52,6 +53,8 @@ public class KadDHT implements Routing {
     private final ConcurrentHashMap<PeerId, MessageSender> strmap = new ConcurrentHashMap<>();
     private final boolean enableProviders = true;
     private final boolean enableValues = true;
+    // check todo if replaced by a concrete. better implemenation
+    private final QueryFilter filter = (dht, addrInfo) -> addrInfo.hasAddresses();
 
     public KadDHT(@NonNull Host host) {
         this.host = host;
@@ -214,7 +217,7 @@ public class KadDHT implements Routing {
                     @NonNull
                     @Override
                     public List<AddrInfo> func(@NonNull Closeable ctx, @NonNull PeerId p)
-                            throws ClosedException, ProtocolNotSupported, ConnectionNotSupported {
+                            throws ClosedException, ProtocolNotSupported, ConnectionFailure, ConnectionTimeout {
                         // For DHT query command
 
                         /* TODO
@@ -237,15 +240,17 @@ public class KadDHT implements Routing {
                             List<ByteString> addresses = entry.getAddrsList();
                             for (ByteString address : addresses) {
                                 Multiaddr multiaddr = filterAddress(address);
-                                if(multiaddr != null){
+                                if (multiaddr != null) {
                                     multiAddresses.add(multiaddr);
                                 }
                             }
                             AddrInfo addrInfo = new AddrInfo(peerId, multiAddresses);
-                            provs.add(addrInfo);
 
-                            host.getAddressBook().addAddrs(peerId, Long.MAX_VALUE,
-                                    addrInfo.getAddresses());
+                            if (filter.queryPeerFilter(KadDHT.this, addrInfo)) {
+                                provs.add(addrInfo);
+                                host.getAddressBook().addAddrs(peerId, Long.MAX_VALUE,
+                                        addrInfo.getAddresses());
+                            }
                         }
 
                         LogUtils.error(TAG, "" + provs.size() + " provider entries decoded");
@@ -274,15 +279,16 @@ public class KadDHT implements Routing {
                             List<ByteString> addresses = entry.getAddrsList();
                             for (ByteString address : addresses) {
                                 Multiaddr multiaddr = filterAddress(address);
-                                if(multiaddr != null){
+                                if (multiaddr != null) {
                                     multiAddresses.add(multiaddr);
                                 }
                             }
                             AddrInfo addrInfo = new AddrInfo(peerId, multiAddresses);
-                            peers.add(addrInfo);
-
-                            host.getAddressBook().addAddrs(peerId, Long.MAX_VALUE,
-                                    addrInfo.getAddresses());
+                            if (filter.queryPeerFilter(KadDHT.this, addrInfo)) {
+                                peers.add(addrInfo);
+                                host.getAddressBook().addAddrs(peerId, Long.MAX_VALUE,
+                                        addrInfo.getAddresses());
+                            }
                         }
 
                         /*
@@ -321,7 +327,7 @@ public class KadDHT implements Routing {
     private DhtProtos.Message sendRequest(@NonNull Closeable ctx,
                                           @NonNull PeerId peerId,
                                           @NonNull DhtProtos.Message message)
-            throws ClosedException, ProtocolNotSupported, ConnectionNotSupported {
+            throws ClosedException, ProtocolNotSupported, ConnectionFailure, ConnectionTimeout {
         //ctx, _ = tag.New(ctx, metrics.UpsertMessageType(pmes)) // TODO maybe
 
         MessageSender ms = messageSenderForPeer(peerId);
@@ -372,7 +378,7 @@ public class KadDHT implements Routing {
 
     // findPeerSingle asks peer 'p' if they know where the peer with id 'id' is
     private DhtProtos.Message findPeerSingle(Closeable ctx, PeerId p, PeerId id)
-            throws ClosedException, ProtocolNotSupported, ConnectionNotSupported {
+            throws ClosedException, ProtocolNotSupported, ConnectionFailure, ConnectionTimeout {
         DhtProtos.Message pmes = DhtProtos.Message.newBuilder()
                 .setType(DhtProtos.Message.MessageType.FIND_NODE)
                 .setKey(ByteString.copyFrom(id.getBytes())).build();
@@ -381,7 +387,7 @@ public class KadDHT implements Routing {
     }
 
     private DhtProtos.Message findProvidersSingle(Closeable ctx, PeerId p, io.ipfs.multihash.Multihash key)
-            throws ClosedException, ProtocolNotSupported, ConnectionNotSupported {
+            throws ClosedException, ProtocolNotSupported, ConnectionFailure, ConnectionTimeout {
         DhtProtos.Message pmes = DhtProtos.Message.newBuilder()
                 .setType(DhtProtos.Message.MessageType.GET_PROVIDERS)
                 .setKey(ByteString.copyFrom(key.getHash())).build();
@@ -413,7 +419,6 @@ public class KadDHT implements Routing {
     @Nullable
     private Multiaddr filterAddress(@NonNull ByteString address) {
         try {
-            // TODO filter address
            return  new Multiaddr(address.toByteArray());
         } catch (Throwable ignore){
             // nothing to do
@@ -439,7 +444,7 @@ public class KadDHT implements Routing {
                     @NonNull
                     @Override
                     public List<AddrInfo> func(@NonNull Closeable ctx, @NonNull PeerId p)
-                            throws ClosedException, ProtocolNotSupported, ConnectionNotSupported {
+                            throws ClosedException, ProtocolNotSupported, ConnectionFailure, ConnectionTimeout {
                             /* TODO
                             // For DHT query command
                             routing.PublishQueryEvent(ctx, &routing.QueryEvent{
@@ -459,15 +464,17 @@ public class KadDHT implements Routing {
                             List<ByteString> addresses = entry.getAddrsList();
                             for (ByteString address : addresses) {
                                 Multiaddr multiaddr = filterAddress(address);
-                                if(multiaddr != null){
+                                if (multiaddr != null) {
                                     multiAddresses.add(multiaddr);
                                 }
                             }
                             AddrInfo addrInfo = new AddrInfo(peerId, multiAddresses);
-                            peers.add(addrInfo);
+                            if (filter.queryPeerFilter(KadDHT.this, addrInfo)) {
+                                peers.add(addrInfo);
 
-                            host.getAddressBook().addAddrs(peerId, Long.MAX_VALUE,
-                                    addrInfo.getAddresses());
+                                host.getAddressBook().addAddrs(peerId, Long.MAX_VALUE,
+                                        addrInfo.getAddresses());
+                            }
 
                         }
 

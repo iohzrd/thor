@@ -13,8 +13,8 @@ import java.util.Set;
 import java.util.Stack;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import io.Closeable;
-import io.ipfs.ClosedException;
+import io.core.Closeable;
+import io.core.ClosedException;
 import io.ipfs.IPFS;
 import io.ipfs.cid.Cid;
 import io.ipfs.format.NavigableIPLDNode;

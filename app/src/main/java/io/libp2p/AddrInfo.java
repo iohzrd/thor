@@ -52,4 +52,8 @@ public class AddrInfo {
             }
         }
     }
+
+    public boolean hasAddresses() {
+        return !this.addresses.isEmpty();
+    }
 }

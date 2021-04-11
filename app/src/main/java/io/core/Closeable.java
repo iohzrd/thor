@@ -1,4 +1,4 @@
-package io;
+package io.core;
 
 
 public interface Closeable {

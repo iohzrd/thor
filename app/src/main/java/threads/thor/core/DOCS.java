@@ -25,8 +25,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import io.Closeable;
-import io.ipfs.ClosedException;
+import io.core.Closeable;
+import io.core.ClosedException;
 import io.ipfs.DnsAddrResolver;
 import io.ipfs.IPFS;
 import io.ipfs.format.Node;

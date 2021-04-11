@@ -20,7 +20,6 @@ public class QueryPeerState implements Comparable<QueryPeerState> {
 
     @Override
     public int compareTo(QueryPeerState o) {
-
         return Long.compare(distance, o.distance);
     }
 }

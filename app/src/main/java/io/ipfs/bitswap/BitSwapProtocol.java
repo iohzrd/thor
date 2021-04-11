@@ -5,10 +5,16 @@ import androidx.annotation.NonNull;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.Buffer;
+import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 
 import io.LogUtils;
+import io.ipfs.IPFS;
 import io.ipfs.multihash.Multihash;
 import io.libp2p.core.ConnectionClosedException;
 import io.libp2p.core.P2PChannel;
@@ -74,11 +80,12 @@ public class BitSwapProtocol implements ProtocolBinding<BitSwapProtocol.BitSwapC
 
         public boolean acceptInboundMessage(Object msg) throws Exception {
             try {
-                return true; //!receiver.GatePeer(stream.remotePeerId()); // TODO
+                return !receiver.GatePeer(stream.remotePeerId());
             } catch (Throwable ignore) {
                 return super.acceptInboundMessage(msg);
             }
         }
+
 
         @Override
         public void sendRequest(@NonNull BitSwapMessage pmes) throws NotImplementedError {
@@ -92,27 +99,45 @@ public class BitSwapProtocol implements ProtocolBinding<BitSwapProtocol.BitSwapC
             receiver.ReceiveError(stream.remotePeerId(),
                     stream.getProtocol().get(), " " + cause.getMessage());
         }
-
+        private final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        private long expectedLength;
+        public static long copy(InputStream source, OutputStream sink) throws IOException {
+            long nread = 0L;
+            byte[] buf = new byte[4096];
+            int n;
+            while ((n = source.read(buf)) > 0) {
+                sink.write(buf, 0, n);
+                nread += n;
+            }
+            return nread;
+        }
         @Override
         protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
 
-            // TODO when not all data is in the msg
-            byte[] data = new byte[msg.readableBytes()];
-            int readerIndex = msg.readerIndex();
-            msg.getBytes(readerIndex, data);
+            try {
+                if (buffer.size() > 0) {
+                    msg.readBytes(buffer, msg.readableBytes());
+                } else {
+                    byte[] data = new byte[msg.readableBytes()];
+                    int readerIndex = msg.readerIndex();
+                    msg.getBytes(readerIndex, data);
+                    try (InputStream inputStream = new ByteArrayInputStream(data)) {
+                        expectedLength = Multihash.readVarint(inputStream);
+                        copy(inputStream, buffer);
+                    }
+                }
 
-            try (InputStream inputStream = new ByteArrayInputStream(data)) {
-                long length = Multihash.readVarint(inputStream);
-
-                byte[] content = new byte[(int) length];
-                int res = inputStream.read(content); // TODO improve
-                BitSwapMessage received = BitSwapMessage.fromData(content);
-                receiver.ReceiveMessage(stream.remotePeerId(),
-                        stream.getProtocol().get(), received);
+                if(buffer.size() >= expectedLength) {
+                    BitSwapMessage received = BitSwapMessage.fromData(buffer.toByteArray());
+                    receiver.ReceiveMessage(stream.remotePeerId(),
+                            stream.getProtocol().get(), received);
+                    buffer.close();
+                    ctx.close();
+                }
 
             } catch (Throwable throwable) {
                 LogUtils.error(TAG, throwable);
-                throw throwable;
+                throw new RuntimeException(throwable);
             }
         }
     }
@@ -148,6 +173,7 @@ public class BitSwapProtocol implements ProtocolBinding<BitSwapProtocol.BitSwapC
             try {
                 byte[] data = pmes.ToNetV1();
                 stream.writeAndFlush(Unpooled.buffer().writeBytes(data));
+                LogUtils.error(TAG, "success write message");
             } catch (Throwable throwable) {
                 LogUtils.error(TAG, throwable);
                 throw new NotImplementedError("" + throwable.getMessage());

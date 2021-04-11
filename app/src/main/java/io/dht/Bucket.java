@@ -93,7 +93,7 @@ public class Bucket extends ConcurrentSkipListSet<Bucket.PeerInfo> {
         // AddedAt is the time this peer was added to the routing table.
         long AddedAt;
         // if a bucket is full, this peer can be replaced to make space for a new peer.
-        boolean replaceable;
+        public boolean replaceable;
 
         public PeerInfo(@NonNull PeerId peerId, @NonNull ID id) {
             this.peerId = peerId;

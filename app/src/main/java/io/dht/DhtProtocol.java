@@ -6,7 +6,9 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.concurrent.CompletableFuture;
 
 import io.LogUtils;
@@ -118,27 +120,46 @@ public class DhtProtocol implements ProtocolBinding<DhtProtocol.DhtController> {
             return resFuture;
         }
 
+        private final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        private long expectedLength;
+
+        public static long copy(InputStream source, OutputStream sink) throws IOException {
+            long nread = 0L;
+            byte[] buf = new byte[4096];
+            int n;
+            while ((n = source.read(buf)) > 0) {
+                sink.write(buf, 0, n);
+                nread += n;
+            }
+            return nread;
+        }
+
         @Override
         protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
-
-            // TODO when not all data is in the msg
             try {
-                byte[] data = new byte[msg.readableBytes()];
-                int readerIndex = msg.readerIndex();
-                msg.getBytes(readerIndex, data);
-
-                try (InputStream inputStream = new ByteArrayInputStream(data)) {
-                    long length = Multihash.readVarint(inputStream);
-
-                    byte[] content = new byte[(int) length];
-                    int res = inputStream.read(content);
-                    DhtProtos.Message message = DhtProtos.Message.parseFrom(content);
-                    resFuture.complete(message);
+                if (buffer.size() > 0) {
+                    msg.readBytes(buffer, msg.readableBytes());
+                } else {
+                    byte[] data = new byte[msg.readableBytes()];
+                    int readerIndex = msg.readerIndex();
+                    msg.getBytes(readerIndex, data);
+                    try (InputStream inputStream = new ByteArrayInputStream(data)) {
+                        expectedLength = Multihash.readVarint(inputStream);
+                        copy(inputStream, buffer);
+                    }
                 }
+                if (buffer.size() == expectedLength) {
+                    DhtProtos.Message message = DhtProtos.Message.parseFrom(buffer.toByteArray());
+                    resFuture.complete(message);
+                    buffer.close();
+                    ctx.close();
+                }
+
             } catch (Throwable throwable) {
                 LogUtils.error(TAG, throwable);
                 throw new RuntimeException(throwable);
             }
+
         }
     }
 }

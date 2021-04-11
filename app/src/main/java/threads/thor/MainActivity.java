@@ -75,7 +75,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import io.Closeable;
+import io.core.Closeable;
 import io.ipfs.IPFS;
 import io.ipfs.format.Node;
 import io.ipfs.utils.TimeoutProgress;

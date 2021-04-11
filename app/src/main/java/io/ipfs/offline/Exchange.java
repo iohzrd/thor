@@ -4,7 +4,7 @@ import androidx.annotation.NonNull;
 
 import java.util.List;
 
-import io.Closeable;
+import io.core.Closeable;
 import io.ipfs.bitswap.BitSwapMessage;
 import io.ipfs.cid.Cid;
 import io.ipfs.exchange.Interface;

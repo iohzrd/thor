@@ -5,9 +5,9 @@ import androidx.annotation.Nullable;
 
 import java.util.List;
 
-import io.Closeable;
+import io.core.Closeable;
 import io.LogUtils;
-import io.ipfs.ClosedException;
+import io.core.ClosedException;
 import io.ipfs.cid.Cid;
 import io.ipfs.exchange.Interface;
 import io.ipfs.format.Block;

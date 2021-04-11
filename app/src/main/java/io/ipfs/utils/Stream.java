@@ -10,12 +10,12 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Objects;
 
-import io.Closeable;
+import io.core.Closeable;
 import io.dht.Offline;
 import io.dht.Quorum;
 import io.dht.ResolveInfo;
 import io.dht.Routing;
-import io.ipfs.ClosedException;
+import io.core.ClosedException;
 import io.ipfs.IPFS;
 import io.ipfs.blockservice.BlockService;
 import io.ipfs.cid.Cid;

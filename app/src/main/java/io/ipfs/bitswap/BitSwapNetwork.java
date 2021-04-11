@@ -4,12 +4,12 @@ import androidx.annotation.NonNull;
 
 import java.util.Set;
 
-import io.Closeable;
-import io.ipfs.ConnectionNotSupported;
+import io.core.Closeable;
+import io.core.ConnectionFailure;
 import io.libp2p.AddrInfo;
 import io.dht.ContentRouting;
-import io.ipfs.ClosedException;
-import io.ipfs.ProtocolNotSupported;
+import io.core.ClosedException;
+import io.core.ProtocolNotSupported;
 import io.libp2p.core.PeerId;
 
 
@@ -20,7 +20,7 @@ public interface BitSwapNetwork extends ContentRouting {
 
     void WriteMessage(@NonNull Closeable closeable, @NonNull PeerId peer,
                       @NonNull BitSwapMessage message, int timeout)
-            throws ClosedException, ProtocolNotSupported, ConnectionNotSupported;
+            throws ClosedException, ProtocolNotSupported, ConnectionFailure;
 
     @NonNull
     Set<PeerId> getPeers();

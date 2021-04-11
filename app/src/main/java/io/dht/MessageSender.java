@@ -5,14 +5,16 @@ import androidx.annotation.NonNull;
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 
-import io.Closeable;
 import io.LogUtils;
-import io.ipfs.ClosedException;
-import io.ipfs.ConnectionNotSupported;
-import io.ipfs.ProtocolNotSupported;
+import io.core.Closeable;
+import io.core.ClosedException;
+import io.core.ConnectionFailure;
+import io.core.ConnectionTimeout;
+import io.core.ProtocolNotSupported;
 import io.libp2p.core.NoSuchRemoteProtocolException;
 import io.libp2p.core.PeerId;
 import io.libp2p.etc.types.NothingToCompleteException;
+import io.netty.handler.timeout.ReadTimeoutException;
 import io.protos.dht.DhtProtos;
 
 public class MessageSender {
@@ -27,7 +29,7 @@ public class MessageSender {
 
     public synchronized DhtProtos.Message SendRequest(
             @NonNull Closeable ctx, @NonNull DhtProtos.Message message)
-            throws ClosedException, ProtocolNotSupported, ConnectionNotSupported {
+            throws ClosedException, ProtocolNotSupported, ConnectionFailure, ConnectionTimeout {
 
 
         if (ctx.isClosed()) {
@@ -58,7 +60,10 @@ public class MessageSender {
                 throw new ProtocolNotSupported();
             }
             if (cause instanceof NothingToCompleteException) {
-                throw new ConnectionNotSupported();
+                throw new ConnectionFailure();
+            }
+            if (cause instanceof ReadTimeoutException) {
+                throw new ConnectionTimeout();
             }
             LogUtils.error(TAG, throwable);
             throw new RuntimeException(throwable); // TODO

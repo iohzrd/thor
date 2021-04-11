@@ -15,13 +15,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import io.Closeable;
+import io.core.Closeable;
 import io.LogUtils;
 import io.libp2p.AddrInfo;
 import io.dht.Providers;
-import io.ipfs.ClosedException;
+import io.core.ClosedException;
 import io.ipfs.IPFS;
-import io.ipfs.ProtocolNotSupported;
+import io.core.ProtocolNotSupported;
 import io.ipfs.cid.Cid;
 import io.ipfs.format.Block;
 import io.ipfs.format.BlockStore;
@@ -197,6 +197,7 @@ public class ContentManager {
                         long start = System.currentTimeMillis();
                         try {
                             peers.add(peer);
+
                             MessageWriter.sendHaveMessage(closeable, network, peer,
                                     Collections.singletonList(cid), IPFS.WRITE_TIMEOUT);
                             handled.add(peer);

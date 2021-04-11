@@ -5,6 +5,7 @@ import androidx.annotation.NonNull;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 import io.libp2p.core.PeerId;
@@ -47,11 +48,11 @@ public class QueryPeerSet {
     }
 
     public PeerState GetState(@NonNull PeerId p) {
-        return all.get(p).state;
+        return Objects.requireNonNull(all.get(p)).state;
     }
 
     public void SetState(@NonNull PeerId p, @NonNull PeerState peerState) {
-        all.get(p).state = peerState;
+        Objects.requireNonNull(all.get(p)).state = peerState;
     }
 
 

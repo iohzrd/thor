@@ -1,6 +1,6 @@
 package io.ipfs.utils;
 
-import io.Closeable;
+import io.core.Closeable;
 
 public interface Progress extends Closeable {
 

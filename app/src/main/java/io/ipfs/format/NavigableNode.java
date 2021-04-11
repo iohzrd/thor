@@ -2,8 +2,8 @@ package io.ipfs.format;
 
 import androidx.annotation.NonNull;
 
-import io.Closeable;
-import io.ipfs.ClosedException;
+import io.core.Closeable;
+import io.core.ClosedException;
 import io.ipfs.cid.Cid;
 
 public interface NavigableNode {

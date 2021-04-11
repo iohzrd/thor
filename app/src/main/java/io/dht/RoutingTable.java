@@ -127,7 +127,7 @@ public class RoutingTable {
     }
 
     // locking is the responsibility of the caller
-    private boolean addPeer(PeerId p, Boolean queryPeer, boolean isReplaceable) {
+    private boolean addPeer(PeerId p, boolean queryPeer, boolean isReplaceable) {
 
 
         int bucketID = bucketIdForPeer(p);

@@ -29,7 +29,7 @@ import java.util.Hashtable;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import io.Closeable;
+import io.core.Closeable;
 import io.LogUtils;
 import io.ipfs.IPFS;
 import io.ipfs.format.Node;

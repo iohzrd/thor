@@ -2,22 +2,20 @@ package io.ipfs.bitswap;
 
 import androidx.annotation.NonNull;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
-import io.Closeable;
+import io.core.Closeable;
 import io.LogUtils;
-import io.ipfs.ConnectionNotSupported;
+import io.core.ConnectionFailure;
 import io.libp2p.AddrInfo;
 import io.dht.ContentRouting;
 import io.dht.Providers;
-import io.ipfs.ClosedException;
+import io.core.ClosedException;
 import io.ipfs.IPFS;
-import io.ipfs.ProtocolNotSupported;
+import io.core.ProtocolNotSupported;
 import io.ipfs.cid.Cid;
 import io.libp2p.core.Connection;
 import io.libp2p.core.Host;
@@ -76,7 +74,7 @@ public class LiteHost implements BitSwapNetwork {
 
     @Override
     public void WriteMessage(@NonNull Closeable closeable, @NonNull PeerId peer,
-                             @NonNull BitSwapMessage message, int timeout) throws ClosedException, ProtocolNotSupported, ConnectionNotSupported {
+                             @NonNull BitSwapMessage message, int timeout) throws ClosedException, ProtocolNotSupported, ConnectionFailure {
 
         try {
 
@@ -110,7 +108,7 @@ public class LiteHost implements BitSwapNetwork {
                 throw new ProtocolNotSupported();
             }
             if (cause instanceof NothingToCompleteException) {
-                throw new ConnectionNotSupported();
+                throw new ConnectionFailure();
             }
             throw new RuntimeException(throwable);
         }

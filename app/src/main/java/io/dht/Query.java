@@ -16,11 +16,12 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 
-import io.Closeable;
 import io.LogUtils;
-import io.ipfs.ClosedException;
-import io.ipfs.ConnectionNotSupported;
-import io.ipfs.ProtocolNotSupported;
+import io.core.Closeable;
+import io.core.ClosedException;
+import io.core.ConnectionFailure;
+import io.core.ConnectionTimeout;
+import io.core.ProtocolNotSupported;
 import io.libp2p.AddrInfo;
 import io.libp2p.core.PeerId;
 import io.libp2p.core.multiformats.Multiaddr;
@@ -328,7 +329,7 @@ public class Query {
 
         } catch (ClosedException closedException) {
             throw closedException;
-        } catch (ProtocolNotSupported | ConnectionNotSupported ignore) {
+        } catch (ProtocolNotSupported | ConnectionFailure | ConnectionTimeout ignore) {
             QueryUpdate update = new QueryUpdate(p);
             update.unreachable.add(p);
             queue.offer(update);

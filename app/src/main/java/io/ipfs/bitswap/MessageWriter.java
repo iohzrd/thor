@@ -4,10 +4,10 @@ import androidx.annotation.NonNull;
 
 import java.util.List;
 
-import io.Closeable;
-import io.ipfs.ClosedException;
-import io.ipfs.ConnectionNotSupported;
-import io.ipfs.ProtocolNotSupported;
+import io.core.Closeable;
+import io.core.ClosedException;
+import io.core.ConnectionFailure;
+import io.core.ProtocolNotSupported;
 import io.ipfs.cid.Cid;
 import io.libp2p.core.PeerId;
 import io.protos.bitswap.BitswapProtos;
@@ -22,7 +22,7 @@ public class MessageWriter {
                                        @NonNull PeerId peer,
                                        @NonNull List<Cid> wantHaves,
                                        int timeout)
-            throws ClosedException, ProtocolNotSupported, ConnectionNotSupported {
+            throws ClosedException, ProtocolNotSupported, ConnectionFailure {
         if (wantHaves.size() == 0) {
             return;
         }
@@ -56,7 +56,7 @@ public class MessageWriter {
                                         @NonNull PeerId peer,
                                         @NonNull List<Cid> wantBlocks,
                                         int timeout)
-            throws ClosedException, ProtocolNotSupported, ConnectionNotSupported {
+            throws ClosedException, ProtocolNotSupported, ConnectionFailure {
 
         if (wantBlocks.size() == 0) {
             return;

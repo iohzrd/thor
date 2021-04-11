@@ -28,8 +28,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-import io.Closeable;
+import io.core.Closeable;
 import io.LogUtils;
+import io.core.ClosedException;
 import io.libp2p.AddrInfo;
 import io.dht.DhtProtocol;
 import io.dht.KadDHT;
