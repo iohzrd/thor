@@ -2,6 +2,8 @@ package io.libp2p;
 
 import androidx.annotation.NonNull;
 
+import com.google.common.collect.Iterables;
+
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -42,7 +44,7 @@ public class AddrInfo {
     }
 
     public Multiaddr[] getAddresses() {
-        return addresses.toArray(new Multiaddr[addresses.size()]);
+        return Iterables.toArray(addresses, Multiaddr.class);
     }
 
     public void addAddresses(@NonNull Collection<Multiaddr> addresses) {

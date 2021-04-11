@@ -18,6 +18,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import io.LogUtils;
 import io.core.Closeable;
@@ -54,16 +56,17 @@ public class KadDHT implements Routing {
     private final boolean enableValues = true;
     // check todo if replaced by a concrete. better implemenation
     private final QueryFilter filter = (dht, addrInfo) -> addrInfo.hasAddresses();
+    public final ExecutorService executors;
 
-    public KadDHT(@NonNull Host host) {
+    public KadDHT(@NonNull Host host, int alpha) {
         this.host = host;
         this.self = host.getPeerId();
         this.selfKey = Util.ConvertPeerID(host.getPeerId());
         this.bucketSize = defaultBucketSize; // todo config
         this.routingTable = new RoutingTable(bucketSize, selfKey); // TODO
         this.beta = 20; // TODO
-        this.alpha = 20; // TODO
-
+        this.alpha = alpha;
+        this.executors = Executors.newFixedThreadPool(alpha);
 
         host.addConnectionHandler(new ConnectionHandler() {
             @Override
@@ -209,8 +212,8 @@ public class KadDHT implements Routing {
         }
 
         // TODO check if correct
-        io.ipfs.multihash.Multihash key = cid.Hash();
-        LookupWithFollowupResult lookupRes = runLookupWithFollowup(providers, key.toHex(),
+
+        LookupWithFollowupResult lookupRes = runLookupWithFollowup(providers, cid.String(),
                 new QueryFunc() {
 
                     @NonNull
@@ -226,7 +229,7 @@ public class KadDHT implements Routing {
                         })
                         */
 
-                        DhtProtos.Message message = findProvidersSingle(ctx, p, key);
+                        DhtProtos.Message message = findProvidersSingle(ctx, p, cid);
 
                         LogUtils.error(TAG, "" + message.getProviderPeersList().size()
                                 + " provider entries");
@@ -385,11 +388,11 @@ public class KadDHT implements Routing {
         return sendRequest(ctx, p, pmes);
     }
 
-    private DhtProtos.Message findProvidersSingle(Closeable ctx, PeerId p, io.ipfs.multihash.Multihash key)
+    private DhtProtos.Message findProvidersSingle(Closeable ctx, PeerId p, @NonNull Cid cid)
             throws ClosedException, ProtocolNotSupported, ConnectionFailure {
         DhtProtos.Message pmes = DhtProtos.Message.newBuilder()
                 .setType(DhtProtos.Message.MessageType.GET_PROVIDERS)
-                .setKey(ByteString.copyFrom(key.getHash())).build();
+                .setKey(ByteString.copyFrom(cid.Bytes())).build();
         return sendRequest(ctx, p, pmes);
     }
 
@@ -506,46 +509,32 @@ public class KadDHT implements Routing {
         if (closeable.isClosed()) {
             throw new ClosedException();
         }
-        boolean dialedPeerDuringQuery = false;
-        Objects.requireNonNull(lookupRes);
-        PeerState state = lookupRes.peers.get(id);
-        if (state != null) {
-            // Note: we consider PeerUnreachable to be a valid state because the peer may not support the DHT protocol
-            // and therefore the peer would fail the query. The fact that a peer that is returned can be a non-DHT
-            // server peer and is not identified as such is a bug.
-            dialedPeerDuringQuery = (state == PeerState.PeerQueried || state == PeerState.PeerUnreachable || state == PeerState.PeerWaiting);
-
-        }
-            /*
-            for i, p := range lookupRes.peers {
-                if p == id {
-                    // Note: we consider PeerUnreachable to be a valid state because the peer may not support the DHT protocol
-                    // and therefore the peer would fail the query. The fact that a peer that is returned can be a non-DHT
-                    // server peer and is not identified as such is a bug.
-                    dialedPeerDuringQuery = (lookupRes.state[i] == qpeerset.PeerQueried || lookupRes.state[i] == qpeerset.PeerUnreachable || lookupRes.state[i] == qpeerset.PeerWaiting)
-                    break
-                }
-            }*/
-
-        // Return peer information if we tried to dial the peer during the query or we are (or recently were) connected
-        // to the peer.
-        //connectedness := dht.host.Network().Connectedness(id)
         try {
+            boolean dialedPeerDuringQuery = false;
+            Objects.requireNonNull(lookupRes);
+            PeerState state = lookupRes.peers.get(id);
+            if (state != null) {
+                // Note: we consider PeerUnreachable to be a valid state because the peer may not support the DHT protocol
+                // and therefore the peer would fail the query. The fact that a peer that is returned can be a non-DHT
+                // server peer and is not identified as such is a bug.
+                dialedPeerDuringQuery = (state == PeerState.PeerQueried || state == PeerState.PeerUnreachable || state == PeerState.PeerWaiting);
+
+            }
+
+            // Return peer information if we tried to dial the peer during the query or we are
+            // (or recently were) connected to the peer.
+
             Collection<Multiaddr> addr = host.getAddressBook().getAddrs(id).get();
             Objects.requireNonNull(addr);
             AddrInfo addrInfo = new AddrInfo(id, addr);
+
             boolean connectedness = host.getNetwork().connect(
                     addrInfo.getPeerId(), addrInfo.getAddresses()).get() != null;
-                /*if (dialedPeerDuringQuery || connectedness == network.Connected || connectedness == network.CanConnect) {
-                    return dht.peerstore.PeerInfo(id),nil
-                }*/
-            if (dialedPeerDuringQuery || connectedness) {
 
+            if (dialedPeerDuringQuery || connectedness) {
                 return addrInfo;
-                //return new PeerInfo(id);
             }
-        } catch (Throwable throwable) {
-            LogUtils.error(TAG, throwable); // TODO
+        } catch (Throwable ignore) {
         }
 
         return null;

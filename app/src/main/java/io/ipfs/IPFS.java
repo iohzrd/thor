@@ -81,6 +81,7 @@ public class IPFS implements Receiver {
     public static final String AGENT = "/go-ipfs/0.9.0-dev/thor"; // todo rename
     public static final String PROTOCOL_VERSION = "ipfs/0.1.0";  // todo rename
     public static final int TIMEOUT_BOOTSTRAP = 5;
+    public static final long TIMEOUT_DHT_PEER = 3;
     public static final int LOW_WATER = 50;
     public static final int HIGH_WATER = 300;
     public static final String GRACE_PERIOD = "10s";
@@ -113,6 +114,7 @@ public class IPFS implements Receiver {
     public static final String DNS_LINK = "dnslink=";
 
 
+
     // rough estimates on expected sizes
     private static final int roughLinkBlockSize = 1 << 13; // 8KB
     private static final int roughLinkSize = 34 + 8 + 5;// sha256 multihash + size + no name + protobuf framing
@@ -139,7 +141,6 @@ public class IPFS implements Receiver {
     private static final String PRIVATE_KEY = "privateKey";
     private static final String CONCURRENCY_KEY = "concurrencyKey";
     private static final String TAG = IPFS.class.getSimpleName();
-    private static final ExecutorService READER = Executors.newFixedThreadPool(4);
     private static IPFS INSTANCE = null;
 
     private final BLOCKS blocks;
@@ -217,7 +218,9 @@ public class IPFS implements Receiver {
                         "/ip4/0.0.0.0/udp/"+port+"/quic",
                         "/ip6/::/udp/"+port+"/quic"*/)
                 .build();
-        this.routing = new KadDHT(host);
+
+        int alpha = getConcurrencyValue(context);
+        this.routing = new KadDHT(host, alpha);
 
 
         BitSwapNetwork bsm = LiteHost.NewLiteHost(host, routing);
@@ -465,11 +468,11 @@ public class IPFS implements Receiver {
                     String pid = multiaddr.getStringComponent(Protocol.P2P);
                     Objects.requireNonNull(pid);
                     AddrInfo addr = routing.FindPeer(closeable, PeerId.fromBase58(pid));
-
-                    return host.getNetwork().connect(addr.getPeerId(),
-                            addr.getAddresses())
-                            .get() != null;
-
+                    if(addr != null) {
+                        return host.getNetwork().connect(addr.getPeerId(),
+                                addr.getAddresses())
+                                .get() != null;
+                    }
                 }
             } catch (ClosedException closedException) {
                 throw closedException;
@@ -498,11 +501,11 @@ public class IPFS implements Receiver {
                     String pid = multiaddr.getStringComponent(Protocol.P2P);
                     Objects.requireNonNull(pid);
                     AddrInfo addr = routing.FindPeer(new TimeoutCloseable(timeout), PeerId.fromBase58(pid));
-
-                    return host.getNetwork().connect(addr.getPeerId(),
-                            addr.getAddresses())
-                            .get() != null;
-
+                    if(addr != null) {
+                        return host.getNetwork().connect(addr.getPeerId(),
+                                addr.getAddresses())
+                                .get(timeout, TimeUnit.SECONDS) != null;
+                    }
                 }
             } catch(ClosedException ignore) {
                 // ignore

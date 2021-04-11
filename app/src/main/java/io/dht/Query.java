@@ -4,6 +4,8 @@ import android.util.Pair;
 
 import androidx.annotation.NonNull;
 
+import com.google.common.collect.Iterables;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -14,13 +16,14 @@ import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import io.LogUtils;
 import io.core.Closeable;
 import io.core.ClosedException;
 import io.core.ConnectionFailure;
 import io.core.ProtocolNotSupported;
+import io.ipfs.IPFS;
 import io.libp2p.AddrInfo;
 import io.libp2p.core.PeerId;
 import io.libp2p.core.multiformats.Multiaddr;
@@ -178,7 +181,7 @@ public class Query {
 
     public void run(Closeable ctx) throws ClosedException, InterruptedException {
 
-        int alpha = dht.alpha; // TODO set alpha
+        int alpha = dht.alpha;
 
 
         BlockingQueue<QueryUpdate> queue = new ArrayBlockingQueue<>(alpha);
@@ -249,11 +252,10 @@ public class Query {
         queryPeers.SetState(queryPeer, PeerState.PeerWaiting);
 
 
-        // TODO executor
-        Executors.newSingleThreadExecutor().execute(() -> {
+        dht.executors.execute(() -> {
             try {
                 queryPeer(ctx, queue, queryPeer);
-            } catch(ClosedException ignore) {
+            } catch (ClosedException ignore) {
                 // nothing to do here (works as expected)
             } catch (Throwable throwable) {
                 // not expected exception
@@ -266,7 +268,7 @@ public class Query {
     // queryPeer queries a single peer and reports its findings on the channel.
     // queryPeer does not access the query state in queryPeers!
     private void queryPeer(@NonNull Closeable ctx, @NonNull BlockingQueue<QueryUpdate> queue,
-                           @NonNull PeerId p) throws ClosedException {
+                           @NonNull PeerId queryPeer) throws ClosedException {
 
 
         long startQuery = System.currentTimeMillis();
@@ -275,55 +277,58 @@ public class Query {
             throw new ClosedException();
         }
         try {
-            LogUtils.info(TAG, "Dial Peer Dialing " + p.toBase58());
-            // TODO   and timeout
-            Collection<Multiaddr> collections = dht.host.getAddressBook().getAddrs(p).get();
-            dht.host.getNetwork().connect(p, collections.toArray(new Multiaddr[collections.size()])).get();
-            LogUtils.info(TAG, "Dial Peer Success : " + p.toBase58());
+
+            Collection<Multiaddr> collections = dht.host.getAddressBook().getAddrs(queryPeer).get();
+            if (collections != null) {
+                dht.host.getNetwork().connect(queryPeer,
+                        Iterables.toArray(collections, Multiaddr.class)).get(
+                        IPFS.TIMEOUT_DHT_PEER, TimeUnit.SECONDS);
+            } else {
+                dht.host.getNetwork().connect(queryPeer).get(
+                        IPFS.TIMEOUT_DHT_PEER, TimeUnit.SECONDS);
+            }
 
         } catch (Throwable throwable) {
             if (ctx.isClosed()) {
                 throw new ClosedException();
             }
 
-
             // remove the peer if there was a dial failure..but not because of a context cancellation
             /* TODO if dialCtx.Err() == nil {
                 q.dht.peerStoppedDHT(q.dht.ctx, p)
             }*/
-            /*
-            QueryUpdate update = new QueryUpdate(p);
-            update.unreachable.add(p);
-            queue.offer(update);*/
-            // TODO  ch <- &queryUpdate{cause: p, unreachable: []peer.ID{p}}
-            //return;
+
+            QueryUpdate update = new QueryUpdate(queryPeer);
+            update.unreachable.add(queryPeer);
+            queue.offer(update);
+            return;
         }
 
 
         try {
             // send query RPC to the remote peer
-            List<AddrInfo> newPeers = queryFn.func(ctx, p);
+            List<AddrInfo> newPeers = queryFn.func(ctx, queryPeer);
 
 
             long queryDuration = startQuery - System.currentTimeMillis();
 
             // query successful, try to add to RT
-            dht.peerFound(p, true);
+            dht.peerFound(queryPeer, true);
 
             // process new peers
             List<PeerId> saw = new ArrayList<>();
             for (AddrInfo next : newPeers) {
                 if (Objects.equals(next.getPeerId(), dht.self)) { // don't add self.
-                    LogUtils.error(TAG, "PEERS CLOSER -- worker for: found self " + p.toBase58());
+                    LogUtils.error(TAG, "PEERS CLOSER -- worker for: found self " + queryPeer.toBase58());
                     continue;
                 }
 
                 saw.add(next.getPeerId());
             }
 
-            QueryUpdate update = new QueryUpdate(p);
+            QueryUpdate update = new QueryUpdate(queryPeer);
             update.heard.addAll(saw);
-            update.queried.add(p);
+            update.queried.add(queryPeer);
             update.queryDuration = queryDuration;
             queue.offer(update);
             // TODO  ch <- &queryUpdate{cause: p, heard: saw, queried: []peer.ID{p}, queryDuration: queryDuration}
@@ -331,8 +336,8 @@ public class Query {
         } catch (ClosedException closedException) {
             throw closedException;
         } catch (ProtocolNotSupported | ConnectionFailure ignore) {
-            QueryUpdate update = new QueryUpdate(p);
-            update.unreachable.add(p);
+            QueryUpdate update = new QueryUpdate(queryPeer);
+            update.unreachable.add(queryPeer);
             queue.offer(update);
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
@@ -340,8 +345,8 @@ public class Query {
             if queryCtx.Err() == nil {
                 q.dht.peerStoppedDHT(q.dht.ctx, p)
             }*/
-            QueryUpdate update = new QueryUpdate(p);
-            update.unreachable.add(p);
+            QueryUpdate update = new QueryUpdate(queryPeer);
+            update.unreachable.add(queryPeer);
             queue.offer(update);
             // TODO ch <- &queryUpdate{cause: p, unreachable: []peer.ID{p}}
         }
