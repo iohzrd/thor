@@ -45,6 +45,7 @@ import io.ipfs.bitswap.Receiver;
 import io.ipfs.cid.Cid;
 import io.ipfs.exchange.Interface;
 import io.ipfs.format.BlockStore;
+import io.ipfs.format.Node;
 import io.ipfs.utils.Link;
 import io.ipfs.utils.LinkCloseable;
 import io.ipfs.utils.Progress;
@@ -55,6 +56,7 @@ import io.ipfs.utils.Resolver;
 import io.ipfs.utils.Stream;
 import io.libp2p.AddrInfo;
 import io.libp2p.HostBuilder;
+import io.libp2p.core.Host;
 import io.libp2p.core.PeerId;
 import io.libp2p.core.crypto.KEY_TYPE;
 import io.libp2p.core.crypto.KeyKt;
@@ -86,15 +88,14 @@ public class IPFS implements Receiver {
     public static final int RESOLVE_TIMEOUT = 3000; // 3 sec
     public static final long WANTS_WAIT_TIMEOUT = 2000; // 2 sec
     public static final int CHUNK_SIZE = 262144;
-    public static final String ProtocolLite = "/ipfs/lite/1.0.0";
     public static final String ProtocolBitswap = "/ipfs/bitswap/1.2.0";
-    public static final String ProtocolBitswapOneOne = "/ipfs/bitswap/1.1.0";
 
     // BlockSizeLimit specifies the maximum size an imported block can have.
     public static final int BLOCK_SIZE_LIMIT = 1048576; // 1 MB
     public static final String IPFS_PATH = "/ipfs/";
     public static final String IPNS_PATH = "/ipns/";
     public static final String P2P_PATH = "/p2p/";
+
     // IPFS BOOTSTRAP
     @NonNull
     public static final List<String> IPFS_BOOTSTRAP_NODES = new ArrayList<>(Arrays.asList(
@@ -115,18 +116,18 @@ public class IPFS implements Receiver {
     private static final int roughLinkBlockSize = 1 << 13; // 8KB
     private static final int roughLinkSize = 34 + 8 + 5;// sha256 multihash + size + no name + protobuf framing
     // DefaultLinksPerBlock governs how the importer decides how many links there
-// will be per block. This calculation is based on expected distributions of:
-//  * the expected distribution of block sizes
-//  * the expected distribution of link sizes
-//  * desired access speed
-// For now, we use:
-//
-//   var roughLinkBlockSize = 1 << 13 // 8KB
-//   var roughLinkSize = 34 + 8 + 5   // sha256 multihash + size + no name
-//                                    // + protobuf framing
-//   var DefaultLinksPerBlock = (roughLinkBlockSize / roughLinkSize)
-//                            = ( 8192 / 47 )
-//                            = (approximately) 174
+    // will be per block. This calculation is based on expected distributions of:
+    //  * the expected distribution of block sizes
+    //  * the expected distribution of link sizes
+    //  * desired access speed
+    // For now, we use:
+    //
+    //   var roughLinkBlockSize = 1 << 13 // 8KB
+    //   var roughLinkSize = 34 + 8 + 5   // sha256 multihash + size + no name
+    //                                    // + protobuf framing
+    //   var DefaultLinksPerBlock = (roughLinkBlockSize / roughLinkSize)
+    //                            = ( 8192 / 47 )
+    //                            = (approximately) 174
     public static final int LINKS_PER_BLOCK = roughLinkBlockSize / roughLinkSize;
 
 
@@ -139,12 +140,11 @@ public class IPFS implements Receiver {
     private static final String TAG = IPFS.class.getSimpleName();
     private static final ExecutorService READER = Executors.newFixedThreadPool(4);
     private static IPFS INSTANCE = null;
-    //private final Node node;
 
     private final BLOCKS blocks;
     private final Interface exchange;
     private final Routing routing;
-    private final io.libp2p.core.Host host;
+    private final Host host;
 
     private boolean running;
 
@@ -154,8 +154,6 @@ public class IPFS implements Receiver {
 
         blocks = BLOCKS.getInstance(context);
 
-
-        //node = new Node(this);
 
         if (getPeerID(context) == null) {
             kotlin.Pair<PrivKey, PubKey> keys = KeyKt.generateKeyPair(KEY_TYPE.ED25519);
@@ -222,85 +220,6 @@ public class IPFS implements Receiver {
         BlockStore blockstore = BlockStore.NewBlockstore(blocks);
 
         this.exchange = BitSwap.New(bsm, blockstore);
-
-        /*
-        this.host = new Host() {
-            @Override
-            public List<PeerID> getPeers() {
-                List<PeerID> peers = new ArrayList<>();
-                if (isDaemonRunning()) {
-                    try {
-                        node.swarmPeers(ID -> peers.add(new PeerID(ID)));
-                    } catch (Throwable e) {
-                        LogUtils.error(TAG, e);
-                    }
-                }
-                return peers;
-            }
-
-            @Override
-            public boolean Connect(@NonNull Closeable closeable,
-                                   @NonNull PeerID peer, boolean protect) throws ClosedException {
-                try {
-                    return node.swarmConnect(P2P_PATH + peer.String(),
-                            protect, closeable::isClosed);
-                } catch (Throwable throwable) {
-                    if (closeable.isClosed()) {
-                        throw new ClosedException();
-                    }
-                    return false;
-                }
-            }
-
-            @Override
-            public long WriteMessage(@NonNull Closeable closeable,
-                                     @NonNull PeerID peer,
-                                     @NonNull List<Protocol> protocols,
-                                     @NonNull byte[] bytes,
-                                     int timeout)
-                    throws ClosedException, ProtocolNotSupported {
-
-                try {
-                    String protos = "";
-                    for (int i = 0; i < protocols.size(); i++) {
-                        if (i > 1) {
-                            protos = protos.concat(";");
-                        }
-                        protos = protos.concat(protocols.get(i).String());
-                    }
-                    return node.writeMessage(closeable::isClosed, peer.String(),
-                            protos, bytes, timeout);
-                } catch (Throwable throwable) {
-                    if (closeable.isClosed()) {
-                        throw new ClosedException();
-                    } else {
-                        String msg = throwable.getMessage();
-                        if(Objects.equals(msg, "protocol not supported")){
-                            throw new ProtocolNotSupported();
-                        } else {
-                            throw new RuntimeException(throwable);
-                        }
-                    }
-                }
-            }
-
-
-            @Override
-            public void SetStreamHandler(@NonNull Protocol proto,
-                                         @NonNull StreamHandler handler) {
-                setStreamHandler(handler);
-                node.setStreamHandler(proto.String());
-
-            }
-
-            @Override
-            public PeerID Self() {
-                return new PeerID(getPeerID());
-            }
-        };*/
-
-
-
         host.start().get();
         running = true;
     }
@@ -591,10 +510,8 @@ public class IPFS implements Receiver {
     }
 
 
-
-
     @Nullable
-    public io.ipfs.format.Node resolveNode(@NonNull String root, @NonNull List<String> path, @NonNull Closeable closeable) throws ClosedException {
+    public Node resolveNode(@NonNull String root, @NonNull List<String> path, @NonNull Closeable closeable) throws ClosedException {
 
         String resultPath = IPFS_PATH + root;
         for (String name : path) {
@@ -606,12 +523,12 @@ public class IPFS implements Receiver {
     }
 
     @Nullable
-    public io.ipfs.format.Node resolveNode(@NonNull String path, @NonNull Closeable closeable) throws ClosedException {
+    public Node resolveNode(@NonNull String path, @NonNull Closeable closeable) throws ClosedException {
 
         try {
             return Resolver.resolveNode(closeable, blocks, exchange, path);
         } catch (Throwable ignore) {
-            // common use case not resolve a a path
+            // common exception to not resolve a a path
         }
         if (closeable.isClosed()) {
             throw new ClosedException();
@@ -883,90 +800,10 @@ public class IPFS implements Receiver {
     }
 
 
-    // TODO @Override
-    public void connected(String pretty) {
-        LogUtils.error(TAG, pretty);
-    }
-
-    // TODO @Override
-    public void error(String message) {
-        if (message != null && !message.isEmpty()) {
-            LogUtils.error(TAG, "" + message);
-        }
-    }
-
-    // TODO @Override
-    public void info(String message) {
-        if (message != null && !message.isEmpty()) {
-            LogUtils.info(TAG, "" + message);
-        }
-    }
-
-
-    // TODO @Override
-    public void verbose(String s) {
-        LogUtils.verbose(TAG, "" + s);
-    }
-
     @NonNull
     public InputStream getInputStream(@NonNull String cid, @NonNull Closeable closeable) throws ClosedException {
         io.ipfs.utils.Reader reader = getReader(cid, closeable);
         return new ReaderStream(reader);
-
-    }
-
-    public void startDaemon() {
-        /*
-        if (!node.getRunning()) {
-            synchronized (locker) {
-                if (!node.getRunning()) {
-                    AtomicBoolean failure = new AtomicBoolean(false);
-                    ExecutorService executor = Executors.newSingleThreadExecutor();
-                    AtomicReference<String> exception = new AtomicReference<>("");
-                    executor.submit(() -> {
-                        try {
-
-                            long port = node.getPort();
-                            if (!isLocalPortFree((int) port)) {
-                                node.setPort(nextFreePort());
-                            }
-                            LogUtils.error(TAG, "start daemon...");
-                            node.daemon();
-                            LogUtils.error(TAG, "stop daemon...");
-                        } catch (Throwable e) {
-                            failure.set(true);
-                            exception.set("" + e.getLocalizedMessage());
-                            LogUtils.error(TAG, e);
-                        }
-                    });
-
-                    while (!node.getRunning()) {
-                        if (failure.get()) {
-                            break;
-                        }
-                    }
-                    if (failure.get()) {
-                        throw new RuntimeException(exception.get());
-                    }
-
-
-                    if (node.getRunning()) {
-                        List<Protocol> protocols = new ArrayList<>();
-
-
-                        protocols.add(Protocol.ProtocolBitswap);
-
-
-                        BitSwapNetwork bsm = LiteHost.NewLiteHost(host, routing, protocols);
-
-
-                        BlockStore blockstore = BlockStore.NewBlockstore(blocks);
-
-                        exchange = BitSwap.New(bsm, blockstore);
-                    }
-                }
-            }
-        }*/
     }
 
     public boolean isDaemonRunning() {

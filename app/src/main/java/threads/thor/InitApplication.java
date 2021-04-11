@@ -26,7 +26,6 @@ public class InitApplication extends Application {
                 (System.currentTimeMillis() - start) + "]...");
         try {
             IPFS ipfs = IPFS.getInstance(getApplicationContext());
-            ipfs.startDaemon();
             Executors.newSingleThreadExecutor().submit(ipfs::bootstrap);
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
