@@ -28,11 +28,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-import io.core.Closeable;
 import io.LogUtils;
+import io.core.Closeable;
 import io.core.ClosedException;
 import io.core.TimeoutCloseable;
-import io.libp2p.AddrInfo;
 import io.dht.DhtProtocol;
 import io.dht.KadDHT;
 import io.dht.ResolveInfo;
@@ -54,6 +53,7 @@ import io.ipfs.utils.ReaderProgress;
 import io.ipfs.utils.ReaderStream;
 import io.ipfs.utils.Resolver;
 import io.ipfs.utils.Stream;
+import io.libp2p.AddrInfo;
 import io.libp2p.HostBuilder;
 import io.libp2p.core.PeerId;
 import io.libp2p.core.crypto.KEY_TYPE;
@@ -498,15 +498,13 @@ public class IPFS implements Receiver {
                     if (!second.isEmpty()) {
                         executor = Executors.newFixedThreadPool(second.size());
                         for (String address : second) {
-                            tasks.add(() -> swarmConnect(address, TIMEOUT_BOOTSTRAP*5));
+                            tasks.add(() -> swarmConnect(address, TIMEOUT_BOOTSTRAP));
                         }
                         futures.clear();
-                        long time = System.currentTimeMillis();
-                        futures = executor.invokeAll(tasks, TIMEOUT_BOOTSTRAP *5, TimeUnit.SECONDS); // TODO
+                        futures = executor.invokeAll(tasks, TIMEOUT_BOOTSTRAP, TimeUnit.SECONDS);
                         for (Future<Boolean> future : futures) {
                             LogUtils.info(TAG, "\nConnect done " + future.isDone());
                         }
-                        LogUtils.error(TAG, "Time " + (System.currentTimeMillis() - time));
                     }
 
                 } catch (Throwable throwable) {
@@ -533,14 +531,28 @@ public class IPFS implements Receiver {
         if (!isDaemonRunning()) {
             return false;
         }
-        try {
-            // TODO closeable
-            Multiaddr multiaddr = new Multiaddr(multiAddress);
 
+        Multiaddr multiaddr = new Multiaddr(multiAddress);
+        try {
             return host.getNetwork().connect(multiaddr).get() != null;
-            //return node.swarmConnect(multiAddress, true, closeable::isClosed);
-        } catch (Throwable throwable) {
-            LogUtils.error(TAG, multiAddress + " connection failed");
+        } catch (Throwable e) {
+
+            try {
+                if (multiAddress.startsWith(IPFS.P2P_PATH)) {
+                    String pid = multiaddr.getStringComponent(Protocol.P2P);
+                    Objects.requireNonNull(pid);
+                    AddrInfo addr = routing.FindPeer(closeable, PeerId.fromBase58(pid));
+
+                    return host.getNetwork().connect(addr.getPeerId(),
+                            addr.getAddresses())
+                            .get() != null;
+
+                }
+            } catch (ClosedException closedException) {
+                throw closedException;
+            } catch (Throwable throwable) {
+                LogUtils.error(TAG, throwable);
+            }
         }
         if (closeable.isClosed()) {
             throw new ClosedException();
@@ -554,24 +566,20 @@ public class IPFS implements Receiver {
         }
         Multiaddr multiaddr = new Multiaddr(multiAddress);
         try {
-
             return host.getNetwork().connect(multiaddr)
                     .get(timeout, TimeUnit.SECONDS) != null;
         } catch (Throwable e) {
-            LogUtils.error(TAG, multiAddress + " " + e.getLocalizedMessage());
+
             try {
                 if (multiAddress.startsWith(IPFS.P2P_PATH)) {
                     String pid = multiaddr.getStringComponent(Protocol.P2P);
                     Objects.requireNonNull(pid);
-                    AddrInfo addr = routing.FindPeer(new TimeoutCloseable(timeout), PeerId.fromBase58(pid)); // timeout
+                    AddrInfo addr = routing.FindPeer(new TimeoutCloseable(timeout), PeerId.fromBase58(pid));
 
-                    LogUtils.error(TAG, addr.toString());
-
-                    boolean result = host.getNetwork().connect(addr.getPeerId(),
+                    return host.getNetwork().connect(addr.getPeerId(),
                             addr.getAddresses())
                             .get() != null;
-                    LogUtils.error(TAG, "Success " + result + " " + multiAddress);
-                    return result;
+
                 }
             } catch(ClosedException ignore) {
                 // ignore
