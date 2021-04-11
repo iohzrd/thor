@@ -104,7 +104,7 @@ public class DOCS {
                 }
 
                 if (page != null) {
-                    Multiaddr info = ipfs.swarmPeer(pid); // TODO optimize here !!!
+                    Multiaddr info = ipfs.swarmPeer(pid);
                     if (info != null) {
                         String address = info.toString();
                         if (!address.isEmpty() && !address.contains(Content.CIRCUIT)) {

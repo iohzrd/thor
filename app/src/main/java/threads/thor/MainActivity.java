@@ -78,7 +78,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import io.core.Closeable;
 import io.ipfs.IPFS;
 import io.ipfs.format.Node;
-import io.ipfs.utils.TimeoutProgress;
+import io.core.TimeoutCloseable;
 import threads.LogUtils;
 import threads.thor.core.Content;
 import threads.thor.core.DOCS;
@@ -1132,7 +1132,7 @@ public class MainActivity extends AppCompatActivity implements
                     String res = uri.getQueryParameter("download");
                     if (Objects.equals(res, "0")) {
                         try {
-                            Node node = docs.resolvePath(uri, new TimeoutProgress(1));
+                            Node node = docs.resolvePath(uri, new TimeoutCloseable(1));
                             Objects.requireNonNull(node);
                             Uri redirect = FileDocumentsProvider.getUriForIpfs(
                                     node, filename, mimeType);

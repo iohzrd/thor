@@ -164,7 +164,7 @@ public class KadDHT implements Routing {
         }
 
 
-        // TODO findProvidersAsyncRoutine(providers, cid, chSize);
+        findProvidersAsyncRoutine(providers, cid, chSize);
     }
 
 
@@ -418,7 +418,9 @@ public class KadDHT implements Routing {
     @Nullable
     private Multiaddr filterAddress(@NonNull ByteString address) {
         try {
-           return  new Multiaddr(address.toByteArray());
+           Multiaddr multiaddr = new Multiaddr(address.toByteArray());
+           LogUtils.info(TAG, multiaddr.toString());
+           return multiaddr;
         } catch (Throwable ignore){
             // nothing to do
         }
@@ -532,7 +534,8 @@ public class KadDHT implements Routing {
             Collection<Multiaddr> addr = host.getAddressBook().getAddrs(id).get();
             Objects.requireNonNull(addr);
             AddrInfo addrInfo = new AddrInfo(id, addr);
-            boolean connectedness = host.getNetwork().connect(id, addrInfo.getAddresses()).get() != null;
+            boolean connectedness = host.getNetwork().connect(
+                    addrInfo.getPeerId(), addrInfo.getAddresses()).get() != null;
                 /*if (dialedPeerDuringQuery || connectedness == network.Connected || connectedness == network.CanConnect) {
                     return dht.peerstore.PeerInfo(id),nil
                 }*/
