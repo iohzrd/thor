@@ -254,8 +254,10 @@ public class Query {
         Executors.newSingleThreadExecutor().execute(() -> {
             try {
                 queryPeer(ctx, queue, queryPeer);
+            } catch(ClosedException ignore) {
+                // nothing to do here (works as expected)
             } catch (Throwable throwable) {
-                // TODO
+                // not expected exception
                 LogUtils.error(TAG, throwable);
             }
         });
