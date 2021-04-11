@@ -711,7 +711,7 @@ public class DOCS {
             if (!ipfs.isValidCID(host)) {
                 String link = DnsAddrResolver.getDNSLink(host);
                 if (link.isEmpty()) {
-                    // could not resolved, maybe no NET
+                    // could not resolved, maybe no NETWORK
                     String dnsLink = books.getDnsLink(uri.toString());
                     if (dnsLink == null) {
                         if (Objects.equals(uri.getScheme(), Content.IPNS)) {

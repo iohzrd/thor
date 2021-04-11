@@ -9,8 +9,8 @@ import io.LogUtils;
 import io.core.Closeable;
 import io.core.ClosedException;
 import io.core.ConnectionFailure;
-import io.core.ConnectionTimeout;
 import io.core.ProtocolNotSupported;
+import io.libp2p.core.ConnectionClosedException;
 import io.libp2p.core.NoSuchRemoteProtocolException;
 import io.libp2p.core.PeerId;
 import io.libp2p.etc.types.NothingToCompleteException;
@@ -29,7 +29,7 @@ public class MessageSender {
 
     public synchronized DhtProtos.Message SendRequest(
             @NonNull Closeable ctx, @NonNull DhtProtos.Message message)
-            throws ClosedException, ProtocolNotSupported, ConnectionFailure, ConnectionTimeout {
+            throws ClosedException, ProtocolNotSupported, ConnectionFailure {
 
 
         if (ctx.isClosed()) {
@@ -47,9 +47,7 @@ public class MessageSender {
             }
 
             DhtProtocol.DhtController dhtController = (DhtProtocol.DhtController) object;
-            DhtProtos.Message result = dhtController.sendRequest(message).get(); // TODO timeout
-            LogUtils.info(TAG, "success " + p.toBase58());
-            return result;
+            return dhtController.sendRequest(message).get();
 
         } catch (Throwable throwable) {
             if (ctx.isClosed()) {
@@ -62,8 +60,11 @@ public class MessageSender {
             if (cause instanceof NothingToCompleteException) {
                 throw new ConnectionFailure();
             }
+            if (cause instanceof ConnectionClosedException) {
+                throw new ConnectionFailure();
+            }
             if (cause instanceof ReadTimeoutException) {
-                throw new ConnectionTimeout();
+                throw new ConnectionFailure();
             }
             LogUtils.error(TAG, throwable);
             throw new RuntimeException(throwable); // TODO

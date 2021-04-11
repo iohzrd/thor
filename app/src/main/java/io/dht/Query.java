@@ -20,7 +20,6 @@ import io.LogUtils;
 import io.core.Closeable;
 import io.core.ClosedException;
 import io.core.ConnectionFailure;
-import io.core.ConnectionTimeout;
 import io.core.ProtocolNotSupported;
 import io.libp2p.AddrInfo;
 import io.libp2p.core.PeerId;
@@ -331,7 +330,7 @@ public class Query {
 
         } catch (ClosedException closedException) {
             throw closedException;
-        } catch (ProtocolNotSupported | ConnectionFailure | ConnectionTimeout ignore) {
+        } catch (ProtocolNotSupported | ConnectionFailure ignore) {
             QueryUpdate update = new QueryUpdate(p);
             update.unreachable.add(p);
             queue.offer(update);

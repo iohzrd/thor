@@ -18,10 +18,12 @@ import io.ipfs.IPFS;
 import io.core.ProtocolNotSupported;
 import io.ipfs.cid.Cid;
 import io.libp2p.core.Connection;
+import io.libp2p.core.ConnectionClosedException;
 import io.libp2p.core.Host;
 import io.libp2p.core.NoSuchRemoteProtocolException;
 import io.libp2p.core.PeerId;
 import io.libp2p.etc.types.NothingToCompleteException;
+import io.netty.handler.timeout.ReadTimeoutException;
 
 
 public class LiteHost implements BitSwapNetwork {
@@ -96,7 +98,6 @@ public class LiteHost implements BitSwapNetwork {
                 throw new RuntimeException("Message not fully written");
             }*/
 
-            LogUtils.error(TAG, "messsage done");
         } catch(ClosedException closedException){
             throw new ClosedException();
         } catch (Throwable throwable) {
@@ -108,6 +109,12 @@ public class LiteHost implements BitSwapNetwork {
                 throw new ProtocolNotSupported();
             }
             if (cause instanceof NothingToCompleteException) {
+                throw new ConnectionFailure();
+            }
+            if (cause instanceof ConnectionClosedException) {
+                throw new ConnectionFailure();
+            }
+            if (cause instanceof ReadTimeoutException) {
                 throw new ConnectionFailure();
             }
             throw new RuntimeException(throwable);

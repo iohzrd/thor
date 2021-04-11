@@ -88,8 +88,7 @@ public class BitSwapProtocol implements ProtocolBinding<BitSwapProtocol.BitSwapC
 
 
         @Override
-        public void sendRequest(@NonNull BitSwapMessage pmes) throws NotImplementedError {
-            LogUtils.error(TAG, "sendRequest");
+        public void sendRequest(@NonNull BitSwapMessage message) throws NotImplementedError {
             throw new NotImplementedError();
         }
 
@@ -173,7 +172,6 @@ public class BitSwapProtocol implements ProtocolBinding<BitSwapProtocol.BitSwapC
             try {
                 byte[] data = pmes.ToNetV1();
                 stream.writeAndFlush(Unpooled.buffer().writeBytes(data));
-                LogUtils.error(TAG, "success write message");
             } catch (Throwable throwable) {
                 LogUtils.error(TAG, throwable);
                 throw new NotImplementedError("" + throwable.getMessage());
@@ -183,6 +181,7 @@ public class BitSwapProtocol implements ProtocolBinding<BitSwapProtocol.BitSwapC
         @Override
         protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
             LogUtils.error(TAG, "TODO channel read ");
+            throw new RuntimeException("TODO maybe");
         }
     }
 }

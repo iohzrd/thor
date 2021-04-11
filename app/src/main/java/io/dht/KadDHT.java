@@ -23,7 +23,6 @@ import io.LogUtils;
 import io.core.Closeable;
 import io.core.ClosedException;
 import io.core.ConnectionFailure;
-import io.core.ConnectionTimeout;
 import io.core.ProtocolNotSupported;
 import io.ipfs.cid.Cid;
 import io.libp2p.AddrInfo;
@@ -165,7 +164,7 @@ public class KadDHT implements Routing {
         }
 
 
-        findProvidersAsyncRoutine(providers, cid, chSize);
+        // TODO findProvidersAsyncRoutine(providers, cid, chSize);
     }
 
 
@@ -217,7 +216,7 @@ public class KadDHT implements Routing {
                     @NonNull
                     @Override
                     public List<AddrInfo> func(@NonNull Closeable ctx, @NonNull PeerId p)
-                            throws ClosedException, ProtocolNotSupported, ConnectionFailure, ConnectionTimeout {
+                            throws ClosedException, ProtocolNotSupported, ConnectionFailure {
                         // For DHT query command
 
                         /* TODO
@@ -327,7 +326,7 @@ public class KadDHT implements Routing {
     private DhtProtos.Message sendRequest(@NonNull Closeable ctx,
                                           @NonNull PeerId peerId,
                                           @NonNull DhtProtos.Message message)
-            throws ClosedException, ProtocolNotSupported, ConnectionFailure, ConnectionTimeout {
+            throws ClosedException, ProtocolNotSupported, ConnectionFailure {
         //ctx, _ = tag.New(ctx, metrics.UpsertMessageType(pmes)) // TODO maybe
 
         MessageSender ms = messageSenderForPeer(peerId);
@@ -378,7 +377,7 @@ public class KadDHT implements Routing {
 
     // findPeerSingle asks peer 'p' if they know where the peer with id 'id' is
     private DhtProtos.Message findPeerSingle(Closeable ctx, PeerId p, PeerId id)
-            throws ClosedException, ProtocolNotSupported, ConnectionFailure, ConnectionTimeout {
+            throws ClosedException, ProtocolNotSupported, ConnectionFailure {
         DhtProtos.Message pmes = DhtProtos.Message.newBuilder()
                 .setType(DhtProtos.Message.MessageType.FIND_NODE)
                 .setKey(ByteString.copyFrom(id.getBytes())).build();
@@ -387,7 +386,7 @@ public class KadDHT implements Routing {
     }
 
     private DhtProtos.Message findProvidersSingle(Closeable ctx, PeerId p, io.ipfs.multihash.Multihash key)
-            throws ClosedException, ProtocolNotSupported, ConnectionFailure, ConnectionTimeout {
+            throws ClosedException, ProtocolNotSupported, ConnectionFailure {
         DhtProtos.Message pmes = DhtProtos.Message.newBuilder()
                 .setType(DhtProtos.Message.MessageType.GET_PROVIDERS)
                 .setKey(ByteString.copyFrom(key.getHash())).build();
@@ -444,7 +443,7 @@ public class KadDHT implements Routing {
                     @NonNull
                     @Override
                     public List<AddrInfo> func(@NonNull Closeable ctx, @NonNull PeerId p)
-                            throws ClosedException, ProtocolNotSupported, ConnectionFailure, ConnectionTimeout {
+                            throws ClosedException, ProtocolNotSupported, ConnectionFailure {
                             /* TODO
                             // For DHT query command
                             routing.PublishQueryEvent(ctx, &routing.QueryEvent{
