@@ -60,8 +60,11 @@ public class DnsAddrResolver {
             DnsMessage response = result.response;
             List<Record<? extends Data>> records = response.answerSection;
             for (Record<? extends Data> record : records) {
-                TXT text = (TXT) record.getPayload();
-                txtRecords.add(text.getText());
+                Data payload = record.getPayload();
+                if(payload instanceof TXT) {
+                    TXT text = (TXT) payload;
+                    txtRecords.add(text.getText());
+                }
             }
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
@@ -117,8 +120,11 @@ public class DnsAddrResolver {
             DnsMessage response = result.response;
             List<Record<? extends Data>> records = response.answerSection;
             for (Record<? extends Data> record : records) {
-                TXT text = (TXT) record.getPayload();
-                txtRecords.add(text.getText());
+                Data payload = record.getPayload();
+                if(payload instanceof TXT) {
+                    TXT text = (TXT) payload;
+                    txtRecords.add(text.getText());
+                }
             }
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);

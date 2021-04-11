@@ -17,6 +17,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.core.Closeable;
 import io.LogUtils;
+import io.core.ConnectionFailure;
 import io.libp2p.AddrInfo;
 import io.dht.Providers;
 import io.core.ClosedException;
@@ -238,7 +239,7 @@ public class ContentManager {
                             handled.add(peer);
                         } catch (ClosedException closedException) {
                             // ignore
-                        } catch (ProtocolNotSupported ignore) {
+                        } catch (ProtocolNotSupported | ConnectionFailure ignore) {
                             peers.remove(peer);
                             priority.remove(peer);
                             faulty.add(peer);
