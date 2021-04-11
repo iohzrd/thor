@@ -15,17 +15,17 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import io.core.Closeable;
 import io.LogUtils;
-import io.core.ConnectionFailure;
-import io.libp2p.AddrInfo;
-import io.dht.Providers;
+import io.core.Closeable;
 import io.core.ClosedException;
-import io.ipfs.IPFS;
+import io.core.ConnectionFailure;
 import io.core.ProtocolNotSupported;
+import io.dht.Providers;
+import io.ipfs.IPFS;
 import io.ipfs.cid.Cid;
 import io.ipfs.format.Block;
 import io.ipfs.format.BlockStore;
+import io.libp2p.AddrInfo;
 import io.libp2p.core.PeerId;
 
 
@@ -33,12 +33,10 @@ public class ContentManager {
     public static final int PROVIDERS = 10;
     private static final int TIMEOUT = 15000;
     private static final String TAG = ContentManager.class.getSimpleName();
-    private final BitSwapNetwork network;
-    private final BlockStore blockStore;
-
     private static final ExecutorService LOADS = Executors.newFixedThreadPool(4);
     private static final ExecutorService WANTS = Executors.newFixedThreadPool(4);
-
+    private final BitSwapNetwork network;
+    private final BlockStore blockStore;
     private final ConcurrentSkipListSet<PeerId> faulty = new ConcurrentSkipListSet<>(
             (o1, o2) -> o1.toHex().compareTo(o2.toHex()));
     private final ConcurrentSkipListSet<PeerId> peers = new ConcurrentSkipListSet<>(
@@ -327,7 +325,7 @@ public class ContentManager {
                     LogUtils.error(TAG, "LoadBlocks " + peer.toBase58());
                     long start = System.currentTimeMillis();
                     try {
-                        if(wantsMessage){
+                        if (wantsMessage) {
                             MessageWriter.sendWantsMessage(closeable, network, peer, loads,
                                     IPFS.WRITE_TIMEOUT);
                             wantsMessage = false;

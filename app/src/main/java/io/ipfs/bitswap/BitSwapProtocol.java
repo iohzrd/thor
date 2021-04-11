@@ -9,12 +9,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.Buffer;
-import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 
 import io.LogUtils;
-import io.ipfs.IPFS;
 import io.ipfs.multihash.Multihash;
 import io.libp2p.core.ConnectionClosedException;
 import io.libp2p.core.P2PChannel;
@@ -29,11 +26,9 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import kotlin.NotImplementedError;
 
 public class BitSwapProtocol implements ProtocolBinding<BitSwapProtocol.BitSwapController> {
+    private static final String TAG = BitSwapProtocol.class.getSimpleName();
     private final String protocol;
     private final Receiver receiver;
-
-
-    private static final String TAG = BitSwapProtocol.class.getSimpleName();
 
     public BitSwapProtocol(@NonNull Receiver receiver, @NonNull String protocol) {
         this.protocol = protocol;
@@ -72,10 +67,24 @@ public class BitSwapProtocol implements ProtocolBinding<BitSwapProtocol.BitSwapC
     private static class ServerHandler extends DhtHandler {
         private final Receiver receiver;
         private final Stream stream;
+        private final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        private long expectedLength;
+
 
         private ServerHandler(@NonNull Stream stream, @NonNull Receiver receiver) {
             this.stream = stream;
             this.receiver = receiver;
+        }
+
+        public static long copy(InputStream source, OutputStream sink) throws IOException {
+            long nread = 0L;
+            byte[] buf = new byte[4096];
+            int n;
+            while ((n = source.read(buf)) > 0) {
+                sink.write(buf, 0, n);
+                nread += n;
+            }
+            return nread;
         }
 
         public boolean acceptInboundMessage(Object msg) throws Exception {
@@ -85,7 +94,6 @@ public class BitSwapProtocol implements ProtocolBinding<BitSwapProtocol.BitSwapC
                 return super.acceptInboundMessage(msg);
             }
         }
-
 
         @Override
         public void sendRequest(@NonNull BitSwapMessage message) throws NotImplementedError {
@@ -98,18 +106,7 @@ public class BitSwapProtocol implements ProtocolBinding<BitSwapProtocol.BitSwapC
             receiver.ReceiveError(stream.remotePeerId(),
                     stream.getProtocol().get(), " " + cause.getMessage());
         }
-        private final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-        private long expectedLength;
-        public static long copy(InputStream source, OutputStream sink) throws IOException {
-            long nread = 0L;
-            byte[] buf = new byte[4096];
-            int n;
-            while ((n = source.read(buf)) > 0) {
-                sink.write(buf, 0, n);
-                nread += n;
-            }
-            return nread;
-        }
+
         @Override
         protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
 
@@ -126,7 +123,7 @@ public class BitSwapProtocol implements ProtocolBinding<BitSwapProtocol.BitSwapC
                     }
                 }
 
-                if(buffer.size() >= expectedLength) {
+                if (buffer.size() >= expectedLength) {
                     BitSwapMessage received = BitSwapMessage.fromData(buffer.toByteArray());
                     receiver.ReceiveMessage(stream.remotePeerId(),
                             stream.getProtocol().get(), received);

@@ -8,15 +8,14 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 import io.core.Closeable;
-import io.LogUtils;
+import io.core.ClosedException;
 import io.core.ConnectionFailure;
-import io.libp2p.AddrInfo;
+import io.core.ProtocolNotSupported;
 import io.dht.ContentRouting;
 import io.dht.Providers;
-import io.core.ClosedException;
 import io.ipfs.IPFS;
-import io.core.ProtocolNotSupported;
 import io.ipfs.cid.Cid;
+import io.libp2p.AddrInfo;
 import io.libp2p.core.Connection;
 import io.libp2p.core.ConnectionClosedException;
 import io.libp2p.core.Host;
@@ -53,7 +52,7 @@ public class LiteHost implements BitSwapNetwork {
             // TODO closeable and timeout
             return future.get() != null;
         } catch (Throwable throwable) {
-            if(closeable.isClosed()){
+            if (closeable.isClosed()) {
                 throw new ClosedException();
             }
             return false;
@@ -66,7 +65,7 @@ public class LiteHost implements BitSwapNetwork {
     @Override
     public Set<PeerId> getPeers() {
         Set<PeerId> peerIds = new HashSet<>();
-        for (Connection connection: host.getNetwork().getConnections()){
+        for (Connection connection : host.getNetwork().getConnections()) {
             peerIds.add(connection.secureSession().getRemoteId());
         }
 
@@ -98,7 +97,7 @@ public class LiteHost implements BitSwapNetwork {
                 throw new RuntimeException("Message not fully written");
             }*/
 
-        } catch(ClosedException closedException){
+        } catch (ClosedException closedException) {
             throw new ClosedException();
         } catch (Throwable throwable) {
             if (closeable.isClosed()) {
@@ -120,7 +119,6 @@ public class LiteHost implements BitSwapNetwork {
             throw new RuntimeException(throwable);
         }
     }
-
 
 
     @Override

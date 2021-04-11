@@ -2,8 +2,8 @@ package io.ipfs.bitswap;
 
 import androidx.annotation.NonNull;
 
-import io.core.Closeable;
 import io.LogUtils;
+import io.core.Closeable;
 import io.ipfs.IPFS;
 import io.ipfs.cid.Cid;
 

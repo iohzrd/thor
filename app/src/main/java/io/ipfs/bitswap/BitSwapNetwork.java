@@ -5,11 +5,11 @@ import androidx.annotation.NonNull;
 import java.util.Set;
 
 import io.core.Closeable;
-import io.core.ConnectionFailure;
-import io.libp2p.AddrInfo;
-import io.dht.ContentRouting;
 import io.core.ClosedException;
+import io.core.ConnectionFailure;
 import io.core.ProtocolNotSupported;
+import io.dht.ContentRouting;
+import io.libp2p.AddrInfo;
 import io.libp2p.core.PeerId;
 
 
