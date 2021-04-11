@@ -145,7 +145,7 @@ public class IPFS implements Receiver {
     private final Interface exchange;
     private final Routing routing;
     private final io.libp2p.core.Host host;
-    private StreamHandler handler;
+
     private boolean running;
 
 
@@ -473,9 +473,6 @@ public class IPFS implements Receiver {
         return host.getPeerId().toBase58();
     }
 
-    private void setStreamHandler(@NonNull StreamHandler streamHandler) {
-        this.handler = streamHandler;
-    }
 
 
     public void bootstrap() {
@@ -873,28 +870,6 @@ public class IPFS implements Receiver {
             throw new ClosedException();
         }
         return resolvedName.get();
-    }
-
-
-    // TODO @Override
-    public void bitSwapData(String pid, String proto, byte[] bytes) {
-        LogUtils.verbose(TAG, "Receive message from " + pid + " proto " + proto + " data " + bytes.length);
-        Objects.requireNonNull(handler);
-
-        READER.execute(() -> handler.message(PeerId.fromBase58(pid), proto, bytes));
-    }
-
-    // TODO @Override
-    public void bitSwapError(String pid, String proto, String error) {
-        LogUtils.error(TAG, "Receive error from " + pid + " proto " + proto + " error " + error);
-        Objects.requireNonNull(handler);
-        handler.error(PeerId.fromBase58(pid), proto, error);
-    }
-
-    // TODO @Override
-    public boolean bitSwapGate(String pid) {
-        Objects.requireNonNull(handler);
-        return handler.gate(PeerId.fromBase58(pid));
     }
 
 
