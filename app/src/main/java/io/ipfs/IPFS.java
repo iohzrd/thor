@@ -68,6 +68,7 @@ import io.libp2p.core.mux.StreamMuxerProtocol;
 import io.libp2p.crypto.keys.Ed25519Kt;
 import io.libp2p.protocol.Identify;
 import io.libp2p.security.noise.NoiseXXSecureChannel;
+import io.libp2p.security.secio.SecIoSecureChannel;
 import io.libp2p.transport.tcp.TcpTransport;
 import io.protos.ipns.IpnsProtos;
 import threads.thor.core.blocks.BLOCKS;
@@ -208,10 +209,13 @@ public class IPFS implements Receiver {
                 .protocol(new Identify(), new DhtProtocol(),
                         new BitSwapProtocol(this, ProtocolBitswap))
                 .identity(privKey)
-                .transport(TcpTransport::new)
-                .secureChannel(NoiseXXSecureChannel::new)
+                .transport(TcpTransport::new) // TODO QUIC Transport when available
+                .secureChannel(NoiseXXSecureChannel::new, SecIoSecureChannel::new) // TODO add TLS when available, and remove Secio
                 .muxer(StreamMuxerProtocol::getMplex)
-                .listen("/ip4/127.0.0.1/tcp/" + port)
+                .listen("/ip4/127.0.0.1/tcp/" + port  /* TODO QUIC + IPV6,
+                        "/ip6/::/tcp/"+ port,
+                        "/ip4/0.0.0.0/udp/"+port+"/quic",
+                        "/ip6/::/udp/"+port+"/quic"*/)
                 .build();
         this.routing = new KadDHT(host);
 
