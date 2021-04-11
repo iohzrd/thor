@@ -43,20 +43,20 @@ public class Bucket extends ConcurrentSkipListSet<Bucket.PeerInfo> {
     // greater than cpl (returned bucket has closer peers)
     public Bucket split(int cpl, @NonNull ID target) {
 
-        LogUtils.error(TAG, "cpl " + cpl);
-        Bucket newbuck = new Bucket();
+        LogUtils.info(TAG, "cpl " + cpl);
+        Bucket newbie = new Bucket();
 
         for (PeerInfo e : this) {
             ID pDhtId = e.getID();
             int peerCPL = Util.CommonPrefixLen(pDhtId, target);
             if (peerCPL > cpl) {
-                newbuck.add(e);
+                newbie.add(e);
                 this.remove(e);
             }
         }
-        LogUtils.error(TAG, "Old Bucket Size : " + this.size());
-        LogUtils.error(TAG, "New Bucket Size : " + newbuck.size());
-        return newbuck;
+        LogUtils.info(TAG, "Old Bucket Size : " + this.size());
+        LogUtils.info(TAG, "New Bucket Size : " + newbie.size());
+        return newbie;
     }
 
 
