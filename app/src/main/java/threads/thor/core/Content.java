@@ -23,4 +23,7 @@ public class Content {
     public static final String CID = "cid";
     public static final String TEXT = "text";
     public static final String URL = "url";
+    public static final String HOST = "host";
+    public static final String PORT = "port";
+    public static final String INET6 = "inet6";
 }

@@ -117,7 +117,7 @@ public class RoutingTable {
 
 
     // the caller is responsible for the locking
-    private int bucketIdForPeer(PeerId p) {
+    private int bucketIdForPeer(@NonNull PeerId p) {
         ID peerID = Util.ConvertPeerID(p);
         int bucketID = Util.CommonPrefixLen(peerID, local);
         if (bucketID >= buckets.size()) {
@@ -283,5 +283,9 @@ public class RoutingTable {
             return true;
         }
         return false;
+    }
+
+    public void RemovePeer(@NonNull PeerId p) {
+        removePeer(p);
     }
 }

@@ -11,6 +11,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.concurrent.CompletableFuture;
 
+import dht.pb.Dht;
 import io.LogUtils;
 import io.ipfs.multihash.Multihash;
 import io.libp2p.core.ConnectionClosedException;
@@ -23,7 +24,6 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import io.protos.dht.DhtProtos;
 import kotlin.NotImplementedError;
 
 public class DhtProtocol implements ProtocolBinding<DhtProtocol.DhtController> {
@@ -53,7 +53,7 @@ public class DhtProtocol implements ProtocolBinding<DhtProtocol.DhtController> {
 
 
     public interface DhtController {
-        CompletableFuture<DhtProtos.Message> sendRequest(@NonNull DhtProtos.Message pmes) throws NotImplementedError;
+        CompletableFuture<Dht.Message> sendRequest(@NonNull Dht.Message pmes) throws NotImplementedError;
     }
 
     abstract static class DhtHandler extends SimpleChannelInboundHandler<ByteBuf> implements DhtController {
@@ -62,7 +62,7 @@ public class DhtProtocol implements ProtocolBinding<DhtProtocol.DhtController> {
     private static class ServerHandler extends DhtHandler {
 
         @Override
-        public CompletableFuture<DhtProtos.Message> sendRequest(@NonNull DhtProtos.Message pmes) throws NotImplementedError {
+        public CompletableFuture<Dht.Message> sendRequest(@NonNull Dht.Message pmes) throws NotImplementedError {
             throw new NotImplementedError();
         }
 
@@ -78,7 +78,7 @@ public class DhtProtocol implements ProtocolBinding<DhtProtocol.DhtController> {
     }
 
     private static class ClientHandler extends DhtHandler {
-        private final CompletableFuture<DhtProtos.Message> resFuture = new CompletableFuture<>();
+        private final CompletableFuture<Dht.Message> resFuture = new CompletableFuture<>();
         private final CompletableFuture<DhtController> activationFut;
         private final Stream stream;
 
@@ -107,7 +107,7 @@ public class DhtProtocol implements ProtocolBinding<DhtProtocol.DhtController> {
         }
 
         @Override
-        public CompletableFuture<DhtProtos.Message> sendRequest(@NonNull DhtProtos.Message pmes) throws NotImplementedError {
+        public CompletableFuture<Dht.Message> sendRequest(@NonNull Dht.Message pmes) throws NotImplementedError {
             byte[] data = pmes.toByteArray();
             try (ByteArrayOutputStream buf = new ByteArrayOutputStream()) {
                 Multihash.putUvarint(buf, data.length);
@@ -149,7 +149,7 @@ public class DhtProtocol implements ProtocolBinding<DhtProtocol.DhtController> {
                     }
                 }
                 if (buffer.size() == expectedLength) {
-                    DhtProtos.Message message = DhtProtos.Message.parseFrom(buffer.toByteArray());
+                    Dht.Message message = Dht.Message.parseFrom(buffer.toByteArray());
                     resFuture.complete(message);
                     buffer.close();
                     ctx.close();

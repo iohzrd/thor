@@ -1,7 +1,7 @@
 package io.dht;
 
-import io.core.Closeable;
 
-public interface ResolveInfo extends Closeable {
+
+public interface ResolveInfo {
     void resolved(byte[] data);
 }

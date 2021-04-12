@@ -14,6 +14,8 @@ import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.net.http.SslError;
+import android.net.nsd.NsdManager;
+import android.net.nsd.NsdServiceInfo;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.provider.DocumentsContract;
@@ -68,6 +70,8 @@ import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
 
 import java.io.ByteArrayInputStream;
+import java.net.Inet6Address;
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -92,7 +96,9 @@ import threads.thor.fragments.ContentDialogFragment;
 import threads.thor.fragments.HistoryDialogFragment;
 import threads.thor.fragments.SettingsDialogFragment;
 import threads.thor.provider.FileDocumentsProvider;
+import threads.thor.services.DiscoveryService;
 import threads.thor.services.QRCodeService;
+import threads.thor.services.RegistrationService;
 import threads.thor.services.ThorService;
 import threads.thor.utils.AdBlocker;
 import threads.thor.utils.BookmarksAdapter;
@@ -102,6 +108,7 @@ import threads.thor.utils.PermissionAction;
 import threads.thor.work.ClearBrowserDataWorker;
 import threads.thor.work.DownloadContentWorker;
 import threads.thor.work.DownloadFileWorker;
+import threads.thor.work.LocalConnectWorker;
 
 
 public class MainActivity extends AppCompatActivity implements
@@ -1475,7 +1482,14 @@ public class MainActivity extends AppCompatActivity implements
                 openUri(Uri.parse(Settings.HOMEPAGE));
             }
         }
-
+        try {
+            if (true) {
+                IPFS ipfs = IPFS.getInstance(getApplicationContext());
+                registerService(ipfs.getPort());
+            }
+        } catch (Throwable e) {
+            io.LogUtils.error(TAG, e);
+        }
         LogUtils.info(InitApplication.TIME_TAG,
                 "MainActivity finish onCreate [" + (System.currentTimeMillis() - start) + "]...");
     }
@@ -1540,11 +1554,6 @@ public class MainActivity extends AppCompatActivity implements
         }
     }
 
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        releaseActionMode();
-    }
 
     @Override
     public void onNewIntent(Intent intent) {
@@ -1833,6 +1842,70 @@ public class MainActivity extends AppCompatActivity implements
             }
         };
 
+    }
+    private NsdManager mNsdManager;
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        releaseActionMode();
+        try {
+            if (mNsdManager != null) {
+                mNsdManager.unregisterService(RegistrationService.getInstance());
+                mNsdManager.stopServiceDiscovery(DiscoveryService.getInstance());
+            }
+
+        } catch (Throwable e) {
+            io.LogUtils.error(TAG, e);
+        }
+    }
+
+    private void registerService(int port) {
+        try {
+            String peerID = IPFS.getPeerID(getApplicationContext());
+            Objects.requireNonNull(peerID);
+            String serviceType = "_ipfs-discovery._udp";
+            NsdServiceInfo serviceInfo = new NsdServiceInfo();
+            serviceInfo.setServiceName(peerID);
+            serviceInfo.setServiceType(serviceType);
+            serviceInfo.setPort(port);
+            mNsdManager = (NsdManager) getSystemService(Context.NSD_SERVICE);
+            Objects.requireNonNull(mNsdManager);
+            mNsdManager.registerService(serviceInfo, NsdManager.PROTOCOL_DNS_SD,
+                    RegistrationService.getInstance());
+
+
+            DiscoveryService discovery = DiscoveryService.getInstance();
+            discovery.setOnServiceFoundListener((info) -> mNsdManager.resolveService(info, new NsdManager.ResolveListener() {
+
+                @Override
+                public void onResolveFailed(NsdServiceInfo serviceInfo, int errorCode) {
+
+                }
+
+
+                @Override
+                public void onServiceResolved(NsdServiceInfo serviceInfo) {
+
+                    try {
+
+                        String serviceName = serviceInfo.getServiceName();
+                        boolean connect = !Objects.equals(peerID, serviceName);
+                        if (connect) {
+                            InetAddress inetAddress = serviceInfo.getHost();
+                            LocalConnectWorker.connect(getApplicationContext(),
+                                    serviceName, serviceInfo.getHost().toString(),
+                                    serviceInfo.getPort(), inetAddress instanceof Inet6Address);
+                        }
+
+                    } catch (Throwable e) {
+                        io.LogUtils.error(TAG, e);
+                    }
+                }
+            }));
+            mNsdManager.discoverServices(serviceType, NsdManager.PROTOCOL_DNS_SD, discovery);
+        } catch (Throwable e) {
+            io.LogUtils.error(TAG, e);
+        }
     }
 
     public abstract static class AppBarStateChangedListener implements AppBarLayout.OnOffsetChangedListener {

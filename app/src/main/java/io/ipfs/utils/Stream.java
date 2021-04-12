@@ -54,19 +54,22 @@ public class Stream {
         }
     }
 
-    public static void ResolveName(@NonNull Routing routing, @NonNull ResolveInfo info,
-                                   @NonNull String pid, boolean offline, int dhtRecords) {
+    public static void ResolveName(@NonNull Closeable closeable,
+                                   @NonNull Routing routing,
+                                   @NonNull ResolveInfo info,
+                                   @NonNull PeerId name, boolean offline, int dhtRecords)
+            throws ClosedException {
 
-        PeerId peerId = PeerId.fromBase58(pid);
+
 
 
         // Use the routing system to get the name.
         // Note that the DHT will call the ipns validator when retrieving
         // the value, which in turn verifies the ipns record signature
-        String ipnsKey = IPFS.IPNS_PATH + peerId.toBase58();
+        String ipnsKey = IPFS.IPNS_PATH + name.toBase58();
 
 
-        routing.SearchValue(info, ipnsKey, new Quorum(dhtRecords), new Offline(offline));
+        routing.SearchValue(closeable, info, ipnsKey, new Quorum(dhtRecords), new Offline(offline));
 
     }
 

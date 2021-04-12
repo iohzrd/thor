@@ -5,6 +5,7 @@ import androidx.annotation.NonNull;
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 
+import dht.pb.Dht;
 import io.LogUtils;
 import io.core.Closeable;
 import io.core.ClosedException;
@@ -15,7 +16,7 @@ import io.libp2p.core.NoSuchRemoteProtocolException;
 import io.libp2p.core.PeerId;
 import io.libp2p.etc.types.NothingToCompleteException;
 import io.netty.handler.timeout.ReadTimeoutException;
-import io.protos.dht.DhtProtos;
+
 
 public class MessageSender {
     private static final String TAG = MessageSender.class.getSimpleName();
@@ -27,8 +28,8 @@ public class MessageSender {
         this.dht = dht;
     }
 
-    public synchronized DhtProtos.Message SendRequest(
-            @NonNull Closeable ctx, @NonNull DhtProtos.Message message)
+    public synchronized Dht.Message SendRequest(
+            @NonNull Closeable ctx, @NonNull Dht.Message message)
             throws ClosedException, ProtocolNotSupported, ConnectionFailure {
 
 

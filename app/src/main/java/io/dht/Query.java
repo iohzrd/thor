@@ -52,8 +52,6 @@ public class Query {
     // the function that will be used to query a single peer.
     private final QueryFunc queryFn;
 
-    // waitGroup ensures lookup does not end until all query goroutines complete.
-    // TODO waitGroup sync.WaitGroup
     // stopFn is used to determine if we should stop the WHOLE disjoint query.
     private final StopFunc stopFn;
     // terminated is set when the first worker thread encounters the termination condition.
@@ -98,7 +96,7 @@ public class Query {
         res.completed = completed;
 
         // get the top K overall peers
-        /*
+        /* TODO target
         sortedPeers = kb.SortClosestPeers(peers, target);
         if len(sortedPeers) > q.dht.bucketSize {
             sortedPeers = sortedPeers[:q.dht.bucketSize]
@@ -192,8 +190,6 @@ public class Query {
         //ch := make(chan *queryUpdate, alpha)
         //ch <- &queryUpdate{cause: q.dht.self, heard: q.seedPeers}
 
-        // return only once all outstanding queries have completed.
-        //defer q.waitGroup.Wait()
         while (true) {
 
             QueryUpdate current = queue.take();
@@ -294,9 +290,7 @@ public class Query {
             }
 
             // remove the peer if there was a dial failure..but not because of a context cancellation
-            /* TODO if dialCtx.Err() == nil {
-                q.dht.peerStoppedDHT(q.dht.ctx, p)
-            }*/
+            dht.peerStoppedDHT(queryPeer);
 
             QueryUpdate update = new QueryUpdate(queryPeer);
             update.unreachable.add(queryPeer);

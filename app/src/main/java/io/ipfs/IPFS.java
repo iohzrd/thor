@@ -7,11 +7,13 @@ import android.util.Pair;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -31,7 +33,9 @@ import java.util.concurrent.atomic.AtomicReference;
 import io.LogUtils;
 import io.core.Closeable;
 import io.core.ClosedException;
+import io.core.InvalidRecord;
 import io.core.TimeoutCloseable;
+import io.core.Validator;
 import io.dht.DhtProtocol;
 import io.dht.KadDHT;
 import io.dht.ResolveInfo;
@@ -46,6 +50,8 @@ import io.ipfs.cid.Cid;
 import io.ipfs.exchange.Interface;
 import io.ipfs.format.BlockStore;
 import io.ipfs.format.Node;
+import io.ipfs.multibase.Base58;
+import io.ipfs.multihash.Multihash;
 import io.ipfs.utils.Link;
 import io.ipfs.utils.LinkCloseable;
 import io.ipfs.utils.Progress;
@@ -54,6 +60,7 @@ import io.ipfs.utils.ReaderProgress;
 import io.ipfs.utils.ReaderStream;
 import io.ipfs.utils.Resolver;
 import io.ipfs.utils.Stream;
+import io.ipns.IpnsValidator;
 import io.libp2p.AddrInfo;
 import io.libp2p.HostBuilder;
 import io.libp2p.core.Host;
@@ -149,7 +156,7 @@ public class IPFS implements Receiver {
     private final Host host;
 
     private boolean running;
-
+    private final int port;
 
 
     private IPFS(@NonNull Context context) throws Exception {
@@ -199,7 +206,7 @@ public class IPFS implements Receiver {
         node.setEnableConnService(false);*/
 
 
-        int port = nextFreePort();
+        port = nextFreePort();
 
         String prk = IPFS.getPrivateKey(context);
         byte[] kk = Base64.getDecoder().decode(prk);
@@ -220,7 +227,9 @@ public class IPFS implements Receiver {
                 .build();
 
         int alpha = getConcurrencyValue(context);
-        this.routing = new KadDHT(host, alpha);
+
+        // TODO implement validator
+        this.routing = new KadDHT(host, new IpnsValidator(), alpha);
 
 
         BitSwapNetwork bsm = LiteHost.NewLiteHost(host, routing);
@@ -229,6 +238,9 @@ public class IPFS implements Receiver {
         this.exchange = BitSwap.New(bsm, blockstore);
         host.start().get();
         running = true;
+    }
+    public int getPort(){
+        return port;
     }
     @Override
     public void ReceiveMessage(@NonNull PeerId peer, @NonNull String protocol, @NonNull BitSwapMessage incoming) {
@@ -383,10 +395,64 @@ public class IPFS implements Receiver {
     }
 
 
+
+    private static String deserialize(byte[] raw) {
+        try (InputStream inputStream = new ByteArrayInputStream(raw)) {
+            return deserialize(inputStream);
+        } catch (Throwable ignore) {
+            return "";
+        }
+
+    }
+
+    private static String deserialize(InputStream din) throws IOException {
+        int type = (int) Multihash.readVarint(din);
+        if (type != 1) {
+            throw new RuntimeException();
+        }
+        Multihash.readVarint(din);
+        ByteBuffer byteBuffer = ByteBuffer.allocate(din.available());
+
+        int res = din.read(byteBuffer.array());
+        if (res <= 0) {
+            throw new RuntimeException();
+        }
+
+        return Base58.encode(byteBuffer.array());
+    }
+
+
+
+    @Nullable
+    public static PeerId decode(@NonNull String name) {
+        try {
+
+            if (name.startsWith("Qm") || name.startsWith("1")) {
+                // base58 encoded sha256 or identity multihash
+                return PeerId.fromBase58(name);
+            }
+            Cid cid = Cid.Decode(name);
+
+
+            long ty = cid.Type();
+            if (ty != Cid.Libp2pKey) {
+                throw new RuntimeException("Decode name failed");
+            }
+
+            return PeerId.fromBase58((deserialize(cid.Bytes())));
+
+
+        } catch (Throwable ignore) {
+            // ignore
+        }
+        return null;
+    }
+
+
     @NonNull
     public String decodeName(@NonNull String name) {
         try {
-            return PeerId.fromBase58(name).toBase58();
+            return decode(name).toBase58();
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         }
@@ -419,15 +485,17 @@ public class IPFS implements Receiver {
                         LogUtils.info(TAG, "\nBootstrap done " + future.isDone());
                     }
 
+                    routing.init();
+
                     List<String> second = result.second;
                     tasks.clear();
                     if (!second.isEmpty()) {
                         executor = Executors.newFixedThreadPool(second.size());
                         for (String address : second) {
-                            tasks.add(() -> swarmConnect(address, TIMEOUT_BOOTSTRAP * 5));
+                            tasks.add(() -> swarmConnect(address, TIMEOUT_BOOTSTRAP));
                         }
                         futures.clear();
-                        futures = executor.invokeAll(tasks, TIMEOUT_BOOTSTRAP * 5, TimeUnit.SECONDS);
+                        futures = executor.invokeAll(tasks, TIMEOUT_BOOTSTRAP, TimeUnit.SECONDS);
                         for (Future<Boolean> future : futures) {
                             LogUtils.info(TAG, "\nConnect done " + future.isDone());
                         }
@@ -752,11 +820,8 @@ public class IPFS implements Receiver {
         try {
             AtomicLong timeout = new AtomicLong(System.currentTimeMillis() + RESOLVE_MAX_TIME);
             AtomicBoolean abort = new AtomicBoolean(false);
-            Stream.ResolveName(routing, new ResolveInfo() {
-                @Override
-                public boolean isClosed() {
-                    return (timeout.get() < System.currentTimeMillis()) || abort.get() || closeable.isClosed();
-                }
+            Stream.ResolveName(() -> /*(timeout.get() < System.currentTimeMillis())
+                    ||*/ abort.get() || closeable.isClosed(), routing, new ResolveInfo() {
 
                 private void setName(@NonNull String hash, long sequence) {
                     resolvedName.set(new ResolvedName(sequence,
@@ -792,8 +857,10 @@ public class IPFS implements Receiver {
                     }
 
                 }
-            }, name, false, 8);
+            }, decode(name), false, 8);
 
+        } catch (ClosedException closedException){
+            throw closedException;
         } catch (Throwable e) {
             LogUtils.error(TAG, e);
         }

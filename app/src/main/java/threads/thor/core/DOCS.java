@@ -103,7 +103,7 @@ public class DOCS {
                     connected = ipfs.swarmConnect(Content.P2P_PATH + pid, closeable);
                 }
 
-                if (page != null) {
+                if (page != null && connected) {
                     Multiaddr info = ipfs.swarmPeer(pid);
                     if (info != null) {
                         String address = info.toString();
