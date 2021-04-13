@@ -708,7 +708,7 @@ public class DOCS {
             List<String> paths = uri.getPathSegments();
             String host = uri.getHost();
             Objects.requireNonNull(host);
-            if (!ipfs.isValidCID(host)) {
+            if (ipfs.decodeName(host).isEmpty()) {
                 String link = DnsAddrResolver.getDNSLink(host);
                 if (link.isEmpty()) {
                     // could not resolved, maybe no NETWORK

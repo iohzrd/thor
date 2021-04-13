@@ -16,7 +16,6 @@ import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
@@ -60,11 +59,11 @@ public class Query {
     // Its role is to make sure that once termination is determined, it is sticky.
     boolean terminated = false;
 
-    public Query(@NonNull KadDHT dht, @NonNull UUID uuid, @NonNull String key,
+    public Query(@NonNull KadDHT dht, @NonNull UUID uuid, @NonNull byte[] key,
                  @NonNull List<PeerId> seedPeers, @NonNull QueryPeerSet queryPeers,
                  @NonNull QueryFunc queryFn, @NonNull StopFunc stopFn) {
         this.id = uuid;
-        this.key = key;
+        this.key = new String(key); // TODO remove
         this.dht = dht;
         this.seedPeers = seedPeers;
         this.queryPeers = queryPeers;
@@ -292,7 +291,7 @@ public class Query {
 
             // remove the peer if there was a dial failure..but not because of a context cancellation
             LogUtils.error(TAG, throwable);
-            // dht.peerStoppedDHT(queryPeer); // TODO
+            dht.peerStoppedDHT(queryPeer); // TODO
             try {
                 Collection<Multiaddr> collections = dht.host.getAddressBook().getAddrs(queryPeer).get();
                 if (collections != null) {

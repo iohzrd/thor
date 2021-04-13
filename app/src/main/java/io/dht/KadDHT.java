@@ -80,7 +80,7 @@ public class KadDHT implements Routing {
         this.host.addConnectionHandler(new ConnectionHandler() {
             @Override
             public void handleConnection(@NotNull Connection conn) {
-             //   peerFound(conn.secureSession().getRemoteId(), false);
+              peerFound(conn.secureSession().getRemoteId(), false);
             }
         });
     }
@@ -177,7 +177,7 @@ public class KadDHT implements Routing {
         }
 
 
-        findProvidersAsyncRoutine(providers, cid, chSize);
+        findProvidersAsyncRoutine(providers, cid.Bytes(), chSize);
     }
 
 
@@ -212,13 +212,13 @@ public class KadDHT implements Routing {
     }
 
     private void findProvidersAsyncRoutine(@NonNull Providers providers,
-                                           @NonNull Cid cid, int count) throws ClosedException {
+                                           @NonNull byte[] key, int count) throws ClosedException {
 
 
         boolean findAll = count == 0;
         Set<PeerId> ps = new HashSet<>();
 
-
+        /*
         Set<AddrInfo> provs = providerManager.GetProviders(cid);
         for (AddrInfo prov : provs) {
             // NOTE: Assuming that this list of peers is unique
@@ -229,11 +229,11 @@ public class KadDHT implements Routing {
             if (!findAll && ps.size() >= count) {
                 return;
             }
-        }
+        }*/
 
         // TODO check if correct
 
-        LookupWithFollowupResult lookupRes = runLookupWithFollowup(providers, cid.String(),
+        LookupWithFollowupResult lookupRes = runLookupWithFollowup(providers, key,
                 new QueryFunc() {
 
                     @NonNull
@@ -249,7 +249,7 @@ public class KadDHT implements Routing {
                         })
                         */
 
-                        Dht.Message message = findProvidersSingle(ctx, p, cid);
+                        Dht.Message message = findProvidersSingle(ctx, p, key);
 
                        /* LogUtils.error(TAG, "" + message.getProviderPeersList().size()
                                 + " provider entries");*/
@@ -279,15 +279,15 @@ public class KadDHT implements Routing {
 
                         // Add unique providers from request, up to 'count'
                         for (AddrInfo prov : provs) {
-                            providerManager.addProvider(cid, prov);
+                            //providerManager.addProvider(cid, prov);
 
                             LogUtils.error(TAG, "got provider : " + prov.getPeerId());
                             if (ps.add(prov.getPeerId())) {
-                                LogUtils.error(TAG, "using provider: " + prov.getPeerId());
+                                LogUtils.error(TAG, "got provider using: " + prov.getPeerId());
                                 providers.Peer(prov);
                             }
                             if (!findAll && ps.size() >= count) {
-                                LogUtils.error(TAG, "got enough providers " + ps.size() + " " + count);
+                                LogUtils.error(TAG, "got provider enough " + ps.size() + " " + count);
                                 break;
                             }
                         }
@@ -399,11 +399,11 @@ public class KadDHT implements Routing {
     }
 
 
-    private Dht.Message getValueSingle(@NonNull Closeable ctx, @NonNull PeerId p, @NonNull String key)
+    private Dht.Message getValueSingle(@NonNull Closeable ctx, @NonNull PeerId p, @NonNull byte[] key)
             throws ConnectionFailure, ProtocolNotSupported, ClosedException {
         Dht.Message pms = Dht.Message.newBuilder()
                 .setType(Dht.Message.MessageType.GET_VALUE)
-                .setKey(ByteString.copyFrom(key.getBytes()))
+                .setKey(ByteString.copyFrom(key))
                 .setClusterLevelRaw(0).build();
         return sendRequest(ctx, p, pms);
     }
@@ -418,11 +418,11 @@ public class KadDHT implements Routing {
         return sendRequest(ctx, p, pms);
     }
 
-    private Dht.Message findProvidersSingle(@NonNull Closeable ctx, @NonNull PeerId p, @NonNull Cid cid)
+    private Dht.Message findProvidersSingle(@NonNull Closeable ctx, @NonNull PeerId p, @NonNull byte[] cid)
             throws ClosedException, ProtocolNotSupported, ConnectionFailure {
         Dht.Message pms = Dht.Message.newBuilder()
                 .setType(Dht.Message.MessageType.GET_PROVIDERS)
-                .setKey(ByteString.copyFrom(cid.Bytes()))
+                .setKey(ByteString.copyFrom(cid))
                 .setClusterLevelRaw(0).build();
         return sendRequest(ctx, p, pms);
     }
@@ -474,7 +474,7 @@ public class KadDHT implements Routing {
                 return pi, nil
             }*/
 
-        LookupWithFollowupResult lookupRes = runLookupWithFollowup(closeable, id.toBase58(),
+        LookupWithFollowupResult lookupRes = runLookupWithFollowup(closeable, id.getBytes(),
                 new QueryFunc() {
                     @NonNull
                     @Override
@@ -571,7 +571,7 @@ public class KadDHT implements Routing {
         return null;
     }
 
-    private LookupWithFollowupResult runQuery(@NonNull Closeable ctx, @NonNull String target,
+    private LookupWithFollowupResult runQuery(@NonNull Closeable ctx, @NonNull byte[] target,
                                               @NonNull QueryFunc queryFn, @NonNull StopFunc stopFn)
             throws ClosedException, InterruptedException {
         // pick the K closest peers to the key in our Routing table.
@@ -612,7 +612,7 @@ public class KadDHT implements Routing {
     //
     // After the lookup is complete the query function is run (unless stopped) against all of the top K peers from the
     // lookup that have not already been successfully queried.
-    private LookupWithFollowupResult runLookupWithFollowup(@NonNull Closeable ctx, @NonNull String target,
+    private LookupWithFollowupResult runLookupWithFollowup(@NonNull Closeable ctx, @NonNull byte[] target,
                                                            @NonNull QueryFunc queryFn, @NonNull StopFunc stopFn)
             throws ClosedException {
         // run the query
@@ -700,8 +700,8 @@ public class KadDHT implements Routing {
 // NOTE: It will update the dht's peerstore with any new addresses
 // it finds for the given peer.
     private Pair< RecordOuterClass.Record, List<AddrInfo>> getValueOrPeers(@NonNull Closeable ctx,
-                                                                   @NonNull PeerId p ,
-                                                                   @NonNull String key)
+                                                                           @NonNull PeerId p,
+                                                                           @NonNull byte[] key)
             throws ConnectionFailure, ClosedException, ProtocolNotSupported, InvalidRecord { // TODO rethink InvalidRecord
 
 
@@ -732,20 +732,17 @@ public class KadDHT implements Routing {
 
         }
 
-        RecordOuterClass.Record rec = pms.getRecord();
-        if(rec != null) {
 
-
-            String cmpkey = new String(rec.getKey().toByteArray());
-            LogUtils.error(TAG, "" +  cmpkey);
-
+        if(pms.hasRecord()) {
+            RecordOuterClass.Record rec = pms.getRecord();
             // make sure record is valid.
             try {
                 byte[] record = rec.getValue().toByteArray();
                 if(record != null && record.length > 0) {
-                    LogUtils.error(TAG, "Got Record for key " + key);
-                    validator.Validate(key, record);
-                    LogUtils.error(TAG, "Success Got Record for key " + key);
+                    String found = new String(rec.getKey().toByteArray());
+                    LogUtils.error(TAG, "Got Record for key " + found);
+                    validator.Validate(found, record);
+                    LogUtils.error(TAG, "Got Record success for key " + found);
                     return Pair.create(rec, peers);
                 }
             } catch (Throwable throwable){
@@ -761,7 +758,7 @@ public class KadDHT implements Routing {
     }
 
     LookupWithFollowupResult getValues(@NonNull Closeable ctx, @NonNull RecordValFunc recordFunc,
-                                       @NonNull String key, @NonNull StopFunc stopQuery) throws ClosedException {
+                                       @NonNull byte[] key, @NonNull StopFunc stopQuery) throws ClosedException {
 
         /*
         valCh := make(chan RecvdVal, 1)
@@ -959,7 +956,7 @@ public class KadDHT implements Routing {
 
             updatePeerValues(ctx, key, best, updatePeers) */
             }
-        }, key, new StopFunc() {
+        }, key.getBytes(), new StopFunc() {
             @Override
             public boolean func() {
                 return numResponses.get() == nvals;

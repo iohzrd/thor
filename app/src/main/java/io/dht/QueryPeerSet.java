@@ -24,8 +24,8 @@ public class QueryPeerSet {
 
     // NewQueryPeerset creates a new empty set of peers.
     // key is the target key of the lookup that this peer set is for.
-    public static QueryPeerSet create(@NonNull String key) {
-        return new QueryPeerSet(QueryKey.createQueryKey(key.getBytes()));
+    public static QueryPeerSet create(@NonNull byte[] key) {
+        return new QueryPeerSet(QueryKey.createQueryKey(key));
     }
 
     private BigInteger distanceToKey(@NonNull PeerId p) {

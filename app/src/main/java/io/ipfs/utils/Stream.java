@@ -13,6 +13,7 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Objects;
 
+import dht.pb.Dht;
 import io.LogUtils;
 import io.core.Closeable;
 import io.dht.Offline;
@@ -62,12 +63,8 @@ public class Stream {
     public static void ResolveName(@NonNull Closeable closeable,
                                    @NonNull Routing routing,
                                    @NonNull ResolveInfo info,
-                                   @NonNull String name, boolean offline, int dhtRecords)
+                                   @NonNull PeerId id, boolean offline, int dhtRecords)
             throws ClosedException {
-
-
-        Cid cid = Cid.Decode(name); // scheint ok zu seim
-
 
 
 
@@ -80,11 +77,11 @@ public class Stream {
         // Use the routing system to get the name.
         // Note that the DHT will call the ipns validator when retrieving
         // the value, which in turn verifies the ipns record signature
-        String ipnsKey = IPFS.IPNS_PATH + new String(cid.Hash().toBytes()); // richtig testen
+        String ipnsKey = IPFS.IPNS_PATH + new String(id.getBytes()); // richtig testen
 
 
-
-
+        // /ipns/�� ^J��N�i}'8����\Ɗ��UVD���_��
+        //String ipnsKey = IPFS.IPNS_PATH + name; //PeerId.fromBase58(name);
         LogUtils.error(TAG, ipnsKey);
 
         routing.SearchValue(closeable, info, ipnsKey, new Quorum(dhtRecords), new Offline(offline));
@@ -116,7 +113,7 @@ public class Stream {
 
         byte[] bytes = record.toByteArray();
 
-        String rk = IPFS.IPNS_PATH + id.toBase58();
+        String rk = IPFS.IPNS_PATH + new String(id.getBytes());
 
         routing.PutValue(closable, rk, bytes);
     }

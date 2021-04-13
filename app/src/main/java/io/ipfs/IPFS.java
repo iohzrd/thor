@@ -2,28 +2,29 @@ package io.ipfs;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.util.Log;
 import android.util.Pair;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import org.bouncycastle.util.encoders.UTF8;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -37,11 +38,10 @@ import java.util.concurrent.atomic.AtomicReference;
 import io.LogUtils;
 import io.core.Closeable;
 import io.core.ClosedException;
-import io.core.InvalidRecord;
 import io.core.TimeoutCloseable;
-import io.core.Validator;
 import io.dht.DhtProtocol;
 import io.dht.KadDHT;
+import io.dht.Providers;
 import io.dht.ResolveInfo;
 import io.dht.Routing;
 import io.ipfs.bitswap.BitSwap;
@@ -55,6 +55,7 @@ import io.ipfs.exchange.Interface;
 import io.ipfs.format.BlockStore;
 import io.ipfs.format.Node;
 import io.ipfs.multibase.Base58;
+import io.ipfs.multibase.Multibase;
 import io.ipfs.multihash.Multihash;
 import io.ipfs.utils.Link;
 import io.ipfs.utils.LinkCloseable;
@@ -67,6 +68,7 @@ import io.ipfs.utils.Stream;
 import io.ipns.IpnsValidator;
 import io.libp2p.AddrInfo;
 import io.libp2p.HostBuilder;
+import io.libp2p.core.Connection;
 import io.libp2p.core.Host;
 import io.libp2p.core.PeerId;
 import io.libp2p.core.crypto.KEY_TYPE;
@@ -158,6 +160,7 @@ public class IPFS implements Receiver {
     private final Interface exchange;
     private final Routing routing;
     private final Host host;
+    private final String privateKey;
 
     private boolean running;
     private final int port;
@@ -211,10 +214,12 @@ public class IPFS implements Receiver {
 
 
         port = nextFreePort();
+        privateKey = getPrivateKey(context);
 
         String prk = IPFS.getPrivateKey(context);
         byte[] kk = Base64.getDecoder().decode(prk);
         PrivKey privKey = KeyKt.unmarshalPrivateKey(kk);
+        PeerId tt = PeerId.fromPubKey(privKey.publicKey());
 
 
         host = new HostBuilder()
@@ -242,10 +247,21 @@ public class IPFS implements Receiver {
         this.exchange = BitSwap.New(bsm, blockstore);
         host.start().get();
         running = true;
+
+
+        String rk = IPFS.IPNS_PATH + new String(tt.getBytes());
+        String cmp = IPFS.IPNS_PATH + new String(host.getPeerId().getBytes());
+        LogUtils.error(TAG, rk);
+        LogUtils.error(TAG, cmp);
+        PeerId s = decode(Multibase.encode(Multibase.Base.Base32, host.getPeerId().getBytes()));
+        String rks = IPFS.IPNS_PATH + new String(s.getBytes());
+        LogUtils.error(TAG, rks);
+        LogUtils.error(TAG, IPFS.IPNS_PATH + new String(decode(getPeerID()).getBytes()));
     }
     public int getPort(){
         return port;
     }
+
     @Override
     public void ReceiveMessage(@NonNull PeerId peer, @NonNull String protocol, @NonNull BitSwapMessage incoming) {
         exchange.ReceiveMessage(peer, protocol, incoming);
@@ -254,6 +270,298 @@ public class IPFS implements Receiver {
     @Override
     public void ReceiveError(@NonNull PeerId peer, @NonNull String protocol, @NonNull String error) {
         exchange.ReceiveError(peer, protocol, error);
+    }
+
+
+    @Nullable
+    public String storeFile(@NonNull File target) {
+        try (FileInputStream inputStream = new FileInputStream(target)) {
+            return storeInputStream(inputStream);
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable);
+        }
+        return null;
+    }
+
+    @NonNull
+    public List<String> swarmPeers() {
+        if (!isDaemonRunning()) {
+            return Collections.emptyList();
+        }
+        return swarm_peers();
+    }
+
+    @NonNull
+    private List<String> swarm_peers() {
+
+        List<String> peers = new ArrayList<>();
+        if (isDaemonRunning()) {
+            try {
+
+                for (Connection connection : host.getNetwork().getConnections()) {
+                    peers.add(connection.secureSession().getRemoteId().toBase58()); // TODO return PeerId
+                }
+            } catch (Throwable e) {
+                LogUtils.error(TAG, e);
+            }
+        }
+        return peers;
+    }
+
+    public void dhtPublish(@NonNull Closeable closable, @NonNull String cid) throws ClosedException {
+
+        if (!isDaemonRunning()) {
+            return;
+        }
+
+        try {
+            // TODO node.dhtProvide(cid, closable::isClosed);
+        } catch (Throwable ignore) {
+        }
+        if (closable.isClosed()) {
+            throw new ClosedException();
+        }
+    }
+
+
+    public void Provide(@NonNull Closeable closeable, @NonNull Cid cid) {
+        try {
+            dhtPublish(closeable, cid.String());
+        } catch (Throwable throwable) {
+            throw new RuntimeException(throwable);
+        }
+
+    }
+
+    @NonNull
+    public static PeerId decode(@NonNull String name) {
+
+        if (name.startsWith("Qm") || name.startsWith("1")) {
+            // base58 encoded sha256 or identity multihash
+            return PeerId.fromBase58(name);
+        }
+        byte[] data = Multibase.decode(name);
+
+        if (data[0] == 0) {
+            Multihash mh = new Multihash(Multihash.Type.id, data);
+            return PeerId.fromBase58(Base58.encode(mh.getHash()));
+        } else {
+            try (InputStream inputStream = new ByteArrayInputStream(data)) {
+                long version = Multihash.readVarint(inputStream);
+                if (version != 1) {
+                    throw new Exception("invalid version");
+                }
+                long codecType = Multihash.readVarint(inputStream);
+                if (!(codecType == Cid.DagProtobuf || codecType == Cid.Raw || codecType == Cid.Libp2pKey)) {
+                    throw new Exception("not supported codec");
+                }
+                Multihash mh = Multihash.deserialize(inputStream);
+                return PeerId.fromBase58(mh.toBase58());
+
+            } catch (Throwable throwable) {
+                throw new RuntimeException(throwable);
+            }
+        }
+
+
+    }
+
+    public void rm(@NonNull String cid, boolean recursively) {
+        try {
+            Stream.Rm(() -> false, blocks, cid, recursively);
+        } catch (Throwable e) {
+            LogUtils.error(TAG, e);
+        }
+    }
+
+    @Nullable
+    public String storeData(@NonNull byte[] data) {
+
+        try (InputStream inputStream = new ByteArrayInputStream(data)) {
+            return storeInputStream(inputStream);
+        } catch (Throwable e) {
+            LogUtils.error(TAG, e);
+        }
+        return null;
+    }
+
+    @Nullable
+    public String storeText(@NonNull String content) {
+
+        try (InputStream inputStream = new ByteArrayInputStream(content.getBytes())) {
+            return storeInputStream(inputStream);
+        } catch (Throwable e) {
+            LogUtils.error(TAG, e);
+        }
+        return null;
+    }
+
+    public void storeToFile(@NonNull File file, @NonNull String cid, @NonNull Closeable closeable) throws Exception {
+
+        try (FileOutputStream fileOutputStream = new FileOutputStream(file)) {
+            storeToOutputStream(fileOutputStream, cid, closeable);
+        }
+    }
+
+    @Nullable
+    public String storeInputStream(@NonNull InputStream inputStream,
+                                   @NonNull Progress progress, long size) {
+
+
+        String res = "";
+        try {
+            res = Stream.Write(blocks, new io.ipfs.utils.WriterStream(inputStream, progress, size));
+        } catch (Throwable e) {
+            if (!progress.isClosed()) {
+                LogUtils.error(TAG, e);
+            }
+        }
+
+        if (!res.isEmpty()) {
+            return res;
+        }
+        return null;
+    }
+
+    @Nullable
+    public String storeInputStream(@NonNull InputStream inputStream) {
+
+        return storeInputStream(inputStream, new Progress() {
+            @Override
+            public boolean isClosed() {
+                return false;
+            }
+
+            @Override
+            public void setProgress(int progress) {
+            }
+
+            @Override
+            public boolean doProgress() {
+                return false;
+            }
+
+
+        }, 0);
+    }
+
+    @Nullable
+    public String getText(@NonNull String cid, @NonNull Closeable closeable) {
+
+        try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+            getToOutputStream(outputStream, cid, closeable);
+            return new String(outputStream.toByteArray());
+        } catch (Throwable e) {
+            LogUtils.error(TAG, e);
+            return null;
+        }
+    }
+
+    public void storeToOutputStream(@NonNull OutputStream os, @NonNull Progress progress,
+                                    @NonNull String cid) throws Exception {
+
+        long totalRead = 0L;
+        int remember = 0;
+
+        io.ipfs.utils.Reader reader = getReader(cid, progress);
+        long size = reader.getSize();
+        byte[] buf = reader.loadNextData();
+        while (buf != null && buf.length > 0) {
+
+            if (progress.isClosed()) {
+                throw new RuntimeException("Progress closed");
+            }
+
+            // calculate progress
+            totalRead += buf.length;
+            if (progress.doProgress()) {
+                if (size > 0) {
+                    int percent = (int) ((totalRead * 100.0f) / size);
+                    if (remember < percent) {
+                        remember = percent;
+                        progress.setProgress(percent);
+                    }
+                }
+            }
+
+            os.write(buf, 0, buf.length);
+
+            buf = reader.loadNextData();
+
+        }
+
+
+    }
+
+    public void storeToOutputStream(@NonNull OutputStream os, @NonNull String cid, @NonNull Closeable closeable) throws Exception {
+
+
+        io.ipfs.utils.Reader reader = getReader(cid, closeable);
+        byte[] buf = reader.loadNextData();
+        while (buf != null && buf.length > 0) {
+
+            os.write(buf, 0, buf.length);
+            buf = reader.loadNextData();
+        }
+
+
+    }
+
+    @Nullable
+    public byte[] loadData(@NonNull String cid, @NonNull Closeable closeable) throws Exception {
+        if (!isDaemonRunning()) {
+            return null;
+        }
+        try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+            storeToOutputStream(outputStream, new Progress() {
+                @Override
+                public void setProgress(int progress) {
+
+                }
+
+                @Override
+                public boolean doProgress() {
+                    return false;
+                }
+
+                @Override
+                public boolean isClosed() {
+                    return closeable.isClosed();
+                }
+            }, cid);
+            return outputStream.toByteArray();
+        }
+    }
+
+    @Nullable
+    public byte[] loadData(@NonNull String cid, @NonNull Progress progress) throws Exception {
+        if (!isDaemonRunning()) {
+            return null;
+        }
+        try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+            storeToOutputStream(outputStream, progress, cid);
+            return outputStream.toByteArray();
+        }
+    }
+
+    @Nullable
+    public String rmLinkFromDir(String dir, String name) {
+        try {
+            return Stream.RemoveLinkFromDir(blocks, () -> false, dir, name);
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable);
+        }
+        return null;
+    }
+
+    @Nullable
+    public String addLinkToDir(@NonNull String dir, @NonNull String name, @NonNull String link) {
+        try {
+            return Stream.AddLinkToDir(blocks, () -> false, dir, name, link);
+        } catch (Throwable e) {
+            LogUtils.error(TAG, e);
+        }
+        return null;
     }
 
     @Override
@@ -425,29 +733,12 @@ public class IPFS implements Receiver {
         return Base58.encode(byteBuffer.array());
     }
 
-
-
     @Nullable
-    public static PeerId decode(@NonNull String name) {
+    public String createEmptyDir() {
         try {
-
-            if (name.startsWith("Qm") || name.startsWith("1")) {
-                // base58 encoded sha256 or identity multihash
-                return PeerId.fromBase58(name);
-            }
-            Cid cid = Cid.Decode(name);
-
-
-            long ty = cid.Type();
-            if (ty != Cid.Libp2pKey) {
-                throw new RuntimeException("Decode name failed");
-            }
-
-            return PeerId.fromBase58((deserialize(cid.Bytes())));
-
-
-        } catch (Throwable ignore) {
-            // ignore
+            return Stream.CreateEmptyDir(blocks);
+        } catch (Throwable e) {
+            LogUtils.error(TAG, e);
         }
         return null;
     }
@@ -613,6 +904,90 @@ public class IPFS implements Receiver {
             throw new ClosedException();
         }
         return null;
+    }
+
+    @NonNull
+    public String base32(@NonNull String pid) {
+        /*
+
+// Cast casts a buffer onto a multihash, and returns an error
+// if it does not work.
+func Cast(buf []byte) (Multihash, error) {
+	dm, err := Decode(buf)
+	if err != nil {
+		return Multihash{}, err
+	}
+
+	if !ValidCode(dm.Code) {
+		return Multihash{}, ErrUnknownCode
+	}
+
+	return Multihash(buf), nil
+}
+
+// ToCid encodes a peer ID as a CID of the public key.
+//
+// If the peer ID is invalid (e.g., empty), this will return the empty CID.
+func ToCid(id ID) cid.Cid {
+	m, err := mh.Cast([]byte(id))
+	if err != nil {
+		return cid.Cid{}
+	}
+	return cid.NewCidV1(cid.Libp2pKey, m)
+}
+         */
+        try {
+
+            /*
+            id, err := peer.Decode(pid)
+            if err != nil {
+                return "", fmt.Errorf("invalid peer id")
+            }
+            return peer.ToCid(id).String(), nil*/
+           return Stream.base32(decode(pid));
+        } catch (Throwable e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @NonNull
+    public String getHost() {
+        return base32(getPeerID());
+    }
+    public void publishName(@NonNull String cid, @NonNull Closeable closeable, int sequence)
+            throws ClosedException {
+        if (!isDaemonRunning()) {
+            return;
+        }
+        try {
+
+           Stream.PublishName(closeable, routing, privateKey, cid, sequence);
+        } catch (Throwable ignore) {
+            LogUtils.error(TAG, ignore);
+        }
+
+        if (closeable.isClosed()) {
+            throw new ClosedException();
+        }
+    }
+
+    public void dhtFindProviders(@NonNull String cid, int numProviders,
+                                 @NonNull Providers providers) throws ClosedException {
+        if (!isDaemonRunning()) {
+            return;
+        }
+
+        if (numProviders < 1) {
+            throw new RuntimeException("number of providers must be greater than 0");
+        }
+
+        try {
+            routing.FindProvidersAsync(providers, Cid.Decode(cid), numProviders);
+        } catch (Throwable ignore) {
+        }
+        if (providers.isClosed()) {
+            throw new ClosedException();
+        }
     }
 
     @Nullable
@@ -862,7 +1237,7 @@ public class IPFS implements Receiver {
                     }
 
                 }
-            }, name, false, 8);
+            }, decode(name), false, 8);
 
         } catch (ClosedException closedException){
             throw closedException;
@@ -942,6 +1317,15 @@ public class IPFS implements Receiver {
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         }
+    }
+
+    public boolean isConnected(@NonNull String pid) {
+        try {
+            return host.getNetwork().connect(decode(pid)).get() != null;
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable);
+        }
+        return false;
     }
 
 

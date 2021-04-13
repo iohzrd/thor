@@ -83,10 +83,10 @@ public class Util {
     }
 
     // ConvertKey creates a DHT ID by hashing a local key (String)
-    public static ID ConvertKey(@NonNull String id) {
+    public static ID ConvertKey(@NonNull byte[] id) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            return new ID(digest.digest(id.getBytes()));
+            return new ID(digest.digest(id));
         } catch (Throwable throwable) {
             throw new RuntimeException(throwable);
         }
