@@ -362,8 +362,6 @@ public class IPFS implements Receiver {
                 throw new RuntimeException(throwable);
             }
         }
-
-
     }
 
     public void rm(@NonNull String cid, boolean recursively) {
@@ -944,7 +942,7 @@ func ToCid(id ID) cid.Cid {
                 return "", fmt.Errorf("invalid peer id")
             }
             return peer.ToCid(id).String(), nil*/
-           return Stream.base32(decode(pid));
+           return Stream.base32(host.getPeerId());
         } catch (Throwable e) {
             throw new RuntimeException(e);
         }

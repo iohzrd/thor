@@ -49,26 +49,6 @@ public class IpfsTest {
     }
 
     @Test
-    public void test_resolve_publish() throws ClosedException {
-        IPFS ipfs = TestEnv.getTestInstance(context);
-        String test = "Moin Wurst";
-        String cid = ipfs.storeText(test);
-        assertNotNull(cid);
-        int random = (int) Math.abs(Math.random());
-
-
-        ipfs.publishName(cid, ()-> false, random);
-
-        String key = IPFS.IPNS_PATH + ipfs.getHost();
-
-        IPFS.ResolvedName res = ipfs.resolveName(key, random, () -> false);
-        assertNotNull(res);
-
-        assertEquals(res.getHash(), cid);
-
-    }
-
-    @Test
     public void test_dns_addr() {
 
         if (TestEnv.isConnected(context)) {
