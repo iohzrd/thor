@@ -2,10 +2,13 @@ package io.ipfs;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.util.Log;
 import android.util.Pair;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+
+import org.bouncycastle.util.encoders.UTF8;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -14,6 +17,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -820,6 +824,7 @@ public class IPFS implements Receiver {
         try {
             AtomicLong timeout = new AtomicLong(System.currentTimeMillis() + RESOLVE_MAX_TIME);
             AtomicBoolean abort = new AtomicBoolean(false);
+
             Stream.ResolveName(() -> /*(timeout.get() < System.currentTimeMillis())
                     ||*/ abort.get() || closeable.isClosed(), routing, new ResolveInfo() {
 
@@ -857,7 +862,7 @@ public class IPFS implements Receiver {
                     }
 
                 }
-            }, decode(name), false, 8);
+            }, name, false, 8);
 
         } catch (ClosedException closedException){
             throw closedException;

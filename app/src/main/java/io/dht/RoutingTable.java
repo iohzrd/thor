@@ -2,10 +2,12 @@ package io.dht;
 
 import androidx.annotation.NonNull;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import io.LogUtils;
@@ -17,6 +19,11 @@ public class RoutingTable {
     private final ID local;  // ID of the local peer
     private final CopyOnWriteArrayList<Bucket> buckets = new CopyOnWriteArrayList<>();
     private final int bucketsize;
+    // latency metrics
+    private final ConcurrentHashMap<PeerId, Duration> metrics = new ConcurrentHashMap<>();
+    // Maximum acceptable latency for peers in this cluster
+    private final Duration maxLatency = Duration.ofMinutes(1);
+
 
     public RoutingTable(int bucketsize, @NonNull ID local) {
         this.bucketsize = bucketsize;
@@ -149,13 +156,18 @@ public class RoutingTable {
             }
             return false;
         }
-/* TODO
-            // peer's latency threshold is NOT acceptable
-            if rt.metrics.LatencyEWMA(p) > rt.maxLatency {
-                // Connection doesnt meet requirements, skip!
-                return false, ErrPeerRejectedHighLatency
-            }
 
+        // peer's latency threshold is NOT acceptable
+        /* TODO
+        Duration duration = metrics.get(p);
+        if (duration != null) {
+            if (duration.compareTo(maxLatency) > 0) {
+                // Connection doesnt meet requirements, skip!
+                return false; // TODO, ErrPeerRejectedHighLatency
+            }
+        } */
+
+        /* TODO maybe
             // add it to the diversity filter for now.
             // if we aren't able to find a place for the peer in the table,
             // we will simply remove it from the Filter later.

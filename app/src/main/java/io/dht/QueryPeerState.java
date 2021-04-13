@@ -2,15 +2,17 @@ package io.dht;
 
 import androidx.annotation.NonNull;
 
+import java.math.BigInteger;
+
 import io.libp2p.core.PeerId;
 
 public class QueryPeerState implements Comparable<QueryPeerState> {
     public final PeerId id;
-    private final long distance;// TODO
+    private final BigInteger distance;
     private final PeerId referredBy;
     PeerState state;
 
-    public QueryPeerState(@NonNull PeerId id, long distance, @NonNull PeerId referredBy) {
+    public QueryPeerState(@NonNull PeerId id, BigInteger distance, @NonNull PeerId referredBy) {
         this.id = id;
         this.distance = distance;
         this.state = PeerState.PeerHeard;
@@ -20,6 +22,6 @@ public class QueryPeerState implements Comparable<QueryPeerState> {
 
     @Override
     public int compareTo(QueryPeerState o) {
-        return Long.compare(distance, o.distance);
+        return distance.compareTo(o.distance); // TODO check
     }
 }

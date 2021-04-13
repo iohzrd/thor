@@ -2,6 +2,10 @@ package io.dht;
 
 import androidx.annotation.NonNull;
 
+import com.google.common.primitives.UnsignedBytes;
+
+import java.util.Objects;
+
 public class ID implements Comparable<ID> {
     public byte[] data;
 
@@ -12,18 +16,7 @@ public class ID implements Comparable<ID> {
     @Override
     public int compareTo(ID o) {
 
-        /* TODO
-        QueryKey a = ks.Key {
-            Space:
-            ks.XORKeySpace, Bytes:id
-        }
-        QueryKey b = ks.Key {
-            Space:
-            ks.XORKeySpace, Bytes:other
-        }
-        return a.Less(b);
-
-         */
-        return 0;
+        // TODO check SignedBytes.lexicographicalComparator() or UnsignedBytes.lexicographicalComparator()
+        return Objects.compare(this.data, o.data, UnsignedBytes.lexicographicalComparator());
     }
 }

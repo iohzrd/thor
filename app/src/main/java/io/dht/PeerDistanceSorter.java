@@ -13,7 +13,7 @@ public class PeerDistanceSorter extends ArrayList<PeerDistanceSorter.PeerDistanc
         this.target = target;
     }
 
-    public void appendPeer(@NonNull PeerId peerId, @NonNull ID id) {
+    private void appendPeer(@NonNull PeerId peerId, @NonNull ID id) {
         this.add(new PeerDistance(peerId, Util.xor(target, id)));
     }
 

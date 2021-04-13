@@ -16,6 +16,8 @@ import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import io.LogUtils;
@@ -248,7 +250,7 @@ public class Query {
         queryPeers.SetState(queryPeer, PeerState.PeerWaiting);
 
 
-        dht.executors.execute(() -> {
+        Executors.newSingleThreadExecutor().execute(() -> {
             try {
                 queryPeer(ctx, queue, queryPeer);
             } catch (ClosedException ignore) {
@@ -277,8 +279,7 @@ public class Query {
             Collection<Multiaddr> collections = dht.host.getAddressBook().getAddrs(queryPeer).get();
             if (collections != null) {
                 dht.host.getNetwork().connect(queryPeer,
-                        Iterables.toArray(collections, Multiaddr.class)).get(
-                        IPFS.TIMEOUT_DHT_PEER, TimeUnit.SECONDS);
+                        Iterables.toArray(collections, Multiaddr.class)).get();
             } else {
                 dht.host.getNetwork().connect(queryPeer).get(
                         IPFS.TIMEOUT_DHT_PEER, TimeUnit.SECONDS);
@@ -290,7 +291,16 @@ public class Query {
             }
 
             // remove the peer if there was a dial failure..but not because of a context cancellation
-            dht.peerStoppedDHT(queryPeer);
+            LogUtils.error(TAG, throwable);
+            // dht.peerStoppedDHT(queryPeer); // TODO
+            try {
+                Collection<Multiaddr> collections = dht.host.getAddressBook().getAddrs(queryPeer).get();
+                if (collections != null) {
+                    LogUtils.error(TAG, collections.toString());
+                }
+            } catch (Throwable ignore){
+                //
+            }
 
             QueryUpdate update = new QueryUpdate(queryPeer);
             update.unreachable.add(queryPeer);

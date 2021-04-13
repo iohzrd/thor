@@ -224,7 +224,7 @@ public class ContentManager {
             }
 
             if (!hasRun) {
-                Set<PeerId> cons = network.getPeers();
+                Set<PeerId> cons = network.getPeers(); // TODO important
                 for (PeerId peer : cons) {
 
                     if (!faulty.contains(peer) && !handled.contains(peer)) {

@@ -2,6 +2,7 @@ package io.dht;
 
 import androidx.annotation.NonNull;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -27,7 +28,7 @@ public class QueryPeerSet {
         return new QueryPeerSet(QueryKey.createQueryKey(key.getBytes()));
     }
 
-    private long distanceToKey(@NonNull PeerId p) {
+    private BigInteger distanceToKey(@NonNull PeerId p) {
         return QueryKey.createQueryKey(p.getBytes()).Distance(key);
     }
 

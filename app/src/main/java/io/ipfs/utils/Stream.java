@@ -3,6 +3,9 @@ package io.ipfs.utils;
 
 import androidx.annotation.NonNull;
 
+import org.bouncycastle.util.encoders.UTF8;
+
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -10,6 +13,7 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Objects;
 
+import io.LogUtils;
 import io.core.Closeable;
 import io.dht.Offline;
 import io.dht.Quorum;
@@ -27,6 +31,7 @@ import io.ipfs.format.Link;
 import io.ipfs.format.Node;
 import io.ipfs.format.ProtoNode;
 import io.ipfs.merkledag.DagService;
+import io.ipfs.multibase.Multibase;
 import io.ipfs.multihash.Multihash;
 import io.ipfs.offline.Exchange;
 import io.ipfs.unixfs.Directory;
@@ -40,7 +45,7 @@ import io.libp2p.crypto.keys.Ed25519Kt;
 
 public class Stream {
 
-
+    private static final String TAG = Stream.class.getSimpleName();
     private static Duration DefaultRecordEOL = Duration.ofHours(24);
 
 
@@ -57,17 +62,30 @@ public class Stream {
     public static void ResolveName(@NonNull Closeable closeable,
                                    @NonNull Routing routing,
                                    @NonNull ResolveInfo info,
-                                   @NonNull PeerId name, boolean offline, int dhtRecords)
+                                   @NonNull String name, boolean offline, int dhtRecords)
             throws ClosedException {
 
 
+        Cid cid = Cid.Decode(name); // scheint ok zu seim
 
+
+
+
+        /*
+        LogUtils.error(TAG,  IPFS.IPNS_PATH + new String(cid.Hash().getHash(),
+                StandardCharsets.UTF_8));
+        LogUtils.error(TAG,  IPFS.IPNS_PATH + new String(cid.Hash().toBytes(),
+                StandardCharsets.UTF_8));*/
 
         // Use the routing system to get the name.
         // Note that the DHT will call the ipns validator when retrieving
         // the value, which in turn verifies the ipns record signature
-        String ipnsKey = IPFS.IPNS_PATH + name.toBase58();
+        String ipnsKey = IPFS.IPNS_PATH + new String(cid.Hash().toBytes()); // richtig testen
 
+
+
+
+        LogUtils.error(TAG, ipnsKey);
 
         routing.SearchValue(closeable, info, ipnsKey, new Quorum(dhtRecords), new Offline(offline));
 

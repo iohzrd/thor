@@ -68,12 +68,7 @@ public class DhtProtocol implements ProtocolBinding<DhtProtocol.DhtController> {
 
         @Override
         protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
-
-            throw new Exception("NOT YET IMPLEMENTED");
-            /*
-            DhtProtos.Message pmes = null; // TODO
-            ctx.writeAndFlush(Unpooled.buffer().writeBytes(pmes.toByteArray()));
-            ctx.close();*/
+            throw new Exception("NOT IMPLEMENTED");
         }
     }
 

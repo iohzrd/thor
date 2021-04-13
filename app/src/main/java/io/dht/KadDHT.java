@@ -63,7 +63,7 @@ public class KadDHT implements Routing {
     private final boolean enableValues = true;
     // check todo if replaced by a concrete. better implemenation
     private final QueryFilter filter = (dht, addrInfo) -> addrInfo.hasAddresses();
-    public final ExecutorService executors;
+    private final ExecutorService executors;
     private final Validator validator;
     public KadDHT(@NonNull Host host, @NonNull Validator validator, int alpha) {
         this.host = host;
@@ -76,10 +76,11 @@ public class KadDHT implements Routing {
         this.alpha = alpha;
         this.executors = Executors.newFixedThreadPool(alpha);
 
+
         this.host.addConnectionHandler(new ConnectionHandler() {
             @Override
             public void handleConnection(@NotNull Connection conn) {
-                peerFound(conn.secureSession().getRemoteId(), false);
+             //   peerFound(conn.secureSession().getRemoteId(), false);
             }
         });
     }
@@ -250,8 +251,8 @@ public class KadDHT implements Routing {
 
                         Dht.Message message = findProvidersSingle(ctx, p, cid);
 
-                        LogUtils.error(TAG, "" + message.getProviderPeersList().size()
-                                + " provider entries");
+                       /* LogUtils.error(TAG, "" + message.getProviderPeersList().size()
+                                + " provider entries");*/
 
                         List<AddrInfo> provs = new ArrayList<>();
                         List<Dht.Message.Peer> list = message.getProviderPeersList();
@@ -274,7 +275,7 @@ public class KadDHT implements Routing {
                             }
                         }
 
-                        LogUtils.error(TAG, "" + provs.size() + " provider entries decoded");
+                        // LogUtils.error(TAG, "" + provs.size() + " provider entries decoded");
 
                         // Add unique providers from request, up to 'count'
                         for (AddrInfo prov : provs) {
@@ -452,7 +453,7 @@ public class KadDHT implements Routing {
     private Multiaddr filterAddress(@NonNull ByteString address) {
         try {
            Multiaddr multiaddr = new Multiaddr(address.toByteArray());
-           LogUtils.info(TAG, multiaddr.toString());
+          // LogUtils.info(TAG, multiaddr.toString());
            return multiaddr;
         } catch (Throwable ignore){
             // nothing to do
