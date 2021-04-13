@@ -11,6 +11,7 @@ import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.Date;
 
+import io.ipfs.IPFS;
 import io.libp2p.core.crypto.PrivKey;
 import io.libp2p.core.crypto.PubKey;
 import io.protos.ipns.IpnsProtos;
@@ -18,8 +19,7 @@ import io.protos.ipns.IpnsProtos;
 public class Ipns {
 
 
-    // TimeFormatIpfs is the format ipfs uses to represent time in string form.
-    public static final String TimeFormatIpfs = "2006-01-02'T'15:04:05.999999999Z07:00";
+
 
 
 
@@ -29,7 +29,7 @@ public class Ipns {
 
 
         @SuppressLint("SimpleDateFormat") String format = new SimpleDateFormat(
-                TimeFormatIpfs).format(new Date(eol.toEpochMilli()));
+                IPFS.TimeFormatIpfs).format(new Date(eol.toEpochMilli()));
         IpnsProtos.IpnsEntry entry = IpnsProtos.IpnsEntry.newBuilder()
                 .setValidityType(IpnsProtos.IpnsEntry.ValidityType.EOL)
                 .setSequence(sequence)

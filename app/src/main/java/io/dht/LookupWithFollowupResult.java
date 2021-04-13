@@ -1,5 +1,6 @@
 package io.dht;
 
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import io.libp2p.core.PeerId;
@@ -12,4 +13,8 @@ public class LookupWithFollowupResult {
     // indicates that neither the lookup nor the followup has been prematurely terminated by an external condition such
     // as context cancellation or the stop function being called.
     boolean completed;
+
+    public Set<PeerId> asSet() {
+        return peers.keySet();
+    }
 }

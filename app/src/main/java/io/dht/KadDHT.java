@@ -1,5 +1,6 @@
 package io.dht;
 
+import android.annotation.SuppressLint;
 import android.util.Pair;
 
 import androidx.annotation.NonNull;
@@ -9,11 +10,13 @@ import com.google.protobuf.ByteString;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -33,6 +36,7 @@ import io.core.ConnectionFailure;
 import io.core.InvalidRecord;
 import io.core.ProtocolNotSupported;
 import io.core.Validator;
+import io.ipfs.IPFS;
 import io.ipfs.cid.Cid;
 import io.libp2p.AddrInfo;
 import io.libp2p.core.Connection;
@@ -157,8 +161,94 @@ public class KadDHT implements Routing {
 
     }
 
+
+    // GetClosestPeers is a Kademlia 'node lookup' operation. Returns a channel of
+    // the K closest peers to the given key.
+    //
+    // If the context is canceled, this function will return the context error along
+    // with the closest K peers it has found so far.
+    private Set<PeerId> GetClosestPeers(@NonNull Closeable ctx, @NonNull byte[] key, @NonNull Channel channel) throws ClosedException {
+        if (key.length == 0) {
+            throw new RuntimeException("can't lookup empty key");
+        }
+
+        LookupWithFollowupResult lookupRes = runLookupWithFollowup(ctx, key, new QueryFunc() {
+            @NonNull
+            @Override
+            public List<AddrInfo> func(@NonNull Closeable ctx, @NonNull PeerId p)
+                    throws ClosedException, ProtocolNotSupported, ConnectionFailure, InvalidRecord {
+                // For DHT query command
+                        /* TODO maybe
+                        routing.PublishQueryEvent(ctx, &routing.QueryEvent{
+                            Type: routing.SendingQuery,
+                                    ID:   p,
+                        })*/
+
+                Dht.Message pms = findPeerSingle(ctx, p, key);
+
+
+                List<AddrInfo> peers = new ArrayList<>();
+                List<Dht.Message.Peer> list = pms.getCloserPeersList();
+                for (Dht.Message.Peer entry : list) {
+                    PeerId peerId = new PeerId(entry.getId().toByteArray());
+
+
+                    List<Multiaddr> multiAddresses = new ArrayList<>();
+                    List<ByteString> addresses = entry.getAddrsList();
+                    for (ByteString address : addresses) {
+                        Multiaddr multiaddr = filterAddress(address);
+                        if (multiaddr != null) {
+                            multiAddresses.add(multiaddr);
+                        }
+                    }
+                    AddrInfo addrInfo = new AddrInfo(peerId, multiAddresses);
+                    if (filter.queryPeerFilter(KadDHT.this, addrInfo)) {
+                        peers.add(addrInfo);
+
+                        host.getAddressBook().addAddrs(peerId, Long.MAX_VALUE,
+                                addrInfo.getAddresses());
+                    }
+
+                }
+
+                for (AddrInfo addrInfo: peers) {
+                    channel.invoke(addrInfo.getPeerId());
+                }
+
+
+
+                // For DHT query command
+                        /* TODO maybe
+                        routing.PublishQueryEvent(ctx, &routing.QueryEvent{
+                            Type:      routing.PeerResponse,
+                                    ID:        p,
+                                    Responses: peers,
+                        }) */
+
+                return peers;
+            }
+        }, new StopFunc() {
+            @Override
+            public boolean func() {
+                return ctx.isClosed();
+            }
+        });
+
+        if (ctx.isClosed()) {
+            throw new ClosedException();
+        }
+
+
+        if (lookupRes.completed) {
+            // refresh the cpl for this key as the query was successful
+            // TODO maybe  dht.routingTable.ResetCplRefreshedAtForID(kb.ConvertKey(key), time.Now())
+        }
+
+        return lookupRes.asSet();
+    }
+
     @Override
-    public void PutValue(@NonNull Closeable closable, @NonNull String key, byte[] value) {
+    public void PutValue(@NonNull Closeable ctx, @NonNull String key, byte[] value) throws ClosedException {
 
 
         // don't even allow local users to put bad values.
@@ -188,40 +278,49 @@ public class KadDHT implements Routing {
             }
         } */
 
-        /*
-         rec = record.MakePutRecord(key, value)
-        rec.TimeReceived = u.FormatRFC3339(time.Now())
-        err = dht.putLocal(key, rec)
-        if err != nil {
-            return err
-        }
-
-        pchan, err := dht.GetClosestPeers(ctx, key)
-        if err != nil {
-            return err
-        }
-
-        wg := sync.WaitGroup{}
-        for p := range pchan {
-            wg.Add(1)
-            go func(p peer.ID) {
-                ctx, cancel := context.WithCancel(ctx)
-                defer cancel()
-                defer wg.Done()
-                routing.PublishQueryEvent(ctx, &routing.QueryEvent{
-                    Type: routing.Value,
-                            ID:   p,
-                })
-
-                err := dht.putValueToPeer(ctx, p, rec)
-                if err != nil {
-                    logger.Debugf("failed putting value to peer: %s", err)
-                }
-            }(p)
-        }
-        wg.Wait()
-
+        @SuppressLint("SimpleDateFormat") String format = new SimpleDateFormat(
+                IPFS.TimeFormatIpfs).format(new Date());
+        RecordOuterClass.Record rec = RecordOuterClass.Record.newBuilder().setKey(ByteString.copyFrom(key.getBytes()))
+                .setValue(ByteString.copyFrom(value))
+                .setTimeReceived(format).build();
+        /* TODO maybe
+        putLocal(key, rec);
         */
+
+        Set<PeerId> res = GetClosestPeers(ctx, key.getBytes(), peerId -> {
+
+        });
+
+        for (PeerId p : res) {
+            try {
+            /* TODO maybe
+        routing.PublishQueryEvent(ctx, &routing.QueryEvent{
+            Type: routing.Value,
+                    ID:   p,
+        }) */
+
+                putValueToPeer(ctx, p, rec);
+            } catch (Throwable throwable) {
+                LogUtils.error(TAG, throwable);
+            }
+        }
+    }
+
+    private void putValueToPeer(@NonNull Closeable ctx, @NonNull PeerId p, @NonNull RecordOuterClass.Record rec)
+            throws ConnectionFailure, ProtocolNotSupported, ClosedException {
+
+        Dht.Message pms = Dht.Message.newBuilder()
+                .setType(Dht.Message.MessageType.PUT_VALUE)
+                .setKey(rec.getKey())
+                .setRecord(rec)
+                .setClusterLevelRaw(0).build();
+        Dht.Message rpmes = sendRequest(ctx, p, pms);
+
+        if (!Arrays.equals(rpmes.getRecord().getValue().toByteArray(),
+                pms.getRecord().getValue().toByteArray())) {
+            throw new RuntimeException("value not put correctly put-message  " +
+                    pms.toString() + " get-message " + rpmes.toString());
+        }
     }
 
     @Override
@@ -468,11 +567,11 @@ public class KadDHT implements Routing {
         return sendRequest(ctx, p, pms);
     }
 
-    private Dht.Message findPeerSingle(@NonNull Closeable ctx, @NonNull PeerId p, @NonNull PeerId id)
+    private Dht.Message findPeerSingle(@NonNull Closeable ctx, @NonNull PeerId p, @NonNull byte[] key)
             throws ClosedException, ProtocolNotSupported, ConnectionFailure {
         Dht.Message pms = Dht.Message.newBuilder()
                 .setType(Dht.Message.MessageType.FIND_NODE)
-                .setKey(ByteString.copyFrom(id.getBytes()))
+                .setKey(ByteString.copyFrom(key))
                 .setClusterLevelRaw(0).build();
 
         return sendRequest(ctx, p, pms);
@@ -547,7 +646,7 @@ public class KadDHT implements Routing {
                                         ID:   p,
                             })*/
 
-                        Dht.Message pms = findPeerSingle(ctx, p, id);
+                        Dht.Message pms = findPeerSingle(ctx, p, id.getBytes());
 
                         List<AddrInfo> peers = new ArrayList<>();
                         List<Dht.Message.Peer> list = pms.getCloserPeersList();

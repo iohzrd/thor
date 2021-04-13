@@ -15,7 +15,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import io.core.ClosedException;
-import io.ipns.Ipns;
 
 import static junit.framework.TestCase.assertNotNull;
 import static org.junit.Assert.assertEquals;
@@ -38,7 +37,7 @@ public class IpfsResolveTest {
 
 
         @SuppressLint("SimpleDateFormat") String format = new SimpleDateFormat(
-                Ipns.TimeFormatIpfs).format(new Date(System.currentTimeMillis()));
+                IPFS.TimeFormatIpfs).format(new Date(System.currentTimeMillis()));
         assertNotNull(format);
         String test = "Moin Wurst";
         String cid = ipfs.storeText(test);
@@ -48,7 +47,7 @@ public class IpfsResolveTest {
 
         ipfs.publishName(cid, ()-> false, random);
 
-        String key = IPFS.IPNS_PATH + ipfs.getHost();
+        String key = ipfs.getHost();
 
         IPFS.ResolvedName res = ipfs.resolveName(key, random, () -> false);
         assertNotNull(res);

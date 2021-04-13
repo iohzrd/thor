@@ -87,7 +87,8 @@ import io.protos.ipns.IpnsProtos;
 import threads.thor.core.blocks.BLOCKS;
 
 public class IPFS implements Receiver {
-
+    // TimeFormatIpfs is the format ipfs uses to represent time in string form.
+    public static final String TimeFormatIpfs = "2006-01-02'T'15:04:05.999999999Z07:00";
     public static final int PRELOAD = 25;
     public static final int PRELOAD_DIST = 5;
     public static final int WRITE_TIMEOUT = 10;
@@ -763,6 +764,7 @@ public class IPFS implements Receiver {
     public void bootstrap() {
         if (isDaemonRunning()) {
             if (numSwarmPeers() < MIN_PEERS) {
+
                 try {
                     Pair<List<String>, List<String>> result = DnsAddrResolver.getBootstrap();
 
@@ -779,6 +781,7 @@ public class IPFS implements Receiver {
                     }
 
                     routing.init();
+
 
                     List<String> second = result.second;
                     tasks.clear();

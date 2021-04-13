@@ -12,6 +12,7 @@ import java.util.Objects;
 import io.LogUtils;
 import io.core.InvalidRecord;
 import io.core.Validator;
+import io.ipfs.IPFS;
 import io.libp2p.core.PeerId;
 import io.libp2p.core.crypto.PubKey;
 import io.protos.ipns.IpnsProtos;
@@ -128,7 +129,7 @@ public class IpnsValidator implements Validator {
         if( entry.getValidityType() != IpnsProtos.IpnsEntry.ValidityType.EOL) {
             throw new InvalidRecord( "ErrUnrecognizedValidity"); // todo maybe better
         }
-        return new SimpleDateFormat(Ipns.TimeFormatIpfs).parse(new String(entry.getValidity().toByteArray()));
+        return new SimpleDateFormat(IPFS.TimeFormatIpfs).parse(new String(entry.getValidity().toByteArray()));
     }
 
 }

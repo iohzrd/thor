@@ -87,7 +87,7 @@ public class Stream {
                                    @NonNull Routing routing,
                                    @NonNull String privateKey,
                                    @NonNull String path,
-                                   int sequence) {
+                                   int sequence) throws ClosedException {
 
         byte[] data = Base64.getDecoder().decode(privateKey);
         PrivKey pkey = Ed25519Kt.unmarshalEd25519PrivateKey(data);
