@@ -18,9 +18,8 @@ import io.protos.ipns.IpnsProtos;
 public class Ipns {
 
 
-
     // TimeFormatIpfs is the format ipfs uses to represent time in string form.
-    public static final String TimeFormatIpfs = "2006-01-02T15:04:05.999999999Z07:00";
+    public static final String TimeFormatIpfs = "2006-01-02'T'15:04:05.999999999Z07:00";
 
 
 
@@ -28,15 +27,17 @@ public class Ipns {
     public static IpnsProtos.IpnsEntry Create(@NonNull PrivKey sk, @NonNull byte[] bytes,
                                               long sequence, @NonNull Instant eol) {
 
-        @SuppressLint("SimpleDateFormat") String format = new SimpleDateFormat(TimeFormatIpfs).format(new Date(eol.toEpochMilli()));
+
+        @SuppressLint("SimpleDateFormat") String format = new SimpleDateFormat(
+                TimeFormatIpfs).format(new Date(eol.toEpochMilli()));
         IpnsProtos.IpnsEntry entry = IpnsProtos.IpnsEntry.newBuilder()
                 .setValidityType(IpnsProtos.IpnsEntry.ValidityType.EOL)
                 .setSequence(sequence)
-                .setValidity(ByteString.copyFrom(format.getBytes()))
-                .build();
-
+                .setValue(ByteString.copyFrom(bytes))
+                .setValidity(ByteString.copyFrom(format.getBytes())).buildPartial();
         byte[] sig = sk.sign(ipnsEntryDataForSig(entry));
-        return entry.newBuilderForType().setSignature(ByteString.copyFrom(sig)).build();
+
+        return entry.toBuilder().setSignature(ByteString.copyFrom(sig)).build();
     }
 
     public static IpnsProtos.IpnsEntry EmbedPublicKey(@NonNull PubKey pk, @NonNull IpnsProtos.IpnsEntry entry) {
@@ -53,7 +54,7 @@ public class Ipns {
         // We failed to extract the public key from the peer ID, embed it in the
         // record.
         byte[] pkBytes = pk.bytes();
-        return entry.newBuilderForType().setPubKey(ByteString.copyFrom(pkBytes)).build();
+        return entry.toBuilder().setPubKey(ByteString.copyFrom(pkBytes)).build();
     }
 
 

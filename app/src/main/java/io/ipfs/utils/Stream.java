@@ -3,9 +3,6 @@ package io.ipfs.utils;
 
 import androidx.annotation.NonNull;
 
-import org.bouncycastle.util.encoders.UTF8;
-
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -13,14 +10,13 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Objects;
 
-import dht.pb.Dht;
 import io.LogUtils;
 import io.core.Closeable;
+import io.core.ClosedException;
 import io.dht.Offline;
 import io.dht.Quorum;
 import io.dht.ResolveInfo;
 import io.dht.Routing;
-import io.core.ClosedException;
 import io.ipfs.IPFS;
 import io.ipfs.blockservice.BlockService;
 import io.ipfs.cid.Cid;
@@ -32,7 +28,6 @@ import io.ipfs.format.Link;
 import io.ipfs.format.Node;
 import io.ipfs.format.ProtoNode;
 import io.ipfs.merkledag.DagService;
-import io.ipfs.multibase.Multibase;
 import io.ipfs.multihash.Multihash;
 import io.ipfs.offline.Exchange;
 import io.ipfs.unixfs.Directory;
@@ -113,9 +108,9 @@ public class Stream {
 
         byte[] bytes = record.toByteArray();
 
-        String rk = IPFS.IPNS_PATH + new String(id.getBytes());
-
-        routing.PutValue(closable, rk, bytes);
+        String key = IPFS.IPNS_PATH + new String(id.getBytes());
+        LogUtils.error(TAG, key);
+        routing.PutValue(closable, key, bytes);
     }
 
 

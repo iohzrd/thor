@@ -1,6 +1,7 @@
 package io.ipfs;
 
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 
 import androidx.test.core.app.ApplicationProvider;
@@ -10,7 +11,11 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 import io.core.ClosedException;
+import io.ipns.Ipns;
 
 import static junit.framework.TestCase.assertNotNull;
 import static org.junit.Assert.assertEquals;
@@ -29,6 +34,12 @@ public class IpfsResolveTest {
     @Test
     public void test_resolve_publish() throws ClosedException {
         IPFS ipfs = TestEnv.getTestInstance(context);
+
+
+
+        @SuppressLint("SimpleDateFormat") String format = new SimpleDateFormat(
+                Ipns.TimeFormatIpfs).format(new Date(System.currentTimeMillis()));
+        assertNotNull(format);
         String test = "Moin Wurst";
         String cid = ipfs.storeText(test);
         assertNotNull(cid);

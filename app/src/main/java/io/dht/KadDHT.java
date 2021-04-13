@@ -158,10 +158,70 @@ public class KadDHT implements Routing {
     }
 
     @Override
-    public void PutValue(@NonNull Closeable closable, String key, byte[] data) {
+    public void PutValue(@NonNull Closeable closable, @NonNull String key, byte[] value) {
 
-        throw new RuntimeException("TODO");
 
+        // don't even allow local users to put bad values.
+        try {
+            validator.Validate(key, value);
+        } catch (Throwable throwable) {
+            throw new RuntimeException(throwable);
+        }
+
+        /* mabye todo
+        old, err := dht.getLocal(key)
+        if err != nil {
+            // Means something is wrong with the datastore.
+            return err
+        } */
+
+        // Check if we have an old value that's not the same as the new one.
+        /* TODO maybe
+        if old != nil && !bytes.Equal(old.GetValue(), value) {
+            // Check to see if the new one is better.
+            i, err := dht.Validator.Select(key, [][]byte{value, old.GetValue()})
+            if err != nil {
+                return err
+            }
+            if i != 0 {
+                return fmt.Errorf("can't replace a newer value with an older value")
+            }
+        } */
+
+        /*
+         rec = record.MakePutRecord(key, value)
+        rec.TimeReceived = u.FormatRFC3339(time.Now())
+        err = dht.putLocal(key, rec)
+        if err != nil {
+            return err
+        }
+
+        pchan, err := dht.GetClosestPeers(ctx, key)
+        if err != nil {
+            return err
+        }
+
+        wg := sync.WaitGroup{}
+        for p := range pchan {
+            wg.Add(1)
+            go func(p peer.ID) {
+                ctx, cancel := context.WithCancel(ctx)
+                defer cancel()
+                defer wg.Done()
+                routing.PublishQueryEvent(ctx, &routing.QueryEvent{
+                    Type: routing.Value,
+                            ID:   p,
+                })
+
+                err := dht.putValueToPeer(ctx, p, rec)
+                if err != nil {
+                    logger.Debugf("failed putting value to peer: %s", err)
+                }
+            }(p)
+        }
+        wg.Wait()
+
+        */
     }
 
     @Override
