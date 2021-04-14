@@ -63,11 +63,10 @@ public class KadDHT implements Routing {
     private final ProviderManager providerManager = new ProviderManager();
     private final ID selfKey;
     private final ConcurrentHashMap<PeerId, MessageSender> strmap = new ConcurrentHashMap<>();
-    private final boolean enableProviders = true;
-    private final boolean enableValues = true;
+
     // check todo if replaced by a concrete. better implemenation
     private final QueryFilter filter = (dht, addrInfo) -> addrInfo.hasAddresses();
-    private final ExecutorService executors;
+
     private final Validator validator;
     public KadDHT(@NonNull Host host, @NonNull Validator validator, int alpha) {
         this.host = host;
@@ -78,14 +77,13 @@ public class KadDHT implements Routing {
         this.routingTable = new RoutingTable(bucketSize, selfKey); // TODO
         this.beta = 20; // TODO
         this.alpha = alpha;
-        this.executors = Executors.newFixedThreadPool(alpha);
 
 
         // TODO rethink
         this.host.addConnectionHandler(new ConnectionHandler() {
             @Override
             public void handleConnection(@NotNull Connection conn) {
-              peerFound(conn.secureSession().getRemoteId(), false);
+             // TODO peerFound(conn.secureSession().getRemoteId(), false);
             }
         });
     }
@@ -327,7 +325,7 @@ public class KadDHT implements Routing {
     @Override
     public void FindProvidersAsync(@NonNull Providers providers,
                                    @NonNull Cid cid, int count) throws ClosedException {
-        if (!enableProviders || !cid.Defined()) {
+        if (!cid.Defined()) {
             return;
         }
 
@@ -1136,10 +1134,6 @@ public class KadDHT implements Routing {
     @Override
     public void SearchValue(@NonNull Closeable ctx, @NonNull ResolveInfo resolveInfo,
                             @NonNull byte[] key, Option... options) throws ClosedException {
-
-        if (!enableValues) {
-            throw new RuntimeException();
-        }
 
         boolean offline = false;
         int quorum = defaultQuorum;
