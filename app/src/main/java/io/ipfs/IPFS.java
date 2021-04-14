@@ -1188,8 +1188,7 @@ func ToCid(id ID) cid.Cid {
     }
 
     @Nullable
-    public ResolvedName resolveName(@NonNull String name, long last,
-                                    @NonNull Closeable closeable) throws ClosedException {
+    public ResolvedName resolveName(@NonNull String name, long last, @NonNull Closeable closeable)  {
         if (!isDaemonRunning()) {
             return null;
         }
@@ -1242,17 +1241,14 @@ func ToCid(id ID) cid.Cid {
                 }
             }, decode(name), false, 8);
 
-        } catch (ClosedException closedException){
-            throw closedException;
+        } catch (ClosedException ignore){
+            // ignore exception
         } catch (Throwable e) {
             LogUtils.error(TAG, e);
         }
         LogUtils.error(TAG, "Finished resolve name " + name + " " +
                 (System.currentTimeMillis() - time));
 
-        if (closeable.isClosed()) {
-            throw new ClosedException();
-        }
         return resolvedName.get();
     }
 
