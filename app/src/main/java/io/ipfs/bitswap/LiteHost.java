@@ -122,12 +122,13 @@ public class LiteHost implements BitSwapNetwork {
 
 
     @Override
-    public void FindProvidersAsync(@NonNull Providers providers, @NonNull Cid cid, int number) throws ClosedException {
-        contentRouting.FindProvidersAsync(providers, cid, number);
+    public void FindProvidersAsync(@NonNull Closeable closeable, @NonNull Providers providers,
+                                   @NonNull Cid cid, int number) throws ClosedException {
+        contentRouting.FindProvidersAsync(closeable, providers, cid, number);
     }
 
     @Override
-    public int Provide(@NonNull Closeable closeable, @NonNull Cid cid) throws ClosedException {
-        return contentRouting.Provide(closeable, cid);
+    public void Provide(@NonNull Closeable closeable, @NonNull Cid cid) throws ClosedException {
+        // nothing to do here
     }
 }

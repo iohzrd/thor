@@ -161,7 +161,7 @@ public class IPFS implements Receiver {
     private final Interface exchange;
     private final Routing routing;
     private final Host host;
-    private final String privateKey;
+    private final PrivKey privateKey;
 
     private boolean running;
     private final int port;
@@ -172,27 +172,11 @@ public class IPFS implements Receiver {
         blocks = BLOCKS.getInstance(context);
 
 
-        if (getPeerID(context) == null) {
+        if (getPrivateKey(context).isEmpty()) {
             kotlin.Pair<PrivKey, PubKey> keys = KeyKt.generateKeyPair(KEY_TYPE.ED25519);
-            java.util.Base64.Encoder encoder = java.util.Base64.getEncoder();
-            setPublicKey(context, encoder.encodeToString(keys.getSecond().bytes()));
+            Base64.Encoder encoder =  Base64.getEncoder();
             setPrivateKey(context, encoder.encodeToString(keys.getFirst().bytes()));
-
-            PeerId id = PeerId.fromPubKey(keys.getSecond());
-            Objects.requireNonNull(id);
-            setPeerID(context, id.toBase58());
-        } else {
-            String pk = IPFS.getPublicKey(context);
-
-            byte[] data = Base64.getDecoder().decode(pk);
-            PubKey pkwy = Ed25519Kt.unmarshalEd25519PublicKey(data);
-
-            PeerId id = PeerId.fromPubKey(pkwy);
-            if (!Objects.equals(id.toBase58(), IPFS.getPeerID(context))) {
-                LogUtils.error(TAG, id.toBase58() + " " + IPFS.getPeerID(context));
-            }
         }
-
         /* TODO
         node.setPeerID(IPFS.getPeerID(context));
         node.setPrivateKey(IPFS.getPrivateKey(context));
@@ -215,18 +199,15 @@ public class IPFS implements Receiver {
 
 
         port = nextFreePort();
-        privateKey = getPrivateKey(context);
 
-        String prk = IPFS.getPrivateKey(context);
-        byte[] kk = Base64.getDecoder().decode(prk);
-        PrivKey privKey = KeyKt.unmarshalPrivateKey(kk);
-        PeerId tt = PeerId.fromPubKey(privKey.publicKey());
+        byte[] data = Base64.getDecoder().decode(getPrivateKey(context));
+        privateKey = Ed25519Kt.unmarshalEd25519PrivateKey(data);
 
 
         host = new HostBuilder()
                 .protocol(new Identify(), new DhtProtocol(),
                         new BitSwapProtocol(this, ProtocolBitswap))
-                .identity(privKey)
+                .identity(privateKey)
                 .transport(TcpTransport::new) // TODO QUIC Transport when available
                 .secureChannel(NoiseXXSecureChannel::new, SecIoSecureChannel::new) // TODO add TLS when available, and remove Secio
                 .muxer(StreamMuxerProtocol::getMplex)
@@ -248,6 +229,9 @@ public class IPFS implements Receiver {
         this.exchange = BitSwap.New(bsm, blockstore);
         host.start().get();
         running = true;
+
+        setPeerID(context, getPeerID());
+
     }
     public int getPort(){
         return port;
@@ -299,20 +283,19 @@ public class IPFS implements Receiver {
         return peers;
     }
 
-    // todo cleanup names
-    public int dhtPublish(@NonNull Closeable closable, @NonNull String cid) throws ClosedException {
+
+    public void dhtPublish(@NonNull Closeable closable, @NonNull String cid) throws ClosedException {
 
         if (!isDaemonRunning()) {
-            return 0;
+            return;
         }
         try {
-            return routing.Provide(closable, Cid.Decode(cid));
+            routing.Provide(closable, Cid.Decode(cid));
         } catch (ClosedException closedException) {
             throw closedException;
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         }
-        return 0;
     }
 
     // TODO cleanup names
@@ -612,13 +595,6 @@ public class IPFS implements Receiver {
         }
     }
 
-    private static void setPublicKey(@NonNull Context context, @NonNull String key) {
-        SharedPreferences sharedPref = context.getSharedPreferences(
-                PREF_KEY, Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPref.edit();
-        editor.putString(PUBLIC_KEY, key);
-        editor.apply();
-    }
 
     private static void setPrivateKey(@NonNull Context context, @NonNull String key) {
         SharedPreferences sharedPref = context.getSharedPreferences(
@@ -628,13 +604,7 @@ public class IPFS implements Receiver {
         editor.apply();
     }
 
-    @NonNull
-    private static String getPublicKey(@NonNull Context context) {
-        SharedPreferences sharedPref = context.getSharedPreferences(
-                PREF_KEY, Context.MODE_PRIVATE);
-        return Objects.requireNonNull(sharedPref.getString(PUBLIC_KEY, ""));
 
-    }
 
     @NonNull
     private static String getPrivateKey(@NonNull Context context) {
@@ -951,23 +921,22 @@ func ToCid(id ID) cid.Cid {
         return base32(getPeerID());
     }
 
-    public int publishName(@NonNull String cid, @NonNull Closeable closeable, int sequence)
+    public void publishName(@NonNull Closeable closeable, @NonNull String cid, int sequence)
             throws ClosedException {
         if (!isDaemonRunning()) {
-            return 0;
+            return;
         }
         try {
-            return Stream.PublishName(closeable, routing, privateKey, cid, sequence);
+            Stream.PublishName(closeable, routing, privateKey, IPFS_PATH + cid, getPID(), sequence);
         } catch (ClosedException closedException) {
             throw closedException;
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         }
-        return 0;
     }
 
     // TODO cleanup names
-    public void dhtFindProviders(@NonNull String cid, int numProviders,
+    public void dhtFindProviders(@NonNull Closeable closeable, @NonNull String cid, int numProviders,
                                  @NonNull Providers providers) throws ClosedException {
         if (!isDaemonRunning()) {
             return;
@@ -978,10 +947,13 @@ func ToCid(id ID) cid.Cid {
         }
 
         try {
-            routing.FindProvidersAsync(providers, Cid.Decode(cid), numProviders);
-        } catch (Throwable ignore) {
+            routing.FindProvidersAsync(closeable, providers, Cid.Decode(cid), numProviders);
+        } catch (ClosedException closedException) {
+            throw closedException;
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable);
         }
-        if (providers.isClosed()) {
+        if (closeable.isClosed()) {
             throw new ClosedException();
         }
     }
@@ -1182,7 +1154,7 @@ func ToCid(id ID) cid.Cid {
     }
 
     @Nullable
-    public ResolvedName resolveName(@NonNull String name, long last, @NonNull Closeable closeable) throws ClosedException  {
+    public ResolvedName resolveName(@NonNull Closeable closeable, @NonNull String name, long last) throws ClosedException {
         if (!isDaemonRunning()) {
             return null;
         }

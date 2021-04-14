@@ -4,6 +4,8 @@ import androidx.annotation.NonNull;
 
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import dht.pb.Dht;
 import io.LogUtils;
@@ -11,6 +13,7 @@ import io.core.Closeable;
 import io.core.ClosedException;
 import io.core.ConnectionFailure;
 import io.core.ProtocolNotSupported;
+import io.ipfs.IPFS;
 import io.libp2p.core.ConnectionClosedException;
 import io.libp2p.core.NoSuchRemoteProtocolException;
 import io.libp2p.core.PeerId;
@@ -41,14 +44,16 @@ public class MessageSender {
             CompletableFuture<Object> ctrl = dht.host.newStream(
                     Collections.singletonList(KadDHT.Protocol), p).getController();
 
-            Object object = ctrl.get(); // TODO timeout
+            Object object = ctrl.get(IPFS.WRITE_TIMEOUT, TimeUnit.SECONDS);
 
             if (ctx.isClosed()) {
                 throw new ClosedException();
             }
 
             DhtProtocol.DhtController dhtController = (DhtProtocol.DhtController) object;
-            return dhtController.sendRequest(message).get();
+            return dhtController.sendRequest(message).get(
+                    IPFS.WRITE_TIMEOUT, TimeUnit.SECONDS
+            );
 
         } catch (Throwable throwable) {
             if (ctx.isClosed()) {
@@ -65,6 +70,9 @@ public class MessageSender {
                 throw new ConnectionFailure();
             }
             if (cause instanceof ReadTimeoutException) {
+                throw new ConnectionFailure();
+            }
+            if (cause instanceof TimeoutException) {
                 throw new ConnectionFailure();
             }
             LogUtils.error(TAG, throwable);

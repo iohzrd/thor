@@ -188,8 +188,6 @@ public class Query {
         QueryUpdate update = new QueryUpdate(dht.self);
         update.heard.addAll(seedPeers);
         queue.offer(update);
-        //ch := make(chan *queryUpdate, alpha)
-        //ch <- &queryUpdate{cause: q.dht.self, heard: q.seedPeers}
 
         while (true) {
 
@@ -253,6 +251,8 @@ public class Query {
             try {
                 queryPeer(ctx, queue, queryPeer);
             } catch (ClosedException ignore) {
+                queue.clear();
+                queue.offer(new QueryUpdate(queryPeer));
                 // nothing to do here (works as expected)
             } catch (Throwable throwable) {
                 // not expected exception
@@ -278,7 +278,9 @@ public class Query {
             Collection<Multiaddr> collections = dht.host.getAddressBook().getAddrs(queryPeer).get();
             if (collections != null) {
                 dht.host.getNetwork().connect(queryPeer,
-                        Iterables.toArray(collections, Multiaddr.class)).get();
+                        Iterables.toArray(collections, Multiaddr.class)).get(
+                        IPFS.TIMEOUT_DHT_PEER, TimeUnit.SECONDS
+                );
             } else {
                 dht.host.getNetwork().connect(queryPeer).get(
                         IPFS.TIMEOUT_DHT_PEER, TimeUnit.SECONDS);
@@ -312,6 +314,9 @@ public class Query {
             // send query RPC to the remote peer
             List<AddrInfo> newPeers = queryFn.func(ctx, queryPeer);
 
+            if (ctx.isClosed()) {
+                throw new ClosedException();
+            }
 
             long queryDuration = startQuery - System.currentTimeMillis();
 
@@ -400,7 +405,7 @@ public class Query {
     }
 
 
-    private Pair<Boolean, List<PeerId>> isReadyToTerminate(Closeable ctx, int nPeersToQuery) {
+    private Pair<Boolean, List<PeerId>> isReadyToTerminate(@NonNull Closeable ctx, int nPeersToQuery) {
         // give the application logic a chance to terminate
         if (stopFn.func()) {
             return Pair.create(true, Collections.emptyList());

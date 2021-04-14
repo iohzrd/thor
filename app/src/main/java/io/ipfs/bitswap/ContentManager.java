@@ -20,12 +20,10 @@ import io.core.Closeable;
 import io.core.ClosedException;
 import io.core.ConnectionFailure;
 import io.core.ProtocolNotSupported;
-import io.dht.Providers;
 import io.ipfs.IPFS;
 import io.ipfs.cid.Cid;
 import io.ipfs.format.Block;
 import io.ipfs.format.BlockStore;
-import io.libp2p.AddrInfo;
 import io.libp2p.core.PeerId;
 
 
@@ -95,49 +93,41 @@ public class ContentManager {
         Executors.newSingleThreadExecutor().execute(() -> {
             long begin = System.currentTimeMillis();
             try {
-                network.FindProvidersAsync(new Providers() {
-                    @Override
-                    public void Peer(@NonNull AddrInfo addrInfo) {
-                        PeerId peer = addrInfo.getPeerId();
-                        LogUtils.error(TAG, "Provider Peer Step " + peer.toBase58());
-                        if (!faulty.contains(peer)) {
-                            WANTS.execute(() -> {
-                                if (matches.containsKey(cid)) { // check still valid
-                                    long start = System.currentTimeMillis();
-                                    try {
-                                        LogUtils.error(TAG, "Provider Peer " +
-                                                peer.toBase58() + " cid " + cid.String());
+                network.FindProvidersAsync(closeable, addrInfo -> {
+                    PeerId peer = addrInfo.getPeerId();
+                    LogUtils.error(TAG, "Provider Peer Step " + peer.toBase58());
+                    if (!faulty.contains(peer)) {
+                        WANTS.execute(() -> {
+                            if (matches.containsKey(cid)) { // check still valid
+                                long start = System.currentTimeMillis();
+                                try {
+                                    LogUtils.error(TAG, "Provider Peer " +
+                                            peer.toBase58() + " cid " + cid.String());
 
-                                        if (network.ConnectTo(() -> closeable.isClosed()
-                                                        || ((System.currentTimeMillis() - start) > TIMEOUT),
-                                                addrInfo, true)) {
-                                            if (matches.containsKey(cid)) { // check still valid
-                                                LogUtils.error(TAG, "Found New Provider " + peer.toBase58()
-                                                        + " for " + cid.String());
-                                                peers.add(peer);
-                                                matches.get(cid).add(peer);
-                                            }
-                                        } else {
-                                            LogUtils.error(TAG, "Provider Peer Connection Failed " +
-                                                    peer.toBase58());
+                                    if (network.ConnectTo(() -> closeable.isClosed()
+                                                    || ((System.currentTimeMillis() - start) > TIMEOUT),
+                                            addrInfo, true)) {
+                                        if (matches.containsKey(cid)) { // check still valid
+                                            LogUtils.error(TAG, "Found New Provider " + peer.toBase58()
+                                                    + " for " + cid.String());
+                                            peers.add(peer);
+                                            matches.get(cid).add(peer);
                                         }
-                                    } catch (ClosedException ignore) {
-                                        // ignore
-                                    } catch (Throwable throwable) {
-                                        LogUtils.error(TAG, throwable);
-                                    } finally {
-                                        LogUtils.error(TAG, "Provider Peer " +
-                                                peer.toBase58() + " took " + (System.currentTimeMillis() - start));
+                                    } else {
+                                        LogUtils.error(TAG, "Provider Peer Connection Failed " +
+                                                peer.toBase58());
                                     }
+                                } catch (ClosedException ignore) {
+                                    // ignore
+                                } catch (Throwable throwable) {
+                                    LogUtils.error(TAG, throwable);
+                                } finally {
+                                    LogUtils.error(TAG, "Provider Peer " +
+                                            peer.toBase58() + " took " + (System.currentTimeMillis() - start));
                                 }
-                            });
+                            }
+                        });
 
-                        }
-                    }
-
-                    @Override
-                    public boolean isClosed() {
-                        return closeable.isClosed();
                     }
                 }, cid, PROVIDERS);
             } catch (ClosedException closedException) {
@@ -356,42 +346,32 @@ public class ContentManager {
                 long start = System.currentTimeMillis();
                 try {
 
-                    network.FindProvidersAsync(new Providers() {
+                    network.FindProvidersAsync(closeable, addrInfo -> {
+                        PeerId peer = addrInfo.getPeerId();
+                        try {
+                            LogUtils.error(TAG, "Load Provider " + peer.toBase58() + " for " + cid.String());
 
-                        @Override
-                        public void Peer(@NonNull AddrInfo addrInfo) {
-                            PeerId peer = addrInfo.getPeerId();
-                            try {
-                                LogUtils.error(TAG, "Load Provider " + peer.toBase58() + " for " + cid.String());
-
-                                LOADS.execute(() -> {
-                                    try {
-                                        if (network.ConnectTo(() -> closeable.isClosed()
-                                                        || ((System.currentTimeMillis() - start) > TIMEOUT),
-                                                addrInfo, true)) {
-                                            LogUtils.error(TAG, "Load Provider Found " + peer.toBase58()
-                                                    + " for " + cid.String());
-                                            peers.add(peer);
-                                            priority.add(peer);
-                                        } else {
-                                            LogUtils.error(TAG, "Load Provider Connection Failed " +
-                                                    peer.toBase58());
-                                        }
-                                    } catch (ClosedException ignore) {
-                                    } catch (Throwable throwable) {
-                                        LogUtils.error(TAG, "Load Provider Failed " +
-                                                throwable.getLocalizedMessage());
+                            LOADS.execute(() -> {
+                                try {
+                                    if (network.ConnectTo(() -> closeable.isClosed()
+                                                    || ((System.currentTimeMillis() - start) > TIMEOUT),
+                                            addrInfo, true)) {
+                                        LogUtils.error(TAG, "Load Provider Found " + peer.toBase58()
+                                                + " for " + cid.String());
+                                        peers.add(peer);
+                                        priority.add(peer);
+                                    } else {
+                                        LogUtils.error(TAG, "Load Provider Connection Failed " +
+                                                peer.toBase58());
                                     }
-                                });
-                            } catch (Throwable throwable) {
-                                LogUtils.error(TAG, throwable);
-                            }
-                        }
-
-
-                        @Override
-                        public boolean isClosed() {
-                            return closeable.isClosed();
+                                } catch (ClosedException ignore) {
+                                } catch (Throwable throwable) {
+                                    LogUtils.error(TAG, "Load Provider Failed " +
+                                            throwable.getLocalizedMessage());
+                                }
+                            });
+                        } catch (Throwable throwable) {
+                            LogUtils.error(TAG, throwable);
                         }
                     }, cid, PROVIDERS);
 

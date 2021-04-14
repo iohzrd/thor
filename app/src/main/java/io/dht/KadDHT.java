@@ -23,6 +23,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -209,7 +210,7 @@ public class KadDHT implements Routing {
                 }
 
                 for (AddrInfo addrInfo: peers) {
-                    channel.invoke(addrInfo.getPeerId());
+                    channel.peer(addrInfo);
                 }
 
 
@@ -245,7 +246,7 @@ public class KadDHT implements Routing {
     }
 
     @Override
-    public int PutValue(@NonNull Closeable ctx, @NonNull byte[] key, @NonNull byte[] value) throws ClosedException {
+    public void PutValue(@NonNull Closeable ctx, @NonNull byte[] key, @NonNull byte[] value) throws ClosedException {
 
 
         // don't even allow local users to put bad values.
@@ -284,25 +285,25 @@ public class KadDHT implements Routing {
         putLocal(key, rec);
         */
 
-        Set<PeerId> res = GetClosestPeers(ctx, key, peerId -> {
-            LogUtils.error(TAG, "PutValue " + peerId.toBase58());
-        });
-        int puts = 0;
-        for (PeerId p : res) {
-            try {
-            /* TODO maybe
-        routing.PublishQueryEvent(ctx, &routing.QueryEvent{
-            Type: routing.Value,
-                    ID:   p,
-        }) */
-
-                putValueToPeer(ctx, p, rec);
-                puts++;
-            } catch (Throwable throwable) {
-                LogUtils.error(TAG, throwable);
+        Set<PeerId> res = GetClosestPeers(ctx, key, new Channel() {
+            @Override
+            public void peer(@NonNull AddrInfo addrInfo) throws ClosedException {
+                if (ctx.isClosed()) {
+                    throw new ClosedException();
+                }
+                try {
+                    host.getNetwork().connect(addrInfo.getPeerId(),
+                            addrInfo.getAddresses()).get(IPFS.TIMEOUT_DHT_PEER, TimeUnit.SECONDS);
+                    putValueToPeer(ctx, addrInfo.getPeerId(), rec);
+                    LogUtils.error(TAG, "PutValue Success to " + addrInfo.getPeerId().toBase58());
+                } catch (ClosedException closedException) {
+                    throw closedException;
+                } catch (Throwable throwable) {
+                    LogUtils.error(TAG,  "PutValue Error " + throwable.getMessage());
+                }
             }
-        }
-        return puts;
+        });
+
     }
 
     private void putValueToPeer(@NonNull Closeable ctx, @NonNull PeerId p, @NonNull RecordOuterClass.Record rec)
@@ -313,17 +314,18 @@ public class KadDHT implements Routing {
                 .setKey(rec.getKey())
                 .setRecord(rec)
                 .setClusterLevelRaw(0).build();
-        Dht.Message rpmes = sendRequest(ctx, p, pms);
+        Dht.Message rimes = sendRequest(ctx, p, pms);
 
-        if (!Arrays.equals(rpmes.getRecord().getValue().toByteArray(),
+        if (!Arrays.equals(rimes.getRecord().getValue().toByteArray(),
                 pms.getRecord().getValue().toByteArray())) {
             throw new RuntimeException("value not put correctly put-message  " +
-                    pms.toString() + " get-message " + rpmes.toString());
+                    pms.toString() + " get-message " + rimes.toString());
         }
     }
 
     @Override
-    public void FindProvidersAsync(@NonNull Providers providers,
+    public void FindProvidersAsync(@NonNull Closeable closeable,
+                                   @NonNull Providers providers,
                                    @NonNull Cid cid, int count) throws ClosedException {
         if (!cid.Defined()) {
             return;
@@ -335,7 +337,7 @@ public class KadDHT implements Routing {
         }
 
 
-        findProvidersAsyncRoutine(providers, cid.Bytes(), chSize);
+        findProvidersAsyncRoutine(closeable, providers, cid.Bytes(), chSize);
     }
 
 
@@ -363,13 +365,14 @@ public class KadDHT implements Routing {
     // peerStoppedDHT signals the routing table that a peer is unable to responsd to DHT queries anymore.
     // TODO choose better name
     public void peerStoppedDHT(PeerId p) {
-        LogUtils.info(TAG , "peer stopped dht " + p.toBase58());
+        LogUtils.info(TAG, "peer stopped dht " + p.toBase58());
         // A peer that does not support the DHT protocol is dead for us.
         // There's no point in talking to anymore till it starts supporting the DHT protocol again.
         routingTable.RemovePeer(p);
     }
 
-    private void findProvidersAsyncRoutine(@NonNull Providers providers,
+    private void findProvidersAsyncRoutine(@NonNull Closeable closeable,
+                                           @NonNull Providers providers,
                                            @NonNull byte[] key, int count) throws ClosedException {
 
 
@@ -391,7 +394,7 @@ public class KadDHT implements Routing {
 
         // TODO check if correct
 
-        LookupWithFollowupResult lookupRes = runLookupWithFollowup(providers, key,
+        LookupWithFollowupResult lookupRes = runLookupWithFollowup(closeable, key,
                 new QueryFunc() {
 
                     @NonNull
@@ -484,11 +487,11 @@ public class KadDHT implements Routing {
                 }, new StopFunc() {
                     @Override
                     public boolean func() {
-                        return providers.isClosed() || (!findAll && ps.size() >= count);
+                        return closeable.isClosed() || (!findAll && ps.size() >= count);
                     }
                 });
 
-        if (providers.isClosed()) {
+        if (closeable.isClosed()) {
             throw new ClosedException();
         }
         /*  TODO
@@ -522,7 +525,7 @@ public class KadDHT implements Routing {
     }
 
     @Override
-    public int Provide(@NonNull Closeable ctx, @NonNull Cid key) throws ClosedException {
+    public void Provide(@NonNull Closeable ctx, @NonNull Cid key) throws ClosedException {
 
         if (!key.Defined()) {
             throw new RuntimeException("invalid cid: undefined");
@@ -554,27 +557,25 @@ public class KadDHT implements Routing {
         }*/
 
 
+        final Dht.Message mes = makeProvRecord(keyMH);
         Set<PeerId> peers = GetClosestPeers(ctx, keyMH, new Channel() {
             @Override
-            public void invoke(@NonNull PeerId peerId) {
-                LogUtils.error(TAG, "Provide " + peerId.toBase58());
+            public void peer(@NonNull AddrInfo addrInfo) throws ClosedException {
+
+                LogUtils.error(TAG, "Provide to " + addrInfo.getPeerId().toBase58());
+                try {
+                    host.getNetwork().connect(addrInfo.getPeerId(),
+                            addrInfo.getAddresses()).get(IPFS.TIMEOUT_DHT_PEER, TimeUnit.SECONDS);
+                    sendRequest(ctx, addrInfo.getPeerId(), mes);
+                    LogUtils.error(TAG, "Provide Success to " + addrInfo.getPeerId().toBase58());
+                } catch (ClosedException closedException) {
+                    throw closedException;
+                } catch (Throwable throwable) {
+                    LogUtils.error(TAG, throwable.getMessage());
+                }
             }
         });
 
-        int publish = 0;
-        Dht.Message mes = makeProvRecord(keyMH);
-        for (PeerId p : peers) {
-            try {
-                sendRequest(ctx, p, mes);
-                publish++;
-            } catch (ClosedException closedException) {
-                throw closedException;
-
-            } catch (Throwable throwable) {
-                LogUtils.error(TAG, throwable);
-            }
-        }
-        return publish;
     }
 
     // sendRequest sends out a request, but also makes sure to
@@ -762,7 +763,9 @@ public class KadDHT implements Routing {
                     public boolean func() {
                         try {
                             // return dht.host.Network().Connectedness(id) == network.Connected
-                            return closeable.isClosed() || host.getNetwork().connect(id).get() != null;
+                            return closeable.isClosed() || host.getNetwork().connect(id).get(
+                                    IPFS.TIMEOUT_DHT_PEER, TimeUnit.SECONDS
+                            ) != null;
                         } catch (Throwable throwable) {
                             return false;
                         }
@@ -793,12 +796,15 @@ public class KadDHT implements Routing {
             AddrInfo addrInfo = new AddrInfo(id, addr);
 
             boolean connectedness = host.getNetwork().connect(
-                    addrInfo.getPeerId(), addrInfo.getAddresses()).get() != null;
+                    addrInfo.getPeerId(), addrInfo.getAddresses()).get(
+                    IPFS.TIMEOUT_DHT_PEER, TimeUnit.SECONDS
+            ) != null;
 
             if (dialedPeerDuringQuery || connectedness) {
                 return addrInfo;
             }
         } catch (Throwable ignore) {
+            // TODO why ignore?
         }
 
         return null;
@@ -972,9 +978,7 @@ public class KadDHT implements Routing {
             try {
                 byte[] record = rec.getValue().toByteArray();
                 if(record != null && record.length > 0) {
-                    LogUtils.error(TAG, "Got Record ");
                     validator.Validate(rec.getKey().toByteArray(), record);
-                    LogUtils.error(TAG, "Got Record success for key ");
                     return Pair.create(rec, peers);
                 }
             } catch (Throwable throwable){

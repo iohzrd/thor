@@ -1,6 +1,7 @@
 package io.core;
 
 public class TimeoutCloseable implements Closeable {
+    private static final String TAG = TimeoutCloseable.class.getSimpleName();
     private final long timeout;
     private final long start;
 

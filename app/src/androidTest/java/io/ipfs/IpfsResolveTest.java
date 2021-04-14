@@ -20,7 +20,9 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.Objects;
 
+import io.LogUtils;
 import io.core.ClosedException;
+import io.core.TimeoutCloseable;
 import io.ipfs.multihash.Multihash;
 import io.ipns.IpnsValidator;
 import io.libp2p.core.PeerId;
@@ -33,7 +35,7 @@ import static org.junit.Assert.assertEquals;
 @SuppressWarnings("SpellCheckingInspection")
 @RunWith(AndroidJUnit4.class)
 public class IpfsResolveTest {
-
+    private static final String TAG = IpfsResolveTest.class.getSimpleName();
     private static Context context;
 
     @BeforeClass
@@ -50,12 +52,17 @@ public class IpfsResolveTest {
         assertNotNull(cid);
         int random = (int) Math.abs(Math.random());
 
-        int pushes = ipfs.publishName(cid, ()-> false, random);
-        assertTrue(pushes > 0);
+        long start = System.currentTimeMillis();
+        try {
+            ipfs.publishName(new TimeoutCloseable(30), cid, random);
+        } catch (ClosedException ignore){
+            // ignore
+        }
+        LogUtils.error(TAG, "Time publish name " +  (System.currentTimeMillis() - start));
 
         String key = ipfs.getHost();
 
-        IPFS.ResolvedName res = ipfs.resolveName(key, random, () -> false);
+        IPFS.ResolvedName res = ipfs.resolveName(() -> false, key, random);
         assertNotNull(res);
 
         assertEquals(res.getHash(), cid);

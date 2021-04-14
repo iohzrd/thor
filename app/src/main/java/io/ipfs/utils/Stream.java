@@ -7,7 +7,6 @@ import com.google.common.primitives.Bytes;
 
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
@@ -38,7 +37,6 @@ import io.ipns.Ipns;
 import io.libp2p.core.PeerId;
 import io.libp2p.core.crypto.PrivKey;
 import io.libp2p.core.crypto.PubKey;
-import io.libp2p.crypto.keys.Ed25519Kt;
 
 
 public class Stream {
@@ -71,14 +69,9 @@ public class Stream {
 
     }
 
-    public static int PublishName(@NonNull Closeable closable,
-                                  @NonNull Routing routing,
-                                  @NonNull String privateKey,
-                                  @NonNull String path,
-                                  int sequence) throws ClosedException {
-
-        byte[] data = Base64.getDecoder().decode(privateKey);
-        PrivKey privKey = Ed25519Kt.unmarshalEd25519PrivateKey(data);
+    public static void PublishName(@NonNull Closeable closable, @NonNull Routing routing,
+                                   @NonNull PrivKey privKey, @NonNull String path,
+                                   @NonNull PeerId peerId, int sequence) throws ClosedException {
 
 
         Date eol = Date.from(new Date().toInstant().plus(DefaultRecordEOL));
@@ -99,7 +92,9 @@ public class Stream {
         byte[] ipns = IPFS.IPNS_PATH.getBytes();
         byte[] ipnsKey = Bytes.concat(ipns, id.getBytes());
         LogUtils.error(TAG, new String(ipnsKey));
-        return routing.PutValue(closable, ipnsKey, bytes);
+        byte[] ipnsKey2 = Bytes.concat(ipns, peerId.getBytes());
+        LogUtils.error(TAG, new String(ipnsKey2));
+        routing.PutValue(closable, ipnsKey2, bytes);
     }
 
 

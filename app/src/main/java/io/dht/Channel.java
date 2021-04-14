@@ -2,8 +2,9 @@ package io.dht;
 
 import androidx.annotation.NonNull;
 
-import io.libp2p.core.PeerId;
+import io.core.ClosedException;
+import io.libp2p.AddrInfo;
 
 public interface Channel {
-     void invoke(@NonNull PeerId peerId);
+    void peer(@NonNull AddrInfo addrInfo) throws ClosedException;
 }
