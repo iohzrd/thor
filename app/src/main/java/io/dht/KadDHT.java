@@ -60,7 +60,7 @@ public class KadDHT implements Routing {
     public final RoutingTable routingTable;
     public final int bucketSize;
     public final int alpha; // The concurrency parameter per path
-    private final ProviderManager providerManager = new ProviderManager();
+
     private final ID selfKey;
     private final ConcurrentHashMap<PeerId, MessageSender> strmap = new ConcurrentHashMap<>();
 
