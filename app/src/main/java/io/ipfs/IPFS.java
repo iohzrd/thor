@@ -17,6 +17,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.nio.ByteBuffer;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -89,7 +91,8 @@ public class IPFS implements Receiver {
     // RFC3339     = "2006-01-02T15:04:05Z07:00"
     // RFC3339Nano = "2006-01-02T15:04:05.999999999Z07:00" *** this ***
 
-    public static final String TimeFormatIpfs = "yyyy-MM-dd'T'HH:mm:ssXXX";
+    public static final String TimeFormatIpfs = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSS'Z'";
+
     public static final int PRELOAD = 25;
     public static final int PRELOAD_DIST = 5;
     public static final int WRITE_TIMEOUT = 10;
@@ -310,22 +313,25 @@ public class IPFS implements Receiver {
         return peers;
     }
 
+    // todo cleanup names
     public void dhtPublish(@NonNull Closeable closable, @NonNull String cid) throws ClosedException {
 
         if (!isDaemonRunning()) {
             return;
         }
-
         try {
-            // TODO node.dhtProvide(cid, closable::isClosed);
-        } catch (Throwable ignore) {
+            routing.Provide(closable, Cid.Decode(cid));
+        } catch(ClosedException closedException){
+            throw closedException;
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable);
         }
         if (closable.isClosed()) {
             throw new ClosedException();
         }
     }
 
-
+    // TODO cleanup names
     public void Provide(@NonNull Closeable closeable, @NonNull Cid cid) {
         try {
             dhtPublish(closeable, cid.String());
@@ -978,6 +984,7 @@ func ToCid(id ID) cid.Cid {
         }
     }
 
+    // TODO cleanup names
     public void dhtFindProviders(@NonNull String cid, int numProviders,
                                  @NonNull Providers providers) throws ClosedException {
         if (!isDaemonRunning()) {

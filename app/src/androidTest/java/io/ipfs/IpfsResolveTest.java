@@ -14,12 +14,15 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.Objects;
 
 import io.core.ClosedException;
 import io.ipfs.multihash.Multihash;
+import io.ipns.IpnsValidator;
 import io.libp2p.core.PeerId;
 
 import static junit.framework.TestCase.assertNotNull;
@@ -36,15 +39,10 @@ public class IpfsResolveTest {
         context = ApplicationProvider.getApplicationContext();
     }
 
-    @Test
+    //@Test
     public void test_resolve_publish() throws ClosedException {
         IPFS ipfs = TestEnv.getTestInstance(context);
 
-
-
-        @SuppressLint("SimpleDateFormat") String format = new SimpleDateFormat(
-                IPFS.TimeFormatIpfs).format(new Date(System.currentTimeMillis()));
-        assertNotNull(format);
         String test = "Moin Wurst";
         String cid = ipfs.storeText(test);
         assertNotNull(cid);
@@ -62,6 +60,20 @@ public class IpfsResolveTest {
 
     }
 
+    @Test
+    public void test_time_format() throws ParseException {
+        @SuppressLint("SimpleDateFormat") String format = new SimpleDateFormat(
+                IPFS.TimeFormatIpfs).format(new Date(System.currentTimeMillis()));
+        assertNotNull(format);
+
+        Date date = IpnsValidator.getDate(format);
+        Objects.requireNonNull(date);
+
+
+        Date cmp = IpnsValidator.getDate("2021-04-15T06:14:21.184394868Z");
+        Objects.requireNonNull(cmp);
+
+    }
     @Test
     public void test_peer_id() throws IOException {
         IPFS ipfs = TestEnv.getTestInstance(context);

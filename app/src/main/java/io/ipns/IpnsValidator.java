@@ -211,12 +211,17 @@ public class IpnsValidator implements Validator {
         }
     }
 
-    @SuppressLint("SimpleDateFormat")
+    @NonNull
     private Date GetEOL(@NonNull IpnsProtos.IpnsEntry entry) throws InvalidRecord, ParseException {
         if (entry.getValidityType() != IpnsProtos.IpnsEntry.ValidityType.EOL) {
             throw new InvalidRecord("ErrUnrecognizedValidity"); // todo maybe better
         }
-        return new SimpleDateFormat(IPFS.TimeFormatIpfs).parse(new String(entry.getValidity().toByteArray()));
+        return getDate(new String(entry.getValidity().toByteArray()));
+    }
+    @SuppressLint("SimpleDateFormat")
+    @NonNull
+    public static Date getDate(@NonNull String format) throws ParseException {
+        return Objects.requireNonNull(new SimpleDateFormat(IPFS.TimeFormatIpfs).parse(format));
     }
 
 }
