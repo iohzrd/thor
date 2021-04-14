@@ -8,7 +8,6 @@ import com.google.protobuf.ByteString;
 
 import java.io.ByteArrayOutputStream;
 import java.text.SimpleDateFormat;
-import java.time.Instant;
 import java.util.Date;
 
 import io.ipfs.IPFS;
@@ -19,17 +18,12 @@ import io.protos.ipns.IpnsProtos;
 public class Ipns {
 
 
-
-
-
-
-
     public static IpnsProtos.IpnsEntry Create(@NonNull PrivKey sk, @NonNull byte[] bytes,
-                                              long sequence, @NonNull Instant eol) {
+                                              long sequence, @NonNull Date eol) {
 
 
         @SuppressLint("SimpleDateFormat") String format = new SimpleDateFormat(
-                IPFS.TimeFormatIpfs).format(new Date(eol.toEpochMilli()));
+                IPFS.TimeFormatIpfs).format(eol);
         IpnsProtos.IpnsEntry entry = IpnsProtos.IpnsEntry.newBuilder()
                 .setValidityType(IpnsProtos.IpnsEntry.ValidityType.EOL)
                 .setSequence(sequence)

@@ -290,7 +290,7 @@ public class Query {
             }
 
             // remove the peer if there was a dial failure..but not because of a context cancellation
-            LogUtils.error(TAG, throwable);
+            // TODO LogUtils.error(TAG, throwable);
             dht.peerStoppedDHT(queryPeer); // TODO
             try {
                 Collection<Multiaddr> collections = dht.host.getAddressBook().getAddrs(queryPeer).get();

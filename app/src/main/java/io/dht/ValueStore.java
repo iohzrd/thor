@@ -17,5 +17,6 @@ public interface ValueStore {
     //
     // Implementations of this methods won't return ErrNotFound. When a value
     // couldn't be found, the channel will get closed without passing any results
-    void SearchValue(@NonNull Closeable closeable, @NonNull ResolveInfo resolveInfo, String key, Option... options) throws ClosedException;
+    void SearchValue(@NonNull Closeable closeable, @NonNull ResolveInfo resolveInfo,
+                     @NonNull byte[] key, Option... options) throws ClosedException;
 }

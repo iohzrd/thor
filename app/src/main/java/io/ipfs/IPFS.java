@@ -21,10 +21,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -88,7 +86,10 @@ import threads.thor.core.blocks.BLOCKS;
 
 public class IPFS implements Receiver {
     // TimeFormatIpfs is the format ipfs uses to represent time in string form.
-    public static final String TimeFormatIpfs = "2006-01-02'T'15:04:05.999999999Z07:00";
+    // RFC3339     = "2006-01-02T15:04:05Z07:00"
+    // RFC3339Nano = "2006-01-02T15:04:05.999999999Z07:00" *** this ***
+
+    public static final String TimeFormatIpfs = "yyyy-MM-dd'T'HH:mm:ssXXX";
     public static final int PRELOAD = 25;
     public static final int PRELOAD_DIST = 5;
     public static final int WRITE_TIMEOUT = 10;
@@ -759,6 +760,10 @@ public class IPFS implements Receiver {
         return host.getPeerId().toBase58();
     }
 
+    @NonNull
+    public PeerId getPID() {
+        return host.getPeerId();
+    }
 
 
     public void bootstrap() {

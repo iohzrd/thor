@@ -2,18 +2,13 @@ package io.core;
 
 import androidx.annotation.NonNull;
 
-import java.util.List;
-
 public interface Validator {
 
     // Validate validates the given record, returning an error if it's
     // invalid (e.g., expired, signed by the wrong key, etc.).
-    void Validate(@NonNull String key, byte[] value) throws InvalidRecord;
+    void Validate(@NonNull byte[] key, byte[] value) throws InvalidRecord;
 
-    // Select selects the best record from the set of records (e.g., the
-    // newest).
-    //
-    // Decisions made by select should be stable.
-    int Select(String key, List<byte[]> values);
+    // return 1 for rec and -1 for cmp and 0 for both equal
+    int Select(@NonNull byte[] rec, byte[] cmp);
 
 }

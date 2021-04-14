@@ -3,10 +3,12 @@ package io.ipfs.utils;
 
 import androidx.annotation.NonNull;
 
+import com.google.common.primitives.Bytes;
+
 import java.time.Duration;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 
@@ -62,23 +64,9 @@ public class Stream {
             throws ClosedException {
 
 
-
-        /*
-        LogUtils.error(TAG,  IPFS.IPNS_PATH + new String(cid.Hash().getHash(),
-                StandardCharsets.UTF_8));
-        LogUtils.error(TAG,  IPFS.IPNS_PATH + new String(cid.Hash().toBytes(),
-                StandardCharsets.UTF_8));*/
-
-        // Use the routing system to get the name.
-        // Note that the DHT will call the ipns validator when retrieving
-        // the value, which in turn verifies the ipns record signature
-        String ipnsKey = IPFS.IPNS_PATH + new String(id.getBytes()); // richtig testen
-
-
-        // /ipns/�� ^J��N�i}'8����\Ɗ��UVD���_��
-        //String ipnsKey = IPFS.IPNS_PATH + name; //PeerId.fromBase58(name);
-        LogUtils.error(TAG, ipnsKey);
-
+        byte[] ipns = IPFS.IPNS_PATH.getBytes();
+        byte[] ipnsKey = Bytes.concat(ipns, id.getBytes());
+        LogUtils.error(TAG, new String(ipnsKey));
         routing.SearchValue(closeable, info, ipnsKey, new Quorum(dhtRecords), new Offline(offline));
 
     }
@@ -90,27 +78,28 @@ public class Stream {
                                    int sequence) throws ClosedException {
 
         byte[] data = Base64.getDecoder().decode(privateKey);
-        PrivKey pkey = Ed25519Kt.unmarshalEd25519PrivateKey(data);
+        PrivKey privKey = Ed25519Kt.unmarshalEd25519PrivateKey(data);
 
 
-        Instant eol = Instant.now().plusMillis(DefaultRecordEOL.toMillis());
-
+        Date eol = Date.from(new Date().toInstant().plus(DefaultRecordEOL));
 
         io.protos.ipns.IpnsProtos.IpnsEntry
-                record = Ipns.Create(pkey, path.getBytes(), sequence, eol);
+                record = Ipns.Create(privKey, path.getBytes(), sequence, eol);
 
 
-        PubKey pk = pkey.publicKey();
+        PubKey pk = privKey.publicKey();
 
-        Ipns.EmbedPublicKey(pk, record);
+        record = Ipns.EmbedPublicKey(pk, record);
 
         PeerId id = PeerId.fromPubKey(pk);
 
         byte[] bytes = record.toByteArray();
 
-        String key = IPFS.IPNS_PATH + new String(id.getBytes());
-        LogUtils.error(TAG, key);
-        routing.PutValue(closable, key, bytes);
+
+        byte[] ipns = IPFS.IPNS_PATH.getBytes();
+        byte[] ipnsKey = Bytes.concat(ipns, id.getBytes());
+        LogUtils.error(TAG, new String(ipnsKey));
+        routing.PutValue(closable, ipnsKey, bytes);
     }
 
 

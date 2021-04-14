@@ -81,6 +81,7 @@ public class KadDHT implements Routing {
         this.executors = Executors.newFixedThreadPool(alpha);
 
 
+        // TODO rethink
         this.host.addConnectionHandler(new ConnectionHandler() {
             @Override
             public void handleConnection(@NotNull Connection conn) {
@@ -248,7 +249,7 @@ public class KadDHT implements Routing {
     }
 
     @Override
-    public void PutValue(@NonNull Closeable ctx, @NonNull String key, byte[] value) throws ClosedException {
+    public void PutValue(@NonNull Closeable ctx, @NonNull byte[] key, @NonNull byte[] value) throws ClosedException {
 
 
         // don't even allow local users to put bad values.
@@ -280,14 +281,14 @@ public class KadDHT implements Routing {
 
         @SuppressLint("SimpleDateFormat") String format = new SimpleDateFormat(
                 IPFS.TimeFormatIpfs).format(new Date());
-        RecordOuterClass.Record rec = RecordOuterClass.Record.newBuilder().setKey(ByteString.copyFrom(key.getBytes()))
+        RecordOuterClass.Record rec = RecordOuterClass.Record.newBuilder().setKey(ByteString.copyFrom(key))
                 .setValue(ByteString.copyFrom(value))
                 .setTimeReceived(format).build();
         /* TODO maybe
         putLocal(key, rec);
         */
 
-        Set<PeerId> res = GetClosestPeers(ctx, key.getBytes(), peerId -> {
+        Set<PeerId> res = GetClosestPeers(ctx, key, peerId -> {
 
         });
 
@@ -898,10 +899,9 @@ public class KadDHT implements Routing {
             try {
                 byte[] record = rec.getValue().toByteArray();
                 if(record != null && record.length > 0) {
-                    String found = new String(rec.getKey().toByteArray());
-                    LogUtils.error(TAG, "Got Record for key " + found);
-                    validator.Validate(found, record);
-                    LogUtils.error(TAG, "Got Record success for key " + found);
+                    LogUtils.error(TAG, "Got Record ");
+                    validator.Validate(rec.getKey().toByteArray(), record);
+                    LogUtils.error(TAG, "Got Record success for key ");
                     return Pair.create(rec, peers);
                 }
             } catch (Throwable throwable){
@@ -975,7 +975,7 @@ public class KadDHT implements Routing {
 
 
                             if(rec != null){
-                                recordFunc.func(new RecordVal(p, rec.toByteArray()));
+                                recordFunc.func(new RecordInfo(p, rec.toByteArray()));
                             }
 
 
@@ -1009,9 +1009,8 @@ public class KadDHT implements Routing {
 
     @NonNull
     private RecordValResult processValues(@NonNull Closeable ctx,
-                                          @NonNull String key,
-                                          @Nullable RecordVal best,
-                                          @NonNull RecordVal v,
+                                          @Nullable RecordInfo best,
+                                          @NonNull RecordInfo v,
                                           @NonNull RecordReportFunc newVal) {
 
         RecordValResult result = new RecordValResult();
@@ -1022,11 +1021,10 @@ public class KadDHT implements Routing {
                         result.peersWithBest.add(v.From); // TODO
                         result.aborted = newVal.func(ctx, v, false);
                     } else {
-                        int sel = validator.Select(key, Arrays.asList(best.Val, v.Val));
+                        int value = validator.Select(best.Val, v.Val);
 
-                        if (sel != 1) {
+                        if (value == -1) {
                             result.aborted = newVal.func(ctx, v, false);
-
                         }
                     }
                 } else {
@@ -1040,10 +1038,9 @@ public class KadDHT implements Routing {
     }
 
 
-
     @Override
     public void SearchValue(@NonNull Closeable ctx, @NonNull ResolveInfo resolveInfo,
-                            @NonNull String key, Option... options) throws ClosedException {
+                            @NonNull byte[] key, Option... options) throws ClosedException {
 
         if (!enableValues) {
             throw new RuntimeException();
@@ -1067,25 +1064,22 @@ public class KadDHT implements Routing {
         }
         final int nvals = responsesNeeded;
         AtomicInteger numResponses = new AtomicInteger(0);
-        AtomicReference<RecordVal> best = new AtomicReference<>();
+        AtomicReference<RecordInfo> best = new AtomicReference<>();
         LookupWithFollowupResult lookupRes = getValues(ctx, new RecordValFunc() {
 
             @Override
-            public void func(@NonNull RecordVal recordVal) {
+            public void func(@NonNull RecordInfo recordVal) {
 
-                RecordValResult res = processValues(ctx, key, best.get(),recordVal, new RecordReportFunc() {
+                RecordValResult res = processValues(ctx, best.get(), recordVal, new RecordReportFunc() {
                     @Override
-                    public boolean func(Closeable ctx, RecordVal v, boolean better) {
+                    public boolean func(Closeable ctx, RecordInfo v, boolean better) {
                         numResponses.incrementAndGet();
-                        if( better ) {
+                        if (better) {
                             resolveInfo.resolved(v.Val);
                             best.set(v);
                         }
 
-                        if( nvals > 0 && (numResponses.get() > nvals)) {
-                            return true;
-                        }
-                        return false;
+                        return nvals > 0 && (numResponses.get() > nvals);
                     }
                 });
 
@@ -1115,7 +1109,7 @@ public class KadDHT implements Routing {
 
             updatePeerValues(ctx, key, best, updatePeers) */
             }
-        }, key.getBytes(), new StopFunc() {
+        }, key, new StopFunc() {
             @Override
             public boolean func() {
                 return numResponses.get() == nvals;
