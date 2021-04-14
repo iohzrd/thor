@@ -85,17 +85,15 @@ import io.protos.ipns.IpnsProtos;
 import threads.thor.core.blocks.BLOCKS;
 
 public class IPFS implements Receiver {
-    // TimeFormatIpfs is the format ipfs uses to represent time in string form.
-    // RFC3339     = "2006-01-02T15:04:05Z07:00"
-    // RFC3339Nano = "2006-01-02T15:04:05.999999999Z07:00" *** this ***
-
+    // TimeFormatIpfs is the format ipfs uses to represent time in string form
+    // RFC3339Nano = "2006-01-02T15:04:05.999999999Z07:00"
     public static final String TimeFormatIpfs = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSS'Z'";
 
     public static final int PRELOAD = 25;
     public static final int PRELOAD_DIST = 5;
     public static final int WRITE_TIMEOUT = 10;
     public static final String AGENT = "/go-ipfs/0.9.0-dev/thor"; // todo rename
-    public static final String PROTOCOL_VERSION = "ipfs/0.1.0";  // todo rename
+    public static final String PROTOCOL_VERSION = "ipfs/0.1.0";  // todo check again
     public static final int TIMEOUT_BOOTSTRAP = 5;
     public static final long TIMEOUT_DHT_PEER = 3;
     public static final int LOW_WATER = 50;
