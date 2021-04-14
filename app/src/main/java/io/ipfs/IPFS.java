@@ -1207,6 +1207,7 @@ func ToCid(id ID) cid.Cid {
             AtomicLong timeout = new AtomicLong(System.currentTimeMillis() + RESOLVE_MAX_TIME);
             AtomicBoolean abort = new AtomicBoolean(false);
 
+            // TODO set timeout again
             Stream.ResolveName(() -> /*(timeout.get() < System.currentTimeMillis())
                     ||*/ abort.get() || closeable.isClosed(), routing, new ResolveInfo() {
 
