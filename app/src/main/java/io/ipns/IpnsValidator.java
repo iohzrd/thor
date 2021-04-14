@@ -14,6 +14,7 @@ import java.util.Date;
 import java.util.Objects;
 
 import crypto.pb.Crypto;
+import io.LogUtils;
 import io.core.InvalidRecord;
 import io.core.Validator;
 import io.ipfs.IPFS;
@@ -27,7 +28,6 @@ import io.libp2p.crypto.keys.Secp256k1Kt;
 import io.protos.ipns.IpnsProtos;
 
 public class IpnsValidator implements Validator {
-
 
     @Override
     public void Validate(@NonNull byte[] key, byte[] value) throws InvalidRecord {
@@ -66,9 +66,11 @@ public class IpnsValidator implements Validator {
 
     }
 
-    int Compare(@NonNull IpnsProtos.IpnsEntry a, @NonNull IpnsProtos.IpnsEntry b) throws InvalidRecord, ParseException {
+    private int Compare(@NonNull IpnsProtos.IpnsEntry a, @NonNull IpnsProtos.IpnsEntry b) throws InvalidRecord, ParseException {
+
         long as = a.getSequence();
         long bs = b.getSequence();
+
 
         if (as > bs) {
             return 1;
@@ -216,7 +218,8 @@ public class IpnsValidator implements Validator {
         if (entry.getValidityType() != IpnsProtos.IpnsEntry.ValidityType.EOL) {
             throw new InvalidRecord("ErrUnrecognizedValidity"); // todo maybe better
         }
-        return getDate(new String(entry.getValidity().toByteArray()));
+        String date = new String(entry.getValidity().toByteArray());
+        return getDate(date);
     }
     @SuppressLint("SimpleDateFormat")
     @NonNull

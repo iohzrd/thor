@@ -1070,7 +1070,7 @@ public class KadDHT implements Routing {
 
 
                             if(rec != null){
-                                recordFunc.func(new RecordInfo(p, rec.toByteArray()));
+                                recordFunc.func(new RecordInfo(p, rec.getValue().toByteArray()));
                             }
 
 
