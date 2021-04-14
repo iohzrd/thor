@@ -17,8 +17,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.nio.ByteBuffer;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeFormatterBuilder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -104,8 +102,8 @@ public class IPFS implements Receiver {
     public static final int HIGH_WATER = 300;
     public static final String GRACE_PERIOD = "10s";
     public static final int MIN_PEERS = 10;
-    public static final long RESOLVE_MAX_TIME = 20000; // 20 sec
-    public static final int RESOLVE_TIMEOUT = 3000; // 3 sec
+    public static final long RESOLVE_MAX_TIME = 30000; // 30 sec
+    public static final int RESOLVE_TIMEOUT = 1000; // 1 sec
     public static final long WANTS_WAIT_TIMEOUT = 2000; // 2 sec
     public static final int CHUNK_SIZE = 262144;
     public static final String ProtocolBitswap = "/ipfs/bitswap/1.2.0";
@@ -252,16 +250,6 @@ public class IPFS implements Receiver {
         this.exchange = BitSwap.New(bsm, blockstore);
         host.start().get();
         running = true;
-
-
-        String rk = IPFS.IPNS_PATH + new String(tt.getBytes());
-        String cmp = IPFS.IPNS_PATH + new String(host.getPeerId().getBytes());
-        LogUtils.error(TAG, rk);
-        LogUtils.error(TAG, cmp);
-        PeerId s = decode(Multibase.encode(Multibase.Base.Base32, host.getPeerId().getBytes()));
-        String rks = IPFS.IPNS_PATH + new String(s.getBytes());
-        LogUtils.error(TAG, rks);
-        LogUtils.error(TAG, IPFS.IPNS_PATH + new String(decode(getPeerID()).getBytes()));
     }
     public int getPort(){
         return port;
@@ -1215,8 +1203,8 @@ func ToCid(id ID) cid.Cid {
             AtomicBoolean abort = new AtomicBoolean(false);
 
             // TODO set timeout again
-            Stream.ResolveName(() -> /*(timeout.get() < System.currentTimeMillis())
-                    ||*/ abort.get() || closeable.isClosed(), routing, new ResolveInfo() {
+            Stream.ResolveName(() -> (timeout.get() < System.currentTimeMillis())
+                    || abort.get() || closeable.isClosed(), routing, new ResolveInfo() {
 
                 private void setName(@NonNull String hash, long sequence) {
                     resolvedName.set(new ResolvedName(sequence,
