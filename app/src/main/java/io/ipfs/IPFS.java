@@ -968,10 +968,11 @@ func ToCid(id ID) cid.Cid {
         try {
 
            Stream.PublishName(closeable, routing, privateKey, cid, sequence);
-        } catch (Throwable ignore) {
-            LogUtils.error(TAG, ignore);
+        } catch(ClosedException closedException) {
+            throw closedException;
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable);
         }
-
         if (closeable.isClosed()) {
             throw new ClosedException();
         }
