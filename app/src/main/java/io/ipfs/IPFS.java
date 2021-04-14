@@ -302,21 +302,19 @@ public class IPFS implements Receiver {
     }
 
     // todo cleanup names
-    public void dhtPublish(@NonNull Closeable closable, @NonNull String cid) throws ClosedException {
+    public int dhtPublish(@NonNull Closeable closable, @NonNull String cid) throws ClosedException {
 
         if (!isDaemonRunning()) {
-            return;
+            return 0;
         }
         try {
-            routing.Provide(closable, Cid.Decode(cid));
-        } catch(ClosedException closedException){
+            return routing.Provide(closable, Cid.Decode(cid));
+        } catch (ClosedException closedException) {
             throw closedException;
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         }
-        if (closable.isClosed()) {
-            throw new ClosedException();
-        }
+        return 0;
     }
 
     // TODO cleanup names
@@ -954,22 +952,20 @@ func ToCid(id ID) cid.Cid {
     public String getHost() {
         return base32(getPeerID());
     }
-    public void publishName(@NonNull String cid, @NonNull Closeable closeable, int sequence)
+
+    public int publishName(@NonNull String cid, @NonNull Closeable closeable, int sequence)
             throws ClosedException {
         if (!isDaemonRunning()) {
-            return;
+            return 0;
         }
         try {
-
-           Stream.PublishName(closeable, routing, privateKey, cid, sequence);
-        } catch(ClosedException closedException) {
+            return Stream.PublishName(closeable, routing, privateKey, cid, sequence);
+        } catch (ClosedException closedException) {
             throw closedException;
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         }
-        if (closeable.isClosed()) {
-            throw new ClosedException();
-        }
+        return 0;
     }
 
     // TODO cleanup names

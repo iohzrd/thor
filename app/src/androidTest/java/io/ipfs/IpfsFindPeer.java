@@ -87,19 +87,23 @@ public class IpfsFindPeer {
         boolean connected = ipfs.isConnected(relay);
         assertFalse(connected);
 
+        LogUtils.error(TAG, "Stage 1");
 
         boolean result = ipfs.swarmConnect(IPFS.P2P_PATH + relay, 1);
         assertFalse(result);
 
+        LogUtils.error(TAG, "Stage 2");
 
-        relay = "QmchgNzyUFyf2wpfDMmpGxMKHA3PkC1f3H2wUgbs21vXoz";
         result = ipfs.swarmConnect(IPFS.P2P_PATH + relay, 10);
         assertFalse(result);
 
+        LogUtils.error(TAG, "Stage 3");
 
         relay = DUMMY_PID;
         result = ipfs.swarmConnect(IPFS.P2P_PATH + relay, 10);
         assertFalse(result);
+
+        LogUtils.error(TAG, "Stage 4");
 
     }
 

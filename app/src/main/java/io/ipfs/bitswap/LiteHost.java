@@ -51,7 +51,7 @@ public class LiteHost implements BitSwapNetwork {
                     addrInfo.getPeerId(), addrInfo.getAddresses());
             // TODO closeable and timeout
             return future.get() != null;
-        } catch (Throwable throwable) {
+        }  catch (Throwable throwable) {
             if (closeable.isClosed()) {
                 throw new ClosedException();
             }
@@ -127,7 +127,7 @@ public class LiteHost implements BitSwapNetwork {
     }
 
     @Override
-    public void Provide(@NonNull Closeable closeable, @NonNull Cid cid) {
-        throw new RuntimeException("not supported");
+    public int Provide(@NonNull Closeable closeable, @NonNull Cid cid) throws ClosedException {
+        return contentRouting.Provide(closeable, cid);
     }
 }

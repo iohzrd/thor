@@ -23,8 +23,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -247,7 +245,7 @@ public class KadDHT implements Routing {
     }
 
     @Override
-    public void PutValue(@NonNull Closeable ctx, @NonNull byte[] key, @NonNull byte[] value) throws ClosedException {
+    public int PutValue(@NonNull Closeable ctx, @NonNull byte[] key, @NonNull byte[] value) throws ClosedException {
 
 
         // don't even allow local users to put bad values.
@@ -287,9 +285,9 @@ public class KadDHT implements Routing {
         */
 
         Set<PeerId> res = GetClosestPeers(ctx, key, peerId -> {
-
+            LogUtils.error(TAG, "PutValue " + peerId.toBase58());
         });
-
+        int puts = 0;
         for (PeerId p : res) {
             try {
             /* TODO maybe
@@ -299,10 +297,12 @@ public class KadDHT implements Routing {
         }) */
 
                 putValueToPeer(ctx, p, rec);
+                puts++;
             } catch (Throwable throwable) {
                 LogUtils.error(TAG, throwable);
             }
         }
+        return puts;
     }
 
     private void putValueToPeer(@NonNull Closeable ctx, @NonNull PeerId p, @NonNull RecordOuterClass.Record rec)
@@ -497,42 +497,41 @@ public class KadDHT implements Routing {
         }*/
     }
 
-    /*
-    func (dht *IpfsDHT) makeProvRecord(key []byte) (*pb.Message, error) {
-        pi := peer.AddrInfo{
-            ID:    dht.self,
-                    Addrs: dht.host.Addrs(),
+
+    private Dht.Message makeProvRecord(@NonNull byte[] key) {
+
+
+        List<Multiaddr> addresses = host.listenAddresses();
+        if (addresses.isEmpty()) {
+            throw new RuntimeException("no known addresses for self, cannot put provider");
         }
 
-        // // only share WAN-friendly addresses ??
-        // pi.Addrs = addrutil.WANShareableAddrs(pi.Addrs)
-        if len(pi.Addrs) < 1 {
-            return nil, fmt.Errorf("no known addresses for self, cannot put provider")
-        }
+        Dht.Message.Builder builder = Dht.Message.newBuilder()
+                .setType(Dht.Message.MessageType.ADD_PROVIDER)
+                .setKey(ByteString.copyFrom(key))
+                .setClusterLevelRaw(0);
 
-        pmes := pb.NewMessage(pb.Message_ADD_PROVIDER, key, 0)
-        pmes.ProviderPeers = pb.RawPeerInfosToPBPeers([]peer.AddrInfo{pi})
-        return pmes, nil
-    }*/
+        Dht.Message.Peer.Builder peerBuilder = Dht.Message.Peer.newBuilder()
+                .setId(ByteString.copyFrom(self.getBytes()));
+        for (Multiaddr addr : addresses) {
+            peerBuilder.addAddrs(ByteString.copyFrom(addr.getBytes()));
+        }
+        builder.addProviderPeers(peerBuilder.build());
+
+        return builder.build();
+    }
 
     @Override
-    public void Provide(@NonNull Closeable closeable, @NonNull Cid key) {
+    public int Provide(@NonNull Closeable ctx, @NonNull Cid key) throws ClosedException {
 
-        /*
-        if !dht.enableProviders {
-            return routing.ErrNotSupported
-        } else if !key.Defined() {
-            return fmt.Errorf("invalid cid: undefined")
-        }
-        keyMH := key.Hash()
-        logger.Debugw("providing", "cid", key, "mh", loggableProviderRecordBytes(keyMH))
-
-        // add self locally
-        dht.ProviderManager.AddProvider(ctx, keyMH, dht.self)
-        if !brdcst {
-            return nil
+        if (!key.Defined()) {
+            throw new RuntimeException("invalid cid: undefined");
         }
 
+        byte[] keyMH = key.Bytes();
+
+
+        /* TODO maybe
         closerCtx := ctx
         if deadline, ok := ctx.Deadline(); ok {
             now := time.Now()
@@ -552,56 +551,37 @@ public class KadDHT implements Routing {
             var cancel context.CancelFunc
                     closerCtx, cancel = context.WithDeadline(ctx, deadline)
             defer cancel()
-        }
+        }*/
 
-        var exceededDeadline bool
-        peers, err := dht.GetClosestPeers(closerCtx, string(keyMH))
-        switch err {
-            case context.DeadlineExceeded:
-                // If the _inner_ deadline has been exceeded but the _outer_
-                // context is still fine, provide the value to the closest peers
-                // we managed to find, even if they're not the _actual_ closest peers.
-                if ctx.Err() != nil {
-                return ctx.Err()
+
+        Set<PeerId> peers = GetClosestPeers(ctx, keyMH, new Channel() {
+            @Override
+            public void invoke(@NonNull PeerId peerId) {
+                LogUtils.error(TAG, "Provide " + peerId.toBase58());
             }
-            exceededDeadline = true
-            case nil:
-            default:
-                return err
-        }
+        });
 
-        mes, err := dht.makeProvRecord(keyMH)
-        if err != nil {
-            return err
-        }
+        int publish = 0;
+        Dht.Message mes = makeProvRecord(keyMH);
+        for (PeerId p : peers) {
+            try {
+                sendRequest(ctx, p, mes);
+                publish++;
+            } catch (ClosedException closedException) {
+                throw closedException;
 
-        wg := sync.WaitGroup{}
-        for p := range peers {
-            wg.Add(1)
-            go func(p peer.ID) {
-                defer wg.Done()
-                logger.Debugf("putProvider(%s, %s)", loggableProviderRecordBytes(keyMH), p)
-                err := dht.sendMessage(ctx, p, mes)
-                if err != nil {
-                    logger.Debug(err)
-                }
-            }(p)
+            } catch (Throwable throwable) {
+                LogUtils.error(TAG, throwable);
+            }
         }
-        wg.Wait()
-        if exceededDeadline {
-            return context.DeadlineExceeded
-        }
-        return ctx.Err()
-        */
-
-        throw new RuntimeException("TODO");
+        return publish;
     }
 
     // sendRequest sends out a request, but also makes sure to
     // measure the RTT for latency measurements.
     private Dht.Message sendRequest(@NonNull Closeable ctx,
-                                          @NonNull PeerId peerId,
-                                          @NonNull Dht.Message message)
+                                    @NonNull PeerId peerId,
+                                    @NonNull Dht.Message message)
             throws ClosedException, ProtocolNotSupported, ConnectionFailure {
         //ctx, _ = tag.New(ctx, metrics.UpsertMessageType(pmes)) // TODO maybe
 

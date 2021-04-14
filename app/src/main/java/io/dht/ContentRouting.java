@@ -9,5 +9,5 @@ import io.ipfs.cid.Cid;
 public interface ContentRouting {
     void FindProvidersAsync(@NonNull Providers providers, @NonNull Cid cid, int number) throws ClosedException;
 
-    void Provide(@NonNull Closeable closeable, @NonNull Cid cid) throws ClosedException;
+    int Provide(@NonNull Closeable closeable, @NonNull Cid cid) throws ClosedException;
 }

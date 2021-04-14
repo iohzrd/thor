@@ -71,11 +71,11 @@ public class Stream {
 
     }
 
-    public static void PublishName(@NonNull Closeable closable,
-                                   @NonNull Routing routing,
-                                   @NonNull String privateKey,
-                                   @NonNull String path,
-                                   int sequence) throws ClosedException {
+    public static int PublishName(@NonNull Closeable closable,
+                                  @NonNull Routing routing,
+                                  @NonNull String privateKey,
+                                  @NonNull String path,
+                                  int sequence) throws ClosedException {
 
         byte[] data = Base64.getDecoder().decode(privateKey);
         PrivKey privKey = Ed25519Kt.unmarshalEd25519PrivateKey(data);
@@ -99,7 +99,7 @@ public class Stream {
         byte[] ipns = IPFS.IPNS_PATH.getBytes();
         byte[] ipnsKey = Bytes.concat(ipns, id.getBytes());
         LogUtils.error(TAG, new String(ipnsKey));
-        routing.PutValue(closable, ipnsKey, bytes);
+        return routing.PutValue(closable, ipnsKey, bytes);
     }
 
 

@@ -26,6 +26,8 @@ import io.ipns.IpnsValidator;
 import io.libp2p.core.PeerId;
 
 import static junit.framework.TestCase.assertNotNull;
+
+import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 
 @SuppressWarnings("SpellCheckingInspection")
@@ -39,7 +41,7 @@ public class IpfsResolveTest {
         context = ApplicationProvider.getApplicationContext();
     }
 
-    //@Test
+    @Test
     public void test_resolve_publish() throws ClosedException {
         IPFS ipfs = TestEnv.getTestInstance(context);
 
@@ -48,8 +50,8 @@ public class IpfsResolveTest {
         assertNotNull(cid);
         int random = (int) Math.abs(Math.random());
 
-
-        ipfs.publishName(cid, ()-> false, random);
+        int pushes = ipfs.publishName(cid, ()-> false, random);
+        assertTrue(pushes > 0);
 
         String key = ipfs.getHost();
 
