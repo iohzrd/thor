@@ -936,18 +936,14 @@ func ToCid(id ID) cid.Cid {
     }
 
     // TODO cleanup names
-    public void dhtFindProviders(@NonNull Closeable closeable, @NonNull String cid, int numProviders,
-                                 @NonNull Providers providers) throws ClosedException {
+    public void findProviders(@NonNull Closeable closeable, @NonNull Providers providers,
+                              @NonNull String cid ) throws ClosedException {
         if (!isDaemonRunning()) {
             return;
         }
 
-        if (numProviders < 1) {
-            throw new RuntimeException("number of providers must be greater than 0");
-        }
-
         try {
-            routing.FindProvidersAsync(closeable, providers, Cid.Decode(cid), numProviders);
+            routing.FindProvidersAsync(closeable, providers, Cid.Decode(cid));
         } catch (ClosedException closedException) {
             throw closedException;
         } catch (Throwable throwable) {
@@ -1159,7 +1155,7 @@ func ToCid(id ID) cid.Cid {
             return null;
         }
 
-
+        LogUtils.error(TAG, "resolveName " + name);
         long time = System.currentTimeMillis();
 
         AtomicReference<ResolvedName> resolvedName = new AtomicReference<>(null);

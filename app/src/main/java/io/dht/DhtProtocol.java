@@ -108,6 +108,7 @@ public class DhtProtocol implements ProtocolBinding<DhtProtocol.DhtController> {
                 Multihash.putUvarint(buf, data.length);
                 buf.write(data);
                 stream.writeAndFlush(Unpooled.buffer().writeBytes(buf.toByteArray()));
+                stream.closeWrite().get();
             } catch (Throwable throwable) {
                 LogUtils.error(TAG, throwable);
                 throw new NotImplementedError("" + throwable.getMessage());

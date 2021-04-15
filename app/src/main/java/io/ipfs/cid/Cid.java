@@ -9,6 +9,7 @@ import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Objects;
 
+import io.LogUtils;
 import io.ipfs.multibase.Multibase;
 import io.ipfs.multihash.Multihash;
 
@@ -157,6 +158,7 @@ public class Cid implements Comparable<Cid> {
         return type;
     }
 
+
     public byte[] Bytes() {
         return multihash;
     }
@@ -211,12 +213,14 @@ public class Cid implements Comparable<Cid> {
         }
     }
 
-    public Multihash Hash() {
+    public byte[] Hash() {
 
         try {
             if (Version() == 0) {
-                return Multihash.deserialize(multihash);
+                LogUtils.error(TAG, "Hash version 0");
+                return multihash;
             } else {
+                LogUtils.error(TAG, "Hash version 1");
                 byte[] data = Bytes();
                 try (InputStream inputStream = new ByteArrayInputStream(data)) {
                     long version = Multihash.readVarint(inputStream);
@@ -235,7 +239,7 @@ public class Cid implements Comparable<Cid> {
                         while ((n = inputStream.read(buf)) > 0) {
                             outputStream.write(buf, 0, n);
                         }
-                        return Multihash.deserialize(outputStream.toByteArray());
+                        return outputStream.toByteArray();
                     }
 
 

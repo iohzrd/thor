@@ -20,7 +20,6 @@ import io.core.Closeable;
 import io.core.ClosedException;
 import io.core.ConnectionFailure;
 import io.core.ProtocolNotSupported;
-import io.ipfs.IPFS;
 import io.ipfs.cid.Cid;
 import io.ipfs.format.Block;
 import io.ipfs.format.BlockStore;
@@ -28,7 +27,7 @@ import io.libp2p.core.PeerId;
 
 
 public class ContentManager {
-    public static final int PROVIDERS = 10;
+
     private static final int TIMEOUT = 15000;
     private static final String TAG = ContentManager.class.getSimpleName();
     private static final ExecutorService LOADS = Executors.newFixedThreadPool(4);
@@ -95,7 +94,7 @@ public class ContentManager {
             try {
                 network.FindProvidersAsync(closeable, addrInfo -> {
                     PeerId peer = addrInfo.getPeerId();
-                    LogUtils.error(TAG, "Provider Peer Step " + peer.toBase58());
+
                     if (!faulty.contains(peer)) {
                         WANTS.execute(() -> {
                             if (matches.containsKey(cid)) { // check still valid
@@ -129,11 +128,14 @@ public class ContentManager {
                         });
 
                     }
-                }, cid, PROVIDERS);
+                }, cid);
             } catch (ClosedException closedException) {
                 // ignore here
+            } catch (Throwable throwable) {
+                LogUtils.error(TAG, throwable);
             } finally {
-                LogUtils.error(TAG, "Finish Provider Search " + (System.currentTimeMillis() - begin));
+                LogUtils.error(TAG, "Finish Provider Search " + cid.String() +
+                        " " + (System.currentTimeMillis() - begin));
             }
         });
 
@@ -235,7 +237,8 @@ public class ContentManager {
                             LogUtils.error(TAG, throwable);
                         } finally {
                             LogUtils.error(TAG, "Network Peer " +
-                                    peer.toBase58() + " took " + (System.currentTimeMillis() - start));
+                                    peer.toBase58() + " took " + (System.currentTimeMillis() - start) +
+                                    "  for cid " + cid.String());
                         }
 
                         // check priority after each run
@@ -371,7 +374,7 @@ public class ContentManager {
                         } catch (Throwable throwable) {
                             LogUtils.error(TAG, throwable);
                         }
-                    }, cid, PROVIDERS);
+                    }, cid);
 
 
                 } catch (ClosedException ignore) {

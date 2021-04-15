@@ -10,7 +10,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import io.LogUtils;
@@ -172,6 +171,7 @@ public class BitSwapProtocol implements ProtocolBinding<BitSwapProtocol.BitSwapC
             try {
                 byte[] data = pmes.ToNetV1();
                 stream.writeAndFlush(Unpooled.buffer().writeBytes(data));
+                stream.closeWrite().get();
             } catch (Throwable throwable) {
                 LogUtils.error(TAG, throwable);
                 throw new NotImplementedError("" + throwable.getMessage());

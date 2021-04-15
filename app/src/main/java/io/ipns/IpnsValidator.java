@@ -7,6 +7,9 @@ import androidx.annotation.NonNull;
 import com.google.common.primitives.Bytes;
 import com.google.protobuf.InvalidProtocolBufferException;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
@@ -14,10 +17,10 @@ import java.util.Date;
 import java.util.Objects;
 
 import crypto.pb.Crypto;
-import io.LogUtils;
 import io.core.InvalidRecord;
 import io.core.Validator;
 import io.ipfs.IPFS;
+import io.ipfs.cid.Cid;
 import io.ipfs.multihash.Multihash;
 import io.libp2p.core.PeerId;
 import io.libp2p.core.crypto.PubKey;
@@ -109,8 +112,10 @@ public class IpnsValidator implements Validator {
     // nothing is malformed.
     @NonNull
     private PubKey ExtractPublicKey(@NonNull PeerId pid, @NonNull IpnsProtos.IpnsEntry entry)
-            throws InvalidRecord, InvalidProtocolBufferException {
-        if (entry.getPubKey() != null) {
+            throws InvalidRecord, IOException {
+
+
+        if (entry.hasPubKey()) {
             byte[] pubKey = entry.getPubKey().toByteArray();
 
             PubKey pk = unmarshalPublicKey(pubKey);
@@ -132,8 +137,31 @@ public class IpnsValidator implements Validator {
     // This method returns ErrNoPublicKey if the peer ID looks valid but it can't extract
     // the public key.
     @NonNull
-    PubKey ExtractPublicKey(@NonNull PeerId id) throws InvalidProtocolBufferException {
+    PubKey ExtractPublicKey(@NonNull PeerId id) throws IOException {
+        /*
+        io.libp2p.core.multiformats.Multihash res =
+                io.libp2p.core.multiformats.Multihash.of(Unpooled.wrappedBuffer(id.getBytes()));
+        io.libp2p.core.multiformats.Multihash.Descriptor des = res.getDesc();
+        if( des.getDigest() != io.libp2p.core.multiformats.Multihash.Digest.Identity){
+            throw new RuntimeException("ErrNoPublicKey");
+        }*/
 
+
+        try (InputStream inputStream = new ByteArrayInputStream(id.getBytes())) {
+            long version = Multihash.readVarint(inputStream);
+            if (version != Cid.IDENTITY) {
+                throw new Exception("not supported codec");
+            }
+            long length = Multihash.readVarint(inputStream);
+            byte[] data = new byte[(int) length];
+            int read = inputStream.read(data);
+            if (read != length) {
+                throw new RuntimeException("Key to short");
+            }
+            return unmarshalPublicKey(data);
+        } catch (Throwable throwable) {
+            throw new RuntimeException(throwable);
+        }
 
 
         /* TODO check if implemenation is correct
@@ -151,7 +179,7 @@ public class IpnsValidator implements Validator {
         return pk, nil *
 
          */
-        return unmarshalPublicKey(id.getBytes());
+
     }
 
     PubKey unmarshalPublicKey(byte[] data) throws InvalidProtocolBufferException {
@@ -176,7 +204,7 @@ public class IpnsValidator implements Validator {
 
     @NonNull
     private PubKey getPublicKey(@NonNull PeerId pid, @NonNull IpnsProtos.IpnsEntry entry)
-            throws InvalidProtocolBufferException, InvalidRecord {
+            throws IOException, InvalidRecord {
 
         return ExtractPublicKey(pid, entry);
 

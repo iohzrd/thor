@@ -210,12 +210,12 @@ public class KadDHT implements Routing {
                     List<Multiaddr> multiAddresses = new ArrayList<>();
                     List<ByteString> addresses = entry.getAddrsList();
                     for (ByteString address : addresses) {
-                        Multiaddr multiaddr = filterAddress(address);
+                        Multiaddr multiaddr = preFilter(address);
                         if (multiaddr != null) {
                             multiAddresses.add(multiaddr);
                         }
                     }
-                    AddrInfo addrInfo = new AddrInfo(peerId, multiAddresses);
+                    AddrInfo addrInfo = AddrInfo.create(peerId, multiAddresses);
                     if (filter.queryPeerFilter(KadDHT.this, addrInfo)) {
                         peers.add(addrInfo);
                         addAddrs(addrInfo);
@@ -305,7 +305,7 @@ public class KadDHT implements Routing {
                 throw new ClosedException();
             }
             try {
-                peerBook.put(addrInfo.getPeerId(), addrInfo);
+                addAddrs(addrInfo);
                 putValueToPeer(ctx, addrInfo.getPeerId(), rec);
                 LogUtils.error(TAG, "PutValue Success to " + addrInfo.getPeerId().toBase58());
             } catch (ClosedException closedException) {
@@ -340,18 +340,14 @@ public class KadDHT implements Routing {
     @Override
     public void FindProvidersAsync(@NonNull Closeable closeable,
                                    @NonNull Providers providers,
-                                   @NonNull Cid cid, int count) throws ClosedException {
+                                   @NonNull Cid cid) throws ClosedException {
         if (!cid.Defined()) {
-            return;
+            throw new RuntimeException("Cid invalid");
         }
 
-        int chSize = count;
-        if (count == 0) {
-            chSize = 1;
-        }
+        byte[] key = cid.Hash(); // cid.Bytes();
 
-
-        findProvidersAsyncRoutine(closeable, providers, cid.Bytes(), chSize);
+        findProvidersAsyncRoutine(closeable, providers, key);
     }
 
 
@@ -387,10 +383,10 @@ public class KadDHT implements Routing {
 
     private void findProvidersAsyncRoutine(@NonNull Closeable closeable,
                                            @NonNull Providers providers,
-                                           @NonNull byte[] key, int count) throws ClosedException {
+                                           @NonNull byte[] key) throws ClosedException {
 
 
-        boolean findAll = count == 0;
+
         Set<PeerId> ps = new HashSet<>();
 
         /*
@@ -435,13 +431,12 @@ public class KadDHT implements Routing {
                             List<Multiaddr> multiAddresses = new ArrayList<>();
                             List<ByteString> addresses = entry.getAddrsList();
                             for (ByteString address : addresses) {
-                                Multiaddr multiaddr = filterAddress(address);
+                                Multiaddr multiaddr = preFilter(address);
                                 if (multiaddr != null) {
                                     multiAddresses.add(multiaddr);
                                 }
                             }
-                            AddrInfo addrInfo = new AddrInfo(peerId, multiAddresses);
-
+                            AddrInfo addrInfo = AddrInfo.create(peerId, multiAddresses);
                             if (filter.queryPeerFilter(KadDHT.this, addrInfo)) {
                                 provs.add(addrInfo);
                                 addAddrs(addrInfo);
@@ -459,10 +454,7 @@ public class KadDHT implements Routing {
                                 LogUtils.error(TAG, "got provider using: " + prov.getPeerId());
                                 providers.Peer(prov);
                             }
-                            if (!findAll && ps.size() >= count) {
-                                LogUtils.error(TAG, "got provider enough " + ps.size() + " " + count);
-                                break;
-                            }
+
                         }
 
                         // Give closer peers back to the query to be queried
@@ -473,12 +465,12 @@ public class KadDHT implements Routing {
                             List<Multiaddr> multiAddresses = new ArrayList<>();
                             List<ByteString> addresses = entry.getAddrsList();
                             for (ByteString address : addresses) {
-                                Multiaddr multiaddr = filterAddress(address);
+                                Multiaddr multiaddr = preFilter(address);
                                 if (multiaddr != null) {
                                     multiAddresses.add(multiaddr);
                                 }
                             }
-                            AddrInfo addrInfo = new AddrInfo(peerId, multiAddresses);
+                            AddrInfo addrInfo = AddrInfo.create(peerId, multiAddresses);
                             if (filter.queryPeerFilter(KadDHT.this, addrInfo)) {
                                 peers.add(addrInfo);
                                 addAddrs(addrInfo);
@@ -498,7 +490,7 @@ public class KadDHT implements Routing {
                 }, new StopFunc() {
                     @Override
                     public boolean func() {
-                        return closeable.isClosed() || (!findAll && ps.size() >= count);
+                        return closeable.isClosed();
                     }
                 });
 
@@ -536,13 +528,13 @@ public class KadDHT implements Routing {
     }
 
     @Override
-    public void Provide(@NonNull Closeable ctx, @NonNull Cid key) throws ClosedException {
+    public void Provide(@NonNull Closeable ctx, @NonNull Cid cid) throws ClosedException {
 
-        if (!key.Defined()) {
+        if (!cid.Defined()) {
             throw new RuntimeException("invalid cid: undefined");
         }
 
-        byte[] keyMH = key.Bytes();
+        byte[] key = cid.Hash(); // cid.Bytes();
 
 
         /* TODO maybe
@@ -568,12 +560,12 @@ public class KadDHT implements Routing {
         }*/
 
 
-        final Dht.Message mes = makeProvRecord(keyMH);
-        GetClosestPeers(ctx, keyMH, addrInfo -> {
+        final Dht.Message mes = makeProvRecord(key);
+        GetClosestPeers(ctx, key, addrInfo -> {
 
             LogUtils.error(TAG, "Provide to " + addrInfo.getPeerId().toBase58());
             try {
-                peerBook.put(addrInfo.getPeerId(), addrInfo);
+                addAddrs(addrInfo);
                 sendRequest(ctx, addrInfo.getPeerId(), mes);
                 LogUtils.error(TAG, "Provide Success to " + addrInfo.getPeerId().toBase58());
             } catch (ClosedException closedException) {
@@ -639,15 +631,6 @@ public class KadDHT implements Routing {
                     throw new ClosedException();
                 }
 
-                // TODO
-                /*
-                AddrInfo addrInfo = peerBook.get(p);
-                if (addrInfo != null) {
-                    LogUtils.error(TAG, addrInfo.toString());
-                } else {
-                    LogUtils.error(TAG, throwable); // should not occeur
-                }*/
-
                 if (throwable instanceof TimeoutException) {
                     throw new ConnectionFailure();
                 }
@@ -658,6 +641,16 @@ public class KadDHT implements Routing {
                     throw new ProtocolNotSupported();
                 }
                 if (cause instanceof NothingToCompleteException) {
+
+                    // TODO
+
+                    AddrInfo addrInfo = peerBook.get(p);
+                    if (addrInfo != null) {
+                        LogUtils.error(TAG, addrInfo.toString());
+                    } else {
+                        LogUtils.error(TAG, throwable); // should not occeur
+                    }
+                    peerStoppedDHT(p);
                     throw new ConnectionFailure();
                 }
                 if (cause instanceof NonCompleteException) {
@@ -698,11 +691,11 @@ public class KadDHT implements Routing {
         return sendRequest(ctx, p, pms);
     }
 
-    private Dht.Message findProvidersSingle(@NonNull Closeable ctx, @NonNull PeerId p, @NonNull byte[] cid)
+    private Dht.Message findProvidersSingle(@NonNull Closeable ctx, @NonNull PeerId p, @NonNull byte[] key)
             throws ClosedException, ProtocolNotSupported, ConnectionFailure {
         Dht.Message pms = Dht.Message.newBuilder()
                 .setType(Dht.Message.MessageType.GET_PROVIDERS)
-                .setKey(ByteString.copyFrom(cid))
+                .setKey(ByteString.copyFrom(key))
                 .setClusterLevelRaw(0).build();
         return sendRequest(ctx, p, pms);
     }
@@ -723,19 +716,17 @@ public class KadDHT implements Routing {
         List<Connection> cons = host.getNetwork().getConnections();
         for (Connection con : cons) {
             if (Objects.equals(con.secureSession().getRemoteId(), id)) {
-                return new AddrInfo(id, con.remoteAddress());
+                return AddrInfo.create(id, con.remoteAddress());
             }
         }
         return null;
     }
 
     @Nullable
-    private Multiaddr filterAddress(@NonNull ByteString address) {
+    private Multiaddr preFilter(@NonNull ByteString address) {
         try {
-           Multiaddr multiaddr = new Multiaddr(address.toByteArray());
-          // LogUtils.info(TAG, multiaddr.toString());
-           return multiaddr;
-        } catch (Throwable ignore){
+            return new Multiaddr(address.toByteArray());
+        } catch (Throwable ignore) {
             // nothing to do
         }
         return null;
@@ -778,12 +769,13 @@ public class KadDHT implements Routing {
                             List<Multiaddr> multiAddresses = new ArrayList<>();
                             List<ByteString> addresses = entry.getAddrsList();
                             for (ByteString address : addresses) {
-                                Multiaddr multiaddr = filterAddress(address);
+                                Multiaddr multiaddr = preFilter(address);
                                 if (multiaddr != null) {
                                     multiAddresses.add(multiaddr);
                                 }
                             }
-                            AddrInfo addrInfo = new AddrInfo(peerId, multiAddresses);
+
+                            AddrInfo addrInfo = AddrInfo.create(peerId, multiAddresses);
                             if (filter.queryPeerFilter(KadDHT.this, addrInfo)) {
                                 peers.add(addrInfo);
                                 addAddrs(addrInfo);
@@ -863,11 +855,13 @@ public class KadDHT implements Routing {
                         Extra: kb.ErrLookupFailure.Error(),
             })
             return nil, kb.ErrLookupFailure */
-            throw new RuntimeException(); // TODO ErrLookupFailure
+            throw new ClosedException();
+            //throw new RuntimeException(); // TODO ErrLookupFailure
+
+            // TODO not throw exception
         }
 
-        Query q = new Query(this, UUID.randomUUID(), target, seedPeers,
-                QueryPeerSet.create(target), queryFn, stopFn);
+        Query q = new Query(this, UUID.randomUUID(), target, seedPeers, queryFn, stopFn);
 
         // run the query
         q.run(ctx);
@@ -991,12 +985,12 @@ public class KadDHT implements Routing {
             List<Multiaddr> multiAddresses = new ArrayList<>();
             List<ByteString> addresses = entry.getAddrsList();
             for (ByteString address : addresses) {
-                Multiaddr multiaddr = filterAddress(address);
+                Multiaddr multiaddr = preFilter(address);
                 if (multiaddr != null) {
                     multiAddresses.add(multiaddr);
                 }
             }
-            AddrInfo addrInfo = new AddrInfo(peerId, multiAddresses);
+            AddrInfo addrInfo = AddrInfo.create(peerId, multiAddresses);
             if (filter.queryPeerFilter(KadDHT.this, addrInfo)) {
                 peers.add(addrInfo);
                 addAddrs(addrInfo);

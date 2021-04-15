@@ -58,13 +58,12 @@ public class Query {
     boolean terminated = false;
 
     public Query(@NonNull KadDHT dht, @NonNull UUID uuid, @NonNull byte[] key,
-                 @NonNull List<PeerId> seedPeers, @NonNull QueryPeerSet queryPeers,
-                 @NonNull QueryFunc queryFn, @NonNull StopFunc stopFn) {
+                 @NonNull List<PeerId> seedPeers, @NonNull QueryFunc queryFn, @NonNull StopFunc stopFn) {
         this.id = uuid;
         this.key = key; // TODO remove
         this.dht = dht;
         this.seedPeers = seedPeers;
-        this.queryPeers = queryPeers;
+        this.queryPeers = QueryPeerSet.create(key);
         this.queryFn = queryFn;
         this.stopFn = stopFn;
     }
@@ -188,8 +187,11 @@ public class Query {
         queue.offer(update);
 
         while (true) {
-
+            LogUtils.error(TAG, "waiting ...");
             QueryUpdate current = queue.take();
+
+            LogUtils.error(TAG, "and running ...");
+
 
             if (ctx.isClosed()) {
                 throw new ClosedException();
@@ -203,9 +205,10 @@ public class Query {
 
             // termination is triggered on end-of-lookup conditions or starvation of unused peers
             // it also returns the peers we should query next for a maximum of `maxNumQueriesToSpawn` peers.
-            Pair<Boolean, List<PeerId>> result = isReadyToTerminate(ctx, maxNumQueriesToSpawn);
+            Pair<Boolean, List<PeerId>> result = isReadyToTerminate(maxNumQueriesToSpawn);
 
             if (!result.first) {
+                LogUtils.error(TAG, "num " + maxNumQueriesToSpawn + " " + result.second.toString());
                 // try spawning the queries, if there are no available peers to query then we won't spawn them
                 for (PeerId queryPeer : result.second) {
                     queryPeers.SetState(queryPeer, PeerState.PeerWaiting);
@@ -317,7 +320,7 @@ public class Query {
     }
 
 
-    private Pair<Boolean, List<PeerId>> isReadyToTerminate(@NonNull Closeable ctx, int nPeersToQuery) {
+    private Pair<Boolean, List<PeerId>> isReadyToTerminate(int nPeersToQuery) {
         // give the application logic a chance to terminate
         if (stopFn.func()) {
             return Pair.create(true, Collections.emptyList());
@@ -331,7 +334,8 @@ public class Query {
 
         // The peers we query next should be ones that we have only Heard about.
         List<PeerId> peersToQuery = new ArrayList<>();
-        List<QueryPeerState> peers = queryPeers.GetClosestInStates(Collections.singletonList(PeerState.PeerHeard));
+        List<QueryPeerState> peers = queryPeers.GetClosestInStates(
+                Collections.singletonList(PeerState.PeerHeard));
         int count = 0;
         for (QueryPeerState p : peers) {
             peersToQuery.add(p.id);

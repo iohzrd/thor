@@ -14,8 +14,8 @@ import io.core.Closeable;
 import io.core.ClosedException;
 import io.core.ConnectionFailure;
 import io.core.ProtocolNotSupported;
-import io.dht.ContentRouting;
 import io.dht.Providers;
+import io.dht.Routing;
 import io.ipfs.IPFS;
 import io.ipfs.cid.Cid;
 import io.libp2p.AddrInfo;
@@ -33,18 +33,16 @@ public class LiteHost implements BitSwapNetwork {
     @NonNull
     private final Host host;
     @NonNull
-    private final ContentRouting contentRouting;
+    private final Routing routing;
 
 
-    private LiteHost(@NonNull Host host,
-                     @NonNull ContentRouting contentRouting) {
+    private LiteHost(@NonNull Host host, @NonNull Routing routing) {
         this.host = host;
-        this.contentRouting = contentRouting;
+        this.routing = routing;
     }
 
-    public static BitSwapNetwork NewLiteHost(@NonNull Host host,
-                                             @NonNull ContentRouting contentRouting) {
-        return new LiteHost(host, contentRouting);
+    public static BitSwapNetwork NewLiteHost(@NonNull Host host, @NonNull Routing routing) {
+        return new LiteHost(host, routing);
     }
 
     @Override
@@ -54,7 +52,7 @@ public class LiteHost implements BitSwapNetwork {
                     addrInfo.getPeerId(), addrInfo.getAddresses());
             // TODO closeable and timeout
             return future.get() != null;
-        }  catch (Throwable throwable) {
+        } catch (Throwable throwable) {
             if (closeable.isClosed()) {
                 throw new ClosedException();
             }
@@ -81,11 +79,14 @@ public class LiteHost implements BitSwapNetwork {
                              @NonNull BitSwapMessage message)
             throws ClosedException, ProtocolNotSupported, ConnectionFailure {
 
-        synchronized (peer.toBase58().intern()) {
+        synchronized (peer.toBase58().intern()) { // TODO rethink
             try {
 
+                if (closeable.isClosed()) {
+                    throw new ClosedException();
+                }
 
-                host.getNetwork().connect(peer).get();
+                host.getNetwork().connect(peer).get(); // TODO rething all addresses
 
 
                 if (closeable.isClosed()) {
@@ -140,12 +141,10 @@ public class LiteHost implements BitSwapNetwork {
 
     @Override
     public void FindProvidersAsync(@NonNull Closeable closeable, @NonNull Providers providers,
-                                   @NonNull Cid cid, int number) throws ClosedException {
-        contentRouting.FindProvidersAsync(closeable, providers, cid, number);
-    }
+                                   @NonNull Cid cid) throws ClosedException {
+        LogUtils.error(TAG, "Find Start Content Provider " + cid.String());
+        routing.FindProvidersAsync(closeable, providers, cid);
+        LogUtils.error(TAG, "Find End Content Provider " + cid.String());
 
-    @Override
-    public void Provide(@NonNull Closeable closeable, @NonNull Cid cid) throws ClosedException {
-        // nothing to do here
     }
 }

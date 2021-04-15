@@ -7,26 +7,34 @@ import com.google.common.collect.Iterables;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 import io.libp2p.core.PeerId;
 import io.libp2p.core.multiformats.Multiaddr;
+import io.libp2p.core.multiformats.Protocol;
 
 
 public class AddrInfo {
+    private static final String TAG = AddrInfo.class.getSimpleName();
     @NonNull
     private final PeerId peerId;
     private final List<Multiaddr> addresses = new ArrayList<>();
 
-    public AddrInfo(@NonNull PeerId id, @NonNull Multiaddr remoteAddress) {
+    private AddrInfo(@NonNull PeerId id) {
         this.peerId = id;
-        this.addresses.add(remoteAddress);
+
     }
 
-    public AddrInfo(@NonNull PeerId id, @NonNull Collection<Multiaddr> remoteAddresses) {
-        this.peerId = id;
-        this.addresses.addAll(remoteAddresses);
+    public static AddrInfo create(@NonNull PeerId id, @NonNull List<Multiaddr> addresses) {
+        AddrInfo addrInfo = new AddrInfo(id);
+        addrInfo.addAddresses(addresses);
+        return addrInfo;
+    }
+
+    public static AddrInfo create(@NonNull PeerId id, @NonNull Multiaddr address) {
+        AddrInfo addrInfo = new AddrInfo(id);
+        addrInfo.addAddress(address);
+        return addrInfo;
     }
 
     @NotNull
@@ -49,9 +57,53 @@ public class AddrInfo {
 
     public void addAddresses(@NonNull Multiaddr... addresses) {
         for (Multiaddr address : addresses) {
-            if (!this.addresses.contains(address)) {
-                this.addresses.add(address);
+            addAddress(address);
+        }
+    }
+
+    public void addAddresses(@NonNull List<Multiaddr> addresses) {
+        for (Multiaddr address : addresses) {
+            addAddress(address);
+        }
+    }
+
+    private void addAddress(@NonNull Multiaddr address) {
+        if (address.has(Protocol.DNS6)) {
+            //LogUtils.error(TAG, "Filter out DNS6 " + address.toString());
+            return;
+        }
+        if (address.has(Protocol.DNSADDR)) {
+            //LogUtils.error(TAG, "Filter out DNS6 " + address.toString());
+            return;
+        }
+        if (address.has(Protocol.WS)) {
+            //LogUtils.error(TAG, "Filter out DNS6 " + address.toString());
+            return;
+        }
+        if (address.has(Protocol.DNS4)) {
+            //LogUtils.error(TAG, "Filter out DNS4 " + address.toString());
+            return;
+        }
+        if (address.has(Protocol.P2PCIRCUIT)) { // TODO SUPPORT THIS
+            // LogUtils.error(TAG, "Filter out P2PCIRCUIT " + address.toString());
+            return;
+        }
+        if (address.has(Protocol.QUIC)) { // TODO SUPPORT THIS
+            // LogUtils.error(TAG, "Filter out QUIC " + address.toString());
+            return;
+        }
+        if (address.has(Protocol.IP4)) {
+            if (address.getStringComponent(Protocol.IP4).equals("127.0.0.1")) { // TODO
+                return;
             }
+        }
+        if (address.has(Protocol.IP6)) {
+            if (address.getStringComponent(Protocol.IP6).equals("::1")) { // TODO
+                return;
+            }
+        }
+        if (!this.addresses.contains(address)) {
+            this.addresses.add(address);
         }
     }
 

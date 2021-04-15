@@ -9,9 +9,11 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
+import io.LogUtils;
 import io.libp2p.core.PeerId;
 
 public class QueryPeerSet {
+    private static final String TAG = QueryPeerSet.class.getSimpleName();
     private final QueryKey key;
     private final ConcurrentHashMap<PeerId, QueryPeerState> all = new ConcurrentHashMap<>();
     boolean sorted;
@@ -73,6 +75,7 @@ public class QueryPeerSet {
             }
         }
         Collections.sort(peers);
+
         return peers;
     }
 
