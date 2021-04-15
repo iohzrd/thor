@@ -19,7 +19,7 @@ public interface BitSwapNetwork extends ContentRouting {
                       boolean protect) throws ClosedException;
 
     void WriteMessage(@NonNull Closeable closeable, @NonNull PeerId peer,
-                      @NonNull BitSwapMessage message, int timeout)
+                      @NonNull BitSwapMessage message)
             throws ClosedException, ProtocolNotSupported, ConnectionFailure;
 
     @NonNull

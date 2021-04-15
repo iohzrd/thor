@@ -18,11 +18,14 @@ public class RoutingTable {
     private static final String TAG = RoutingTable.class.getSimpleName();
     private final ID local;  // ID of the local peer
     private final CopyOnWriteArrayList<Bucket> buckets = new CopyOnWriteArrayList<>();
-    private final int bucketsize;
     // latency metrics
-    private final ConcurrentHashMap<PeerId, Duration> metrics = new ConcurrentHashMap<>();
+    public final ConcurrentHashMap<PeerId, Long> metrics = new ConcurrentHashMap<>();
     // Maximum acceptable latency for peers in this cluster
-    private final Duration maxLatency = Duration.ofMinutes(1);
+    public final long maxLatency = Duration.ofMinutes(1).toMillis();
+
+    private final int bucketsize;
+
+
 
 
     public RoutingTable(int bucketsize, @NonNull ID local) {
@@ -158,14 +161,13 @@ public class RoutingTable {
         }
 
         // peer's latency threshold is NOT acceptable
-        /* TODO
-        Duration duration = metrics.get(p);
+        Long duration = metrics.get(p);
         if (duration != null) {
-            if (duration.compareTo(maxLatency) > 0) {
+            if (duration > maxLatency) {
                 // Connection doesnt meet requirements, skip!
-                return false; // TODO, ErrPeerRejectedHighLatency
+                return false;
             }
-        } */
+        }
 
         /* TODO maybe
             // add it to the diversity filter for now.

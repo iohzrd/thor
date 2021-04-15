@@ -20,8 +20,7 @@ public class MessageWriter {
     public static void sendHaveMessage(@NonNull Closeable closeable,
                                        @NonNull BitSwapNetwork network,
                                        @NonNull PeerId peer,
-                                       @NonNull List<Cid> wantHaves,
-                                       int timeout)
+                                       @NonNull List<Cid> wantHaves)
             throws ClosedException, ProtocolNotSupported, ConnectionFailure {
         if (wantHaves.size() == 0) {
             return;
@@ -46,7 +45,7 @@ public class MessageWriter {
             return;
         }
 
-        network.WriteMessage(closeable, peer, message, timeout);
+        network.WriteMessage(closeable, peer, message);
 
 
     }
@@ -54,8 +53,7 @@ public class MessageWriter {
     public static void sendWantsMessage(@NonNull Closeable closeable,
                                         @NonNull BitSwapNetwork network,
                                         @NonNull PeerId peer,
-                                        @NonNull List<Cid> wantBlocks,
-                                        int timeout)
+                                        @NonNull List<Cid> wantBlocks)
             throws ClosedException, ProtocolNotSupported, ConnectionFailure {
 
         if (wantBlocks.size() == 0) {
@@ -77,7 +75,7 @@ public class MessageWriter {
             return;
         }
 
-        network.WriteMessage(closeable, peer, message, timeout);
+        network.WriteMessage(closeable, peer, message);
 
     }
 

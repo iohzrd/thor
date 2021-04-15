@@ -47,7 +47,7 @@ public class AddrInfo {
         return Iterables.toArray(addresses, Multiaddr.class);
     }
 
-    public void addAddresses(@NonNull Collection<Multiaddr> addresses) {
+    public void addAddresses(@NonNull Multiaddr... addresses) {
         for (Multiaddr address : addresses) {
             if (!this.addresses.contains(address)) {
                 this.addresses.add(address);

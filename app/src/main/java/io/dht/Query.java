@@ -34,14 +34,12 @@ public class Query {
     private static final String TAG = Query.class.getSimpleName();
     private final UUID id;
 
-    // target key for the lookup
-    private final String key;
 
     // the query context.
     // ctx context.Context
 
     private final KadDHT dht;
-
+    private final byte[] key;
     // seedPeers is the set of peers that seed the query
     private final List<PeerId> seedPeers;
 
@@ -63,7 +61,7 @@ public class Query {
                  @NonNull List<PeerId> seedPeers, @NonNull QueryPeerSet queryPeers,
                  @NonNull QueryFunc queryFn, @NonNull StopFunc stopFn) {
         this.id = uuid;
-        this.key = new String(key); // TODO remove
+        this.key = key; // TODO remove
         this.dht = dht;
         this.seedPeers = seedPeers;
         this.queryPeers = queryPeers;
@@ -193,9 +191,11 @@ public class Query {
 
             QueryUpdate current = queue.take();
 
-            updateState(ctx, current);
-            PeerId cause = current.getCause();
+            if (ctx.isClosed()) {
+                throw new ClosedException();
+            }
 
+            updateState(ctx, current);
 
             // calculate the maximum number of queries we could be spawning.
             // Note: NumWaiting will be updated in spawnQuery
@@ -205,60 +205,27 @@ public class Query {
             // it also returns the peers we should query next for a maximum of `maxNumQueriesToSpawn` peers.
             Pair<Boolean, List<PeerId>> result = isReadyToTerminate(ctx, maxNumQueriesToSpawn);
 
-            if (result.first) {
-                terminate(ctx);
-            }
+            if (!result.first) {
+                // try spawning the queries, if there are no available peers to query then we won't spawn them
+                for (PeerId queryPeer : result.second) {
+                    queryPeers.SetState(queryPeer, PeerState.PeerWaiting);
 
-            if (terminated) {
-                return;
-            }
 
-            // try spawning the queries, if there are no available peers to query then we won't spawn them
-            for (PeerId p : result.second) {
-                spawnQuery(ctx, queue, cause, p);
+                    Executors.newSingleThreadExecutor().execute(() -> {
+                        try {
+                            queryPeer(ctx, queue, queryPeer);
+                        } catch (ClosedException ignore) {
+                            queue.clear();
+                            queue.offer(new QueryUpdate(queryPeer));
+                            // nothing to do here (works as expected)
+                        } catch (Throwable throwable) {
+                            // not expected exception
+                            LogUtils.error(TAG, throwable);
+                        }
+                    });
+                }
             }
-
         }
-
-    }
-
-
-    // spawnQuery starts one query, if an available heard peer is found
-    private void spawnQuery(@NonNull Closeable ctx, @NonNull BlockingQueue<QueryUpdate> queue,
-                            @NonNull PeerId cause, @NonNull PeerId queryPeer) {
-        /*
-        PublishLookupEvent(ctx,
-                NewLookupEvent(
-                        q.dht.self,
-                        q.id,
-                        q.key,
-                        NewLookupUpdateEvent(
-                                cause,
-                                q.queryPeers.GetReferrer(queryPeer),
-                                nil,                  // heard
-                                []peer.ID{queryPeer}, // waiting
-        nil,                  // queried
-                nil,                  // unreachable
-			),
-        nil,
-                nil,
-		),
-	)*/
-        queryPeers.SetState(queryPeer, PeerState.PeerWaiting);
-
-
-        Executors.newSingleThreadExecutor().execute(() -> {
-            try {
-                queryPeer(ctx, queue, queryPeer);
-            } catch (ClosedException ignore) {
-                queue.clear();
-                queue.offer(new QueryUpdate(queryPeer));
-                // nothing to do here (works as expected)
-            } catch (Throwable throwable) {
-                // not expected exception
-                LogUtils.error(TAG, throwable);
-            }
-        });
     }
 
 
@@ -273,42 +240,6 @@ public class Query {
         if (ctx.isClosed()) {
             throw new ClosedException();
         }
-        try {
-
-            Collection<Multiaddr> collections = dht.host.getAddressBook().getAddrs(queryPeer).get();
-            if (collections != null) {
-                dht.host.getNetwork().connect(queryPeer,
-                        Iterables.toArray(collections, Multiaddr.class)).get(
-                        IPFS.TIMEOUT_DHT_PEER, TimeUnit.SECONDS
-                );
-            } else {
-                dht.host.getNetwork().connect(queryPeer).get(
-                        IPFS.TIMEOUT_DHT_PEER, TimeUnit.SECONDS);
-            }
-
-        } catch (Throwable throwable) {
-            if (ctx.isClosed()) {
-                throw new ClosedException();
-            }
-
-            // remove the peer if there was a dial failure..but not because of a context cancellation
-            // TODO LogUtils.error(TAG, throwable);
-            dht.peerStoppedDHT(queryPeer); // TODO
-            try {
-                Collection<Multiaddr> collections = dht.host.getAddressBook().getAddrs(queryPeer).get();
-                if (collections != null) {
-                    LogUtils.error(TAG, collections.toString());
-                }
-            } catch (Throwable ignore){
-                //
-            }
-
-            QueryUpdate update = new QueryUpdate(queryPeer);
-            update.unreachable.add(queryPeer);
-            queue.offer(update);
-            return;
-        }
-
 
         try {
             // send query RPC to the remote peer
@@ -344,6 +275,11 @@ public class Query {
         } catch (ClosedException closedException) {
             throw closedException;
         } catch (ProtocolNotSupported | ConnectionFailure ignore) {
+            /* TODO
+            if queryCtx.Err() == nil {
+                q.dht.peerStoppedDHT(q.dht.ctx, p)
+            }*/
+
             QueryUpdate update = new QueryUpdate(queryPeer);
             update.unreachable.add(queryPeer);
             queue.offer(update);
@@ -360,30 +296,6 @@ public class Query {
         }
 
 
-    }
-
-    private void terminate(Closeable ctx) throws ClosedException {
-        if (terminated) {
-            return;
-        }
-        if (ctx.isClosed()) {
-            throw new ClosedException();
-        }
-        /* TODO
-        PublishLookupEvent(ctx,
-                NewLookupEvent(
-                        q.dht.self,
-                        q.id,
-                        q.key,
-                        nil,
-                        nil,
-                        NewLookupTerminateEvent(reason),
-                        ),
-                )
-        cancel() // abort outstanding queries
-
-         */
-        terminated = true;
     }
 
 
@@ -414,9 +326,6 @@ public class Query {
             return Pair.create(true, Collections.emptyList());
         }
         if (isLookupTermination()) {
-            return Pair.create(true, Collections.emptyList());
-        }
-        if (ctx.isClosed()) {
             return Pair.create(true, Collections.emptyList());
         }
 

@@ -6,7 +6,10 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
+import io.LogUtils;
 import io.core.Closeable;
 import io.core.ClosedException;
 import io.core.ConnectionFailure;
@@ -75,21 +78,31 @@ public class LiteHost implements BitSwapNetwork {
 
     @Override
     public void WriteMessage(@NonNull Closeable closeable, @NonNull PeerId peer,
-                             @NonNull BitSwapMessage message, int timeout) throws ClosedException, ProtocolNotSupported, ConnectionFailure {
+                             @NonNull BitSwapMessage message)
+            throws ClosedException, ProtocolNotSupported, ConnectionFailure {
 
-        try {
+        synchronized (peer.toBase58().intern()) {
+            try {
 
-            CompletableFuture<Object> ctrl = host.newStream(
-                    Collections.singletonList(IPFS.ProtocolBitswap), peer).getController();
-            //Object object = ctrl.get(timeout, TimeUnit.SECONDS); // TODO timeout
-            Object object = ctrl.get();
 
-            if (closeable.isClosed()) {
-                throw new ClosedException();
-            }
+                host.getNetwork().connect(peer).get();
 
-            BitSwapProtocol.BitSwapController controller = (BitSwapProtocol.BitSwapController) object;
-            controller.sendRequest(message);
+
+                if (closeable.isClosed()) {
+                    throw new ClosedException();
+                }
+
+                CompletableFuture<Object> ctrl = host.newStream(
+                        Collections.singletonList(IPFS.ProtocolBitswap), peer).getController();
+                Object object = ctrl.get(IPFS.WRITE_TIMEOUT, TimeUnit.SECONDS); // TODO timeout
+                //Object object = ctrl.get();
+
+                if (closeable.isClosed()) {
+                    throw new ClosedException();
+                }
+
+                BitSwapProtocol.BitSwapController controller = (BitSwapProtocol.BitSwapController) object;
+                controller.sendRequest(message);
 
             /* TODO timeout
             long res = host.WriteMessage(closeable, peer, protocols, data, timeout);
@@ -97,26 +110,30 @@ public class LiteHost implements BitSwapNetwork {
                 throw new RuntimeException("Message not fully written");
             }*/
 
-        } catch (ClosedException closedException) {
-            throw new ClosedException();
-        } catch (Throwable throwable) {
-            if (closeable.isClosed()) {
+            } catch (ClosedException closedException) {
                 throw new ClosedException();
+            } catch (Throwable throwable) {
+                if (closeable.isClosed()) {
+                    throw new ClosedException();
+                }
+                if(throwable instanceof TimeoutException){
+                    throw new ConnectionFailure();
+                }
+                Throwable cause = throwable.getCause();
+                if (cause instanceof NoSuchRemoteProtocolException) {
+                    throw new ProtocolNotSupported();
+                }
+                if (cause instanceof NothingToCompleteException) {
+                    throw new ConnectionFailure();
+                }
+                if (cause instanceof ConnectionClosedException) {
+                    throw new ConnectionFailure();
+                }
+                if (cause instanceof ReadTimeoutException) {
+                    throw new ConnectionFailure();
+                }
+                throw new RuntimeException(throwable);
             }
-            Throwable cause = throwable.getCause();
-            if (cause instanceof NoSuchRemoteProtocolException) {
-                throw new ProtocolNotSupported();
-            }
-            if (cause instanceof NothingToCompleteException) {
-                throw new ConnectionFailure();
-            }
-            if (cause instanceof ConnectionClosedException) {
-                throw new ConnectionFailure();
-            }
-            if (cause instanceof ReadTimeoutException) {
-                throw new ConnectionFailure();
-            }
-            throw new RuntimeException(throwable);
         }
     }
 

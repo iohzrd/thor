@@ -10,6 +10,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import io.LogUtils;
 import io.ipfs.multihash.Multihash;
@@ -125,8 +127,9 @@ public class BitSwapProtocol implements ProtocolBinding<BitSwapProtocol.BitSwapC
 
                 if (buffer.size() >= expectedLength) {
                     BitSwapMessage received = BitSwapMessage.fromData(buffer.toByteArray());
-                    receiver.ReceiveMessage(stream.remotePeerId(),
-                            stream.getProtocol().get(), received);
+                    String protocol = stream.getProtocol().get();
+                    Executors.newSingleThreadExecutor().execute(
+                            () -> receiver.ReceiveMessage(stream.remotePeerId(), protocol, received));
                     buffer.close();
                     ctx.close();
                 }

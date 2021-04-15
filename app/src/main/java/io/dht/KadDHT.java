@@ -14,7 +14,6 @@ import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
@@ -22,8 +21,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -39,10 +40,15 @@ import io.ipfs.IPFS;
 import io.ipfs.cid.Cid;
 import io.libp2p.AddrInfo;
 import io.libp2p.core.Connection;
+import io.libp2p.core.ConnectionClosedException;
 import io.libp2p.core.ConnectionHandler;
 import io.libp2p.core.Host;
+import io.libp2p.core.NoSuchRemoteProtocolException;
 import io.libp2p.core.PeerId;
 import io.libp2p.core.multiformats.Multiaddr;
+import io.libp2p.etc.types.NonCompleteException;
+import io.libp2p.etc.types.NothingToCompleteException;
+import io.netty.handler.timeout.ReadTimeoutException;
 import record.pb.RecordOuterClass;
 
 
@@ -61,8 +67,7 @@ public class KadDHT implements Routing {
     public final int alpha; // The concurrency parameter per path
 
     private final ID selfKey;
-    private final ConcurrentHashMap<PeerId, MessageSender> strmap = new ConcurrentHashMap<>();
-
+    public final ConcurrentHashMap<PeerId, AddrInfo> peerBook = new ConcurrentHashMap<>();
     // check todo if replaced by a concrete. better implemenation
     private final QueryFilter filter = (dht, addrInfo) -> addrInfo.hasAddresses();
 
@@ -159,13 +164,24 @@ public class KadDHT implements Routing {
 
     }
 
+    private void addAddrs(@Nullable AddrInfo addrInfo) {
+        PeerId peerId = addrInfo.getPeerId();
+        AddrInfo info = peerBook.get(peerId);
+        if (info != null) {
+            info.addAddresses(addrInfo.getAddresses());
+        } else {
+            peerBook.put(peerId, addrInfo);
+        }
+    }
+
 
     // GetClosestPeers is a Kademlia 'node lookup' operation. Returns a channel of
     // the K closest peers to the given key.
     //
     // If the context is canceled, this function will return the context error along
     // with the closest K peers it has found so far.
-    private Set<PeerId> GetClosestPeers(@NonNull Closeable ctx, @NonNull byte[] key, @NonNull Channel channel) throws ClosedException {
+    private void GetClosestPeers(@NonNull Closeable ctx, @NonNull byte[] key,
+                                 @NonNull Channel channel) throws ClosedException {
         if (key.length == 0) {
             throw new RuntimeException("can't lookup empty key");
         }
@@ -202,9 +218,7 @@ public class KadDHT implements Routing {
                     AddrInfo addrInfo = new AddrInfo(peerId, multiAddresses);
                     if (filter.queryPeerFilter(KadDHT.this, addrInfo)) {
                         peers.add(addrInfo);
-
-                        host.getAddressBook().addAddrs(peerId, Long.MAX_VALUE,
-                                addrInfo.getAddresses());
+                        addAddrs(addrInfo);
                     }
 
                 }
@@ -242,7 +256,7 @@ public class KadDHT implements Routing {
             // TODO maybe  dht.routingTable.ResetCplRefreshedAtForID(kb.ConvertKey(key), time.Now())
         }
 
-        return lookupRes.asSet();
+
     }
 
     @Override
@@ -285,28 +299,27 @@ public class KadDHT implements Routing {
         putLocal(key, rec);
         */
 
-        Set<PeerId> res = GetClosestPeers(ctx, key, new Channel() {
-            @Override
-            public void peer(@NonNull AddrInfo addrInfo) throws ClosedException {
-                if (ctx.isClosed()) {
-                    throw new ClosedException();
-                }
-                try {
-                    host.getNetwork().connect(addrInfo.getPeerId(),
-                            addrInfo.getAddresses()).get(IPFS.TIMEOUT_DHT_PEER, TimeUnit.SECONDS);
-                    putValueToPeer(ctx, addrInfo.getPeerId(), rec);
-                    LogUtils.error(TAG, "PutValue Success to " + addrInfo.getPeerId().toBase58());
-                } catch (ClosedException closedException) {
-                    throw closedException;
-                } catch (Throwable throwable) {
-                    LogUtils.error(TAG,  "PutValue Error " + throwable.getMessage());
-                }
+
+        GetClosestPeers(ctx, key, addrInfo -> {
+            if (ctx.isClosed()) {
+                throw new ClosedException();
+            }
+            try {
+                peerBook.put(addrInfo.getPeerId(), addrInfo);
+                putValueToPeer(ctx, addrInfo.getPeerId(), rec);
+                LogUtils.error(TAG, "PutValue Success to " + addrInfo.getPeerId().toBase58());
+            } catch (ClosedException closedException) {
+                throw closedException;
+            } catch (Throwable throwable) {
+                LogUtils.error(TAG, "PutValue Error " + throwable.getMessage());
             }
         });
 
     }
 
-    private void putValueToPeer(@NonNull Closeable ctx, @NonNull PeerId p, @NonNull RecordOuterClass.Record rec)
+    private void putValueToPeer(@NonNull Closeable ctx,
+                                @NonNull PeerId p,
+                                @NonNull RecordOuterClass.Record rec)
             throws ConnectionFailure, ProtocolNotSupported, ClosedException {
 
         Dht.Message pms = Dht.Message.newBuilder()
@@ -314,6 +327,7 @@ public class KadDHT implements Routing {
                 .setKey(rec.getKey())
                 .setRecord(rec)
                 .setClusterLevelRaw(0).build();
+
         Dht.Message rimes = sendRequest(ctx, p, pms);
 
         if (!Arrays.equals(rimes.getRecord().getValue().toByteArray(),
@@ -409,7 +423,6 @@ public class KadDHT implements Routing {
                                     ID:   p,
                         })
                         */
-
                         Dht.Message message = findProvidersSingle(ctx, p, key);
 
                        /* LogUtils.error(TAG, "" + message.getProviderPeersList().size()
@@ -431,8 +444,7 @@ public class KadDHT implements Routing {
 
                             if (filter.queryPeerFilter(KadDHT.this, addrInfo)) {
                                 provs.add(addrInfo);
-                                host.getAddressBook().addAddrs(peerId, Long.MAX_VALUE,
-                                        addrInfo.getAddresses());
+                                addAddrs(addrInfo);
                             }
                         }
 
@@ -469,8 +481,7 @@ public class KadDHT implements Routing {
                             AddrInfo addrInfo = new AddrInfo(peerId, multiAddresses);
                             if (filter.queryPeerFilter(KadDHT.this, addrInfo)) {
                                 peers.add(addrInfo);
-                                host.getAddressBook().addAddrs(peerId, Long.MAX_VALUE,
-                                        addrInfo.getAddresses());
+                                addAddrs(addrInfo);
                             }
                         }
 
@@ -558,21 +569,17 @@ public class KadDHT implements Routing {
 
 
         final Dht.Message mes = makeProvRecord(keyMH);
-        Set<PeerId> peers = GetClosestPeers(ctx, keyMH, new Channel() {
-            @Override
-            public void peer(@NonNull AddrInfo addrInfo) throws ClosedException {
+        GetClosestPeers(ctx, keyMH, addrInfo -> {
 
-                LogUtils.error(TAG, "Provide to " + addrInfo.getPeerId().toBase58());
-                try {
-                    host.getNetwork().connect(addrInfo.getPeerId(),
-                            addrInfo.getAddresses()).get(IPFS.TIMEOUT_DHT_PEER, TimeUnit.SECONDS);
-                    sendRequest(ctx, addrInfo.getPeerId(), mes);
-                    LogUtils.error(TAG, "Provide Success to " + addrInfo.getPeerId().toBase58());
-                } catch (ClosedException closedException) {
-                    throw closedException;
-                } catch (Throwable throwable) {
-                    LogUtils.error(TAG, throwable.getMessage());
-                }
+            LogUtils.error(TAG, "Provide to " + addrInfo.getPeerId().toBase58());
+            try {
+                peerBook.put(addrInfo.getPeerId(), addrInfo);
+                sendRequest(ctx, addrInfo.getPeerId(), mes);
+                LogUtils.error(TAG, "Provide Success to " + addrInfo.getPeerId().toBase58());
+            } catch (ClosedException closedException) {
+                throw closedException;
+            } catch (Throwable throwable) {
+                LogUtils.error(TAG, throwable.getMessage());
             }
         });
 
@@ -581,55 +588,94 @@ public class KadDHT implements Routing {
     // sendRequest sends out a request, but also makes sure to
     // measure the RTT for latency measurements.
     private Dht.Message sendRequest(@NonNull Closeable ctx,
-                                    @NonNull PeerId peerId,
+                                    @NonNull PeerId p,
                                     @NonNull Dht.Message message)
             throws ClosedException, ProtocolNotSupported, ConnectionFailure {
         //ctx, _ = tag.New(ctx, metrics.UpsertMessageType(pmes)) // TODO maybe
 
-        MessageSender ms = messageSenderForPeer(peerId);
 
-        /* TODO
-        if err != nil {
-            stats.Record(ctx,
-                    metrics.SentRequests.M(1),
-                    metrics.SentRequestErrors.M(1),
-                    )
-            logger.Debugw("request failed to open message sender", "error", err, "to", p)
-            return nil, err
-        }*/
-
-
-        long start = System.currentTimeMillis();
-
-        Dht.Message response = ms.SendRequest(ctx, message);
-        /* TODO
-        if err != nil {
-            stats.Record(ctx,
-                    metrics.SentRequests.M(1),
-                    metrics.SentRequestErrors.M(1),
-                    )
-            logger.Debugw("request failed", "error", err, "to", p)
-            return nil, err
-        }*/
-
-        /* TODO
-        stats.Record(ctx,
-                metrics.SentRequests.M(1),
-                metrics.SentBytes.M(int64(pmes.Size())),
-                metrics.OutboundRequestLatency.M(float64(time.Since(start))/float64(time.Millisecond)),
-                )*/
-        // TODO peerstore.RecordLatency(p, time.Since(start))
-        return response;
-    }
-
-    private MessageSender messageSenderForPeer(@NonNull PeerId p) {
-        MessageSender ms = strmap.get(p);
-        if (ms != null) {
-            return ms;
+        if (ctx.isClosed()) {
+            throw new ClosedException();
         }
-        ms = new MessageSender(p, this);
-        strmap.put(p, ms);
-        return ms;
+        synchronized (p.toBase58().intern()) {
+
+            long start = System.currentTimeMillis();
+
+            try {
+
+                Multiaddr[] addrs = null;
+                AddrInfo addrInfo = peerBook.get(p);
+                if (addrInfo != null) {
+                    addrs = addrInfo.getAddresses();
+                }
+
+                if (addrs != null) {
+                    host.getNetwork().connect(p, addrs).get();
+                } else {
+                    host.getNetwork().connect(p).get();
+                }
+
+                if (ctx.isClosed()) {
+                    throw new ClosedException();
+                }
+
+                CompletableFuture<Object> ctrl = host.newStream(
+                        Collections.singletonList(KadDHT.Protocol), p).getController();
+
+                Object object = ctrl.get(IPFS.WRITE_TIMEOUT, TimeUnit.SECONDS);
+
+                if (ctx.isClosed()) {
+                    throw new ClosedException();
+                }
+
+                DhtProtocol.DhtController dhtController = (DhtProtocol.DhtController) object;
+                return dhtController.sendRequest(message).get(
+                        IPFS.WRITE_TIMEOUT, TimeUnit.SECONDS
+                );
+
+
+            } catch (Throwable throwable) {
+                if (ctx.isClosed()) {
+                    throw new ClosedException();
+                }
+
+                // TODO
+                /*
+                AddrInfo addrInfo = peerBook.get(p);
+                if (addrInfo != null) {
+                    LogUtils.error(TAG, addrInfo.toString());
+                } else {
+                    LogUtils.error(TAG, throwable); // should not occeur
+                }*/
+
+                if (throwable instanceof TimeoutException) {
+                    throw new ConnectionFailure();
+                }
+
+                Throwable cause = throwable.getCause();
+                if (cause instanceof NoSuchRemoteProtocolException) {
+                    peerStoppedDHT(p);
+                    throw new ProtocolNotSupported();
+                }
+                if (cause instanceof NothingToCompleteException) {
+                    throw new ConnectionFailure();
+                }
+                if (cause instanceof NonCompleteException) {
+                    throw new ConnectionFailure();
+                }
+                if (cause instanceof ConnectionClosedException) {
+                    throw new ConnectionFailure();
+                }
+                if (cause instanceof ReadTimeoutException) {
+                    throw new ConnectionFailure();
+                }
+
+                LogUtils.error(TAG, throwable);
+                throw new RuntimeException(throwable); // TODO
+            } finally {
+                routingTable.metrics.put(p, System.currentTimeMillis() - start);
+            }
+        }
     }
 
 
@@ -740,9 +786,7 @@ public class KadDHT implements Routing {
                             AddrInfo addrInfo = new AddrInfo(peerId, multiAddresses);
                             if (filter.queryPeerFilter(KadDHT.this, addrInfo)) {
                                 peers.add(addrInfo);
-
-                                host.getAddressBook().addAddrs(peerId, Long.MAX_VALUE,
-                                        addrInfo.getAddresses());
+                                addAddrs(addrInfo);
                             }
 
                         }
@@ -762,10 +806,7 @@ public class KadDHT implements Routing {
                     @Override
                     public boolean func() {
                         try {
-                            // return dht.host.Network().Connectedness(id) == network.Connected
-                            return closeable.isClosed() || host.getNetwork().connect(id).get(
-                                    IPFS.TIMEOUT_DHT_PEER, TimeUnit.SECONDS
-                            ) != null;
+                            return closeable.isClosed() || host.getNetwork().connect(id).get() != null;
                         } catch (Throwable throwable) {
                             return false;
                         }
@@ -777,6 +818,7 @@ public class KadDHT implements Routing {
             throw new ClosedException();
         }
         try {
+            // todo
             boolean dialedPeerDuringQuery = false;
             Objects.requireNonNull(lookupRes);
             PeerState state = lookupRes.peers.get(id);
@@ -790,10 +832,8 @@ public class KadDHT implements Routing {
 
             // Return peer information if we tried to dial the peer during the query or we are
             // (or recently were) connected to the peer.
-
-            Collection<Multiaddr> addr = host.getAddressBook().getAddrs(id).get();
-            Objects.requireNonNull(addr);
-            AddrInfo addrInfo = new AddrInfo(id, addr);
+            AddrInfo addrInfo = peerBook.get(id);
+            Objects.requireNonNull(addrInfo);
 
             boolean connectedness = host.getNetwork().connect(
                     addrInfo.getPeerId(), addrInfo.getAddresses()).get(
@@ -831,11 +871,6 @@ public class KadDHT implements Routing {
 
         // run the query
         q.run(ctx);
-
-
-        if (ctx.isClosed()) {
-            throw new ClosedException(); // TODO maybe not necessary
-        }
 
 
         q.recordValuablePeers();
@@ -964,9 +999,7 @@ public class KadDHT implements Routing {
             AddrInfo addrInfo = new AddrInfo(peerId, multiAddresses);
             if (filter.queryPeerFilter(KadDHT.this, addrInfo)) {
                 peers.add(addrInfo);
-                // TODO check if address does not contains multiple same entries
-                host.getAddressBook().addAddrs(peerId, Long.MAX_VALUE,
-                        addrInfo.getAddresses());
+                addAddrs(addrInfo);
             }
 
         }

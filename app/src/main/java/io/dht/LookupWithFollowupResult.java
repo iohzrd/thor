@@ -1,6 +1,5 @@
 package io.dht;
 
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import io.libp2p.core.PeerId;
@@ -14,7 +13,4 @@ public class LookupWithFollowupResult {
     // as context cancellation or the stop function being called.
     boolean completed;
 
-    public Set<PeerId> asSet() {
-        return peers.keySet();
-    }
 }
