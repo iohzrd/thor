@@ -43,16 +43,16 @@ public class Query {
     // queryPeers is the set of peers known by this query and their respective states.
     private final QueryPeerSet queryPeers;
     // the function that will be used to query a single peer.
-    private final QueryFunc queryFn;
+    private final KadDHT.QueryFunc queryFn;
 
     // stopFn is used to determine if we should stop the WHOLE disjoint query.
-    private final StopFunc stopFn;
+    private final KadDHT.StopFunc stopFn;
 
     private final int alpha;
     private final BlockingQueue<QueryUpdate> queue;
 
     public Query(@NonNull KadDHT dht, @NonNull UUID uuid, @NonNull byte[] key,
-                 @NonNull List<PeerId> seedPeers, @NonNull QueryFunc queryFn, @NonNull StopFunc stopFn) {
+                 @NonNull List<PeerId> seedPeers, @NonNull KadDHT.QueryFunc queryFn, @NonNull KadDHT.StopFunc stopFn) {
         this.id = uuid;
         this.key = key; // TODO remove
         this.dht = dht;
@@ -240,7 +240,7 @@ public class Query {
 
         try {
             // send query RPC to the remote peer
-            List<AddrInfo> newPeers = queryFn.func(ctx, queryPeer);
+            List<AddrInfo> newPeers = queryFn.query(ctx, queryPeer);
 
             if (ctx.isClosed()) {
                 throw new ClosedException();
@@ -316,7 +316,7 @@ public class Query {
 
     private Pair<Boolean, List<PeerId>> isReadyToTerminate(int nPeersToQuery) {
         // give the application logic a chance to terminate
-        if (stopFn.func()) {
+        if (stopFn.stop()) {
             return Pair.create(true, Collections.emptyList());
         }
         if (isStarvationTermination()) {

@@ -9,7 +9,9 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 
+import io.LogUtils;
 import io.libp2p.core.PeerId;
 import io.libp2p.core.multiformats.Multiaddr;
 import io.libp2p.core.multiformats.Protocol;
@@ -61,36 +63,36 @@ public class AddrInfo {
 
     private void addAddress(@NonNull Multiaddr address) {
         if (address.has(Protocol.DNS6)) {
-            //LogUtils.error(TAG, "Filter out DNS6 " + address.toString());
-            return;
+            LogUtils.info(TAG, "Filter out DNS6 " + address.toString()); // maybe TODO
+            // return;
         }
         if (address.has(Protocol.DNSADDR)) {
-            //LogUtils.error(TAG, "Filter out DNS6 " + address.toString());
-            return;
+            LogUtils.info(TAG, "Filter out DNS6 " + address.toString()); // TODO
+            // return;
         }
         if (address.has(Protocol.WS)) {
-            //LogUtils.error(TAG, "Filter out DNS6 " + address.toString());
+            LogUtils.info(TAG, "Filter out WS " + address.toString()); // maybe TODO
             return;
         }
         if (address.has(Protocol.DNS4)) {
-            //LogUtils.error(TAG, "Filter out DNS4 " + address.toString());
-            return;
+            LogUtils.info(TAG, "Filter out DNS4 " + address.toString()); // maybe TODO
+            // return;
         }
         if (address.has(Protocol.P2PCIRCUIT)) { // TODO SUPPORT THIS
-            // LogUtils.error(TAG, "Filter out P2PCIRCUIT " + address.toString());
+            LogUtils.info(TAG, "Filter out P2PCIRCUIT " + address.toString());
             return;
         }
         if (address.has(Protocol.QUIC)) { // TODO SUPPORT THIS
-            // LogUtils.error(TAG, "Filter out QUIC " + address.toString());
+            LogUtils.info(TAG, "Filter out QUIC " + address.toString());
             return;
         }
         if (address.has(Protocol.IP4)) {
-            if (address.getStringComponent(Protocol.IP4).equals("127.0.0.1")) { // TODO
+            if (Objects.equals(address.getStringComponent(Protocol.IP4), "127.0.0.1")) { // TODO
                 return;
             }
         }
         if (address.has(Protocol.IP6)) {
-            if (address.getStringComponent(Protocol.IP6).equals("::1")) { // TODO
+            if (Objects.equals(address.getStringComponent(Protocol.IP6), "::1")) { // TODO
                 return;
             }
         }

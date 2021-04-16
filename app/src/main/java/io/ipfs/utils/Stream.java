@@ -11,11 +11,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 
-import io.LogUtils;
 import io.core.Closeable;
 import io.core.ClosedException;
-import io.dht.Offline;
-import io.dht.Quorum;
 import io.dht.ResolveInfo;
 import io.dht.Routing;
 import io.ipfs.IPFS;
@@ -59,13 +56,13 @@ public class Stream {
     public static void ResolveName(@NonNull Closeable closeable,
                                    @NonNull Routing routing,
                                    @NonNull ResolveInfo info,
-                                   @NonNull PeerId id, boolean offline, int dhtRecords)
-            throws ClosedException {
+                                   @NonNull PeerId id,
+                                   int dhtRecords) throws ClosedException {
 
 
         byte[] ipns = IPFS.IPNS_PATH.getBytes();
         byte[] ipnsKey = Bytes.concat(ipns, id.getBytes());
-        routing.SearchValue(closeable, info, ipnsKey, new Quorum(dhtRecords), new Offline(offline));
+        routing.SearchValue(closeable, info, ipnsKey, dhtRecords);
 
     }
 
