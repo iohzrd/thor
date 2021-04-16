@@ -2,6 +2,9 @@ package io.ipfs.bitswap;
 
 import androidx.annotation.NonNull;
 
+import com.google.common.collect.Iterables;
+
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -24,6 +27,7 @@ import io.libp2p.core.ConnectionClosedException;
 import io.libp2p.core.Host;
 import io.libp2p.core.NoSuchRemoteProtocolException;
 import io.libp2p.core.PeerId;
+import io.libp2p.core.multiformats.Multiaddr;
 import io.libp2p.etc.types.NothingToCompleteException;
 import io.netty.handler.timeout.ReadTimeoutException;
 
@@ -85,8 +89,16 @@ public class LiteHost implements BitSwapNetwork {
                 if (closeable.isClosed()) {
                     throw new ClosedException();
                 }
-
-                host.getNetwork().connect(peer).get(); // TODO rething all addresses
+                Multiaddr[] addrs = null;
+                Collection<Multiaddr> addrInfo = host.getAddressBook().get(peer).get();
+                if (addrInfo != null) {
+                    addrs = Iterables.toArray(addrInfo, Multiaddr.class);
+                }
+                if(addrs != null) {
+                    host.getNetwork().connect(peer, addrs).get();
+                } else{
+                    host.getNetwork().connect(peer).get();
+                }
 
 
                 if (closeable.isClosed()) {
@@ -118,20 +130,24 @@ public class LiteHost implements BitSwapNetwork {
                     throw new ClosedException();
                 }
                 if(throwable instanceof TimeoutException){
+                    LogUtils.error(TAG, "Timeout excepiton");
                     throw new ConnectionFailure();
                 }
                 Throwable cause = throwable.getCause();
-                if (cause instanceof NoSuchRemoteProtocolException) {
-                    throw new ProtocolNotSupported();
-                }
-                if (cause instanceof NothingToCompleteException) {
-                    throw new ConnectionFailure();
-                }
-                if (cause instanceof ConnectionClosedException) {
-                    throw new ConnectionFailure();
-                }
-                if (cause instanceof ReadTimeoutException) {
-                    throw new ConnectionFailure();
+                if(cause != null) {
+                    LogUtils.error(TAG, cause.getClass().getSimpleName());
+                    if (cause instanceof NoSuchRemoteProtocolException) {
+                        throw new ProtocolNotSupported();
+                    }
+                    if (cause instanceof NothingToCompleteException) {
+                        throw new ConnectionFailure();
+                    }
+                    if (cause instanceof ConnectionClosedException) {
+                        throw new ConnectionFailure();
+                    }
+                    if (cause instanceof ReadTimeoutException) {
+                        throw new ConnectionFailure();
+                    }
                 }
                 throw new RuntimeException(throwable);
             }

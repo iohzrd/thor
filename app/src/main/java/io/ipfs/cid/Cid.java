@@ -215,41 +215,34 @@ public class Cid implements Comparable<Cid> {
 
     public byte[] Hash() {
 
-        try {
-            if (Version() == 0) {
-                LogUtils.error(TAG, "Hash version 0");
-                return multihash;
-            } else {
-                LogUtils.error(TAG, "Hash version 1");
-                byte[] data = Bytes();
-                try (InputStream inputStream = new ByteArrayInputStream(data)) {
-                    long version = Multihash.readVarint(inputStream);
-                    if (version != 1) {
-                        throw new Exception("invalid version");
-                    }
-                    long codec = Multihash.readVarint(inputStream);
-                    if (!(codec == Cid.DagProtobuf || codec == Cid.Raw || codec == Cid.Libp2pKey)) {
-                        throw new Exception("not supported codec");
-                    }
+        if (Version() == 0) {
+            LogUtils.error(TAG, "Hash version 0");
+            return multihash;
+        } else {
+            LogUtils.error(TAG, "Hash version 1");
+            byte[] data = Bytes();
+            try (InputStream inputStream = new ByteArrayInputStream(data)) {
+                long version = Multihash.readVarint(inputStream);
+                if (version != 1) {
+                    throw new Exception("invalid version");
+                }
+                long codec = Multihash.readVarint(inputStream);
+                if (!(codec == Cid.DagProtobuf || codec == Cid.Raw || codec == Cid.Libp2pKey)) {
+                    throw new Exception("not supported codec");
+                }
 
-
-                    try(ByteArrayOutputStream outputStream = new ByteArrayOutputStream()){
-                        byte[] buf = new byte[data.length];
-                        int n;
-                        while ((n = inputStream.read(buf)) > 0) {
-                            outputStream.write(buf, 0, n);
+                try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+                    byte[] buf = new byte[data.length];
+                    int n;
+                    while ((n = inputStream.read(buf)) > 0) {
+                        outputStream.write(buf, 0, n);
                         }
                         return outputStream.toByteArray();
                     }
-
-
-
                 } catch (Throwable throwable) {
                     throw new RuntimeException(throwable);
                 }
             }
-        } catch (Throwable throwable){
-            throw new RuntimeException();
-        }
+
     }
 }

@@ -13,12 +13,12 @@ public class PeerDistanceSorter extends ArrayList<PeerDistanceSorter.PeerDistanc
         this.target = target;
     }
 
-    private void appendPeer(@NonNull PeerId peerId, @NonNull ID id) {
+    public void appendPeer(@NonNull PeerId peerId, @NonNull ID id) {
         this.add(new PeerDistance(peerId, Util.xor(target, id)));
     }
 
     public void appendPeersFromList(@NonNull Bucket bucket) {
-        for (Bucket.PeerInfo peerInfo : bucket) {
+        for (Bucket.PeerInfo peerInfo : bucket.elements()) {
             appendPeer(peerInfo.getPeerId(), peerInfo.getID());
         }
     }
@@ -27,7 +27,7 @@ public class PeerDistanceSorter extends ArrayList<PeerDistanceSorter.PeerDistanc
         private final PeerId peerId;
         private final ID distance;
 
-        public PeerDistance(@NonNull PeerId peerId, @NonNull ID distance) {
+        protected PeerDistance(@NonNull PeerId peerId, @NonNull ID distance) {
             this.peerId = peerId;
             this.distance = distance;
         }

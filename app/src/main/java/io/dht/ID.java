@@ -4,8 +4,6 @@ import androidx.annotation.NonNull;
 
 import com.google.common.primitives.UnsignedBytes;
 
-import java.util.Objects;
-
 public class ID implements Comparable<ID> {
     public byte[] data;
 
@@ -14,9 +12,9 @@ public class ID implements Comparable<ID> {
     }
 
     @Override
-    public int compareTo(ID o) {
-
+    public int compareTo(@NonNull ID o) {
+        //return SignedBytes.lexicographicalComparator().compare(this.data, o.data);
         // TODO check SignedBytes.lexicographicalComparator() or UnsignedBytes.lexicographicalComparator()
-        return Objects.compare(this.data, o.data, UnsignedBytes.lexicographicalComparator());
+        return UnsignedBytes.lexicographicalComparator().compare(this.data, o.data);
     }
 }

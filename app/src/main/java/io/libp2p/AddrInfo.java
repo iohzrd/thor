@@ -7,6 +7,7 @@ import com.google.common.collect.Iterables;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import io.libp2p.core.PeerId;
@@ -25,9 +26,11 @@ public class AddrInfo {
 
     }
 
-    public static AddrInfo create(@NonNull PeerId id, @NonNull List<Multiaddr> addresses) {
+    public static AddrInfo create(@NonNull PeerId id, @NonNull Collection<Multiaddr> addresses) {
         AddrInfo addrInfo = new AddrInfo(id);
-        addrInfo.addAddresses(addresses);
+        for (Multiaddr ma:addresses) {
+            addrInfo.addAddress(ma);
+        }
         return addrInfo;
     }
 
@@ -55,17 +58,6 @@ public class AddrInfo {
         return Iterables.toArray(addresses, Multiaddr.class);
     }
 
-    public void addAddresses(@NonNull Multiaddr... addresses) {
-        for (Multiaddr address : addresses) {
-            addAddress(address);
-        }
-    }
-
-    public void addAddresses(@NonNull List<Multiaddr> addresses) {
-        for (Multiaddr address : addresses) {
-            addAddress(address);
-        }
-    }
 
     private void addAddress(@NonNull Multiaddr address) {
         if (address.has(Protocol.DNS6)) {

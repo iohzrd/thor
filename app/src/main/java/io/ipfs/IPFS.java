@@ -91,7 +91,7 @@ public class IPFS implements Receiver {
 
     public static final int PRELOAD = 25;
     public static final int PRELOAD_DIST = 5;
-    public static final int WRITE_TIMEOUT = 10;
+    public static final int WRITE_TIMEOUT = 60;
     public static final String AGENT = "/go-ipfs/0.9.0-dev/thor"; // todo rename
     public static final String PROTOCOL_VERSION = "ipfs/0.1.0";  // todo check again
     public static final int TIMEOUT_BOOTSTRAP = 5;
@@ -284,7 +284,7 @@ public class IPFS implements Receiver {
     }
 
 
-    public void dhtPublish(@NonNull Closeable closable, @NonNull String cid) throws ClosedException {
+    public void provide(@NonNull Closeable closable, @NonNull String cid) throws ClosedException {
 
         if (!isDaemonRunning()) {
             return;
@@ -298,15 +298,6 @@ public class IPFS implements Receiver {
         }
     }
 
-    // TODO cleanup names
-    public void Provide(@NonNull Closeable closeable, @NonNull Cid cid) {
-        try {
-            dhtPublish(closeable, cid.String());
-        } catch (Throwable throwable) {
-            throw new RuntimeException(throwable);
-        }
-
-    }
 
     @NonNull
     public static PeerId decode(@NonNull String name) {
@@ -1287,8 +1278,8 @@ func ToCid(id ID) cid.Cid {
     public boolean isConnected(@NonNull String pid) {
         try {
             return host.getNetwork().connect(decode(pid)).get() != null;
-        } catch (Throwable throwable) {
-            LogUtils.error(TAG, throwable);
+        } catch (Throwable ignore) {
+            // ignore
         }
         return false;
     }

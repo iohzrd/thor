@@ -4,11 +4,8 @@ import android.util.Pair;
 
 import androidx.annotation.NonNull;
 
-import com.google.common.collect.Iterables;
-
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -17,17 +14,14 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 import io.LogUtils;
 import io.core.Closeable;
 import io.core.ClosedException;
 import io.core.ConnectionFailure;
 import io.core.ProtocolNotSupported;
-import io.ipfs.IPFS;
 import io.libp2p.AddrInfo;
 import io.libp2p.core.PeerId;
-import io.libp2p.core.multiformats.Multiaddr;
 
 public class Query {
 
@@ -53,9 +47,9 @@ public class Query {
 
     // stopFn is used to determine if we should stop the WHOLE disjoint query.
     private final StopFunc stopFn;
-    // terminated is set when the first worker thread encounters the termination condition.
-    // Its role is to make sure that once termination is determined, it is sticky.
-    boolean terminated = false;
+
+    private final int alpha;
+    private final BlockingQueue<QueryUpdate> queue;
 
     public Query(@NonNull KadDHT dht, @NonNull UUID uuid, @NonNull byte[] key,
                  @NonNull List<PeerId> seedPeers, @NonNull QueryFunc queryFn, @NonNull StopFunc stopFn) {
@@ -66,6 +60,8 @@ public class Query {
         this.queryPeers = QueryPeerSet.create(key);
         this.queryFn = queryFn;
         this.stopFn = stopFn;
+        this.alpha = dht.alpha;
+        this.queue = new ArrayBlockingQueue<>(alpha);
     }
 
 
@@ -89,7 +85,10 @@ public class Query {
 
         LookupWithFollowupResult res = new LookupWithFollowupResult();
         for (QueryPeerState p : qp) {
-            res.peers.put(p.id, p.state);
+
+
+
+            res.peers.put(p.id, p.getState());
         }
         res.completed = completed;
 
@@ -119,9 +118,7 @@ public class Query {
 
 
     private void updateState(@NonNull Closeable ctx, @NonNull QueryUpdate up) {
-        if (terminated) {
-            throw new RuntimeException("update should not be invoked after the logical lookup termination");
-        }
+
         /* TODO
         PublishLookupEvent(ctx,
                 NewLookupEvent(
@@ -177,21 +174,15 @@ public class Query {
 
     public void run(Closeable ctx) throws ClosedException, InterruptedException {
 
-        int alpha = dht.alpha;
 
-
-        BlockingQueue<QueryUpdate> queue = new ArrayBlockingQueue<>(alpha);
 
         QueryUpdate update = new QueryUpdate(dht.self);
         update.heard.addAll(seedPeers);
         queue.offer(update);
 
         while (true) {
-            LogUtils.error(TAG, "waiting ...");
+
             QueryUpdate current = queue.take();
-
-            LogUtils.error(TAG, "and running ...");
-
 
             if (ctx.isClosed()) {
                 throw new ClosedException();
@@ -208,7 +199,8 @@ public class Query {
             Pair<Boolean, List<PeerId>> result = isReadyToTerminate(maxNumQueriesToSpawn);
 
             if (!result.first) {
-                LogUtils.error(TAG, "num " + maxNumQueriesToSpawn + " " + result.second.toString());
+                // LogUtils.error(TAG, "num " + maxNumQueriesToSpawn + " " + result.second.toString());
+
                 // try spawning the queries, if there are no available peers to query then we won't spawn them
                 for (PeerId queryPeer : result.second) {
                     queryPeers.SetState(queryPeer, PeerState.PeerWaiting);
@@ -216,7 +208,7 @@ public class Query {
 
                     Executors.newSingleThreadExecutor().execute(() -> {
                         try {
-                            queryPeer(ctx, queue, queryPeer);
+                            queryPeer(ctx, queryPeer);
                         } catch (ClosedException ignore) {
                             queue.clear();
                             queue.offer(new QueryUpdate(queryPeer));
@@ -227,6 +219,9 @@ public class Query {
                         }
                     });
                 }
+            } else {
+                LogUtils.error(TAG, "Termination no succes");
+                break;
             }
         }
     }
@@ -234,8 +229,7 @@ public class Query {
 
     // queryPeer queries a single peer and reports its findings on the channel.
     // queryPeer does not access the query state in queryPeers!
-    private void queryPeer(@NonNull Closeable ctx, @NonNull BlockingQueue<QueryUpdate> queue,
-                           @NonNull PeerId queryPeer) throws ClosedException {
+    private void queryPeer(@NonNull Closeable ctx, @NonNull PeerId queryPeer) throws ClosedException {
 
 
         long startQuery = System.currentTimeMillis();
@@ -255,7 +249,7 @@ public class Query {
             long queryDuration = startQuery - System.currentTimeMillis();
 
             // query successful, try to add to RT
-            dht.peerFound(queryPeer, true);
+            dht.peerFound(queryPeer, true, true);
 
             // process new peers
             List<PeerId> saw = new ArrayList<>();
@@ -273,7 +267,6 @@ public class Query {
             update.queried.add(queryPeer);
             update.queryDuration = queryDuration;
             queue.offer(update);
-            // TODO  ch <- &queryUpdate{cause: p, heard: saw, queried: []peer.ID{p}, queryDuration: queryDuration}
 
         } catch (ClosedException closedException) {
             throw closedException;
@@ -282,7 +275,7 @@ public class Query {
             if queryCtx.Err() == nil {
                 q.dht.peerStoppedDHT(q.dht.ctx, p)
             }*/
-
+            dht.peerStoppedDHT(queryPeer);
             QueryUpdate update = new QueryUpdate(queryPeer);
             update.unreachable.add(queryPeer);
             queue.offer(update);
@@ -292,6 +285,7 @@ public class Query {
             if queryCtx.Err() == nil {
                 q.dht.peerStoppedDHT(q.dht.ctx, p)
             }*/
+            dht.peerStoppedDHT(queryPeer);
             QueryUpdate update = new QueryUpdate(queryPeer);
             update.unreachable.add(queryPeer);
             queue.offer(update);

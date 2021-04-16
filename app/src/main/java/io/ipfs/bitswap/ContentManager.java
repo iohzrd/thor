@@ -54,14 +54,15 @@ public class ContentManager {
 
         for (Cid cid : cids) {
 
-            if (matches.containsKey(cid)) {
+            ConcurrentLinkedDeque<PeerId> res = matches.get(cid);
+            if (res != null) {
+                res.add(peer);
+
                 LogUtils.error(TAG, "HaveReceived " + cid.String() + " " + peer.toBase58());
 
                 if (!Objects.equals(peer, priority.peek())) {
                     priority.push(peer); // top
                 }
-
-                matches.get(cid).add(peer);
             }
         }
     }
@@ -110,7 +111,7 @@ public class ContentManager {
                                             LogUtils.error(TAG, "Found New Provider " + peer.toBase58()
                                                     + " for " + cid.String());
                                             peers.add(peer);
-                                            matches.get(cid).add(peer);
+                                            Objects.requireNonNull(matches.get(cid)).add(peer);
                                         }
                                     } else {
                                         LogUtils.error(TAG, "Provider Peer Connection Failed " +
@@ -216,7 +217,7 @@ public class ContentManager {
             }
 
             if (!hasRun) {
-                Set<PeerId> cons = network.getPeers(); // TODO important
+                Set<PeerId> cons = network.getPeers(); // TODO important rethink
                 for (PeerId peer : cons) {
 
                     if (!faulty.contains(peer) && !handled.contains(peer)) {

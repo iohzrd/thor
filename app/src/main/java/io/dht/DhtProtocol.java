@@ -54,6 +54,8 @@ public class DhtProtocol implements ProtocolBinding<DhtProtocol.DhtController> {
 
     public interface DhtController {
         CompletableFuture<Dht.Message> sendRequest(@NonNull Dht.Message pmes) throws NotImplementedError;
+
+        void sendMessage(@NonNull Dht.Message pmes) throws NotImplementedError;
     }
 
     abstract static class DhtHandler extends SimpleChannelInboundHandler<ByteBuf> implements DhtController {
@@ -63,6 +65,11 @@ public class DhtProtocol implements ProtocolBinding<DhtProtocol.DhtController> {
 
         @Override
         public CompletableFuture<Dht.Message> sendRequest(@NonNull Dht.Message pmes) throws NotImplementedError {
+            throw new NotImplementedError();
+        }
+
+        @Override
+        public void sendMessage(@NonNull Dht.Message pmes) throws NotImplementedError {
             throw new NotImplementedError();
         }
 
@@ -114,6 +121,20 @@ public class DhtProtocol implements ProtocolBinding<DhtProtocol.DhtController> {
                 throw new NotImplementedError("" + throwable.getMessage());
             }
             return resFuture;
+        }
+
+        @Override
+        public void sendMessage(@NonNull Dht.Message pmes) throws NotImplementedError {
+            byte[] data = pmes.toByteArray();
+            try (ByteArrayOutputStream buf = new ByteArrayOutputStream()) {
+                Multihash.putUvarint(buf, data.length);
+                buf.write(data);
+                stream.writeAndFlush(Unpooled.buffer().writeBytes(buf.toByteArray()));
+                stream.close().get();
+            } catch (Throwable throwable) {
+                LogUtils.error(TAG, throwable);
+                throw new NotImplementedError("" + throwable.getMessage());
+            }
         }
 
         private final ByteArrayOutputStream buffer = new ByteArrayOutputStream();

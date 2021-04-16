@@ -50,6 +50,9 @@ public class RoutingTable {
             // Keep unfolding the table until the last bucket is not overflowing.
             nextBucket();
         }
+
+        LogUtils.info(TAG, "Buckets : " + buckets.size());
+
     }
 
 
@@ -61,15 +64,7 @@ public class RoutingTable {
         // bits with the given key. +1 because both the target and all peers in
         // this bucket differ from us in the cpl bit.
 
-        int cpl = Util.CommonPrefixLen(id, this.local);
-
-        // It's assumed that this also protects the buckets.
-        // rt.tabLock.RLock() TODO ???
-
-        // Get bucket index or last bucket
-        if (cpl >= buckets.size()) {
-            cpl = buckets.size() - 1;
-        }
+        int cpl = bucketId(id);
 
         PeerDistanceSorter pds = new PeerDistanceSorter(id);
 
@@ -105,6 +100,7 @@ public class RoutingTable {
         // Sort by distance to local peer
         Collections.sort(pds);
 
+
         List<PeerId> peers = new ArrayList<>();
         for (PeerDistanceSorter.PeerDistance entry : pds) {
             peers.add(entry.getPeerId());
@@ -121,18 +117,24 @@ public class RoutingTable {
         return tot;
     }
 
-    public boolean TryAddPeer(PeerId p, Boolean queryPeer, boolean isReplaceable) {
+    public boolean TryAddPeer(PeerId p, boolean queryPeer, boolean isReplaceable) {
         return addPeer(p, queryPeer, isReplaceable);
     }
 
-
-    // the caller is responsible for the locking
     private int bucketIdForPeer(@NonNull PeerId p) {
         ID peerID = Util.ConvertPeerID(p);
-        int bucketID = Util.CommonPrefixLen(peerID, local);
+        int bucketID = bucketId(peerID);
+        LogUtils.info(TAG, "bucketID " + bucketID + " for " + p.toBase58());
+        return bucketID;
+    }
+
+    private int bucketId(@NonNull ID id) {
+        int bucketID = Util.CommonPrefixLen(id, local);
+
         if (bucketID >= buckets.size()) {
             bucketID = buckets.size() - 1;
         }
+
         return bucketID;
     }
 
@@ -140,34 +142,35 @@ public class RoutingTable {
     private boolean addPeer(PeerId p, boolean queryPeer, boolean isReplaceable) {
 
 
-        int bucketID = bucketIdForPeer(p);
-        Bucket bucket = buckets.get(bucketID);
+        synchronized (p.toBase58().intern()) {
+            int bucketID = bucketIdForPeer(p);
+            Bucket bucket = buckets.get(bucketID);
 
-        long now = System.currentTimeMillis();
-        long lastUsefulAt = 0;
-        if (queryPeer) {
-            lastUsefulAt = now;
-        }
-
-        // peer already exists in the Routing Table.
-        Bucket.PeerInfo peer = bucket.getPeer(p);
-        if (peer != null) {
-            // if we're querying the peer first time after adding it, let's give it a
-            // usefulness bump. This will ONLY happen once.
-            if (peer.LastUsefulAt == 0 && queryPeer) {
-                peer.LastUsefulAt = lastUsefulAt;
+            long now = System.currentTimeMillis();
+            long lastUsefulAt = 0;
+            if (queryPeer) {
+                lastUsefulAt = now;
             }
-            return false;
-        }
 
-        // peer's latency threshold is NOT acceptable
-        Long duration = metrics.get(p);
-        if (duration != null) {
-            if (duration > maxLatency) {
-                // Connection doesnt meet requirements, skip!
+            // peer already exists in the Routing Table.
+            Bucket.PeerInfo peer = bucket.getPeer(p);
+            if (peer != null) {
+                // if we're querying the peer first time after adding it, let's give it a
+                // usefulness bump. This will ONLY happen once.
+                if (peer.LastUsefulAt == 0 && queryPeer) {
+                    peer.LastUsefulAt = lastUsefulAt;
+                }
                 return false;
             }
-        }
+
+            // peer's latency threshold is NOT acceptable
+            Long duration = metrics.get(p);
+            if (duration != null) {
+                if (duration > maxLatency) {
+                    // Connection doesnt meet requirements, skip!
+                    return false;
+                }
+            }
 
         /* TODO maybe
             // add it to the diversity filter for now.
@@ -179,58 +182,43 @@ public class RoutingTable {
                 }
             }*/
 
-        // We have enough space in the bucket (whether spawned or grouped).
-        if (bucket.size() < bucketsize) {
-            Bucket.PeerInfo peerInfo = new Bucket.PeerInfo(p, Util.ConvertPeerID(p));
-            peerInfo.LastUsefulAt = lastUsefulAt;
-            peerInfo.LastSuccessfulOutboundQueryAt = now;
-            peerInfo.AddedAt = now;
-            peerInfo.replaceable = isReplaceable;
-            bucket.add(peerInfo); // TODO it was first in original algo
-            // TODO PeerAdded(p); (notification func)
-            return true;
-        }
-
-        if (bucketID == (buckets.size() - 1)) {
-            // if the bucket is too large and this is the last bucket (i.e. wildcard), unfold it.
-            nextBucket();
-            // the structure of the table has changed, so let's recheck if the peer now has a dedicated bucket.
-            bucketID = bucketIdForPeer(p);
-            bucket = buckets.get(bucketID);
-
-            // push the peer only if the bucket isn't overflowing after slitting
+            // We have enough space in the bucket (whether spawned or grouped).
             if (bucket.size() < bucketsize) {
-                Bucket.PeerInfo peerInfo = new Bucket.PeerInfo(p, Util.ConvertPeerID(p));
-                peerInfo.LastUsefulAt = lastUsefulAt;
-                peerInfo.LastSuccessfulOutboundQueryAt = now;
-                peerInfo.AddedAt = now;
-                peerInfo.replaceable = isReplaceable;
-                bucket.add(peerInfo); // TODO it was first in original algo
+                bucket.addPeer(p, isReplaceable, lastUsefulAt, now);
                 // TODO PeerAdded(p); (notification func)
                 return true;
             }
-        }
 
-        // the bucket to which the peer belongs is full. Let's try to find a peer
-        // in that bucket which is replaceable.
-        // we don't really need a stable sort here as it dosen't matter which peer we evict
-        // as long as it's a replaceable peer.
-        Bucket.PeerInfo replaceablePeer = bucket.min((p1, p2) -> p1.replaceable);
+            if (bucketID == (buckets.size() - 1)) {
+                // if the bucket is too large and this is the last bucket (i.e. wildcard), unfold it.
+                nextBucket();
+                // the structure of the table has changed, so let's recheck if the peer now has a dedicated bucket.
+                bucketID = bucketIdForPeer(p);
+                bucket = buckets.get(bucketID);
 
-        if (replaceablePeer != null && replaceablePeer.replaceable) {
-            // let's evict it and add the new peer
-            if (removePeer(replaceablePeer.getPeerId())) {
-                Bucket.PeerInfo peerInfo = new Bucket.PeerInfo(p, Util.ConvertPeerID(p));
-                peerInfo.LastUsefulAt = lastUsefulAt;
-                peerInfo.LastSuccessfulOutboundQueryAt = now;
-                peerInfo.AddedAt = now;
-                peerInfo.replaceable = isReplaceable;
-                bucket.add(peerInfo); // TODO it was first in original algo
-                // TODO PeerAdded(p); (notification func)
-                return true;
+                // push the peer only if the bucket isn't overflowing after slitting
+                if (bucket.size() < bucketsize) {
+                    bucket.addPeer(p, isReplaceable, lastUsefulAt, now);
+                    // TODO PeerAdded(p); (notification func)
+                    return true;
+                }
+            }
+
+            // the bucket to which the peer belongs is full. Let's try to find a peer
+            // in that bucket which is replaceable.
+            // we don't really need a stable sort here as it dosen't matter which peer we evict
+            // as long as it's a replaceable peer.
+            Bucket.PeerInfo replaceablePeer = bucket.min((p1, p2) -> p1.isReplaceable());
+
+            if (replaceablePeer != null && replaceablePeer.isReplaceable()) {
+                // let's evict it and add the new peer
+                if (removePeer(replaceablePeer.getPeerId())) {
+                    bucket.addPeer(p, isReplaceable, lastUsefulAt, now);
+                    // TODO PeerAdded(p); (notification func)
+                    return true;
+                }
             }
         }
-
         // we weren't able to find place for the peer, remove it from the filter state.
             /* TODO
             if rt.df != nil {

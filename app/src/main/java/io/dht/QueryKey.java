@@ -6,14 +6,16 @@ import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 
-public class QueryKey {
+import io.LogUtils;
 
+public class QueryKey {
+    private static final String TAG = QueryKey.class.getSimpleName();
 
     // Original is the original value of the identifier
-    byte[] Original;
+    private byte[] Original;
 
     // Bytes is the new value of the identifier, in the KeySpace.
-    byte[] Bytes;
+    private byte[] Bytes;
 
     private QueryKey(@NonNull byte[] original, @NonNull byte[] bytes) {
 
@@ -35,7 +37,6 @@ public class QueryKey {
     public BigInteger Distance(@NonNull QueryKey key) {
         // XOR the keys
         byte[] k3 = Util.xor(this.Bytes, key.Bytes);
-
         return new BigInteger(k3);
     }
 }
