@@ -258,7 +258,6 @@ public class RoutingTable {
 
     public boolean UpdateLastSuccessfulOutboundQueryAt(@NonNull PeerId p, long time) {
 
-
         int bucketID = bucketIdForPeer(p);
         Bucket bucket = buckets.get(bucketID);
 

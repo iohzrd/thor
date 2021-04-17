@@ -16,7 +16,8 @@ import io.LogUtils;
 import io.core.Closeable;
 import io.core.ClosedException;
 import io.core.ConnectionFailure;
-import io.core.ProtocolNotSupported;
+import io.core.ConnectionIssue;
+import io.core.ProtocolIssue;
 import io.dht.Channel;
 import io.dht.Routing;
 import io.ipfs.IPFS;
@@ -81,7 +82,7 @@ public class LiteHost implements BitSwapNetwork {
     @Override
     public void WriteMessage(@NonNull Closeable closeable, @NonNull PeerId peer,
                              @NonNull BitSwapMessage message)
-            throws ClosedException, ProtocolNotSupported, ConnectionFailure {
+            throws ClosedException, ProtocolIssue, ConnectionFailure, ConnectionIssue {
 
         synchronized (peer.toBase58().intern()) { // TODO rethink
             try {
@@ -137,10 +138,10 @@ public class LiteHost implements BitSwapNetwork {
                 if(cause != null) {
                     LogUtils.error(TAG, cause.getClass().getSimpleName());
                     if (cause instanceof NoSuchRemoteProtocolException) {
-                        throw new ProtocolNotSupported();
+                        throw new ProtocolIssue();
                     }
                     if (cause instanceof NothingToCompleteException) {
-                        throw new ConnectionFailure();
+                        throw new ConnectionIssue();
                     }
                     if (cause instanceof ConnectionClosedException) {
                         throw new ConnectionFailure();

@@ -18,8 +18,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import io.LogUtils;
 import io.core.Closeable;
 import io.core.ClosedException;
-import io.core.ConnectionFailure;
-import io.core.ProtocolNotSupported;
+import io.core.ConnectionIssue;
+import io.core.ProtocolIssue;
 import io.ipfs.cid.Cid;
 import io.ipfs.format.Block;
 import io.ipfs.format.BlockStore;
@@ -166,7 +166,7 @@ public class ContentManager {
                             }
                         } catch (ClosedException closedException) {
                             // ignore
-                        } catch (ProtocolNotSupported ignore) {
+                        } catch (ProtocolIssue ignore) {
                             faulty.add(peer);
                         } catch (Throwable throwable) {
                             LogUtils.error(TAG, throwable);
@@ -191,12 +191,12 @@ public class ContentManager {
                             peers.add(peer);
 
                             MessageWriter.sendHaveMessage(closeable, network, peer,
-                                    Collections.singletonList(cid) );
+                                    Collections.singletonList(cid));
                             handled.add(peer);
                             hasRun = true;
                         } catch (ClosedException closedException) {
                             // ignore
-                        } catch (ProtocolNotSupported ignore) {
+                        } catch (ProtocolIssue ignore) {
                             peers.remove(peer);
                             priority.remove(peer);
                             faulty.add(peer);
@@ -230,7 +230,7 @@ public class ContentManager {
                             handled.add(peer);
                         } catch (ClosedException closedException) {
                             // ignore
-                        } catch (ProtocolNotSupported | ConnectionFailure ignore) {
+                        } catch (ProtocolIssue | ConnectionIssue ignore) {
                             peers.remove(peer);
                             priority.remove(peer);
                             faulty.add(peer);
@@ -327,7 +327,7 @@ public class ContentManager {
                         }
                     } catch (ClosedException ignore) {
                         // ignore
-                    } catch (ProtocolNotSupported ignore) {
+                    } catch (ProtocolIssue ignore) {
                         faulty.add(peer);
                     } catch (Throwable throwable) {
                         LogUtils.error(TAG, "LoadBlocks Error " + throwable.getLocalizedMessage());

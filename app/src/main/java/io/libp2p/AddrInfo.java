@@ -64,11 +64,11 @@ public class AddrInfo {
     private void addAddress(@NonNull Multiaddr address) {
         if (address.has(Protocol.DNS6)) {
             LogUtils.info(TAG, "Filter out DNS6 " + address.toString()); // maybe TODO
-            // return;
+            return;
         }
         if (address.has(Protocol.DNSADDR)) {
             LogUtils.info(TAG, "Filter out DNS6 " + address.toString()); // TODO
-            // return;
+            return;
         }
         if (address.has(Protocol.WS)) {
             LogUtils.info(TAG, "Filter out WS " + address.toString()); // maybe TODO
@@ -76,7 +76,7 @@ public class AddrInfo {
         }
         if (address.has(Protocol.DNS4)) {
             LogUtils.info(TAG, "Filter out DNS4 " + address.toString()); // maybe TODO
-            // return;
+            return;
         }
         if (address.has(Protocol.P2PCIRCUIT)) { // TODO SUPPORT THIS
             LogUtils.info(TAG, "Filter out P2PCIRCUIT " + address.toString());

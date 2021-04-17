@@ -8,6 +8,7 @@ import java.util.List;
 import io.LogUtils;
 import io.core.Closeable;
 import io.core.ClosedException;
+import io.ipfs.IPFS;
 import io.ipfs.cid.Cid;
 import io.ipfs.exchange.Interface;
 import io.ipfs.format.Block;
@@ -18,11 +19,13 @@ import io.libp2p.core.PeerId;
 public class BitSwap implements Interface {
 
     private static final String TAG = BitSwap.class.getSimpleName();
-    private final ContentManager contentManager;
 
+    private final ContentManager contentManager;
+    private final BitSwapEngine engine;
 
     public BitSwap(@NonNull BlockStore blockstore, @NonNull BitSwapNetwork network) {
         contentManager = new ContentManager(blockstore, network);
+        engine = BitSwapEngine.NewEngine(blockstore, network, network.Self());
     }
 
     public static Interface New(@NonNull BitSwapNetwork bitSwapNetwork, @NonNull BlockStore blockstore) {
@@ -63,6 +66,10 @@ public class BitSwap implements Interface {
             } catch (Throwable throwable) {
                 LogUtils.error(TAG, throwable);
             }
+        }
+
+        if (IPFS.BITSWAP_ENGINE_ACTIVE) {
+            engine.MessageReceived(peer, incoming);
         }
     }
 

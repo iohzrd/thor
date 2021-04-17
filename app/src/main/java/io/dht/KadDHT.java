@@ -33,8 +33,9 @@ import io.LogUtils;
 import io.core.Closeable;
 import io.core.ClosedException;
 import io.core.ConnectionFailure;
+import io.core.ConnectionIssue;
 import io.core.InvalidRecord;
-import io.core.ProtocolNotSupported;
+import io.core.ProtocolIssue;
 import io.core.Validator;
 import io.ipfs.IPFS;
 import io.ipfs.cid.Cid;
@@ -58,7 +59,7 @@ public class KadDHT implements Routing {
 
     public static final Duration TempAddrTTL = Duration.ofMinutes(2);
     private static final String TAG = KadDHT.class.getSimpleName();
-    private static final int defaultQuorum = 0;
+
     public final Host host;
     public final PeerId self; // Local peer (yourself)
     public final int beta; // The number of peers closest to a target that must have responded for a query path to terminate
@@ -207,7 +208,7 @@ public class KadDHT implements Routing {
             @NonNull
             @Override
             public List<AddrInfo> query(@NonNull Closeable ctx, @NonNull PeerId p)
-                    throws ClosedException, ProtocolNotSupported, ConnectionFailure {
+                    throws ClosedException, ProtocolIssue, ConnectionFailure, ConnectionIssue {
 
                 Dht.Message pms = findPeerSingle(ctx, p, key);
                 List<AddrInfo> peers = evalClosestPeers(pms);
@@ -300,7 +301,7 @@ public class KadDHT implements Routing {
     private void putValueToPeer(@NonNull Closeable ctx,
                                 @NonNull PeerId p,
                                 @NonNull RecordOuterClass.Record rec)
-            throws ConnectionFailure, ProtocolNotSupported, ClosedException {
+            throws ConnectionFailure, ProtocolIssue, ClosedException, ConnectionIssue {
 
         Dht.Message pms = Dht.Message.newBuilder()
                 .setType(Dht.Message.MessageType.PUT_VALUE)
@@ -336,7 +337,7 @@ public class KadDHT implements Routing {
                     @NonNull
                     @Override
                     public List<AddrInfo> query(@NonNull Closeable ctx, @NonNull PeerId p)
-                            throws ClosedException, ProtocolNotSupported, ConnectionFailure {
+                            throws ClosedException, ProtocolIssue, ConnectionFailure, ConnectionIssue {
 
 
                         Dht.Message pms = findProvidersSingle(ctx, p, key);
@@ -549,7 +550,7 @@ public class KadDHT implements Routing {
 
     private Dht.Message sendRequest(@NonNull Closeable ctx, @NonNull PeerId p,
                                     @NonNull Dht.Message message)
-            throws ClosedException, ProtocolNotSupported, ConnectionFailure {
+            throws ClosedException, ProtocolIssue, ConnectionFailure, ConnectionIssue {
 
 
         synchronized (p.toBase58().intern()) {
@@ -590,15 +591,14 @@ public class KadDHT implements Routing {
                     throw new ClosedException();
                 }
 
-
                 Throwable cause = throwable.getCause();
                 if (cause != null) {
                     LogUtils.error(TAG, cause.getClass().getSimpleName());
                     if (cause instanceof NoSuchRemoteProtocolException) {
-                        throw new ProtocolNotSupported();
+                        throw new ProtocolIssue();
                     }
                     if (cause instanceof NothingToCompleteException) {
-                        throw new ConnectionFailure();
+                        throw new ConnectionIssue();
                     }
                     if (cause instanceof NonCompleteException) {
                         throw new ConnectionFailure();
@@ -620,7 +620,7 @@ public class KadDHT implements Routing {
 
 
     private Dht.Message getValueSingle(@NonNull Closeable ctx, @NonNull PeerId p, @NonNull byte[] key)
-            throws ConnectionFailure, ProtocolNotSupported, ClosedException {
+            throws ConnectionFailure, ProtocolIssue, ClosedException, ConnectionIssue {
         Dht.Message pms = Dht.Message.newBuilder()
                 .setType(Dht.Message.MessageType.GET_VALUE)
                 .setKey(ByteString.copyFrom(key))
@@ -629,7 +629,7 @@ public class KadDHT implements Routing {
     }
 
     private Dht.Message findPeerSingle(@NonNull Closeable ctx, @NonNull PeerId p, @NonNull byte[] key)
-            throws ClosedException, ProtocolNotSupported, ConnectionFailure {
+            throws ClosedException, ProtocolIssue, ConnectionFailure, ConnectionIssue {
         Dht.Message pms = Dht.Message.newBuilder()
                 .setType(Dht.Message.MessageType.FIND_NODE)
                 .setKey(ByteString.copyFrom(key))
@@ -639,7 +639,7 @@ public class KadDHT implements Routing {
     }
 
     private Dht.Message findProvidersSingle(@NonNull Closeable ctx, @NonNull PeerId p, @NonNull byte[] key)
-            throws ClosedException, ProtocolNotSupported, ConnectionFailure {
+            throws ClosedException, ProtocolIssue, ConnectionFailure, ConnectionIssue {
         Dht.Message pms = Dht.Message.newBuilder()
                 .setType(Dht.Message.MessageType.GET_PROVIDERS)
                 .setKey(ByteString.copyFrom(key))
@@ -689,7 +689,7 @@ public class KadDHT implements Routing {
                     @NonNull
                     @Override
                     public List<AddrInfo> query(@NonNull Closeable ctx, @NonNull PeerId p)
-                            throws ClosedException, ProtocolNotSupported, ConnectionFailure {
+                            throws ClosedException, ProtocolIssue, ConnectionFailure, ConnectionIssue {
                         Dht.Message pms = findPeerSingle(ctx, p, id.getBytes());
                         return evalClosestPeers(pms);
                     }
@@ -870,7 +870,7 @@ public class KadDHT implements Routing {
     private Pair<RecordOuterClass.Record, List<AddrInfo>> getValueOrPeers(@NonNull Closeable ctx,
                                                                           @NonNull PeerId p,
                                                                           @NonNull byte[] key)
-            throws ConnectionFailure, ClosedException, ProtocolNotSupported {
+            throws ConnectionFailure, ClosedException, ProtocolIssue, ConnectionIssue {
 
 
         Dht.Message pms = getValueSingle(ctx, p, key);
@@ -919,7 +919,7 @@ public class KadDHT implements Routing {
                         @NonNull
                         @Override
                         public List<AddrInfo> query(@NonNull Closeable ctx, @NonNull PeerId p)
-                                throws ClosedException, ProtocolNotSupported, ConnectionFailure, InvalidRecord {
+                                throws ClosedException, ProtocolIssue, ConnectionFailure, ConnectionIssue {
 
                             // For DHT query command
                             /* maybe todo
@@ -1077,7 +1077,7 @@ public class KadDHT implements Routing {
     public interface QueryFunc {
         @NonNull
         List<AddrInfo> query(@NonNull Closeable ctx, @NonNull PeerId peerId)
-                throws ClosedException, ProtocolNotSupported, ConnectionFailure, InvalidRecord;
+                throws ClosedException, ProtocolIssue, ConnectionFailure, InvalidRecord, ConnectionIssue;
     }
 
 

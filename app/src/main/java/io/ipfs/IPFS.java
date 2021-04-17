@@ -37,9 +37,9 @@ import io.LogUtils;
 import io.core.Closeable;
 import io.core.ClosedException;
 import io.core.TimeoutCloseable;
+import io.dht.Channel;
 import io.dht.DhtProtocol;
 import io.dht.KadDHT;
-import io.dht.Channel;
 import io.dht.ResolveInfo;
 import io.dht.Routing;
 import io.ipfs.bitswap.BitSwap;
@@ -119,14 +119,20 @@ public class IPFS implements Receiver {
             "/ip4/147.75.195.153/tcp/4001/p2p/QmW9m57aiBDHAkKj9nmFSEn7ZqrcF1fZS4bipsTCHburei",// default relay  libp2p
             "/ip4/147.75.70.221/tcp/4001/p2p/Qme8g49gm3q4Acp7xWBKg3nAa9fxZ1YmyDJdyGgoG6LsXh",// default relay  libp2p
 
-            "/ip4/104.131.131.82/tcp/4001/p2p/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ"// mars.i.ipfs.io
+            "/ip4/104.131.131.82/tcp/4001/p2p/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ", // mars.i.ipfs.io
+
+            "/dnsaddr/bootstrap.libp2p.io/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN", // default dht peer
+            "/dnsaddr/bootstrap.libp2p.io/p2p/QmQCU2EcMqAqQPR2i9bChDtGNJchTbq5TbXJJ16u19uLTa", // default dht peer
+            "/dnsaddr/bootstrap.libp2p.io/p2p/QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb", // default dht peer
+            "/dnsaddr/bootstrap.libp2p.io/p2p/QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt" // default dht peer
 
     ));
     // IPFS BOOTSTRAP DNS
     public static final String LIB2P_DNS = "_dnsaddr.bootstrap.libp2p.io";
     public static final String DNS_ADDR = "dnsaddr=/dnsaddr/";
     public static final String DNS_LINK = "dnslink=";
-
+    public static final boolean SEND_DONT_HAVES = false;
+    public static final boolean BITSWAP_ENGINE_ACTIVE = false;
 
 
     // rough estimates on expected sizes
@@ -782,7 +788,7 @@ public class IPFS implements Receiver {
         try {
             return host.getNetwork().connect(multiaddr).get() != null;
         } catch (Throwable e) {
-
+            LogUtils.error(TAG, multiaddr + " " + e.getMessage());
             try {
                 if (multiAddress.startsWith(IPFS.P2P_PATH)) {
                     String pid = multiaddr.getStringComponent(Protocol.P2P);
@@ -807,31 +813,12 @@ public class IPFS implements Receiver {
     }
 
     public boolean swarmConnect(@NonNull String multiAddress, int timeout) {
-        if (!isDaemonRunning()) {
-            return false;
-        }
-        Multiaddr multiaddr = new Multiaddr(multiAddress);
         try {
-            return host.getNetwork().connect(multiaddr)
-                    .get(timeout, TimeUnit.SECONDS) != null;
-        } catch (Throwable e) {
-
-            try {
-                if (multiAddress.startsWith(IPFS.P2P_PATH)) {
-                    String pid = multiaddr.getStringComponent(Protocol.P2P);
-                    Objects.requireNonNull(pid);
-                    AddrInfo addr = routing.FindPeer(new TimeoutCloseable(timeout), PeerId.fromBase58(pid));
-                    if(addr != null) {
-                        return host.getNetwork().connect(addr.getPeerId(),
-                                addr.getAddresses())
-                                .get(timeout, TimeUnit.SECONDS) != null;
-                    }
-                }
-            } catch(ClosedException ignore) {
-                // ignore
-            } catch (Throwable throwable) {
-                LogUtils.error(TAG, throwable);
-            }
+            return swarmConnect(multiAddress, new TimeoutCloseable(timeout));
+        } catch (ClosedException ignore) {
+            // ignore
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable.getMessage());
         }
         return false;
     }

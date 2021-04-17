@@ -18,8 +18,8 @@ import java.util.concurrent.Executors;
 import io.LogUtils;
 import io.core.Closeable;
 import io.core.ClosedException;
-import io.core.ConnectionFailure;
-import io.core.ProtocolNotSupported;
+import io.core.ConnectionIssue;
+import io.core.ProtocolIssue;
 import io.libp2p.AddrInfo;
 import io.libp2p.core.PeerId;
 
@@ -264,7 +264,7 @@ public class Query {
 
         } catch (ClosedException closedException) {
             throw closedException;
-        } catch (ProtocolNotSupported | ConnectionFailure ignore) {
+        } catch (ProtocolIssue | ConnectionIssue ignore) {
             dht.peerStoppedDHT(queryPeer);
             QueryUpdate update = new QueryUpdate(queryPeer);
             update.unreachable.add(queryPeer);

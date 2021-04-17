@@ -7,7 +7,8 @@ import java.util.List;
 import io.core.Closeable;
 import io.core.ClosedException;
 import io.core.ConnectionFailure;
-import io.core.ProtocolNotSupported;
+import io.core.ConnectionIssue;
+import io.core.ProtocolIssue;
 import io.ipfs.cid.Cid;
 import io.libp2p.core.PeerId;
 import io.protos.bitswap.BitswapProtos;
@@ -21,7 +22,7 @@ public class MessageWriter {
                                        @NonNull BitSwapNetwork network,
                                        @NonNull PeerId peer,
                                        @NonNull List<Cid> wantHaves)
-            throws ClosedException, ProtocolNotSupported, ConnectionFailure {
+            throws ClosedException, ProtocolIssue, ConnectionFailure, ConnectionIssue {
         if (wantHaves.size() == 0) {
             return;
         }
@@ -54,7 +55,7 @@ public class MessageWriter {
                                         @NonNull BitSwapNetwork network,
                                         @NonNull PeerId peer,
                                         @NonNull List<Cid> wantBlocks)
-            throws ClosedException, ProtocolNotSupported, ConnectionFailure {
+            throws ClosedException, ProtocolIssue, ConnectionFailure, ConnectionIssue {
 
         if (wantBlocks.size() == 0) {
             return;
