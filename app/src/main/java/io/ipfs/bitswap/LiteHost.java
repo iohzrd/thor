@@ -17,7 +17,7 @@ import io.core.Closeable;
 import io.core.ClosedException;
 import io.core.ConnectionFailure;
 import io.core.ProtocolNotSupported;
-import io.dht.Providers;
+import io.dht.Channel;
 import io.dht.Routing;
 import io.ipfs.IPFS;
 import io.ipfs.cid.Cid;
@@ -156,10 +156,10 @@ public class LiteHost implements BitSwapNetwork {
 
 
     @Override
-    public void FindProvidersAsync(@NonNull Closeable closeable, @NonNull Providers providers,
+    public void FindProvidersAsync(@NonNull Closeable closeable, @NonNull Channel channel,
                                    @NonNull Cid cid) throws ClosedException {
         LogUtils.error(TAG, "Find Start Content Provider " + cid.String());
-        routing.FindProvidersAsync(closeable, providers, cid);
+        routing.FindProviders(closeable, channel, cid);
         LogUtils.error(TAG, "Find End Content Provider " + cid.String());
 
     }

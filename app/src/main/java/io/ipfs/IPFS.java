@@ -39,7 +39,7 @@ import io.core.ClosedException;
 import io.core.TimeoutCloseable;
 import io.dht.DhtProtocol;
 import io.dht.KadDHT;
-import io.dht.Providers;
+import io.dht.Channel;
 import io.dht.ResolveInfo;
 import io.dht.Routing;
 import io.ipfs.bitswap.BitSwap;
@@ -744,10 +744,10 @@ public class IPFS implements Receiver {
                     if (!second.isEmpty()) {
                         executor = Executors.newFixedThreadPool(second.size());
                         for (String address : second) {
-                            tasks.add(() -> swarmConnect(address, TIMEOUT_BOOTSTRAP * 5));
+                            tasks.add(() -> swarmConnect(address, TIMEOUT_BOOTSTRAP));
                         }
                         futures.clear();
-                        futures = executor.invokeAll(tasks, TIMEOUT_BOOTSTRAP * 5, TimeUnit.SECONDS);
+                        futures = executor.invokeAll(tasks, TIMEOUT_BOOTSTRAP, TimeUnit.SECONDS);
                         for (Future<Boolean> future : futures) {
                             LogUtils.info(TAG, "\nConnect done " + future.isDone());
                         }
@@ -927,14 +927,14 @@ func ToCid(id ID) cid.Cid {
     }
 
     // TODO cleanup names
-    public void findProviders(@NonNull Closeable closeable, @NonNull Providers providers,
+    public void findProviders(@NonNull Closeable closeable, @NonNull Channel channel,
                               @NonNull String cid ) throws ClosedException {
         if (!isDaemonRunning()) {
             return;
         }
 
         try {
-            routing.FindProvidersAsync(closeable, providers, Cid.Decode(cid));
+            routing.FindProviders(closeable, channel, Cid.Decode(cid));
         } catch (ClosedException closedException) {
             throw closedException;
         } catch (Throwable throwable) {

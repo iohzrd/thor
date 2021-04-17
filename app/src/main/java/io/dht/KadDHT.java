@@ -21,9 +21,9 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -278,19 +278,20 @@ public class KadDHT implements Routing {
         putLocal(key, rec);
         */
 
-
+        ConcurrentSkipListSet<PeerId> handled = new ConcurrentSkipListSet<>(
+                (o1, o2) -> o1.toHex().compareTo(o2.toHex()));
         GetClosestPeers(ctx, key, addrInfo -> {
-            if (ctx.isClosed()) {
-                throw new ClosedException();
-            }
-            try {
-                addAddrs(addrInfo);
-                putValueToPeer(ctx, addrInfo.getPeerId(), rec);
-                LogUtils.error(TAG, "PutValue Success to " + addrInfo.getPeerId().toBase58());
-            } catch (ClosedException closedException) {
-                throw closedException;
-            } catch (Throwable throwable) {
-                LogUtils.error(TAG, "PutValue Error " + throwable.getMessage());
+            PeerId peerId = addrInfo.getPeerId();
+            if (!handled.contains(peerId)) {
+                handled.add(peerId);
+                try {
+                    putValueToPeer(ctx, addrInfo.getPeerId(), rec);
+                    LogUtils.error(TAG, "PutValue Success to " + addrInfo.getPeerId().toBase58());
+                } catch (ClosedException closedException) {
+                    throw closedException;
+                } catch (Throwable throwable) {
+                    LogUtils.error(TAG, "PutValue Error " + throwable.getMessage());
+                }
             }
         });
 
@@ -317,72 +318,18 @@ public class KadDHT implements Routing {
     }
 
     @Override
-    public void FindProvidersAsync(@NonNull Closeable closeable,
-                                   @NonNull Providers providers,
-                                   @NonNull Cid cid) throws ClosedException {
+    public void FindProviders(@NonNull Closeable closeable,
+                              @NonNull Channel channel,
+                              @NonNull Cid cid) throws ClosedException {
         if (!cid.Defined()) {
             throw new RuntimeException("Cid invalid");
         }
 
         byte[] key = cid.Hash(); // cid.Bytes();
 
-        findProvidersAsyncRoutine(closeable, providers, key);
-    }
 
-
-    // getLocal attempts to retrieve the value from the datastore
-    /*
-    func (dht *IpfsDHT) getLocal(key string) (*recpb.Record, error) {
-        logger.Debugw("finding value in datastore", "key", loggableRecordKeyString(key))
-
-        rec, err := getRecordFromDatastore(mkDsKey(key))
-        if err != nil {
-            logger.Warnw("get local failed", "key", loggableRecordKeyString(key), "error", err)
-            return nil, err
-        }
-
-        // Double check the key. Can't hurt.
-        if rec != nil && string(rec.GetKey()) != key {
-            logger.Errorw("BUG: found a DHT record that didn't match it's key", "expected", loggableRecordKeyString(key), "got", rec.GetKey())
-            return nil, nil
-
-        }
-        return rec, nil
-    }*/
-
-
-    // peerStoppedDHT signals the routing table that a peer is unable to responsd to DHT queries anymore.
-    // TODO choose better name
-    public void peerStoppedDHT(PeerId p) {
-        LogUtils.info(TAG, "peer stopped dht " + p.toBase58());
-        // A peer that does not support the DHT protocol is dead for us.
-        // There's no point in talking to anymore till it starts supporting the DHT protocol again.
-        routingTable.RemovePeer(p);
-    }
-
-    private void findProvidersAsyncRoutine(@NonNull Closeable closeable,
-                                           @NonNull Providers providers,
-                                           @NonNull byte[] key) throws ClosedException {
-
-
-
-        Set<PeerId> ps = new HashSet<>();
-
-        /*
-        Set<AddrInfo> provs = providerManager.GetProviders(cid);
-        for (AddrInfo prov : provs) {
-            // NOTE: Assuming that this list of peers is unique
-            if (ps.add(prov.getPeerId())) {
-                providers.Peer(prov);
-            }
-            // If we have enough peers locally, don't bother with remote RPC
-            if (!findAll && ps.size() >= count) {
-                return;
-            }
-        }*/
-
-        // TODO check if correct
-
+        ConcurrentSkipListSet<PeerId> handled = new ConcurrentSkipListSet<>(
+                (o1, o2) -> o1.toHex().compareTo(o2.toHex()));
         LookupWithFollowupResult lookupRes = runLookupWithFollowup(closeable, key,
                 new QueryFunc() {
 
@@ -418,9 +365,11 @@ public class KadDHT implements Routing {
                         // invoke callback (not yet as an own thread
                         for (AddrInfo prov : provs) {
                             LogUtils.error(TAG, "got provider : " + prov.getPeerId());
-                            if (ps.add(prov.getPeerId())) {
+                            PeerId peerId = prov.getPeerId();
+                            if (!handled.contains(peerId)) {
+                                handled.add(peerId);
                                 LogUtils.error(TAG, "got provider using: " + prov.getPeerId());
-                                providers.Peer(prov);
+                                channel.peer(prov);
                             }
                         }
 
@@ -442,6 +391,37 @@ public class KadDHT implements Routing {
         if( err == nil && ctx.Err() == nil) {
             dht.refreshRTIfNoShortcut(kb.ConvertKey(string(key)), lookupRes)
         }*/
+    }
+
+
+    // getLocal attempts to retrieve the value from the datastore
+    /*
+    func (dht *IpfsDHT) getLocal(key string) (*recpb.Record, error) {
+        logger.Debugw("finding value in datastore", "key", loggableRecordKeyString(key))
+
+        rec, err := getRecordFromDatastore(mkDsKey(key))
+        if err != nil {
+            logger.Warnw("get local failed", "key", loggableRecordKeyString(key), "error", err)
+            return nil, err
+        }
+
+        // Double check the key. Can't hurt.
+        if rec != nil && string(rec.GetKey()) != key {
+            logger.Errorw("BUG: found a DHT record that didn't match it's key", "expected", loggableRecordKeyString(key), "got", rec.GetKey())
+            return nil, nil
+
+        }
+        return rec, nil
+    }*/
+
+
+    // peerStoppedDHT signals the routing table that a peer is unable to responsd to DHT queries anymore.
+    // TODO choose better name
+    public void peerStoppedDHT(PeerId p) {
+        LogUtils.info(TAG, "peer stopped dht " + p.toBase58());
+        // A peer that does not support the DHT protocol is dead for us.
+        // There's no point in talking to anymore till it starts supporting the DHT protocol again.
+        routingTable.RemovePeer(p);
     }
 
 
@@ -502,17 +482,20 @@ public class KadDHT implements Routing {
 
 
         final Dht.Message mes = makeProvRecord(key);
-        GetClosestPeers(ctx, key, addrInfo -> {
 
-            addAddrs(addrInfo);
-            if (addrInfo.hasAddresses()) {
+        ConcurrentSkipListSet<PeerId> handled = new ConcurrentSkipListSet<>(
+                (o1, o2) -> o1.toHex().compareTo(o2.toHex()));
+        GetClosestPeers(ctx, key, addrInfo -> {
+            PeerId peerId = addrInfo.getPeerId();
+            if (!handled.contains(peerId)) {
+                handled.add(peerId);
                 try {
-                    sendMessage(ctx, addrInfo.getPeerId(), mes);
+                    sendMessage(ctx, peerId, mes);
                     LogUtils.error(TAG, "Provide Success to " + addrInfo.getPeerId().toBase58());
-                } catch(ClosedException closedException){
+                } catch (ClosedException closedException) {
                     throw closedException;
-                } catch (Throwable ignore){
-                    // nothing to do here
+                } catch (Throwable throwable) {
+                    LogUtils.error(TAG, "Provide Error " + throwable.getMessage());
                 }
             }
         });
@@ -1104,10 +1087,6 @@ public class KadDHT implements Routing {
 
     public interface RecordReportFunc {
         boolean report(@NonNull Closeable ctx, @NonNull RecordInfo v, boolean better);
-    }
-
-    public interface Channel {
-        void peer(@NonNull AddrInfo addrInfo) throws ClosedException;
     }
 
     public static class RecordResult {

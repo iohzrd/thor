@@ -20,8 +20,8 @@ public interface Routing {
                      @NonNull byte[] key, int quorum) throws ClosedException;
 
 
-    void FindProvidersAsync(@NonNull Closeable closeable, @NonNull Providers providers,
-                            @NonNull Cid cid) throws ClosedException;
+    void FindProviders(@NonNull Closeable closeable, @NonNull Channel channel,
+                       @NonNull Cid cid) throws ClosedException;
 
     void Provide(@NonNull Closeable closeable, @NonNull Cid cid) throws ClosedException;
 
