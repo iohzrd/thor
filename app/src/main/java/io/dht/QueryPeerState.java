@@ -2,16 +2,18 @@ package io.dht;
 
 import androidx.annotation.NonNull;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.math.BigInteger;
 
-import io.LogUtils;
 import io.libp2p.core.PeerId;
 
 public class QueryPeerState implements Comparable<QueryPeerState> {
-    private static final String TAG = QueryPeerState.class.getSimpleName();
+
     public final PeerId id;
+    @NonNull
     public final BigInteger distance;
-    private final PeerId referredBy;
+    private final PeerId referredBy; // TODO check if necessary
     private PeerState state;
 
     @NonNull
@@ -23,14 +25,14 @@ public class QueryPeerState implements Comparable<QueryPeerState> {
         this.state = state;
     }
 
-    public QueryPeerState(@NonNull PeerId id, BigInteger distance, @NonNull PeerId referredBy) {
+    public QueryPeerState(@NonNull PeerId id, @NonNull BigInteger distance, @NonNull PeerId referredBy) {
         this.id = id;
         this.distance = distance;
         this.state = PeerState.PeerHeard;
         this.referredBy = referredBy;
-
     }
 
+    @NotNull
     @Override
     public String toString() {
         return "QueryPeerState{" +

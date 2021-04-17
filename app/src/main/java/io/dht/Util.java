@@ -7,7 +7,7 @@ import java.security.MessageDigest;
 import io.libp2p.core.PeerId;
 
 public class Util {
-    private static final String TAG = Util.class.getSimpleName();
+
     private static final short[] len8tab = new short[]{
             0x00, 0x01, 0x02, 0x02, 0x03, 0x03, 0x03, 0x03, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04,
             0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05,
@@ -72,7 +72,7 @@ public class Util {
 
     }
 
-    // ConvertPeerID creates a DHT ID by hashing a Peer ID (Multihash)
+    @NonNull
     public static ID ConvertPeerID(@NonNull PeerId id) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
@@ -82,7 +82,7 @@ public class Util {
         }
     }
 
-    // ConvertKey creates a DHT ID by hashing a local key (String)
+    @NonNull
     public static ID ConvertKey(@NonNull byte[] id) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");

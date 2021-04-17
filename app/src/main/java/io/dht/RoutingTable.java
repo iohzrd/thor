@@ -18,14 +18,11 @@ public class RoutingTable {
     private static final String TAG = RoutingTable.class.getSimpleName();
     private final ID local;  // ID of the local peer
     private final CopyOnWriteArrayList<Bucket> buckets = new CopyOnWriteArrayList<>();
-    // latency metrics
     public final ConcurrentHashMap<PeerId, Long> metrics = new ConcurrentHashMap<>();
     // Maximum acceptable latency for peers in this cluster
     public final long maxLatency = Duration.ofMinutes(1).toMillis();
 
     private final int bucketsize;
-
-
 
 
     public RoutingTable(int bucketsize, @NonNull ID local) {
@@ -35,24 +32,23 @@ public class RoutingTable {
     }
 
 
-    private void nextBucket() {
+    private synchronized void nextBucket() {
         // This is the last bucket, which allegedly is a mixed bag containing peers not belonging in dedicated (unfolded) buckets.
         // _allegedly_ is used here to denote that *all* peers in the last bucket might feasibly belong to another bucket.
         // This could happen if e.g. we've unfolded 4 buckets, and all peers in folded bucket 5 really belong in bucket 8.
+
         Bucket bucket = buckets.get(buckets.size() - 1);
 
 
         Bucket newBucket = bucket.split(buckets.size() - 1, local);
         buckets.add(newBucket);
+        LogUtils.error(TAG, "Buckets : " + buckets.size() + " " + buckets.toString());
 
         // The newly formed bucket still contains too many peers. We probably just unfolded a empty bucket.
         if (newBucket.size() >= bucketsize) {
             // Keep unfolding the table until the last bucket is not overflowing.
             nextBucket();
         }
-
-        LogUtils.info(TAG, "Buckets : " + buckets.size());
-
     }
 
 
@@ -95,7 +91,6 @@ public class RoutingTable {
         for (int i = cpl - 1; i >= 0 && pds.size() < count; i--) {
             pds.appendPeersFromList(buckets.get(i));
         }
-        //rt.tabLock.RUnlock()
 
         // Sort by distance to local peer
         Collections.sort(pds);
@@ -213,7 +208,7 @@ public class RoutingTable {
             if (replaceablePeer != null && replaceablePeer.isReplaceable()) {
                 // let's evict it and add the new peer
                 if (removePeer(replaceablePeer.getPeerId())) {
-                    bucket.addPeer(p, isReplaceable, lastUsefulAt, now);
+                    bucket.addPeer(p, isReplaceable, lastUsefulAt, now); // add new peer
                     // TODO PeerAdded(p); (notification func)
                     return true;
                 }
@@ -237,7 +232,7 @@ public class RoutingTable {
         int bucketID = bucketIdForPeer(p);
         Bucket bucket = buckets.get(bucketID);
         Objects.requireNonNull(bucket);
-        if (bucket.removePeerInfo(p)) {
+        if (bucket.removePeer(p)) {
             /* TODO
             if rt.df != nil {
                 rt.df.Remove(p)

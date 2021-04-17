@@ -171,6 +171,7 @@ public class KadDHT implements Routing {
         }
     }
 
+    @NonNull
     private List<AddrInfo> evalClosestPeers(@NonNull Dht.Message pms) {
         List<AddrInfo> peers = new ArrayList<>();
         List<Dht.Message.Peer> list = pms.getCloserPeersList();

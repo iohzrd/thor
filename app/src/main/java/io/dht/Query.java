@@ -227,19 +227,13 @@ public class Query {
     }
 
 
-    // queryPeer queries a single peer and reports its findings on the channel.
-    // queryPeer does not access the query state in queryPeers!
     private void queryPeer(@NonNull Closeable ctx, @NonNull PeerId queryPeer) throws ClosedException {
 
 
         long startQuery = System.currentTimeMillis();
 
-        if (ctx.isClosed()) {
-            throw new ClosedException();
-        }
-
         try {
-            // send query RPC to the remote peer
+
             List<AddrInfo> newPeers = queryFn.query(ctx, queryPeer);
 
             if (ctx.isClosed()) {
@@ -248,7 +242,7 @@ public class Query {
 
             long queryDuration = startQuery - System.currentTimeMillis();
 
-            // query successful, try to add to RT
+            // query successful, try to add to routing table
             dht.peerFound(queryPeer, true, true);
 
             // process new peers
@@ -271,25 +265,17 @@ public class Query {
         } catch (ClosedException closedException) {
             throw closedException;
         } catch (ProtocolNotSupported | ConnectionFailure ignore) {
-            /* TODO
-            if queryCtx.Err() == nil {
-                q.dht.peerStoppedDHT(q.dht.ctx, p)
-            }*/
             dht.peerStoppedDHT(queryPeer);
             QueryUpdate update = new QueryUpdate(queryPeer);
             update.unreachable.add(queryPeer);
             queue.offer(update);
         } catch (Throwable throwable) {
-            LogUtils.error(TAG, throwable);
-            /* TODO
-            if queryCtx.Err() == nil {
-                q.dht.peerStoppedDHT(q.dht.ctx, p)
-            }*/
+            LogUtils.error(TAG, throwable); // TODO print out unknown exceptions
+
             dht.peerStoppedDHT(queryPeer);
             QueryUpdate update = new QueryUpdate(queryPeer);
             update.unreachable.add(queryPeer);
             queue.offer(update);
-            // TODO ch <- &queryUpdate{cause: p, unreachable: []peer.ID{p}}
         }
 
 
@@ -315,6 +301,8 @@ public class Query {
 
 
     private Pair<Boolean, List<PeerId>> isReadyToTerminate(int nPeersToQuery) {
+
+
         // give the application logic a chance to terminate
         if (stopFn.stop()) {
             return Pair.create(true, Collections.emptyList());
@@ -329,7 +317,7 @@ public class Query {
         // The peers we query next should be ones that we have only Heard about.
         List<PeerId> peersToQuery = new ArrayList<>();
         List<QueryPeerState> peers = queryPeers.GetClosestInStates(
-                Collections.singletonList(PeerState.PeerHeard));
+                nPeersToQuery, Collections.singletonList(PeerState.PeerHeard));
         int count = 0;
         for (QueryPeerState p : peers) {
             peersToQuery.add(p.id);

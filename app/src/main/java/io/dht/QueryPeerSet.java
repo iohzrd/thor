@@ -9,22 +9,19 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
+import io.LogUtils;
 import io.libp2p.core.PeerId;
 
 public class QueryPeerSet {
-    private static final String TAG = QueryPeerSet.class.getSimpleName();
+
     private final QueryKey key;
     private final ConcurrentHashMap<PeerId, QueryPeerState> all = new ConcurrentHashMap<>();
-    boolean sorted;
+
 
     private QueryPeerSet(@NonNull QueryKey key) {
         this.key = key;
-        this.sorted = false;
     }
 
-
-    // NewQueryPeerset creates a new empty set of peers.
-    // key is the target key of the lookup that this peer set is for.
     public static QueryPeerSet create(@NonNull byte[] key) {
         return new QueryPeerSet(QueryKey.createQueryKey(key));
     }
@@ -44,7 +41,6 @@ public class QueryPeerSet {
         } else {
             peerset = new QueryPeerState(p, distanceToKey(p), referredBy);
             all.put(p, peerset);
-            sorted = false;
             return true;
         }
     }
@@ -62,7 +58,11 @@ public class QueryPeerSet {
     // It returns n peers or less, if fewer peers meet the condition.
     // The returned peers are sorted in ascending order by their distance to the key.
     public List<QueryPeerState> GetClosestNInStates(int maxLength, List<PeerState> states) {
-
+        if (LogUtils.isDebug()) {
+            if (maxLength < 0) {
+                throw new RuntimeException("internal state error");
+            }
+        }
         List<QueryPeerState> list = new ArrayList<>(all.values());
         Collections.sort(list);
 
@@ -79,26 +79,14 @@ public class QueryPeerSet {
         }
         Collections.sort(peers);
 
-
-        for (QueryPeerState state:
-             peers) {
-
-        }
-
         return peers;
     }
 
-    // GetClosestInStates returns the peers, which are in one of the given states.
-    // The returned peers are sorted in ascending order by their distance to the key.
-    List<QueryPeerState> GetClosestInStates(int maxLength, List<PeerState> states) {
+    @NonNull
+    List<QueryPeerState> GetClosestInStates(int maxLength, @NonNull List<PeerState> states) {
         return GetClosestNInStates(maxLength, states);
     }
 
-    List<QueryPeerState> GetClosestInStates(List<PeerState> states) {
-        return GetClosestNInStates(all.size(), states);
-    }
-
-    // NumWaiting returns the number of peers in state PeerWaiting.
     public int NumWaiting() {
         return GetClosestInStates(all.size(), Collections.singletonList(PeerState.PeerWaiting)).size();
     }

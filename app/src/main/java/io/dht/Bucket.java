@@ -2,6 +2,7 @@ package io.dht;
 
 import androidx.annotation.NonNull;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
@@ -34,30 +35,31 @@ public class Bucket {
                     minVal = entry.getValue();
                 }
             }
-
         }
         return minVal;
     }
 
-    // splits a buckets peers into two buckets, the methods receiver will have
-    // peers with CPL equal to cpl, the returned bucket will have peers with CPL
-    // greater than cpl (returned bucket has closer peers)
-    public Bucket split(int cpl, @NonNull ID target) {
-
+    public synchronized Bucket split(int cpl, @NonNull ID target) {
 
         Bucket newbie = new Bucket();
 
-        for (PeerInfo e : peers.values()) {
+        for (PeerInfo e :  elements()) {
             ID pDhtId = e.getID();
             int peerCPL = Util.CommonPrefixLen(pDhtId, target);
-
             if (peerCPL > cpl) {
                 newbie.pushFront(e);
                 peers.remove(e.getPeerId());
             }
         }
-
         return newbie;
+    }
+
+    @NotNull
+    @Override
+    public String toString() {
+        return "Bucket{" +
+                "peers=" + peers.size() +
+                '}';
     }
 
     public void addPeer(@NonNull PeerId p, boolean isReplaceable, long lastUsefulAt, long now) {
@@ -73,9 +75,7 @@ public class Bucket {
         peers.put(p, peerInfo);
     }
 
-    // removes the peer with the given Id from the bucket.
-    // returns true if successful, false otherwise.
-    public boolean removePeerInfo(@NonNull PeerId p) {
+    public boolean removePeer(@NonNull PeerId p) {
         return peers.remove(p) != null;
     }
 
@@ -84,7 +84,12 @@ public class Bucket {
     }
 
     private void pushFront(@NonNull PeerInfo peerInfo) {
-
+        if (LogUtils.isDebug()) {
+            if (peers.containsKey(peerInfo.getPeerId())) {
+                throw new RuntimeException("invalid state");
+            }
+        }
+        peers.put(peerInfo.getPeerId(), peerInfo);
     }
 
     @NonNull
@@ -99,7 +104,7 @@ public class Bucket {
     public static class PeerInfo {
         @NonNull
         private final PeerId peerId;
-        // Id of the peer in the DHT XOR keyspace
+        @NonNull
         private final ID id;
         // LastUsefulAt is the time instant at which the peer was last "useful" to us.
         // Please see the DHT docs for the definition of usefulness.
@@ -130,6 +135,7 @@ public class Bucket {
             return peerId;
         }
 
+        @NonNull
         public ID getID() {
             return id;
         }

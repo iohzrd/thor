@@ -58,7 +58,6 @@ public class BitSwap implements Interface {
         List<Block> blocks = incoming.Blocks();
         List<Cid> haves = incoming.Haves();
         if (blocks.size() > 0 || haves.size() > 0) {
-            // Process blocks
             try {
                 receiveBlocksFrom(peer, blocks, haves);
             } catch (Throwable throwable) {
