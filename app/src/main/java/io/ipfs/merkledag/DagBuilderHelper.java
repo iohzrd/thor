@@ -53,16 +53,12 @@ public class DagBuilderHelper {
 
     private Node NewLeafNode(byte[] data, UnixfsProtos.Data.DataType fsNodeType) {
 
-
         if (data.length > IPFS.BLOCK_SIZE_LIMIT) {
             throw new RuntimeException("ErrSizeLimitExceeded"); // TODO
         }
 
         if (rawLeaves) {
             // Encapsulate the data in a raw node.
-            if (builder == null) {
-                return RawNode.NewRawNode(data);
-            }
             return RawNode.NewRawNodeWPrefix(data, builder);
         }
 

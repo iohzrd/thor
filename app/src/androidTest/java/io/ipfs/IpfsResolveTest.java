@@ -16,17 +16,15 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.Duration;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 
 import io.LogUtils;
 import io.core.ClosedException;
 import io.core.TimeoutCloseable;
 import io.ipfs.multihash.Multihash;
-import io.ipns.IpnsValidator;
+import io.ipns.Ipns;
 import io.libp2p.core.PeerId;
 
 import static junit.framework.TestCase.assertNotNull;
@@ -77,11 +75,11 @@ public class IpfsResolveTest {
                 IPFS.TimeFormatIpfs).format(new Date(System.currentTimeMillis()));
         assertNotNull(format);
 
-        Date date = IpnsValidator.getDate(format);
+        Date date = Ipns.getDate(format);
         Objects.requireNonNull(date);
 
 
-        Date cmp = IpnsValidator.getDate("2021-04-15T06:14:21.184394868Z");
+        Date cmp = Ipns.getDate("2021-04-15T06:14:21.184394868Z");
         Objects.requireNonNull(cmp);
 
     }

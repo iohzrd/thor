@@ -64,7 +64,7 @@ import io.ipfs.utils.ReaderProgress;
 import io.ipfs.utils.ReaderStream;
 import io.ipfs.utils.Resolver;
 import io.ipfs.utils.Stream;
-import io.ipns.IpnsValidator;
+import io.ipns.Ipns;
 import io.libp2p.AddrInfo;
 import io.libp2p.HostBuilder;
 import io.libp2p.core.Connection;
@@ -226,8 +226,7 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
 
         int alpha = getConcurrencyValue(context);
 
-        // TODO implement validator
-        this.routing = new KadDHT(host, new IpnsValidator(), alpha);
+        this.routing = new KadDHT(host, new Ipns(), alpha);
 
 
         BitSwapNetwork bsm = LiteHost.NewLiteHost(host, routing);
