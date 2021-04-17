@@ -9,8 +9,6 @@ import androidx.annotation.Nullable;
 import com.google.common.collect.Iterables;
 import com.google.protobuf.ByteString;
 
-import org.jetbrains.annotations.NotNull;
-
 import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -42,7 +40,6 @@ import io.ipfs.cid.Cid;
 import io.libp2p.AddrInfo;
 import io.libp2p.core.Connection;
 import io.libp2p.core.ConnectionClosedException;
-import io.libp2p.core.ConnectionHandler;
 import io.libp2p.core.Host;
 import io.libp2p.core.NoSuchRemoteProtocolException;
 import io.libp2p.core.PeerId;
@@ -80,15 +77,6 @@ public class KadDHT implements Routing {
         this.routingTable = new RoutingTable(bucketSize, selfKey); // TODO
         this.beta = 20; // TODO
         this.alpha = alpha;
-
-
-        // TODO rethink
-        this.host.addConnectionHandler(new ConnectionHandler() {
-            @Override
-            public void handleConnection(@NotNull Connection conn) {
-                // peerFound(conn.secureSession().getRemoteId(), false, true);
-            }
-        });
     }
 
     public void init() {
@@ -1095,5 +1083,15 @@ public class KadDHT implements Routing {
         boolean aborted;
         HashSet<PeerId> peersWithBest = new HashSet<>();
         byte[] best;
+    }
+
+    private static class RecordInfo {
+        byte[] Val;
+        PeerId From;
+
+        public RecordInfo(@NonNull PeerId from, @NonNull byte[] data) {
+            this.From = from;
+            this.Val = data;
+        }
     }
 }

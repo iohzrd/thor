@@ -3,19 +3,15 @@ package io.dht;
 import androidx.annotation.NonNull;
 
 import java.math.BigInteger;
-import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 
-import io.LogUtils;
-
 public class QueryKey {
-    private static final String TAG = QueryKey.class.getSimpleName();
 
     // Original is the original value of the identifier
     private byte[] Original;
 
     // Bytes is the new value of the identifier, in the KeySpace.
-    private byte[] Bytes;
+    private final byte[] Bytes;
 
     private QueryKey(@NonNull byte[] original, @NonNull byte[] bytes) {
 
