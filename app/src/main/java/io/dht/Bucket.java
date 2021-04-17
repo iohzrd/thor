@@ -22,7 +22,7 @@ public class Bucket {
     }
 
     @Nullable
-    public PeerInfo min(@NonNull MinFunc func) {
+    public PeerInfo weakest(@NonNull MinFunc func) {
         if (size() == 0) {
             return null;
         }
@@ -31,7 +31,7 @@ public class Bucket {
             if (minVal == null) {
                 minVal = entry.getValue();
             } else {
-                if (func.less(entry.getValue(), minVal)) {
+                if (func.less(minVal, entry.getValue())) {
                     minVal = entry.getValue();
                 }
             }
@@ -62,8 +62,8 @@ public class Bucket {
                 '}';
     }
 
-    public void addPeer(@NonNull PeerId p, boolean isReplaceable, long lastUsefulAt, long now) {
-        Bucket.PeerInfo peerInfo = new Bucket.PeerInfo(p, isReplaceable);
+    public void addPeer(@NonNull PeerId p, long latency, boolean isReplaceable, long lastUsefulAt, long now) {
+        Bucket.PeerInfo peerInfo = new Bucket.PeerInfo(p, latency, isReplaceable);
         peerInfo.LastUsefulAt = lastUsefulAt;
         peerInfo.LastSuccessfulOutboundQueryAt = now;
         peerInfo.AddedAt = now;
@@ -106,6 +106,20 @@ public class Bucket {
         private final PeerId peerId;
         @NonNull
         private final ID id;
+
+        private long latency;
+
+        public PeerInfo(@NonNull PeerId peerId, long latency, boolean replaceable) {
+            this.peerId = peerId;
+            this.latency = latency;
+            this.id = Util.ConvertPeerID(peerId);
+            this.replaceable = replaceable;
+        }
+
+        public long getLatency() {
+            return latency;
+        }
+
         // LastUsefulAt is the time instant at which the peer was last "useful" to us.
         // Please see the DHT docs for the definition of usefulness.
         long LastUsefulAt;
@@ -120,14 +134,21 @@ public class Bucket {
         // if a bucket is full, this peer can be replaced to make space for a new peer.
         private final boolean replaceable;
 
-        public PeerInfo(@NonNull PeerId peerId, boolean replaceable) {
-            this.peerId = peerId;
-            this.id = Util.ConvertPeerID(peerId);
-            this.replaceable = replaceable;
+        public void setLatency(long latency) {
+            this.latency = latency;
         }
 
         public boolean isReplaceable() {
             return replaceable;
+        }
+
+        @NonNull
+        @Override
+        public String toString() {
+            return "{" +
+                    "latency=" + latency +
+                    ", replaceable=" + replaceable +
+                    '}';
         }
 
         @NonNull

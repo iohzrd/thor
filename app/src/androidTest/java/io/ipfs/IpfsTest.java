@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.Objects;
 
 import io.LogUtils;
-import io.core.Closeable;
 import io.core.ClosedException;
 import io.core.TimeoutCloseable;
 import io.ipfs.utils.Link;

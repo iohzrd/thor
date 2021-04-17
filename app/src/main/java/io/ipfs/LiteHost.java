@@ -31,6 +31,7 @@ import io.libp2p.core.Host;
 import io.libp2p.core.NoSuchRemoteProtocolException;
 import io.libp2p.core.PeerId;
 import io.libp2p.core.multiformats.Multiaddr;
+import io.libp2p.etc.types.NonCompleteException;
 import io.libp2p.etc.types.NothingToCompleteException;
 import io.netty.handler.timeout.ReadTimeoutException;
 
@@ -148,6 +149,9 @@ public class LiteHost implements BitSwapNetwork {
                         throw new ProtocolIssue();
                     }
                     if (cause instanceof NothingToCompleteException) {
+                        throw new ConnectionIssue();
+                    }
+                    if (cause instanceof NonCompleteException) {
                         throw new ConnectionIssue();
                     }
                     if (cause instanceof ConnectionClosedException) {

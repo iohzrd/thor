@@ -37,10 +37,10 @@ public class IPFSUtilsTest {
 
         PeerId peerId = ipfs.getPID();
 
-        ID a =  Util.ConvertPeerID(peerId);
-        ID b =  Util.ConvertPeerID(peerId);
+        ID a = Util.ConvertPeerID(peerId);
+        ID b = Util.ConvertPeerID(peerId);
 
-        int res = Util.CommonPrefixLen(a,b);
+        int res = Util.CommonPrefixLen(a, b);
         assertEquals(res, (a.data.length * 8));
 
         int cmp = a.compareTo(b);
@@ -48,9 +48,9 @@ public class IPFSUtilsTest {
 
 
         PeerId randrom = PeerId.random();
-        ID r1 =  Util.ConvertPeerID(randrom);
-        ID r2 =  Util.ConvertPeerID(randrom);
-        int rres = Util.CommonPrefixLen(r1,r2);
+        ID r1 = Util.ConvertPeerID(randrom);
+        ID r2 = Util.ConvertPeerID(randrom);
+        int rres = Util.CommonPrefixLen(r1, r2);
         assertEquals(rres, (r1.data.length * 8));
 
         int rcmp = r1.compareTo(r2);

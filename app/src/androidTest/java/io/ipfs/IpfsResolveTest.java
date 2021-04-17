@@ -28,8 +28,6 @@ import io.ipns.Ipns;
 import io.libp2p.core.PeerId;
 
 import static junit.framework.TestCase.assertNotNull;
-
-import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 
 @SuppressWarnings("SpellCheckingInspection")
@@ -55,10 +53,10 @@ public class IpfsResolveTest {
         long start = System.currentTimeMillis();
         try {
             ipfs.publishName(new TimeoutCloseable(30), cid, random);
-        } catch (ClosedException ignore){
+        } catch (ClosedException ignore) {
             // ignore
         }
-        LogUtils.error(TAG, "Time publish name " +  (System.currentTimeMillis() - start));
+        LogUtils.error(TAG, "Time publish name " + (System.currentTimeMillis() - start));
 
         String key = ipfs.getHost();
 
@@ -83,6 +81,7 @@ public class IpfsResolveTest {
         Objects.requireNonNull(cmp);
 
     }
+
     @Test
     public void test_peer_id() throws IOException {
         IPFS ipfs = TestEnv.getTestInstance(context);

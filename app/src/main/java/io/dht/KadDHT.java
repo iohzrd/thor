@@ -94,7 +94,9 @@ public class KadDHT implements Routing {
     public void init() {
         // Fill routing table with currently connected peers that are DHT servers
         for (Connection conn : host.getNetwork().getConnections()) {
-            peerFound(conn.secureSession().getRemoteId(), false, false);
+            PeerId peerId = conn.secureSession().getRemoteId();
+            routingTable.addLatency(peerId, 0L);
+            peerFound(peerId, false, false);
         }
     }
 
@@ -102,6 +104,8 @@ public class KadDHT implements Routing {
 // supporting the primary protocols, we do not want to add peers that are speaking obsolete secondary protocols to our
 // routing table
     boolean validRTPeer(PeerId p) {
+
+
         /* TODO
         b, err := dht.peerstore.FirstSupportedProtocol(p, dht.protocolsStrs...)
         if len(b) == 0 || err != nil {
@@ -128,9 +132,7 @@ public class KadDHT implements Routing {
     void peerFound(PeerId p, boolean queryPeer, boolean isReplaceable) {
 
         try {
-            boolean b = validRTPeer(p);
-
-            if (b) {
+            if (validRTPeer(p)) {
                 addPeerToRTChan(p, queryPeer, isReplaceable);
             }
         } catch (Throwable throwable) {
@@ -142,7 +144,7 @@ public class KadDHT implements Routing {
     private void addPeerToRTChan(PeerId peerId, boolean queryPeer, boolean isReplaceable) {
 
         try {
-            boolean newlyAdded = routingTable.TryAddPeer(peerId, queryPeer, isReplaceable);
+            boolean newlyAdded = routingTable.addPeer(peerId, queryPeer, isReplaceable);
 
             if (!newlyAdded && queryPeer) {
                 // the peer is already in our RT, but we just successfully queried it and so let's give it a
@@ -601,7 +603,7 @@ public class KadDHT implements Routing {
                         throw new ConnectionIssue();
                     }
                     if (cause instanceof NonCompleteException) {
-                        throw new ConnectionFailure();
+                        throw new ConnectionIssue();
                     }
                     if (cause instanceof ConnectionClosedException) {
                         throw new ConnectionFailure();
@@ -613,7 +615,7 @@ public class KadDHT implements Routing {
                 LogUtils.error(TAG, throwable);
                 throw new RuntimeException(throwable); // TODO
             } finally {
-                routingTable.metrics.put(p, System.currentTimeMillis() - start);
+                routingTable.addLatency(p, System.currentTimeMillis() - start);
             }
         }
     }

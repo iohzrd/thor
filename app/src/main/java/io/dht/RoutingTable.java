@@ -18,12 +18,23 @@ public class RoutingTable {
     private static final String TAG = RoutingTable.class.getSimpleName();
     private final ID local;  // ID of the local peer
     private final CopyOnWriteArrayList<Bucket> buckets = new CopyOnWriteArrayList<>();
-    public final ConcurrentHashMap<PeerId, Long> metrics = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<PeerId, Long> metrics = new ConcurrentHashMap<>();
     // Maximum acceptable latency for peers in this cluster
     public final long maxLatency = Duration.ofMinutes(1).toMillis();
 
     private final int bucketsize;
 
+    public long getLatency(@NonNull PeerId peerId) {
+        Long duration = metrics.get(peerId);
+        if (duration != null) {
+            return duration;
+        }
+        return Long.MAX_VALUE;
+    }
+
+    public void addLatency(@NonNull PeerId peerId, long latency) {
+        metrics.put(peerId, latency);
+    }
 
     public RoutingTable(int bucketsize, @NonNull ID local) {
         this.bucketsize = bucketsize;
@@ -112,9 +123,7 @@ public class RoutingTable {
         return tot;
     }
 
-    public boolean TryAddPeer(PeerId p, boolean queryPeer, boolean isReplaceable) {
-        return addPeer(p, queryPeer, isReplaceable);
-    }
+
 
     private int bucketIdForPeer(@NonNull PeerId p) {
         ID peerID = Util.ConvertPeerID(p);
@@ -133,11 +142,10 @@ public class RoutingTable {
         return bucketID;
     }
 
-    // locking is the responsibility of the caller
-    private boolean addPeer(PeerId p, boolean queryPeer, boolean isReplaceable) {
-
+    public boolean addPeer(PeerId p, boolean queryPeer, boolean isReplaceable) {
 
         synchronized (p.toBase58().intern()) {
+            long latency = getLatency(p);
             int bucketID = bucketIdForPeer(p);
             Bucket bucket = buckets.get(bucketID);
 
@@ -150,8 +158,11 @@ public class RoutingTable {
             // peer already exists in the Routing Table.
             Bucket.PeerInfo peer = bucket.getPeer(p);
             if (peer != null) {
+                peer.setLatency(latency);
+
                 // if we're querying the peer first time after adding it, let's give it a
                 // usefulness bump. This will ONLY happen once.
+
                 if (peer.LastUsefulAt == 0 && queryPeer) {
                     peer.LastUsefulAt = lastUsefulAt;
                 }
@@ -159,13 +170,12 @@ public class RoutingTable {
             }
 
             // peer's latency threshold is NOT acceptable
-            Long duration = metrics.get(p);
-            if (duration != null) {
-                if (duration > maxLatency) {
-                    // Connection doesnt meet requirements, skip!
-                    return false;
-                }
+
+            if (latency > maxLatency) {
+                // Connection doesnt meet requirements, skip!
+                return false;
             }
+
 
         /* TODO maybe
             // add it to the diversity filter for now.
@@ -179,7 +189,7 @@ public class RoutingTable {
 
             // We have enough space in the bucket (whether spawned or grouped).
             if (bucket.size() < bucketsize) {
-                bucket.addPeer(p, isReplaceable, lastUsefulAt, now);
+                bucket.addPeer(p, latency, isReplaceable, lastUsefulAt, now);
                 // TODO PeerAdded(p); (notification func)
                 return true;
             }
@@ -193,7 +203,7 @@ public class RoutingTable {
 
                 // push the peer only if the bucket isn't overflowing after slitting
                 if (bucket.size() < bucketsize) {
-                    bucket.addPeer(p, isReplaceable, lastUsefulAt, now);
+                    bucket.addPeer(p, latency, isReplaceable, lastUsefulAt, now);
                     // TODO PeerAdded(p); (notification func)
                     return true;
                 }
@@ -203,13 +213,28 @@ public class RoutingTable {
             // in that bucket which is replaceable.
             // we don't really need a stable sort here as it dosen't matter which peer we evict
             // as long as it's a replaceable peer.
-            Bucket.PeerInfo replaceablePeer = bucket.min((p1, p2) -> p1.isReplaceable());
+            Bucket.PeerInfo replaceablePeer = bucket.weakest(((p1, p2) -> {
+                boolean result;
+                if (p1.isReplaceable()) {
+                    if (p2.isReplaceable()) {
+                        result = p1.getLatency() < p2.getLatency();
+                    } else {
+                        result = true;
+                    }
+                } else {
+                    if (p2.isReplaceable()) {
+                        result = false;
+                    } else {
+                        result = p1.getLatency() < p2.getLatency();
+                    }
+                }
+                return result;
+            }));
 
             if (replaceablePeer != null && replaceablePeer.isReplaceable()) {
                 // let's evict it and add the new peer
                 if (removePeer(replaceablePeer.getPeerId())) {
-                    bucket.addPeer(p, isReplaceable, lastUsefulAt, now); // add new peer
-                    // TODO PeerAdded(p); (notification func)
+                    bucket.addPeer(p, latency, isReplaceable, lastUsefulAt, now); // add new peer
                     return true;
                 }
             }

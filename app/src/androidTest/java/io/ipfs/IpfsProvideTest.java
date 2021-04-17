@@ -44,14 +44,14 @@ public class IpfsProvideTest {
         try {
             ipfs.provide(new TimeoutCloseable(120), cid);
             fail();
-        } catch (ClosedException ignore){
+        } catch (ClosedException ignore) {
             // ignore
         }
-        LogUtils.error(TAG, "Time provide " +  (System.currentTimeMillis() - start));
+        LogUtils.error(TAG, "Time provide " + (System.currentTimeMillis() - start));
 
         long time = System.currentTimeMillis();
         List<String> provs = new ArrayList<>();
-        ipfs.findProviders(()-> false, addrInfo -> provs.add(addrInfo.getPeerId().toBase58()), cid);
+        ipfs.findProviders(() -> false, addrInfo -> provs.add(addrInfo.getPeerId().toBase58()), cid);
         for (String prov : provs) {
             LogUtils.error(TAG, "Provider " + prov);
         }
