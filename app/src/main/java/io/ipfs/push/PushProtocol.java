@@ -1,4 +1,4 @@
-package io.ipfs.bitswap;
+package io.ipfs.push;
 
 import androidx.annotation.NonNull;
 
@@ -10,7 +10,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executors;
 
 import io.LogUtils;
 import io.ipfs.multihash.Multihash;
@@ -26,14 +25,13 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import kotlin.NotImplementedError;
 
-public class BitSwapProtocol implements ProtocolBinding<BitSwapProtocol.BitSwapController> {
-    private static final String TAG = BitSwapProtocol.class.getSimpleName();
-    private final String protocol;
-    private final BitSwapReceiver bitswapReceiver;
+public class PushProtocol implements ProtocolBinding<PushProtocol.PushController> {
+    private static final String TAG = PushProtocol.class.getSimpleName();
+    private final String protocol = "/ipfs/push/1.0.0";
+    private final PushReceiver pushReceiver;
 
-    public BitSwapProtocol(@NonNull BitSwapReceiver bitswapReceiver, @NonNull String protocol) {
-        this.protocol = protocol;
-        this.bitswapReceiver = bitswapReceiver;
+    public PushProtocol(@NonNull PushReceiver pushReceiver) {
+        this.pushReceiver = pushReceiver;
     }
 
     @NotNull
@@ -44,13 +42,13 @@ public class BitSwapProtocol implements ProtocolBinding<BitSwapProtocol.BitSwapC
 
     @NotNull
     @Override
-    public CompletableFuture<BitSwapController> initChannel(@NotNull P2PChannel ch, @NotNull String selectedProtocol) {
-        CompletableFuture<BitSwapController> ret = new CompletableFuture<>();
+    public CompletableFuture<PushController> initChannel(@NotNull P2PChannel ch, @NotNull String selectedProtocol) {
+        CompletableFuture<PushController> ret = new CompletableFuture<>();
         ChannelHandler handler;
         if (ch.isInitiator()) {
             handler = new ClientHandler((Stream) ch, ret);
         } else {
-            handler = new ServerHandler((Stream) ch, bitswapReceiver);
+            handler = new ServerHandler((Stream) ch, pushReceiver);
         }
 
         ch.pushHandler(handler);
@@ -58,23 +56,23 @@ public class BitSwapProtocol implements ProtocolBinding<BitSwapProtocol.BitSwapC
     }
 
 
-    public interface BitSwapController {
-        void sendRequest(@NonNull BitSwapMessage pmes) throws NotImplementedError;
+    public interface PushController {
+        boolean push(@NonNull String message) throws NotImplementedError;
     }
 
-    abstract static class DhtHandler extends SimpleChannelInboundHandler<ByteBuf> implements BitSwapController {
+    abstract static class DhtHandler extends SimpleChannelInboundHandler<ByteBuf> implements PushController {
     }
 
     private static class ServerHandler extends DhtHandler {
-        private final BitSwapReceiver bitswapReceiver;
+        private final PushReceiver pushReceiver;
         private final Stream stream;
         private final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         private long expectedLength;
 
 
-        private ServerHandler(@NonNull Stream stream, @NonNull BitSwapReceiver bitswapReceiver) {
+        private ServerHandler(@NonNull Stream stream, @NonNull PushReceiver pushReceiver) {
             this.stream = stream;
-            this.bitswapReceiver = bitswapReceiver;
+            this.pushReceiver = pushReceiver;
         }
 
         public static long copy(InputStream source, OutputStream sink) throws IOException {
@@ -90,22 +88,17 @@ public class BitSwapProtocol implements ProtocolBinding<BitSwapProtocol.BitSwapC
 
         public boolean acceptInboundMessage(Object msg) throws Exception {
             try {
-                return !bitswapReceiver.GatePeer(stream.remotePeerId());
+                return pushReceiver.acceptPusher(stream.remotePeerId());
             } catch (Throwable ignore) {
                 return super.acceptInboundMessage(msg);
             }
         }
 
-        @Override
-        public void sendRequest(@NonNull BitSwapMessage message) throws NotImplementedError {
-            throw new NotImplementedError();
-        }
 
         @Override
         public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
                 throws Exception {
-            bitswapReceiver.ReceiveError(stream.remotePeerId(),
-                    stream.getProtocol().get(), " " + cause.getMessage());
+            LogUtils.error(TAG, cause);
         }
 
         @Override
@@ -125,10 +118,7 @@ public class BitSwapProtocol implements ProtocolBinding<BitSwapProtocol.BitSwapC
                 }
 
                 if (buffer.size() >= expectedLength) {
-                    BitSwapMessage received = BitSwapMessage.fromData(buffer.toByteArray());
-                    String protocol = stream.getProtocol().get();
-                    Executors.newSingleThreadExecutor().execute(
-                            () -> bitswapReceiver.ReceiveMessage(stream.remotePeerId(), protocol, received));
+                    pushReceiver.pushMessage(stream.remotePeerId(), buffer.toByteArray());
                     buffer.close();
                     ctx.close();
                 }
@@ -138,13 +128,18 @@ public class BitSwapProtocol implements ProtocolBinding<BitSwapProtocol.BitSwapC
                 throw new RuntimeException(throwable);
             }
         }
+
+        @Override
+        public boolean push(@NonNull String message) throws NotImplementedError {
+            throw new NotImplementedError();
+        }
     }
 
     private static class ClientHandler extends DhtHandler {
-        private final CompletableFuture<BitSwapController> activationFut;
+        private final CompletableFuture<PushController> activationFut;
         private final Stream stream;
 
-        public ClientHandler(@NonNull Stream stream, @NonNull CompletableFuture<BitSwapController> fut) {
+        public ClientHandler(@NonNull Stream stream, @NonNull CompletableFuture<PushController> fut) {
             this.stream = stream;
             this.activationFut = fut;
         }
@@ -166,22 +161,27 @@ public class BitSwapProtocol implements ProtocolBinding<BitSwapProtocol.BitSwapC
             activationFut.completeExceptionally(cause);
         }
 
-        @Override
-        public void sendRequest(@NonNull BitSwapMessage pmes) throws NotImplementedError {
-            try {
-                byte[] data = pmes.ToNetV1();
-                stream.writeAndFlush(Unpooled.buffer().writeBytes(data));
-                stream.closeWrite().get();
-            } catch (Throwable throwable) {
-                LogUtils.error(TAG, throwable);
-                throw new NotImplementedError("" + throwable.getMessage());
-            }
-        }
 
         @Override
         protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
             LogUtils.error(TAG, "TODO channel read ");
             throw new RuntimeException("TODO maybe");
+        }
+
+        @Override
+        public boolean push(@NonNull String message) throws NotImplementedError {
+            byte[] data = message.getBytes();
+            try (ByteArrayOutputStream buf = new ByteArrayOutputStream()) {
+                Multihash.putUvarint(buf, data.length);
+                buf.write(data);
+                stream.writeAndFlush(Unpooled.buffer().writeBytes(buf.toByteArray()));
+                stream.closeWrite().get();
+                return true;
+            } catch (Throwable throwable) {
+                LogUtils.error(TAG, throwable);
+                return false;
+            }
+
         }
     }
 }

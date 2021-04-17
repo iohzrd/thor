@@ -1,4 +1,4 @@
-package io.ipfs.bitswap;
+package io.ipfs;
 
 import androidx.annotation.NonNull;
 
@@ -20,7 +20,9 @@ import io.core.ConnectionIssue;
 import io.core.ProtocolIssue;
 import io.dht.Channel;
 import io.dht.Routing;
-import io.ipfs.IPFS;
+import io.ipfs.bitswap.BitSwapMessage;
+import io.ipfs.bitswap.BitSwapNetwork;
+import io.ipfs.bitswap.BitSwapProtocol;
 import io.ipfs.cid.Cid;
 import io.libp2p.AddrInfo;
 import io.libp2p.core.Connection;
@@ -76,6 +78,11 @@ public class LiteHost implements BitSwapNetwork {
         }
 
         return peerIds;
+    }
+
+    @Override
+    public PeerId Self() {
+        return host.getPeerId();
     }
 
 

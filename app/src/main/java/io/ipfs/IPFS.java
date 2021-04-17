@@ -24,12 +24,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -46,8 +46,7 @@ import io.ipfs.bitswap.BitSwap;
 import io.ipfs.bitswap.BitSwapMessage;
 import io.ipfs.bitswap.BitSwapNetwork;
 import io.ipfs.bitswap.BitSwapProtocol;
-import io.ipfs.bitswap.LiteHost;
-import io.ipfs.bitswap.Receiver;
+import io.ipfs.bitswap.BitSwapReceiver;
 import io.ipfs.cid.Cid;
 import io.ipfs.exchange.Interface;
 import io.ipfs.format.BlockStore;
@@ -55,6 +54,8 @@ import io.ipfs.format.Node;
 import io.ipfs.multibase.Base58;
 import io.ipfs.multibase.Multibase;
 import io.ipfs.multihash.Multihash;
+import io.ipfs.push.PushProtocol;
+import io.ipfs.push.PushReceiver;
 import io.ipfs.utils.Link;
 import io.ipfs.utils.LinkCloseable;
 import io.ipfs.utils.Progress;
@@ -84,7 +85,7 @@ import io.libp2p.transport.tcp.TcpTransport;
 import io.protos.ipns.IpnsProtos;
 import threads.thor.core.blocks.BLOCKS;
 
-public class IPFS implements Receiver {
+public class IPFS implements BitSwapReceiver, PushReceiver {
     // TimeFormatIpfs is the format ipfs uses to represent time in string form
     // RFC3339Nano = "2006-01-02T15:04:05.999999999Z07:00"
     public static final String TimeFormatIpfs = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSS'Z'";
@@ -168,7 +169,7 @@ public class IPFS implements Receiver {
     private final Routing routing;
     private final Host host;
     private final PrivKey privateKey;
-
+    private Pusher pusher;
     private boolean running;
     private final int port;
 
@@ -1139,11 +1140,9 @@ func ToCid(id ID) cid.Cid {
         AtomicReference<ResolvedName> resolvedName = new AtomicReference<>(null);
         try {
             AtomicLong timeout = new AtomicLong(System.currentTimeMillis() + RESOLVE_MAX_TIME);
-            AtomicBoolean abort = new AtomicBoolean(false);
 
-            // TODO set timeout again
             Stream.ResolveName(() -> (timeout.get() < System.currentTimeMillis())
-                    || abort.get() || closeable.isClosed(), routing, new ResolveInfo() {
+                    || closeable.isClosed(), routing, new ResolveInfo() {
 
                 private void setName(@NonNull String hash, long sequence) {
                     resolvedName.set(new ResolvedName(sequence,
@@ -1163,17 +1162,18 @@ func ToCid(id ID) cid.Cid {
                                 (System.currentTimeMillis() - time));
 
                         if (seq < last) {
-                            abort.set(true);
-                            return; // newest value already available
+                            // newest value already available
+                            throw new ClosedException();
+
                         }
-                        if (!abort.get()) {
-                            if (hash.startsWith(IPFS_PATH)) {
-                                timeout.set(System.currentTimeMillis() + RESOLVE_TIMEOUT);
-                                setName(hash, seq);
-                            } else {
-                                LogUtils.error(TAG, "invalid hash " + hash);
-                            }
+
+                        if (hash.startsWith(IPFS_PATH)) {
+                            timeout.set(System.currentTimeMillis() + RESOLVE_TIMEOUT);
+                            setName(hash, seq);
+                        } else {
+                            LogUtils.error(TAG, "invalid hash " + hash);
                         }
+
                     } catch (Throwable throwable) {
                         LogUtils.error(TAG, throwable);
                     }
@@ -1271,6 +1271,63 @@ func ToCid(id ID) cid.Cid {
         return false;
     }
 
+    public boolean notify(@NonNull String pid, @NonNull String content) {
+        if (!isDaemonRunning()) {
+            return false;
+        }
+        try {
+            synchronized (pid.intern()) {
+
+                PeerId peerId = PeerId.fromBase58(pid); // TODO
+                CompletableFuture<Object> ctrl = host.newStream(
+                        Collections.singletonList(IPFS.ProtocolBitswap), peerId).getController();
+                Object object = ctrl.get(3, TimeUnit.SECONDS); // TODO timeout
+                //Object object = ctrl.get();
+
+                PushProtocol.PushController controller = (PushProtocol.PushController) object;
+                return controller.push(content);
+
+            }
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable);
+        }
+        return false;
+    }
+
+    public void push(String pid, String content) {
+        try {
+            // CID and PID are both valid objects (code done in go)
+            Objects.requireNonNull(pid);
+            Objects.requireNonNull(content);
+            if (pusher != null) {
+                ExecutorService executor = Executors.newSingleThreadExecutor();
+                executor.submit(() -> pusher.push(pid, content));
+            }
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable);
+        }
+
+    }
+
+    public void setPusher(@Nullable Pusher pusher) {
+        this.pusher = pusher;
+    }
+
+    @Override
+    public boolean acceptPusher(@NonNull PeerId remotePeerId) {
+        return false; // TODO adapt for implementation
+    }
+
+    @Override
+    public void pushMessage(@NonNull PeerId remotePeerId, @NonNull byte[] toByteArray) {
+        if (pusher != null) {
+            push(remotePeerId.toBase58(), new String(toByteArray));
+        }
+    }
+
+    public interface Pusher {
+        void push(@NonNull String pid, @NonNull String cid);
+    }
 
     public static class ResolvedName {
         private final long sequence;
