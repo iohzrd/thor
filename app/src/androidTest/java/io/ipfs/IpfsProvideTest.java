@@ -43,7 +43,6 @@ public class IpfsProvideTest {
         long start = System.currentTimeMillis();
         try {
             ipfs.provide(new TimeoutCloseable(120), cid);
-            fail();
         } catch (ClosedException ignore) {
             // ignore
         }

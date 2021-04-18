@@ -38,6 +38,7 @@ import io.core.Validator;
 import io.ipfs.IPFS;
 import io.ipfs.cid.Cid;
 import io.libp2p.AddrInfo;
+import io.libp2p.HostBuilder;
 import io.libp2p.core.Connection;
 import io.libp2p.core.ConnectionClosedException;
 import io.libp2p.core.Host;
@@ -419,8 +420,7 @@ public class KadDHT implements Routing {
     private Dht.Message makeProvRecord(@NonNull byte[] key) {
 
 
-        // TODO this is not correct
-        List<Multiaddr> addresses = host.listenAddresses();
+        List<Multiaddr> addresses = HostBuilder.listenAddresses(host);
         if (addresses.isEmpty()) {
             throw new RuntimeException("no known addresses for self, cannot put provider");
         }

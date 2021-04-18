@@ -15,12 +15,15 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
 import java.net.ServerSocket;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.Callable;
@@ -77,6 +80,7 @@ import io.libp2p.core.crypto.PubKey;
 import io.libp2p.core.multiformats.Multiaddr;
 import io.libp2p.core.multiformats.Protocol;
 import io.libp2p.core.mux.StreamMuxerProtocol;
+import io.libp2p.core.transport.Transport;
 import io.libp2p.crypto.keys.Ed25519Kt;
 import io.libp2p.protocol.Identify;
 import io.libp2p.security.noise.NoiseXXSecureChannel;
@@ -211,6 +215,14 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
         privateKey = Ed25519Kt.unmarshalEd25519PrivateKey(data);
 
 
+        // TODO shit not really working for IPv6 and IPv4
+        // best would be that just the port is given
+        // together with the transport the services can
+        // be run (anouncing the public adderesses to other KAD
+        // should be done dynamacially with information
+        // from other peers
+        String address = HostBuilder.getLocalIpAddress();
+
         host = new HostBuilder()
                 .protocol(new Identify(), new DhtProtocol(),
                         new BitSwapProtocol(this, ProtocolBitswap))
@@ -218,7 +230,7 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
                 .transport(TcpTransport::new) // TODO QUIC Transport when available
                 .secureChannel(NoiseXXSecureChannel::new, SecIoSecureChannel::new) // TODO add TLS when available, and remove Secio
                 .muxer(StreamMuxerProtocol::getMplex)
-                .listen("/ip4/127.0.0.1/tcp/" + port  /* TODO QUIC + IPV6,
+                .listen("/ip4/"+address+"/tcp/" + port  /* TODO QUIC + IPV6,
                         "/ip6/::/tcp/"+ port,
                         "/ip4/0.0.0.0/udp/"+port+"/quic",
                         "/ip6/::/udp/"+port+"/quic"*/)
@@ -242,8 +254,7 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
 
     @NonNull
     public List<Multiaddr> listenAddresses(){
-        return host.listenAddresses();
-
+        return HostBuilder.listenAddresses(host);
     }
     public int getPort(){
         return port;
@@ -258,7 +269,6 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
     public void ReceiveError(@NonNull PeerId peer, @NonNull String protocol, @NonNull String error) {
         exchange.ReceiveError(peer, protocol, error);
     }
-
 
     @Nullable
     public String storeFile(@NonNull File target) {
