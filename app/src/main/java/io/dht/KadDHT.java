@@ -419,6 +419,7 @@ public class KadDHT implements Routing {
     private Dht.Message makeProvRecord(@NonNull byte[] key) {
 
 
+        // TODO this is not correct
         List<Multiaddr> addresses = host.listenAddresses();
         if (addresses.isEmpty()) {
             throw new RuntimeException("no known addresses for self, cannot put provider");

@@ -18,6 +18,7 @@ import io.LogUtils;
 import io.core.ClosedException;
 import io.core.TimeoutCloseable;
 import io.ipfs.utils.Link;
+import io.libp2p.core.multiformats.Multiaddr;
 
 import static junit.framework.TestCase.assertNotNull;
 import static org.junit.Assert.assertEquals;
@@ -33,6 +34,20 @@ public class IpfsTest {
     @BeforeClass
     public static void setup() {
         context = ApplicationProvider.getApplicationContext();
+    }
+
+    @Test
+    public void test_listenAddresses() {
+        IPFS ipfs = TestEnv.getTestInstance(context);
+
+        List<Multiaddr> result = ipfs.listenAddresses();
+        assertNotNull(result);
+        for (Multiaddr ma:result) {
+            LogUtils.error(TAG, ma.toString());
+        }
+
+        // TODO test is not correct (listen addresses should be improved)
+        fail();
     }
 
 

@@ -90,19 +90,18 @@ public class DhtProtocol implements ProtocolBinding<DhtProtocol.DhtController> {
         }
 
         @Override
-        public void channelActive(ChannelHandlerContext ctx) throws Exception {
+        public void channelActive(ChannelHandlerContext ctx) {
             activationFut.complete(this);
         }
 
         @Override
-        public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
+        public void channelUnregistered(ChannelHandlerContext ctx) {
             activationFut.completeExceptionally(new ConnectionClosedException());
             resFuture.completeExceptionally(new ConnectionClosedException());
         }
 
         @Override
-        public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
-                throws Exception {
+        public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
             LogUtils.error(TAG, cause);
             activationFut.completeExceptionally(cause);
             resFuture.completeExceptionally(cause);
@@ -152,7 +151,7 @@ public class DhtProtocol implements ProtocolBinding<DhtProtocol.DhtController> {
         }
 
         @Override
-        protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
+        protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) {
             try {
                 if (buffer.size() > 0) {
                     msg.readBytes(buffer, msg.readableBytes());

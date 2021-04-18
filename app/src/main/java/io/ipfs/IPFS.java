@@ -239,6 +239,12 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
         setPeerID(context, getPeerID());
 
     }
+
+    @NonNull
+    public List<Multiaddr> listenAddresses(){
+        return host.listenAddresses();
+
+    }
     public int getPort(){
         return port;
     }
