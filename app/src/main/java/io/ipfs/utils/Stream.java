@@ -13,7 +13,6 @@ import java.util.Objects;
 
 import io.core.Closeable;
 import io.core.ClosedException;
-import io.dht.ResolveInfo;
 import io.dht.Routing;
 import io.ipfs.IPFS;
 import io.ipfs.blockservice.BlockService;
@@ -55,7 +54,7 @@ public class Stream {
 
     public static void ResolveName(@NonNull Closeable closeable,
                                    @NonNull Routing routing,
-                                   @NonNull ResolveInfo info,
+                                   @NonNull Routing.ResolveInfo info,
                                    @NonNull PeerId id,
                                    int dhtRecords) throws ClosedException {
 

@@ -93,8 +93,7 @@ public class ContentManager {
         Executors.newSingleThreadExecutor().execute(() -> {
             long begin = System.currentTimeMillis();
             try {
-                network.FindProvidersAsync(closeable, addrInfo -> {
-                    PeerId peer = addrInfo.getPeerId();
+                network.FindProviders(closeable, peer -> {
 
                     if (!faulty.contains(peer)) {
                         WANTS.execute(() -> {
@@ -106,7 +105,7 @@ public class ContentManager {
 
                                     if (network.ConnectTo(() -> closeable.isClosed()
                                                     || ((System.currentTimeMillis() - start) > TIMEOUT),
-                                            addrInfo, true)) {
+                                            peer, true)) {
                                         if (matches.containsKey(cid)) { // check still valid
                                             LogUtils.error(TAG, "Found New Provider " + peer.toBase58()
                                                     + " for " + cid.String());
@@ -117,7 +116,7 @@ public class ContentManager {
                                         LogUtils.error(TAG, "Provider Peer Connection Failed " +
                                                 peer.toBase58());
                                     }
-                                } catch (ClosedException ignore) {
+                                } catch (ClosedException | ConnectionIssue ignore) {
                                     // ignore
                                 } catch (Throwable throwable) {
                                     LogUtils.error(TAG, throwable);
@@ -348,8 +347,8 @@ public class ContentManager {
                 long start = System.currentTimeMillis();
                 try {
 
-                    network.FindProvidersAsync(closeable, addrInfo -> {
-                        PeerId peer = addrInfo.getPeerId();
+                    network.FindProviders(closeable, peer -> {
+
                         try {
                             LogUtils.error(TAG, "Load Provider " + peer.toBase58() + " for " + cid.String());
 
@@ -357,7 +356,7 @@ public class ContentManager {
                                 try {
                                     if (network.ConnectTo(() -> closeable.isClosed()
                                                     || ((System.currentTimeMillis() - start) > TIMEOUT),
-                                            addrInfo, true)) {
+                                            peer, true)) {
                                         LogUtils.error(TAG, "Load Provider Found " + peer.toBase58()
                                                 + " for " + cid.String());
                                         peers.add(peer);
@@ -366,7 +365,7 @@ public class ContentManager {
                                         LogUtils.error(TAG, "Load Provider Connection Failed " +
                                                 peer.toBase58());
                                     }
-                                } catch (ClosedException ignore) {
+                                } catch (ClosedException | ConnectionIssue ignore) {
                                 } catch (Throwable throwable) {
                                     LogUtils.error(TAG, "Load Provider Failed " +
                                             throwable.getLocalizedMessage());

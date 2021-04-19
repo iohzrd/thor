@@ -12,19 +12,19 @@ import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.LogUtils;
 import io.core.ClosedException;
 import io.core.TimeoutCloseable;
 
-import static junit.framework.TestCase.assertFalse;
+import static junit.framework.TestCase.assertTrue;
 import static junit.framework.TestCase.assertNotNull;
-import static junit.framework.TestCase.fail;
 
 @SuppressWarnings("SpellCheckingInspection")
 @RunWith(AndroidJUnit4.class)
 public class IpfsProvideTest {
-    private static final String TAG = IpfsResolveTest.class.getSimpleName();
+    private static final String TAG = IpfsProvideTest.class.getSimpleName();
     private static Context context;
 
     @BeforeClass
@@ -42,19 +42,18 @@ public class IpfsProvideTest {
 
         long start = System.currentTimeMillis();
         try {
-            ipfs.provide(new TimeoutCloseable(120), cid);
+            ipfs.provide(new TimeoutCloseable(30), cid);
         } catch (ClosedException ignore) {
-            // ignore
         }
         LogUtils.error(TAG, "Time provide " + (System.currentTimeMillis() - start));
 
         long time = System.currentTimeMillis();
-        List<String> provs = new ArrayList<>();
-        ipfs.findProviders(() -> false, addrInfo -> provs.add(addrInfo.getPeerId().toBase58()), cid);
-        for (String prov : provs) {
-            LogUtils.error(TAG, "Provider " + prov);
+        AtomicBoolean finished = new AtomicBoolean(false);
+        try {
+            ipfs.findProviders(finished::get, peerId -> finished.set(true), cid);
+        } catch (ClosedException ignore) {
         }
         LogUtils.error(TAG, "Time Providers : " + (System.currentTimeMillis() - time) + " [ms]");
-        assertFalse(provs.isEmpty());
+        assertTrue(finished.get());
     }
 }

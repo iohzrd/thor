@@ -40,7 +40,7 @@ public class IpfsCatTest {
         String cid = "Qmaisz6NMhDB51cCvNWa1GMS7LU1pAxdF4Ld6Ft9kZEP2a";
         long time = System.currentTimeMillis();
         List<String> provs = new ArrayList<>();
-        ipfs.findProviders(() -> false, addrInfo -> provs.add(addrInfo.getPeerId().toBase58()), cid);
+        ipfs.findProviders(() -> false, peerId -> provs.add(peerId.toBase58()), cid);
         for (String prov : provs) {
             LogUtils.error(TAG, "Provider " + prov);
         }

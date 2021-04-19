@@ -15,15 +15,12 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.InetAddress;
-import java.net.NetworkInterface;
 import java.net.ServerSocket;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.Callable;
@@ -40,10 +37,8 @@ import io.LogUtils;
 import io.core.Closeable;
 import io.core.ClosedException;
 import io.core.TimeoutCloseable;
-import io.dht.Channel;
 import io.dht.DhtProtocol;
 import io.dht.KadDHT;
-import io.dht.ResolveInfo;
 import io.dht.Routing;
 import io.ipfs.bitswap.BitSwap;
 import io.ipfs.bitswap.BitSwapMessage;
@@ -68,7 +63,6 @@ import io.ipfs.utils.ReaderStream;
 import io.ipfs.utils.Resolver;
 import io.ipfs.utils.Stream;
 import io.ipns.Ipns;
-import io.libp2p.AddrInfo;
 import io.libp2p.HostBuilder;
 import io.libp2p.core.Connection;
 import io.libp2p.core.Host;
@@ -80,7 +74,6 @@ import io.libp2p.core.crypto.PubKey;
 import io.libp2p.core.multiformats.Multiaddr;
 import io.libp2p.core.multiformats.Protocol;
 import io.libp2p.core.mux.StreamMuxerProtocol;
-import io.libp2p.core.transport.Transport;
 import io.libp2p.crypto.keys.Ed25519Kt;
 import io.libp2p.protocol.Identify;
 import io.libp2p.security.noise.NoiseXXSecureChannel;
@@ -221,8 +214,9 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
         // be run (anouncing the public adderesses to other KAD
         // should be done dynamacially with information
         // from other peers
-        String address = HostBuilder.getLocalIpAddress();
+        //String address = HostBuilder.getLocalIpAddress();
 
+        //  TODO QUIC and IPV6
         host = new HostBuilder()
                 .protocol(new Identify(), new DhtProtocol(),
                         new BitSwapProtocol(this, ProtocolBitswap))
@@ -230,7 +224,8 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
                 .transport(TcpTransport::new) // TODO QUIC Transport when available
                 .secureChannel(NoiseXXSecureChannel::new, SecIoSecureChannel::new) // TODO add TLS when available, and remove Secio
                 .muxer(StreamMuxerProtocol::getMplex)
-                .listen("/ip4/"+address+"/tcp/" + port  /* TODO QUIC + IPV6,
+                .listen("/ip4/0.0.0.0/tcp/" + port /*,,
+                        "/ip4/0.0.0.0/udp/" + port+ "/quic"
                         "/ip6/::/tcp/"+ port,
                         "/ip4/0.0.0.0/udp/"+port+"/quic",
                         "/ip6/::/udp/"+port+"/quic"*/)
@@ -802,19 +797,15 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
 
         Multiaddr multiaddr = new Multiaddr(multiAddress);
         try {
-            return host.getNetwork().connect(multiaddr).get() != null;
+            CompletableFuture<Connection> fdf = host.getNetwork().connect(multiaddr);
+            return fdf.get() != null;
         } catch (Throwable e) {
             LogUtils.error(TAG, multiaddr + " " + e.getMessage());
             try {
                 if (multiAddress.startsWith(IPFS.P2P_PATH)) {
                     String pid = multiaddr.getStringComponent(Protocol.P2P);
                     Objects.requireNonNull(pid);
-                    AddrInfo addr = routing.FindPeer(closeable, PeerId.fromBase58(pid));
-                    if(addr != null) {
-                        return host.getNetwork().connect(addr.getPeerId(),
-                                addr.getAddresses())
-                                .get() != null;
-                    }
+                    return routing.FindPeer(closeable, decode(pid));
                 }
             } catch (ClosedException closedException) {
                 throw closedException;
@@ -929,15 +920,15 @@ func ToCid(id ID) cid.Cid {
         }
     }
 
-    // TODO cleanup names
-    public void findProviders(@NonNull Closeable closeable, @NonNull Channel channel,
-                              @NonNull String cid ) throws ClosedException {
+
+    public void findProviders(@NonNull Closeable closeable, @NonNull Routing.Providers providers,
+                              @NonNull String cid) throws ClosedException {
         if (!isDaemonRunning()) {
             return;
         }
 
         try {
-            routing.FindProviders(closeable, channel, Cid.Decode(cid));
+            routing.FindProviders(closeable, providers, Cid.Decode(cid));
         } catch (ClosedException closedException) {
             throw closedException;
         } catch (Throwable throwable) {
@@ -954,7 +945,7 @@ func ToCid(id ID) cid.Cid {
             return null;
         }
         try {
-            return host.getNetwork().connect(PeerId.fromBase58(pid)).get().remoteAddress();
+            return host.getNetwork().connect(decode(pid)).get().remoteAddress();
         } catch (Throwable e) {
             LogUtils.error(TAG, e);
         }
@@ -1157,7 +1148,7 @@ func ToCid(id ID) cid.Cid {
             AtomicLong timeout = new AtomicLong(System.currentTimeMillis() + RESOLVE_MAX_TIME);
 
             Stream.ResolveName(() -> (timeout.get() < System.currentTimeMillis())
-                    || closeable.isClosed(), routing, new ResolveInfo() {
+                    || closeable.isClosed(), routing, new Routing.ResolveInfo() {
 
                 private void setName(@NonNull String hash, long sequence) {
                     resolvedName.set(new ResolvedName(sequence,
@@ -1278,12 +1269,7 @@ func ToCid(id ID) cid.Cid {
     }
 
     public boolean isConnected(@NonNull String pid) {
-        try {
-            return host.getNetwork().connect(decode(pid)).get() != null;
-        } catch (Throwable ignore) {
-            // ignore
-        }
-        return false;
+        return HostBuilder.isConnected(host, decode(pid));
     }
 
     public boolean notify(@NonNull String pid, @NonNull String content) {
@@ -1293,7 +1279,7 @@ func ToCid(id ID) cid.Cid {
         try {
             synchronized (pid.intern()) {
 
-                PeerId peerId = PeerId.fromBase58(pid); // TODO
+                PeerId peerId = decode(pid);
                 CompletableFuture<Object> ctrl = host.newStream(
                         Collections.singletonList(IPFS.ProtocolBitswap), peerId).getController();
                 Object object = ctrl.get(3, TimeUnit.SECONDS); // TODO timeout

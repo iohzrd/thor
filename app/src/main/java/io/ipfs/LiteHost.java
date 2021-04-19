@@ -2,15 +2,8 @@ package io.ipfs;
 
 import androidx.annotation.NonNull;
 
-import com.google.common.collect.Iterables;
-
-import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import io.LogUtils;
 import io.core.Closeable;
@@ -18,19 +11,17 @@ import io.core.ClosedException;
 import io.core.ConnectionFailure;
 import io.core.ConnectionIssue;
 import io.core.ProtocolIssue;
-import io.dht.Channel;
 import io.dht.Routing;
 import io.ipfs.bitswap.BitSwapMessage;
 import io.ipfs.bitswap.BitSwapNetwork;
 import io.ipfs.bitswap.BitSwapProtocol;
 import io.ipfs.cid.Cid;
-import io.libp2p.AddrInfo;
+import io.libp2p.HostBuilder;
 import io.libp2p.core.Connection;
 import io.libp2p.core.ConnectionClosedException;
 import io.libp2p.core.Host;
 import io.libp2p.core.NoSuchRemoteProtocolException;
 import io.libp2p.core.PeerId;
-import io.libp2p.core.multiformats.Multiaddr;
 import io.libp2p.etc.types.NonCompleteException;
 import io.libp2p.etc.types.NothingToCompleteException;
 import io.netty.handler.timeout.ReadTimeoutException;
@@ -54,19 +45,9 @@ public class LiteHost implements BitSwapNetwork {
     }
 
     @Override
-    public boolean ConnectTo(@NonNull Closeable closeable, @NonNull AddrInfo addrInfo, boolean protect) throws ClosedException {
-        try {
-            CompletableFuture<Connection> future = host.getNetwork().connect(
-                    addrInfo.getPeerId(), addrInfo.getAddresses());
-            // TODO closeable and timeout
-            return future.get() != null;
-        } catch (Throwable throwable) {
-            if (closeable.isClosed()) {
-                throw new ClosedException();
-            }
-            return false;
-        }
-
+    public boolean ConnectTo(@NonNull Closeable closeable, @NonNull PeerId peerId, boolean protect)
+            throws ClosedException, ConnectionIssue {
+        return HostBuilder.connect(closeable, host, peerId) != null;
     }
 
 
@@ -92,86 +73,50 @@ public class LiteHost implements BitSwapNetwork {
                              @NonNull BitSwapMessage message)
             throws ClosedException, ProtocolIssue, ConnectionFailure, ConnectionIssue {
 
-        synchronized (peer.toBase58().intern()) { // TODO rethink
-            try {
+        Connection con = HostBuilder.connect(closeable, host, peer);
+        try {
 
-                if (closeable.isClosed()) {
-                    throw new ClosedException();
-                }
-                Multiaddr[] addrs = null;
-                Collection<Multiaddr> addrInfo = host.getAddressBook().get(peer).get();
-                if (addrInfo != null) {
-                    addrs = Iterables.toArray(addrInfo, Multiaddr.class);
-                }
-                if(addrs != null) {
-                    host.getNetwork().connect(peer, addrs).get();
-                } else{
-                    host.getNetwork().connect(peer).get();
-                }
+            Object object = HostBuilder.stream(closeable, host, IPFS.ProtocolBitswap, con);
 
+            BitSwapProtocol.BitSwapController controller = (BitSwapProtocol.BitSwapController) object;
+            controller.sendRequest(message);
 
-                if (closeable.isClosed()) {
-                    throw new ClosedException();
-                }
-
-                CompletableFuture<Object> ctrl = host.newStream(
-                        Collections.singletonList(IPFS.ProtocolBitswap), peer).getController();
-                Object object = ctrl.get(IPFS.WRITE_TIMEOUT, TimeUnit.SECONDS); // TODO timeout
-                //Object object = ctrl.get();
-
-                if (closeable.isClosed()) {
-                    throw new ClosedException();
-                }
-
-                BitSwapProtocol.BitSwapController controller = (BitSwapProtocol.BitSwapController) object;
-                controller.sendRequest(message);
-
-            /* TODO timeout
-            long res = host.WriteMessage(closeable, peer, protocols, data, timeout);
-            if (Objects.equals(data.length, res)) {
-                throw new RuntimeException("Message not fully written");
-            }*/
-
-            } catch (ClosedException closedException) {
+        } catch (ClosedException exception) {
+            throw exception;
+        } catch (Throwable throwable) {
+            if (closeable.isClosed()) {
                 throw new ClosedException();
-            } catch (Throwable throwable) {
-                if (closeable.isClosed()) {
-                    throw new ClosedException();
+            }
+            Throwable cause = throwable.getCause();
+            if (cause != null) {
+                LogUtils.error(TAG, cause.getClass().getSimpleName());
+                if (cause instanceof NoSuchRemoteProtocolException) {
+                    throw new ProtocolIssue();
                 }
-                if(throwable instanceof TimeoutException){
-                    LogUtils.error(TAG, "Timeout excepiton");
+                if (cause instanceof NothingToCompleteException) {
+                    throw new ConnectionIssue();
+                }
+                if (cause instanceof NonCompleteException) {
+                    throw new ConnectionIssue();
+                }
+                if (cause instanceof ConnectionClosedException) {
                     throw new ConnectionFailure();
                 }
-                Throwable cause = throwable.getCause();
-                if(cause != null) {
-                    LogUtils.error(TAG, cause.getClass().getSimpleName());
-                    if (cause instanceof NoSuchRemoteProtocolException) {
-                        throw new ProtocolIssue();
-                    }
-                    if (cause instanceof NothingToCompleteException) {
-                        throw new ConnectionIssue();
-                    }
-                    if (cause instanceof NonCompleteException) {
-                        throw new ConnectionIssue();
-                    }
-                    if (cause instanceof ConnectionClosedException) {
-                        throw new ConnectionFailure();
-                    }
-                    if (cause instanceof ReadTimeoutException) {
-                        throw new ConnectionFailure();
-                    }
+                if (cause instanceof ReadTimeoutException) {
+                    throw new ConnectionFailure();
                 }
-                throw new RuntimeException(throwable);
             }
+            throw new RuntimeException(throwable);
         }
+
     }
 
 
     @Override
-    public void FindProvidersAsync(@NonNull Closeable closeable, @NonNull Channel channel,
-                                   @NonNull Cid cid) throws ClosedException {
+    public void FindProviders(@NonNull Closeable closeable, @NonNull Routing.Providers providers,
+                              @NonNull Cid cid) throws ClosedException {
         LogUtils.error(TAG, "Find Start Content Provider " + cid.String());
-        routing.FindProviders(closeable, channel, cid);
+        routing.FindProviders(closeable, providers, cid);
         LogUtils.error(TAG, "Find End Content Provider " + cid.String());
 
     }

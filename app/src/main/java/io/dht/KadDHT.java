@@ -6,7 +6,6 @@ import android.util.Pair;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.google.common.collect.Iterables;
 import com.google.protobuf.ByteString;
 
 import java.text.SimpleDateFormat;
@@ -20,9 +19,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentSkipListSet;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -311,7 +308,7 @@ public class KadDHT implements Routing {
 
     @Override
     public void FindProviders(@NonNull Closeable closeable,
-                              @NonNull Channel channel,
+                              @NonNull Providers providers,
                               @NonNull Cid cid) throws ClosedException {
         if (!cid.Defined()) {
             throw new RuntimeException("Cid invalid");
@@ -361,7 +358,7 @@ public class KadDHT implements Routing {
                             if (!handled.contains(peerId)) {
                                 handled.add(peerId);
                                 LogUtils.error(TAG, "got provider using: " + prov.getPeerId());
-                                channel.peer(prov);
+                                providers.peer(peerId);
                             }
                         }
 
@@ -447,30 +444,7 @@ public class KadDHT implements Routing {
             throw new RuntimeException("invalid cid: undefined");
         }
 
-        byte[] key = cid.Hash(); // cid.Bytes();
-
-
-        /* TODO maybe
-        closerCtx := ctx
-        if deadline, ok := ctx.Deadline(); ok {
-            now := time.Now()
-            timeout := deadline.Sub(now)
-
-            if timeout < 0 {
-                // timed out
-                return context.DeadlineExceeded
-            } else if timeout < 10*time.Second {
-                // Reserve 10% for the final put.
-                deadline = deadline.Add(-timeout / 10)
-            } else {
-                // Otherwise, reserve a second (we'll already be
-                // connected so this should be fast).
-                deadline = deadline.Add(-time.Second)
-            }
-            var cancel context.CancelFunc
-                    closerCtx, cancel = context.WithDeadline(ctx, deadline)
-            defer cancel()
-        }*/
+        byte[] key = cid.Hash();
 
 
         final Dht.Message mes = makeProvRecord(key);
@@ -487,7 +461,7 @@ public class KadDHT implements Routing {
                 } catch (ClosedException closedException) {
                     throw closedException;
                 } catch (Throwable throwable) {
-                    LogUtils.error(TAG, "Provide Error " + throwable.getMessage());
+                    LogUtils.error(TAG, "Provide Error " + throwable.getClass().getName());
                 }
             }
         });
@@ -495,118 +469,76 @@ public class KadDHT implements Routing {
     }
 
 
-    private void sendMessage(@NonNull Closeable ctx, @NonNull PeerId p, @NonNull Dht.Message message)
-            throws ClosedException {
+    private void sendMessage(@NonNull Closeable closeable, @NonNull PeerId p, @NonNull Dht.Message message)
+            throws ClosedException, ConnectionIssue {
 
+        Connection con = HostBuilder.connect(closeable, host, p);
 
-        synchronized (p.toBase58().intern()) {
-            if (ctx.isClosed()) {
+        try {
+
+            Object object = HostBuilder.stream(closeable, host, KadDHT.Protocol, con);
+
+            DhtProtocol.DhtController dhtController = (DhtProtocol.DhtController) object;
+            dhtController.sendMessage(message);
+
+        } catch (ClosedException exception) {
+            throw exception;
+        } catch (Throwable throwable) {
+            if (closeable.isClosed()) {
                 throw new ClosedException();
             }
-            try {
-                Multiaddr[] addrs = null;
-                Collection<Multiaddr> addrInfo = host.getAddressBook().get(p).get();
-                if (addrInfo != null) {
-                    addrs = Iterables.toArray(addrInfo, Multiaddr.class);
-                }
-
-                if (addrs != null) {
-                    host.getNetwork().connect(p, addrs).get(
-                            IPFS.TIMEOUT_DHT_PEER, TimeUnit.SECONDS
-                    );
-                } else {
-                    host.getNetwork().connect(p).get(IPFS.TIMEOUT_DHT_PEER, TimeUnit.SECONDS);
-                }
-
-                CompletableFuture<Object> ctrl = host.newStream(
-                        Collections.singletonList(KadDHT.Protocol), p).getController();
-
-                Object object = ctrl.get(IPFS.TIMEOUT_DHT_PEER, TimeUnit.SECONDS);
-
-                if (ctx.isClosed()) {
-                    throw new ClosedException();
-                }
-
-                DhtProtocol.DhtController dhtController = (DhtProtocol.DhtController) object;
-                dhtController.sendMessage(message);
-
-            } catch (Throwable throwable) {
-                if (ctx.isClosed()) {
-                    throw new ClosedException();
-                }
-                throw new RuntimeException(throwable);
-            }
+            throw new RuntimeException(throwable);
         }
     }
 
-    private Dht.Message sendRequest(@NonNull Closeable ctx, @NonNull PeerId p,
+    private Dht.Message sendRequest(@NonNull Closeable closeable, @NonNull PeerId p,
                                     @NonNull Dht.Message message)
             throws ClosedException, ProtocolIssue, ConnectionFailure, ConnectionIssue {
 
 
-        synchronized (p.toBase58().intern()) {
-            if (ctx.isClosed()) {
+        long start = System.currentTimeMillis();
+
+        Connection con = HostBuilder.connect(closeable, host, p);
+        try {
+            Object object = HostBuilder.stream(closeable, host, KadDHT.Protocol, con);
+
+
+            DhtProtocol.DhtController dhtController = (DhtProtocol.DhtController) object;
+            return dhtController.sendRequest(message).get();
+
+
+        } catch (ClosedException exception) {
+            throw exception;
+        } catch (Throwable throwable) {
+            if (closeable.isClosed()) {
                 throw new ClosedException();
             }
-            long start = System.currentTimeMillis();
 
-            try {
-
-                Multiaddr[] addrs = null;
-                Collection<Multiaddr> addrInfo = host.getAddressBook().get(p).get();
-                if (addrInfo != null) {
-                    addrs = Iterables.toArray(addrInfo, Multiaddr.class);
+            Throwable cause = throwable.getCause();
+            if (cause != null) {
+                LogUtils.error(TAG, cause.getClass().getSimpleName());
+                if (cause instanceof NoSuchRemoteProtocolException) {
+                    throw new ProtocolIssue();
                 }
-
-                if (addrs != null) {
-                    host.getNetwork().connect(p, addrs).get();
-                } else {
-                    host.getNetwork().connect(p).get();
+                if (cause instanceof NothingToCompleteException) {
+                    throw new ConnectionIssue();
                 }
-
-                CompletableFuture<Object> ctrl = host.newStream(
-                        Collections.singletonList(KadDHT.Protocol), p).getController();
-
-                Object object = ctrl.get();
-
-                if (ctx.isClosed()) {
-                    throw new ClosedException();
+                if (cause instanceof NonCompleteException) {
+                    throw new ConnectionIssue();
                 }
-
-                DhtProtocol.DhtController dhtController = (DhtProtocol.DhtController) object;
-                return dhtController.sendRequest(message).get();
-
-
-            } catch (Throwable throwable) {
-                if (ctx.isClosed()) {
-                    throw new ClosedException();
+                if (cause instanceof ConnectionClosedException) {
+                    throw new ConnectionFailure();
                 }
-
-                Throwable cause = throwable.getCause();
-                if (cause != null) {
-                    LogUtils.error(TAG, cause.getClass().getSimpleName());
-                    if (cause instanceof NoSuchRemoteProtocolException) {
-                        throw new ProtocolIssue();
-                    }
-                    if (cause instanceof NothingToCompleteException) {
-                        throw new ConnectionIssue();
-                    }
-                    if (cause instanceof NonCompleteException) {
-                        throw new ConnectionIssue();
-                    }
-                    if (cause instanceof ConnectionClosedException) {
-                        throw new ConnectionFailure();
-                    }
-                    if (cause instanceof ReadTimeoutException) {
-                        throw new ConnectionFailure();
-                    }
+                if (cause instanceof ReadTimeoutException) {
+                    throw new ConnectionFailure();
                 }
-                LogUtils.error(TAG, throwable);
-                throw new RuntimeException(throwable); // TODO
-            } finally {
+            }
+            LogUtils.error(TAG, throwable);
+            throw new RuntimeException(throwable); // TODO
+        } finally {
                 routingTable.addLatency(p, System.currentTimeMillis() - start);
             }
-        }
+
     }
 
 
@@ -661,12 +593,12 @@ public class KadDHT implements Routing {
     }
 
     @Override
-    public AddrInfo FindPeer(@NonNull Closeable closeable, @NonNull PeerId id) throws ClosedException {
+    public boolean FindPeer(@NonNull Closeable closeable, @NonNull PeerId id) throws ClosedException {
 
         // Check if were already connected to them
         AddrInfo pi = FindLocal(id);
         if (pi != null) {
-            return pi;
+            return true;
         }
             /*
             if pi := dht.FindLocal(id); pi.ID != "" {
@@ -684,16 +616,7 @@ public class KadDHT implements Routing {
                         Dht.Message pms = findPeerSingle(ctx, p, id.getBytes());
                         return evalClosestPeers(pms);
                     }
-                }, new StopFunc() {
-                    @Override
-                    public boolean stop() {
-                        try {
-                            return closeable.isClosed() || host.getNetwork().connect(id).get() != null;
-                        } catch (Throwable throwable) {
-                            return false;
-                        }
-                    }
-                });
+                }, () -> closeable.isClosed() || HostBuilder.isConnected(host, id));
 
 
         if (closeable.isClosed()) {
@@ -717,21 +640,17 @@ public class KadDHT implements Routing {
             // Return peer information if we tried to dial the peer during the query or we are
             // (or recently were) connected to the peer.
 
-            Collection<Multiaddr> addrInfo = host.getAddressBook().get(id).get();
-            Objects.requireNonNull(addrInfo);
-            boolean connectedness = host.getNetwork().connect(
-                    id, Iterables.toArray(addrInfo, Multiaddr.class)).get(
-                    IPFS.TIMEOUT_DHT_PEER, TimeUnit.SECONDS
-            ) != null;
+            // TODO simply return peerID
 
+            boolean connectedness = HostBuilder.isConnected(host, id);
             if (dialedPeerDuringQuery || connectedness) {
-                return AddrInfo.create(id, addrInfo);
+                return true;
             }
         } catch (Throwable ignore) {
             // TODO why ignore?
         }
 
-        return null;
+        return false;
     }
 
     private LookupWithFollowupResult runQuery(@NonNull Closeable ctx, @NonNull byte[] target,
@@ -1094,5 +1013,9 @@ public class KadDHT implements Routing {
             this.From = from;
             this.Val = data;
         }
+    }
+
+    public interface Channel {
+        void peer(@NonNull AddrInfo addrInfo) throws ClosedException;
     }
 }
