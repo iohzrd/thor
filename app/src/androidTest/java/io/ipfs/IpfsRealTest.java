@@ -14,8 +14,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.LogUtils;
+import io.core.Closeable;
 import io.core.ClosedException;
+import io.core.TimeoutCloseable;
 
+import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertTrue;
 import static junit.framework.TestCase.fail;
@@ -56,6 +59,27 @@ public class IpfsRealTest {
         } catch (ClosedException closedException) {
             assertTrue(atomicBoolean.get());
         }
+
+    }
+
+    @Test
+    public void test_2() {
+
+        IPFS ipfs = TestEnv.getTestInstance(context);
+
+        String link = DnsAddrResolver.getDNSLink("blog.ipfs.io");
+
+        assertNotNull(link);
+        assertFalse(link.isEmpty());
+
+        String cid = link.replaceFirst(IPFS.IPFS_PATH, "");
+
+        String text = ipfs.getText(cid, new TimeoutCloseable(30));
+
+        assertNotNull(text);
+        assertFalse(text.isEmpty());
+        LogUtils.error(TAG, text);
+
 
     }
 }

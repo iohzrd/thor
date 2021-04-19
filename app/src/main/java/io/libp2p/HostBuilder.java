@@ -190,11 +190,9 @@ public class HostBuilder {
             List<Multiaddr> addrInfo = getAddresses(host, peerId);
 
             if (!addrInfo.isEmpty()) {
+                // TODO or better parallel
                 for (Multiaddr addr : addrInfo) {
                     try {
-                        if (closeable.isClosed()) {
-                            throw new ClosedException();
-                        }
 
                         CompletableFuture<Connection> future = host.getNetwork().connect(peerId, addr);
 
@@ -203,6 +201,10 @@ public class HostBuilder {
                                 future.cancel(true);
                             }
                         }
+                        if (closeable.isClosed()) {
+                            throw new ClosedException();
+                        }
+
                         return future.get();
                     } catch (ClosedException closedException) {
                         throw closedException;

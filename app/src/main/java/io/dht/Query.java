@@ -206,7 +206,7 @@ public class Query {
                     queryPeers.SetState(queryPeer, PeerState.PeerWaiting);
 
 
-                    Executors.newSingleThreadExecutor().execute(() -> {
+                    new Thread(() -> {
                         try {
                             queryPeer(ctx, queryPeer);
                         } catch (ClosedException ignore) {
@@ -217,7 +217,7 @@ public class Query {
                             // not expected exception
                             LogUtils.error(TAG, throwable);
                         }
-                    });
+                    }).start();
                 }
             } else {
                 LogUtils.error(TAG, "Termination no succes");

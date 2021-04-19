@@ -11,7 +11,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentSkipListSet;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -30,8 +29,7 @@ public class ContentManager {
 
     private static final int TIMEOUT = 15000;
     private static final String TAG = ContentManager.class.getSimpleName();
-    private static final ExecutorService LOADS = Executors.newFixedThreadPool(4);
-    private static final ExecutorService WANTS = Executors.newFixedThreadPool(4);
+
     private final BitSwapNetwork network;
     private final BlockStore blockStore;
     private final ConcurrentSkipListSet<PeerId> faulty = new ConcurrentSkipListSet<>(
@@ -90,43 +88,42 @@ public class ContentManager {
     public Block runWantHaves(@NonNull Closeable closeable, @NonNull Cid cid) throws ClosedException {
 
 
-        Executors.newSingleThreadExecutor().execute(() -> {
+        new Thread(() -> {
             long begin = System.currentTimeMillis();
             try {
                 network.FindProviders(closeable, peer -> {
 
                     if (!faulty.contains(peer)) {
-                        WANTS.execute(() -> {
-                            if (matches.containsKey(cid)) { // check still valid
-                                long start = System.currentTimeMillis();
-                                try {
-                                    LogUtils.error(TAG, "Provider Peer " +
-                                            peer.toBase58() + " cid " + cid.String());
+                        if (matches.containsKey(cid)) { // check still valid
+                            new Thread(() -> {
+                                if (matches.containsKey(cid)) { // check still valid
+                                    long start = System.currentTimeMillis();
+                                    try {
+                                        LogUtils.error(TAG, "Provider Peer " +
+                                                peer.toBase58() + " cid " + cid.String());
 
-                                    if (network.ConnectTo(() -> closeable.isClosed()
-                                                    || ((System.currentTimeMillis() - start) > TIMEOUT),
-                                            peer, true)) {
-                                        if (matches.containsKey(cid)) { // check still valid
-                                            LogUtils.error(TAG, "Found New Provider " + peer.toBase58()
-                                                    + " for " + cid.String());
-                                            peers.add(peer);
-                                            Objects.requireNonNull(matches.get(cid)).add(peer);
+                                        if (network.ConnectTo(closeable, peer, true)) {
+                                            if (matches.containsKey(cid)) { // check still valid
+                                                LogUtils.error(TAG, "Found New Provider " + peer.toBase58()
+                                                        + " for " + cid.String());
+                                                peers.add(peer);
+                                                Objects.requireNonNull(matches.get(cid)).add(peer);
+                                            }
+                                        } else {
+                                            LogUtils.error(TAG, "Provider Peer Connection Failed " +
+                                                    peer.toBase58());
                                         }
-                                    } else {
-                                        LogUtils.error(TAG, "Provider Peer Connection Failed " +
-                                                peer.toBase58());
+                                    } catch (ClosedException | ConnectionIssue ignore) {
+                                        // ignore
+                                    } catch (Throwable throwable) {
+                                        LogUtils.error(TAG, throwable);
+                                    } finally {
+                                        LogUtils.error(TAG, "Provider Peer " +
+                                                peer.toBase58() + " took " + (System.currentTimeMillis() - start));
                                     }
-                                } catch (ClosedException | ConnectionIssue ignore) {
-                                    // ignore
-                                } catch (Throwable throwable) {
-                                    LogUtils.error(TAG, throwable);
-                                } finally {
-                                    LogUtils.error(TAG, "Provider Peer " +
-                                            peer.toBase58() + " took " + (System.currentTimeMillis() - start));
                                 }
-                            }
-                        });
-
+                            }).start();
+                        }
                     }
                 }, cid);
             } catch (ClosedException closedException) {
@@ -137,7 +134,7 @@ public class ContentManager {
                 LogUtils.error(TAG, "Finish Provider Search " + cid.String() +
                         " " + (System.currentTimeMillis() - begin));
             }
-        });
+        }).start();
 
         Set<PeerId> handled = new HashSet<>();
         Set<PeerId> wants = new HashSet<>();
@@ -343,20 +340,18 @@ public class ContentManager {
         if (!loads.contains(cid)) {
             loads.add(cid);
             LogUtils.error(TAG, "Load Provider Start " + cid.String());
-            Executors.newSingleThreadExecutor().execute(() -> {
+            new Thread(() -> {
                 long start = System.currentTimeMillis();
                 try {
+                    Closeable loadCloseable = () -> closeable.isClosed() || (System.currentTimeMillis() - start) > TIMEOUT;
 
-                    network.FindProviders(closeable, peer -> {
+                    network.FindProviders(loadCloseable, peer -> {
 
                         try {
                             LogUtils.error(TAG, "Load Provider " + peer.toBase58() + " for " + cid.String());
-
-                            LOADS.execute(() -> {
+                            new Thread(() -> {
                                 try {
-                                    if (network.ConnectTo(() -> closeable.isClosed()
-                                                    || ((System.currentTimeMillis() - start) > TIMEOUT),
-                                            peer, true)) {
+                                    if (network.ConnectTo(loadCloseable, peer, true)) {
                                         LogUtils.error(TAG, "Load Provider Found " + peer.toBase58()
                                                 + " for " + cid.String());
                                         peers.add(peer);
@@ -370,7 +365,7 @@ public class ContentManager {
                                     LogUtils.error(TAG, "Load Provider Failed " +
                                             throwable.getLocalizedMessage());
                                 }
-                            });
+                            }).start();
                         } catch (Throwable throwable) {
                             LogUtils.error(TAG, throwable);
                         }
@@ -384,7 +379,7 @@ public class ContentManager {
                     LogUtils.info(TAG, "Finish " + cid.String() +
                             " onStart [" + (System.currentTimeMillis() - start) + "]...");
                 }
-            });
+            }).start();
         }
     }
 }
