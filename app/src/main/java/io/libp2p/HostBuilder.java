@@ -2,6 +2,8 @@ package io.libp2p;
 
 import androidx.annotation.NonNull;
 
+import com.google.common.collect.Iterables;
+
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
@@ -190,28 +192,21 @@ public class HostBuilder {
             List<Multiaddr> addrInfo = getAddresses(host, peerId);
 
             if (!addrInfo.isEmpty()) {
-                // TODO or better parallel
-                for (Multiaddr addr : addrInfo) {
-                    try {
 
-                        CompletableFuture<Connection> future = host.getNetwork().connect(peerId, addr);
+                CompletableFuture<Connection> future = host.getNetwork().connect(peerId,
+                        Iterables.toArray(addrInfo, Multiaddr.class));
 
-                        while (!future.isDone()) {
-                            if (closeable.isClosed()) {
-                                future.cancel(true);
-                            }
-                        }
-                        if (closeable.isClosed()) {
-                            throw new ClosedException();
-                        }
-
-                        return future.get();
-                    } catch (ClosedException closedException) {
-                        throw closedException;
-                    } catch (Throwable ignore) {
-                        // removeMultiaddress(host, peerId, addr); TODO
+                while (!future.isDone()) {
+                    if (closeable.isClosed()) {
+                        future.cancel(true);
                     }
                 }
+                if (closeable.isClosed()) {
+                    throw new ClosedException();
+                }
+
+                return future.get();
+
             } else {
                 return host.getNetwork().connect(peerId).get();
             }
@@ -221,7 +216,6 @@ public class HostBuilder {
             throw new ConnectionIssue();
         }
 
-        throw new ConnectionIssue();
 
     }
 
@@ -232,7 +226,7 @@ public class HostBuilder {
             if (addrInfo != null) {
                 for (Multiaddr addr : addrInfo) {
                     // TODO filter Ipv4/Ipv6 ??? and other stuff
-
+                    // LogUtils.error(TAG, addr.toString());
                     sorted.add(addr);
                 }
             }
