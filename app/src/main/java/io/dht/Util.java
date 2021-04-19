@@ -2,8 +2,10 @@ package io.dht;
 
 import androidx.annotation.NonNull;
 
+import java.math.BigInteger;
 import java.security.MessageDigest;
 
+import io.LogUtils;
 import io.libp2p.core.PeerId;
 
 public class Util {
@@ -73,13 +75,19 @@ public class Util {
     }
 
     @NonNull
+    public static BigInteger Distance(@NonNull ID a, @NonNull ID b) {
+        byte[] k3 = Util.xor(a.data, b.data);
+
+        // SetBytes interprets buf as the bytes of a big-endian unsigned
+        // integer, sets z to that value, and returns z.
+        // big.NewInt(0).SetBytes(k3)
+
+        return new BigInteger(k3);
+    }
+
+    @NonNull
     public static ID ConvertPeerID(@NonNull PeerId id) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            return new ID(digest.digest(id.getBytes()));
-        } catch (Throwable throwable) {
-            throw new RuntimeException(throwable);
-        }
+        return ConvertKey(id.getBytes());
     }
 
     @NonNull

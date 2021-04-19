@@ -132,7 +132,9 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
     public static final boolean SEND_DONT_HAVES = false;
     public static final boolean BITSWAP_ENGINE_ACTIVE = false;
 
-
+    // The number of peers closest to a target that must have responded for a query path to terminate
+    private static final int KAD_DHT_BETA = 20;
+    public static final int KAD_DHT_BUCKET_SIZE = 20;
     // rough estimates on expected sizes
     private static final int roughLinkBlockSize = 1 << 13; // 8KB
     private static final int roughLinkSize = 34 + 8 + 5;// sha256 multihash + size + no name + protobuf framing
@@ -159,6 +161,7 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
     private static final String PRIVATE_KEY = "privateKey";
     private static final String CONCURRENCY_KEY = "concurrencyKey";
     private static final String TAG = IPFS.class.getSimpleName();
+
     private static IPFS INSTANCE = null;
 
     private final BLOCKS blocks;
@@ -233,7 +236,8 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
 
         int alpha = getConcurrencyValue(context);
 
-        this.routing = new KadDHT(host, new Ipns(), alpha);
+        this.routing = new KadDHT(host, new Ipns(), alpha, IPFS.KAD_DHT_BETA,
+                IPFS.KAD_DHT_BUCKET_SIZE);
 
 
         BitSwapNetwork bsm = LiteHost.NewLiteHost(host, routing);

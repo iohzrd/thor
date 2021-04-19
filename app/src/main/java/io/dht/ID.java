@@ -13,8 +13,6 @@ public class ID implements Comparable<ID> {
 
     @Override
     public int compareTo(@NonNull ID o) {
-        //return SignedBytes.lexicographicalComparator().compare(this.data, o.data);
-        // TODO check SignedBytes.lexicographicalComparator() or UnsignedBytes.lexicographicalComparator()
         return UnsignedBytes.lexicographicalComparator().compare(this.data, o.data);
     }
 }

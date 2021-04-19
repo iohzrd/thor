@@ -10,10 +10,11 @@ import io.libp2p.core.PeerId;
 
 public class QueryPeerState implements Comparable<QueryPeerState> {
 
+    @NonNull
     public final PeerId id;
     @NonNull
     public final BigInteger distance;
-    private final PeerId referredBy; // TODO check if necessary
+    @NonNull
     private PeerState state;
 
     @NonNull
@@ -25,11 +26,10 @@ public class QueryPeerState implements Comparable<QueryPeerState> {
         this.state = state;
     }
 
-    public QueryPeerState(@NonNull PeerId id, @NonNull BigInteger distance, @NonNull PeerId referredBy) {
+    public QueryPeerState(@NonNull PeerId id, @NonNull BigInteger distance) {
         this.id = id;
         this.distance = distance;
         this.state = PeerState.PeerHeard;
-        this.referredBy = referredBy;
     }
 
     @NotNull
@@ -38,7 +38,6 @@ public class QueryPeerState implements Comparable<QueryPeerState> {
         return "QueryPeerState{" +
                 "id=" + id +
                 ", distance=" + distance +
-                ", referredBy=" + referredBy +
                 ", state=" + state +
                 '}';
     }

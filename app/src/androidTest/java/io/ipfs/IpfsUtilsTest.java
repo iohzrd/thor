@@ -10,6 +10,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.math.BigInteger;
 import java.util.Collections;
 
 import io.dht.ID;
@@ -18,10 +19,11 @@ import io.dht.Util;
 import io.libp2p.core.PeerId;
 
 import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertTrue;
 
 @SuppressWarnings("SpellCheckingInspection")
 @RunWith(AndroidJUnit4.class)
-public class IPFSUtilsTest {
+public class IpfsUtilsTest {
     private static final String TAG = IpfsCatTest.class.getSimpleName();
     private static Context context;
 
@@ -40,6 +42,10 @@ public class IPFSUtilsTest {
         ID a = Util.ConvertPeerID(peerId);
         ID b = Util.ConvertPeerID(peerId);
 
+
+        BigInteger dist = Util.Distance(a, b);
+        assertEquals(dist.longValue(),0L);
+
         int res = Util.CommonPrefixLen(a, b);
         assertEquals(res, (a.data.length * 8));
 
@@ -50,6 +56,10 @@ public class IPFSUtilsTest {
         PeerId randrom = PeerId.random();
         ID r1 = Util.ConvertPeerID(randrom);
         ID r2 = Util.ConvertPeerID(randrom);
+
+        BigInteger distCmp = Util.Distance(a, r1);
+        assertTrue(distCmp.longValue() != 0L);
+
         int rres = Util.CommonPrefixLen(r1, r2);
         assertEquals(rres, (r1.data.length * 8));
 

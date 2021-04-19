@@ -9,17 +9,19 @@ import androidx.annotation.Nullable;
 import com.google.protobuf.ByteString;
 
 import java.text.SimpleDateFormat;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
-import java.util.UUID;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -49,95 +51,43 @@ import record.pb.RecordOuterClass;
 
 
 public class KadDHT implements Routing {
-    public static final String Protocol = "/ipfs/kad/1.0.0";
-    public static final int defaultBucketSize = 20;
-
-    public static final Duration TempAddrTTL = Duration.ofMinutes(2);
     private static final String TAG = KadDHT.class.getSimpleName();
+    public static final String Protocol = "/ipfs/kad/1.0.0";
+
 
     public final Host host;
-    public final PeerId self; // Local peer (yourself)
-    public final int beta; // The number of peers closest to a target that must have responded for a query path to terminate
-    public final RoutingTable routingTable;
+    public final PeerId self;
+    public final int beta;
     public final int bucketSize;
-    public final int alpha; // The concurrency parameter per path
+    public final int alpha;
 
-    private final ID selfKey;
     private final Validator validator;
+    public final RoutingTable routingTable;
 
-
-    public KadDHT(@NonNull Host host, @NonNull Validator validator, int alpha) {
+    public KadDHT(@NonNull Host host, @NonNull Validator validator, int alpha, int beta, int bucketSize) {
         this.host = host;
         this.validator = validator;
         this.self = host.getPeerId();
-        this.selfKey = Util.ConvertPeerID(host.getPeerId());
-        this.bucketSize = defaultBucketSize; // todo config
-        this.routingTable = new RoutingTable(bucketSize, selfKey); // TODO
-        this.beta = 20; // TODO
+        ID selfKey = Util.ConvertPeerID(host.getPeerId());
+        this.bucketSize = bucketSize;
+        this.routingTable = new RoutingTable(bucketSize, selfKey);
+        this.beta = beta;
         this.alpha = alpha;
     }
 
     public void init() {
         // Fill routing table with currently connected peers that are DHT servers
+
         for (Connection conn : host.getNetwork().getConnections()) {
             PeerId peerId = conn.secureSession().getRemoteId();
             routingTable.addLatency(peerId, 0L);
-            peerFound(peerId, false, false);
+            peerFound(peerId, false);
         }
     }
 
-    // validRTPeer returns true if the peer supports the DHT protocol and false otherwise. Supporting the DHT protocol means
-// supporting the primary protocols, we do not want to add peers that are speaking obsolete secondary protocols to our
-// routing table
-    boolean validRTPeer(PeerId p) {
-
-
-        /* TODO
-        b, err := dht.peerstore.FirstSupportedProtocol(p, dht.protocolsStrs...)
-        if len(b) == 0 || err != nil {
-            return false, err
-        }
-
-        return dht.routingTablePeerFilter == nil || dht.routingTablePeerFilter(dht, dht.Host().Network().ConnsToPeer(p)), nil*/
-        return true;
-    }
-
-    // peerFound signals the routingTable that we've found a peer that
-// might support the DHT protocol.
-// If we have a connection a peer but no exchange of a query RPC ->
-//    LastQueriedAt=time.Now (so we don't ping it for some time for a liveliness check)
-//    LastUsefulAt=0
-// If we connect to a peer and then exchange a query RPC ->
-//    LastQueriedAt=time.Now (same reason as above)
-//    LastUsefulAt=time.Now (so we give it some life in the RT without immediately evicting it)
-// If we query a peer we already have in our Routing Table ->
-//    LastQueriedAt=time.Now()
-//    LastUsefulAt remains unchanged
-// If we connect to a peer we already have in the RT but do not exchange a query (rare)
-//    Do Nothing.
-    void peerFound(PeerId p, boolean queryPeer, boolean isReplaceable) {
-
+    void peerFound(PeerId p, boolean isReplaceable) {
         try {
-            if (validRTPeer(p)) {
-                addPeerToRTChan(p, queryPeer, isReplaceable);
-            }
-        } catch (Throwable throwable) {
-            LogUtils.error(TAG, throwable);
-        }
-
-    }
-
-    private void addPeerToRTChan(PeerId peerId, boolean queryPeer, boolean isReplaceable) {
-
-        try {
-            boolean newlyAdded = routingTable.addPeer(peerId, queryPeer, isReplaceable);
-
-            if (!newlyAdded && queryPeer) {
-                // the peer is already in our RT, but we just successfully queried it and so let's give it a
-                // bump on the query time so we don't ping it too soon for a liveliness check.
-                routingTable.UpdateLastSuccessfulOutboundQueryAt(peerId, System.currentTimeMillis());
-            }
-
+            routingTable.addPeer(p, isReplaceable);
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         }
@@ -192,37 +142,17 @@ public class KadDHT implements Routing {
             throw new RuntimeException("can't lookup empty key");
         }
 
-        LookupWithFollowupResult lookupRes = runLookupWithFollowup(ctx, key, new QueryFunc() {
-            @NonNull
-            @Override
-            public List<AddrInfo> query(@NonNull Closeable ctx, @NonNull PeerId p)
-                    throws ClosedException, ProtocolIssue, ConnectionFailure, ConnectionIssue {
+        runLookupWithFollowup(ctx, key, (ctx1, p) -> {
 
-                Dht.Message pms = findPeerSingle(ctx, p, key);
-                List<AddrInfo> peers = evalClosestPeers(pms);
+            Dht.Message pms = findPeerSingle(ctx1, p, key);
+            List<AddrInfo> peers = evalClosestPeers(pms);
 
-                for (AddrInfo addrInfo : peers) {
-                    channel.peer(addrInfo);
-                }
-
-                return peers;
+            for (AddrInfo addrInfo : peers) {
+                channel.peer(addrInfo);
             }
-        }, new StopFunc() {
-            @Override
-            public boolean stop() {
-                return ctx.isClosed();
-            }
-        });
 
-        if (ctx.isClosed()) {
-            throw new ClosedException();
-        }
-
-
-        if (lookupRes.completed) {
-            // refresh the cpl for this key as the query was successful
-            // TODO maybe  dht.routingTable.ResetCplRefreshedAtForID(kb.ConvertKey(key), time.Now())
-        }
+            return peers;
+        }, ctx::isClosed);
 
 
     }
@@ -231,41 +161,18 @@ public class KadDHT implements Routing {
     public void PutValue(@NonNull Closeable ctx, @NonNull byte[] key, @NonNull byte[] value) throws ClosedException {
 
 
-        // don't even allow local users to put bad values.
+        // don't allow local users to put bad values.
         try {
             validator.Validate(key, value);
         } catch (Throwable throwable) {
             throw new RuntimeException(throwable);
         }
 
-        /* mabye todo
-        old, err := dht.getLocal(key)
-        if err != nil {
-            // Means something is wrong with the datastore.
-            return err
-        } */
-
-        // Check if we have an old value that's not the same as the new one.
-        /* TODO maybe
-        if old != nil && !bytes.Equal(old.GetValue(), value) {
-            // Check to see if the new one is better.
-            i, err := dht.Validator.Select(key, [][]byte{value, old.GetValue()})
-            if err != nil {
-                return err
-            }
-            if i != 0 {
-                return fmt.Errorf("can't replace a newer value with an older value")
-            }
-        } */
-
         @SuppressLint("SimpleDateFormat") String format = new SimpleDateFormat(
                 IPFS.TimeFormatIpfs).format(new Date());
         RecordOuterClass.Record rec = RecordOuterClass.Record.newBuilder().setKey(ByteString.copyFrom(key))
                 .setValue(ByteString.copyFrom(value))
                 .setTimeReceived(format).build();
-        /* TODO maybe
-        putLocal(key, rec);
-        */
 
         ConcurrentSkipListSet<PeerId> handled = new ConcurrentSkipListSet<>(
                 (o1, o2) -> o1.toHex().compareTo(o2.toHex()));
@@ -314,108 +221,57 @@ public class KadDHT implements Routing {
             throw new RuntimeException("Cid invalid");
         }
 
-        byte[] key = cid.Hash(); // cid.Bytes();
-
+        byte[] key = cid.Hash();
 
         ConcurrentSkipListSet<PeerId> handled = new ConcurrentSkipListSet<>(
                 (o1, o2) -> o1.toHex().compareTo(o2.toHex()));
-        LookupWithFollowupResult lookupRes = runLookupWithFollowup(closeable, key,
-                new QueryFunc() {
+        runLookupWithFollowup(closeable, key, (ctx, p) -> {
 
-                    @NonNull
-                    @Override
-                    public List<AddrInfo> query(@NonNull Closeable ctx, @NonNull PeerId p)
-                            throws ClosedException, ProtocolIssue, ConnectionFailure, ConnectionIssue {
+            Dht.Message pms = findProvidersSingle(ctx, p, key);
 
+            List<AddrInfo> provs = new ArrayList<>();
+            List<Dht.Message.Peer> list = pms.getProviderPeersList();
+            for (Dht.Message.Peer entry : list) {
 
-                        Dht.Message pms = findProvidersSingle(ctx, p, key);
-
-                        List<AddrInfo> provs = new ArrayList<>();
-                        List<Dht.Message.Peer> list = pms.getProviderPeersList();
-                        for (Dht.Message.Peer entry : list) {
-
-                            PeerId peerId = new PeerId(entry.getId().toByteArray());
-                            LogUtils.error(TAG, "got provider before filter : " + peerId.toBase58());
-                            List<Multiaddr> multiAddresses = new ArrayList<>();
-                            List<ByteString> addresses = entry.getAddrsList();
-                            for (ByteString address : addresses) {
-                                Multiaddr multiaddr = preFilter(address);
-                                if (multiaddr != null) {
-                                    multiAddresses.add(multiaddr);
-                                }
-                            }
-                            AddrInfo addrInfo = AddrInfo.create(peerId, multiAddresses);
-                            if (addrInfo.hasAddresses()) {
-                                provs.add(addrInfo);
-                                addAddrs(addrInfo);
-                            }
-                        }
-
-                        // invoke callback (not yet as an own thread
-                        for (AddrInfo prov : provs) {
-                            LogUtils.error(TAG, "got provider : " + prov.getPeerId());
-                            PeerId peerId = prov.getPeerId();
-                            if (!handled.contains(peerId)) {
-                                handled.add(peerId);
-                                LogUtils.error(TAG, "got provider using: " + prov.getPeerId());
-                                providers.peer(peerId);
-                            }
-                        }
-
-                        // Give closer peers back to the query to be queried
-                        return evalClosestPeers(pms);
-
+                PeerId peerId = new PeerId(entry.getId().toByteArray());
+                LogUtils.error(TAG, "got provider before filter : " + peerId.toBase58());
+                List<Multiaddr> multiAddresses = new ArrayList<>();
+                List<ByteString> addresses = entry.getAddrsList();
+                for (ByteString address : addresses) {
+                    Multiaddr multiaddr = preFilter(address);
+                    if (multiaddr != null) {
+                        multiAddresses.add(multiaddr);
                     }
-                }, new StopFunc() {
-                    @Override
-                    public boolean stop() {
-                        return closeable.isClosed();
-                    }
-                });
+                }
+                AddrInfo addrInfo = AddrInfo.create(peerId, multiAddresses);
+                if (addrInfo.hasAddresses()) {
+                    provs.add(addrInfo);
+                    addAddrs(addrInfo);
+                }
+            }
 
-        if (closeable.isClosed()) {
-            throw new ClosedException();
-        }
-        /*  TODO
-        if( err == nil && ctx.Err() == nil) {
-            dht.refreshRTIfNoShortcut(kb.ConvertKey(string(key)), lookupRes)
-        }*/
+
+            for (AddrInfo prov : provs) {
+                LogUtils.error(TAG, "got provider : " + prov.getPeerId());
+                PeerId peerId = prov.getPeerId();
+                if (!handled.contains(peerId)) {
+                    handled.add(peerId);
+                    LogUtils.error(TAG, "got provider using: " + prov.getPeerId());
+                    providers.peer(peerId);
+                }
+            }
+            return evalClosestPeers(pms);
+
+        }, closeable::isClosed);
     }
 
 
-    // getLocal attempts to retrieve the value from the datastore
-    /*
-    func (dht *IpfsDHT) getLocal(key string) (*recpb.Record, error) {
-        logger.Debugw("finding value in datastore", "key", loggableRecordKeyString(key))
-
-        rec, err := getRecordFromDatastore(mkDsKey(key))
-        if err != nil {
-            logger.Warnw("get local failed", "key", loggableRecordKeyString(key), "error", err)
-            return nil, err
-        }
-
-        // Double check the key. Can't hurt.
-        if rec != nil && string(rec.GetKey()) != key {
-            logger.Errorw("BUG: found a DHT record that didn't match it's key", "expected", loggableRecordKeyString(key), "got", rec.GetKey())
-            return nil, nil
-
-        }
-        return rec, nil
-    }*/
-
-
-    // peerStoppedDHT signals the routing table that a peer is unable to responsd to DHT queries anymore.
-    // TODO choose better name
-    public void peerStoppedDHT(PeerId p) {
-        LogUtils.info(TAG, "peer stopped dht " + p.toBase58());
-        // A peer that does not support the DHT protocol is dead for us.
-        // There's no point in talking to anymore till it starts supporting the DHT protocol again.
+    public void removePeerFromDht(PeerId p) {
         routingTable.RemovePeer(p);
     }
 
 
     private Dht.Message makeProvRecord(@NonNull byte[] key) {
-
 
         List<Multiaddr> addresses = HostBuilder.listenAddresses(host);
         if (addresses.isEmpty()) {
@@ -445,7 +301,6 @@ public class KadDHT implements Routing {
         }
 
         byte[] key = cid.Hash();
-
 
         final Dht.Message mes = makeProvRecord(key);
 
@@ -534,11 +389,10 @@ public class KadDHT implements Routing {
                 }
             }
             LogUtils.error(TAG, throwable);
-            throw new RuntimeException(throwable); // TODO
+            throw new RuntimeException(throwable);
         } finally {
-                routingTable.addLatency(p, System.currentTimeMillis() - start);
-            }
-
+            routingTable.addLatency(p, System.currentTimeMillis() - start);
+        }
     }
 
 
@@ -570,9 +424,8 @@ public class KadDHT implements Routing {
         return sendRequest(ctx, p, pms);
     }
 
-    // FindLocal looks for a peer with a given ID connected to this dht and returns the peer and the table it was found in.
     @Nullable
-    AddrInfo FindLocal(@NonNull PeerId id) {
+    private AddrInfo FindLocal(@NonNull PeerId id) {
         List<Connection> cons = host.getNetwork().getConnections();
         for (Connection con : cons) {
             if (Objects.equals(con.secureSession().getRemoteId(), id)) {
@@ -587,7 +440,7 @@ public class KadDHT implements Routing {
         try {
             return new Multiaddr(address.toByteArray());
         } catch (Throwable ignore) {
-            // nothing to do
+            LogUtils.error(TAG, address.toStringUtf8());
         }
         return null;
     }
@@ -595,62 +448,39 @@ public class KadDHT implements Routing {
     @Override
     public boolean FindPeer(@NonNull Closeable closeable, @NonNull PeerId id) throws ClosedException {
 
-        // Check if were already connected to them
         AddrInfo pi = FindLocal(id);
         if (pi != null) {
             return true;
         }
-            /*
-            if pi := dht.FindLocal(id); pi.ID != "" {
-                return pi, nil
-            }*/
 
         byte[] key = id.getBytes();
 
         LookupWithFollowupResult lookupRes = runLookupWithFollowup(closeable, key,
-                new QueryFunc() {
-                    @NonNull
-                    @Override
-                    public List<AddrInfo> query(@NonNull Closeable ctx, @NonNull PeerId p)
-                            throws ClosedException, ProtocolIssue, ConnectionFailure, ConnectionIssue {
-                        Dht.Message pms = findPeerSingle(ctx, p, id.getBytes());
-                        return evalClosestPeers(pms);
-                    }
+                (ctx, p) -> {
+                    Dht.Message pms = findPeerSingle(ctx, p, id.getBytes());
+                    return evalClosestPeers(pms);
                 }, () -> closeable.isClosed() || HostBuilder.isConnected(host, id));
 
 
         if (closeable.isClosed()) {
             throw new ClosedException();
         }
-        try {
-            // todo
-            boolean dialedPeerDuringQuery = false;
-            Objects.requireNonNull(lookupRes);
-            PeerState state = lookupRes.peers.get(id);
-            if (state != null) {
 
+        boolean dialedPeerDuringQuery = false;
+        Objects.requireNonNull(lookupRes);
+        PeerState state = lookupRes.peers.get(id);
+        if (state != null) {
 
-                // Note: we consider PeerUnreachable to be a valid state because the peer may not support the DHT protocol
-                // and therefore the peer would fail the query. The fact that a peer that is returned can be a non-DHT
-                // server peer and is not identified as such is a bug.
-                dialedPeerDuringQuery = (state == PeerState.PeerQueried || state == PeerState.PeerUnreachable || state == PeerState.PeerWaiting);
+            // Note: we consider PeerUnreachable to be a valid state because the peer may not support the DHT protocol
+            // and therefore the peer would fail the query. The fact that a peer that is returned can be a non-DHT
+            // server peer and is not identified as such is a bug.
+            dialedPeerDuringQuery = (state == PeerState.PeerQueried ||
+                    state == PeerState.PeerUnreachable || state == PeerState.PeerWaiting);
 
-            }
-
-            // Return peer information if we tried to dial the peer during the query or we are
-            // (or recently were) connected to the peer.
-
-            // TODO simply return peerID
-
-            boolean connectedness = HostBuilder.isConnected(host, id);
-            if (dialedPeerDuringQuery || connectedness) {
-                return true;
-            }
-        } catch (Throwable ignore) {
-            // TODO why ignore?
         }
 
-        return false;
+        boolean connectedness = HostBuilder.isConnected(host, id);
+        return dialedPeerDuringQuery || connectedness;
     }
 
     private LookupWithFollowupResult runQuery(@NonNull Closeable ctx, @NonNull byte[] target,
@@ -660,26 +490,12 @@ public class KadDHT implements Routing {
         ID targetKadID = Util.ConvertKey(target);
         List<PeerId> seedPeers = routingTable.NearestPeers(targetKadID, bucketSize);
         if (seedPeers.size() == 0) {
-            /* TODO
-            routing.PublishQueryEvent(ctx, &routing.QueryEvent{
-                Type:  routing.QueryError,
-                        Extra: kb.ErrLookupFailure.Error(),
-            })
-            return nil, kb.ErrLookupFailure */
             throw new ClosedException();
-            //throw new RuntimeException(); // TODO ErrLookupFailure
-
-            // TODO not throw exception
         }
 
-        Query q = new Query(this, UUID.randomUUID(), target, seedPeers, queryFn, stopFn);
+        Query q = new Query(this, target, seedPeers, queryFn, stopFn);
 
-        // run the query
         q.run(ctx);
-
-
-        q.recordValuablePeers();
-
 
         return q.constructLookupResult(targetKadID);
     }
@@ -694,7 +510,6 @@ public class KadDHT implements Routing {
     private LookupWithFollowupResult runLookupWithFollowup(@NonNull Closeable ctx, @NonNull byte[] target,
                                                            @NonNull QueryFunc queryFn, @NonNull StopFunc stopFn)
             throws ClosedException {
-        // run the query
 
         try {
             LookupWithFollowupResult lookupRes = runQuery(ctx, target, queryFn, stopFn);
@@ -704,8 +519,6 @@ public class KadDHT implements Routing {
             // This ensures that all of the top K results have been queried which adds to resiliency against churn for query
             // functions that carry state (e.g. FindProviders and GetValue) as well as establish connections that are needed
             // by stateless query functions (e.g. GetClosestPeers and therefore Provide and PutValue)
-
-            /* TODO maybe
 
             List<PeerId> queryPeers = new ArrayList<>();
             for (Map.Entry<PeerId, PeerState> entry : lookupRes.peers.entrySet()) {
@@ -719,52 +532,30 @@ public class KadDHT implements Routing {
                 return lookupRes;
             }
 
+            if (stopFn.stop()) {
+                lookupRes.completed = false;
+                return lookupRes;
+            }
 
-
-        // return if the lookup has been externally stopped
-        if ctx.Err() != nil || stopFn() {
-            lookupRes.completed = false
-            return lookupRes, nil
-        }
-
-        doneCh := make(chan struct{}, len(queryPeers))
-        followUpCtx, cancelFollowUp := context.WithCancel(ctx)
-        defer cancelFollowUp()
-        for _, p := range queryPeers {
-            qp := p
-            go func() {
-                _, _ = queryFn(followUpCtx, qp)
-                doneCh <- struct{}{}
-            }()
-        }
-
-        // wait for all queries to complete before returning, aborting ongoing queries if we've been externally stopped
-        followupsCompleted := 0
-        processFollowUp:
-        for i := 0; i < len(queryPeers); i++ {
-            select {
-                case <-doneCh:
-                    followupsCompleted++
-                    if stopFn() {
-                    cancelFollowUp()
-                    if i < len(queryPeers)-1 {
-                        lookupRes.completed = false
-                    }
-                    break processFollowUp
+            List<Callable<List<AddrInfo>>> tasks = new ArrayList<>();
+            for (PeerId p : queryPeers) {
+                tasks.add(() -> queryFn.query(ctx, p));
+            }
+            ExecutorService executor = Executors.newFixedThreadPool(4);
+            int followupsCompleted = 0;
+            List<Future<List<AddrInfo>>> futures = executor.invokeAll(tasks);
+            for (Future<List<AddrInfo>> future : futures) {
+                try {
+                    future.get();
+                    followupsCompleted++;
+                } catch (Throwable throwable) {
+                    LogUtils.error(TAG, throwable.getClass().getSimpleName());
                 }
-                case <-ctx.Done():
-                    lookupRes.completed = false
-                    cancelFollowUp()
-                    break processFollowUp
             }
-        }
+            if (!lookupRes.completed) {
+                lookupRes.completed = followupsCompleted == queryPeers.size();
+            }
 
-        if !lookupRes.completed {
-            for i := followupsCompleted; i < len(queryPeers); i++ {
-			<-doneCh
-            }
-        }
-        */
             return lookupRes;
         } catch (InterruptedException ignore) {
             throw new ClosedException();
@@ -773,13 +564,8 @@ public class KadDHT implements Routing {
     }
 
 
-    // getValueOrPeers queries a particular peer p for the value for
-    // key. It returns either the value or a list of closer peers.
-    // NOTE: It will update the dht's peerstore with any new addresses
-    // it finds for the given peer.
-    private Pair<RecordOuterClass.Record, List<AddrInfo>> getValueOrPeers(@NonNull Closeable ctx,
-                                                                          @NonNull PeerId p,
-                                                                          @NonNull byte[] key)
+    private Pair<RecordOuterClass.Record, List<AddrInfo>> getValueOrPeers(
+            @NonNull Closeable ctx, @NonNull PeerId p, @NonNull byte[] key)
             throws ConnectionFailure, ClosedException, ProtocolIssue, ConnectionIssue {
 
 
@@ -799,131 +585,48 @@ public class KadDHT implements Routing {
             }
         }
 
-        if( peers.size() > 0 ) {
+        if (peers.size() > 0) {
             return Pair.create(null, peers);
         }
         return Pair.create(null, Collections.emptyList());
     }
 
-    LookupWithFollowupResult getValues(@NonNull Closeable ctx, @NonNull RecordValFunc recordFunc,
-                                       @NonNull byte[] key, @NonNull StopFunc stopQuery) throws ClosedException {
+    private void getValues(@NonNull Closeable ctx, @NonNull RecordValueFunc recordFunc,
+                           @NonNull byte[] key, @NonNull StopFunc stopQuery) throws ClosedException {
 
-        /*
-        valCh := make(chan RecvdVal, 1)
-        lookupResCh := make(chan *lookupWithFollowupResult, 1)
 
-        logger.Debugw("finding value", "key", loggableRecordKeyString(key))
+        runLookupWithFollowup(ctx, key, (ctx1, p) -> {
 
-        if rec, err := dht.getLocal(key); rec != nil && err == nil {
-            select {
-                case valCh <- RecvdVal{
-                    Val:  rec.GetValue(),
-                            From: dht.self,
-                }:
-                case <-ctx.Done():
+            Pair<RecordOuterClass.Record, List<AddrInfo>> result = getValueOrPeers(ctx1, p, key);
+            RecordOuterClass.Record rec = result.first;
+            List<AddrInfo> peers = result.second;
+
+            if (rec != null) {
+                recordFunc.record(new RecordInfo(rec.getValue().toByteArray()));
             }
-        }*/
 
-            LookupWithFollowupResult lookupRes = runLookupWithFollowup(ctx, key,
-                    new QueryFunc() {
-                        @NonNull
-                        @Override
-                        public List<AddrInfo> query(@NonNull Closeable ctx, @NonNull PeerId p)
-                                throws ClosedException, ProtocolIssue, ConnectionFailure, ConnectionIssue {
+            return peers;
+        }, stopQuery);
 
-                            // For DHT query command
-                            /* maybe todo
-                            routing.PublishQueryEvent(ctx, &routing.QueryEvent{
-                                Type: routing.SendingQuery,
-                                        ID:   p,
-                            }) */
-
-                            Pair<RecordOuterClass.Record, List<AddrInfo>> result = getValueOrPeers(ctx, p, key);
-                            RecordOuterClass.Record rec = result.first;
-                            List<AddrInfo> peers = result.second;
-                            /* maybe todo
-                            switch err {
-                                case routing.ErrNotFound:
-                                    // in this case, they responded with nothing,
-                                    // still send a notification so listeners can know the
-                                    // request has completed 'successfully'
-                                    routing.PublishQueryEvent(ctx, &routing.QueryEvent{
-                                    Type: routing.PeerResponse,
-                                            ID:   p,
-                                })
-                                return nil, err
-                                default:
-                                    return nil, err
-                                case nil, errInvalidRecord:
-                                    // in either of these cases, we want to keep going
-                            } */
-
-                            // TODO: What should happen if the record is invalid?
-                            // Pre-existing code counted it towards the quorum, but should it?
-
-
-
-                            if(rec != null){
-                                recordFunc.record(new RecordInfo(p, rec.getValue().toByteArray()));
-                            }
-
-
-                            // For DHT query command
-                            /* maybe TODO
-                            routing.PublishQueryEvent(ctx, &routing.QueryEvent{
-                                Type:      routing.PeerResponse,
-                                        ID:        p,
-                                        Responses: peers,
-                            })*/
-
-                            return peers;
-                        }
-                    }, stopQuery );
-
-
-        /* TODO
-            if err != nil {
-                return
-            }
-            lookupResCh <- lookupRes
-
-            if ctx.Err() == nil {
-                dht.refreshRTIfNoShortcut(kb.ConvertKey(key), lookupRes)
-            }
-       */
-
-        return lookupRes;
     }
 
 
-    @NonNull
-    private RecordResult processValues(@NonNull Closeable ctx,
-                                       @Nullable RecordInfo best,
-                                       @NonNull RecordInfo v,
-                                       @NonNull RecordReportFunc newVal) {
+    private void processValues(@NonNull Closeable ctx, @Nullable RecordInfo best,
+                               @NonNull RecordInfo v, @NonNull RecordReportFunc reporter) {
 
-        RecordResult result = new RecordResult();
-
-        // Select best value
         if (best != null) {
             if (Arrays.equals(best.Val, v.Val)) {
-                result.peersWithBest.add(v.From); // TODO
-                result.aborted = newVal.report(ctx, v, false);
+                reporter.report(ctx, v, false);
             } else {
                 int value = validator.Select(best.Val, v.Val);
 
                 if (value == -1) {
-                    result.aborted = newVal.report(ctx, v, false);
+                    reporter.report(ctx, v, false);
                 }
             }
         } else {
-
-            result.peersWithBest.add(v.From); // TODO
-            result.aborted = newVal.report(ctx, v, true);
-
+            reporter.report(ctx, v, true);
         }
-
-        return result;
     }
 
 
@@ -933,49 +636,13 @@ public class KadDHT implements Routing {
 
         AtomicInteger numResponses = new AtomicInteger(0);
         AtomicReference<RecordInfo> best = new AtomicReference<>();
-        LookupWithFollowupResult lookupRes = getValues(ctx, recordVal -> {
-
-            RecordResult res = processValues(ctx, best.get(), recordVal, (ctx1, v, better) -> {
-                numResponses.incrementAndGet();
-                if (better) {
-                    resolveInfo.resolved(v.Val);
-                    best.set(v);
-                }
-                return quorum > 0 && (numResponses.get() > quorum);
-            });
-
-            if (res == null) {
-                return;
+        getValues(ctx, recordVal -> processValues(ctx, best.get(), recordVal, (ctx1, v, better) -> {
+            numResponses.incrementAndGet();
+            if (better) {
+                resolveInfo.resolved(v.Val);
+                best.set(v);
             }
-
-            if (res.best == null || res.aborted) {
-                return;
-            }
-        /* TODO
-        updatePeers := make([]peer.ID, 0, bucketSize)
-        select {
-            case l := <-lookupRes:
-                if l == nil {
-                return
-            }
-
-            for _, p := range l.peers {
-                if _, ok := peersWithBest[p]; !ok {
-                    updatePeers = append(updatePeers, p)
-                }
-            }
-            case <-ctx.Done():
-                return
-        }
-
-        updatePeerValues(ctx, key, best, updatePeers) */
-        }, key, new StopFunc() {
-            @Override
-            public boolean stop() {
-                return numResponses.get() == quorum;
-            }
-        });
-
+        }), key, () -> numResponses.get() == quorum);
 
     }
 
@@ -991,26 +658,19 @@ public class KadDHT implements Routing {
     }
 
 
-    public interface RecordValFunc {
+    public interface RecordValueFunc {
         void record(@NonNull RecordInfo recordInfo);
     }
 
     public interface RecordReportFunc {
-        boolean report(@NonNull Closeable ctx, @NonNull RecordInfo v, boolean better);
+        void report(@NonNull Closeable ctx, @NonNull RecordInfo v, boolean better);
     }
 
-    public static class RecordResult {
-        boolean aborted;
-        HashSet<PeerId> peersWithBest = new HashSet<>();
-        byte[] best;
-    }
 
     private static class RecordInfo {
         byte[] Val;
-        PeerId From;
 
-        public RecordInfo(@NonNull PeerId from, @NonNull byte[] data) {
-            this.From = from;
+        public RecordInfo(@NonNull byte[] data) {
             this.Val = data;
         }
     }

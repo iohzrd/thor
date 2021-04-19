@@ -8,7 +8,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 import io.LogUtils;
 import io.libp2p.core.PeerId;
@@ -17,12 +16,10 @@ public class RoutingTable {
 
     private static final String TAG = RoutingTable.class.getSimpleName();
     private final ID local;  // ID of the local peer
-    private final CopyOnWriteArrayList<Bucket> buckets = new CopyOnWriteArrayList<>();
+    private final ConcurrentHashMap<Integer, Bucket> buckets = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<PeerId, Long> metrics = new ConcurrentHashMap<>();
-    // Maximum acceptable latency for peers in this cluster
     public final long maxLatency = Duration.ofMinutes(1).toMillis();
-
-    private final int bucketsize;
+    private final int bucketSize;
 
     public long getLatency(@NonNull PeerId peerId) {
         Long duration = metrics.get(peerId);
@@ -36,30 +33,9 @@ public class RoutingTable {
         metrics.put(peerId, latency);
     }
 
-    public RoutingTable(int bucketsize, @NonNull ID local) {
-        this.bucketsize = bucketsize;
+    public RoutingTable(int bucketSize, @NonNull ID local) {
+        this.bucketSize = bucketSize;
         this.local = local;
-        buckets.add(new Bucket());
-    }
-
-
-    private synchronized void nextBucket() {
-        // This is the last bucket, which allegedly is a mixed bag containing peers not belonging in dedicated (unfolded) buckets.
-        // _allegedly_ is used here to denote that *all* peers in the last bucket might feasibly belong to another bucket.
-        // This could happen if e.g. we've unfolded 4 buckets, and all peers in folded bucket 5 really belong in bucket 8.
-
-        Bucket bucket = buckets.get(buckets.size() - 1);
-
-
-        Bucket newBucket = bucket.split(buckets.size() - 1, local);
-        buckets.add(newBucket);
-        LogUtils.error(TAG, "Buckets : " + buckets.size() + " " + buckets.toString());
-
-        // The newly formed bucket still contains too many peers. We probably just unfolded a empty bucket.
-        if (newBucket.size() >= bucketsize) {
-            // Keep unfolding the table until the last bucket is not overflowing.
-            nextBucket();
-        }
     }
 
 
@@ -76,7 +52,7 @@ public class RoutingTable {
         PeerDistanceSorter pds = new PeerDistanceSorter(id);
 
         // Add peers from the target bucket (cpl+1 shared bits).
-        pds.appendPeersFromList(buckets.get(cpl));
+        pds.appendPeersFromList(getBucket(cpl));
 
         // If we're short, add peers from all buckets to the right. All buckets
         // to the right share exactly cpl bits (as opposed to the cpl+1 bits
@@ -88,7 +64,7 @@ public class RoutingTable {
 
         if (pds.size() < count) {
             for (int i = cpl + 1; i < buckets.size(); i++) {
-                pds.appendPeersFromList(buckets.get(i));
+                pds.appendPeersFromList(getBucket(i));
             }
         }
 
@@ -100,7 +76,7 @@ public class RoutingTable {
         // * bucket cpl-2: cpl-2 shared bits.
         // ...
         for (int i = cpl - 1; i >= 0 && pds.size() < count; i--) {
-            pds.appendPeersFromList(buckets.get(i));
+            pds.appendPeersFromList(getBucket(i));
         }
 
         // Sort by distance to local peer
@@ -117,12 +93,11 @@ public class RoutingTable {
 
     public int size() {
         int tot = 0;
-        for (Bucket bucket : buckets) {
+        for (Bucket bucket : buckets.values()) {
             tot += bucket.size();
         }
         return tot;
     }
-
 
 
     private int bucketIdForPeer(@NonNull PeerId p) {
@@ -133,81 +108,49 @@ public class RoutingTable {
     }
 
     private int bucketId(@NonNull ID id) {
-        int bucketID = Util.CommonPrefixLen(id, local);
-
-        if (bucketID >= buckets.size()) {
-            bucketID = buckets.size() - 1;
-        }
-
-        return bucketID;
+        return Util.CommonPrefixLen(id, local);
     }
 
-    public boolean addPeer(PeerId p, boolean queryPeer, boolean isReplaceable) {
+    private synchronized Bucket getBucket(int cpl) {
+        Bucket bucket = buckets.get(cpl);
+        if (bucket != null) {
+            return bucket;
+        }
+        bucket = new Bucket();
+        buckets.put(cpl, bucket);
+        return bucket;
+    }
+
+    public void addPeer(@NonNull PeerId p, boolean isReplaceable) {
 
         synchronized (p.toBase58().intern()) {
+
+            LogUtils.error(TAG, buckets.toString());
             long latency = getLatency(p);
             int bucketID = bucketIdForPeer(p);
-            Bucket bucket = buckets.get(bucketID);
+            Bucket bucket = getBucket(bucketID);
 
-            long now = System.currentTimeMillis();
-            long lastUsefulAt = 0;
-            if (queryPeer) {
-                lastUsefulAt = now;
-            }
 
             // peer already exists in the Routing Table.
             Bucket.PeerInfo peer = bucket.getPeer(p);
             if (peer != null) {
                 peer.setLatency(latency);
-
-                // if we're querying the peer first time after adding it, let's give it a
-                // usefulness bump. This will ONLY happen once.
-
-                if (peer.LastUsefulAt == 0 && queryPeer) {
-                    peer.LastUsefulAt = lastUsefulAt;
-                }
-                return false;
+                return;
             }
 
             // peer's latency threshold is NOT acceptable
-
             if (latency > maxLatency) {
                 // Connection doesnt meet requirements, skip!
-                return false;
+                return;
             }
 
-
-        /* TODO maybe
-            // add it to the diversity filter for now.
-            // if we aren't able to find a place for the peer in the table,
-            // we will simply remove it from the Filter later.
-            if rt.df != nil {
-                if !rt.df.TryAdd(p) {
-                    return false, errors.New("peer rejected by the diversity filter")
-                }
-            }*/
 
             // We have enough space in the bucket (whether spawned or grouped).
-            if (bucket.size() < bucketsize) {
-                bucket.addPeer(p, latency, isReplaceable, lastUsefulAt, now);
-                // TODO PeerAdded(p); (notification func)
-                return true;
+            if (bucket.size() < bucketSize) {
+                bucket.addPeer(p, latency, isReplaceable);
+                return;
             }
 
-            if (bucketID == (buckets.size() - 1)) {
-                // if the bucket is too large and this is the last bucket (i.e. wildcard), unfold it.
-                nextBucket();
-                // the structure of the table has changed, so let's recheck if the peer now has a dedicated bucket.
-                bucketID = bucketIdForPeer(p);
-                bucket = buckets.get(bucketID);
-
-                // push the peer only if the bucket isn't overflowing after slitting
-                if (bucket.size() < bucketsize) {
-                    bucket.addPeer(p, latency, isReplaceable, lastUsefulAt, now);
-                    // TODO PeerAdded(p); (notification func)
-                    return true;
-                }
-            }
 
             // the bucket to which the peer belongs is full. Let's try to find a peer
             // in that bucket which is replaceable.
@@ -234,77 +177,24 @@ public class RoutingTable {
             if (replaceablePeer != null && replaceablePeer.isReplaceable()) {
                 // let's evict it and add the new peer
                 if (removePeer(replaceablePeer.getPeerId())) {
-                    bucket.addPeer(p, latency, isReplaceable, lastUsefulAt, now); // add new peer
-                    return true;
+                    bucket.addPeer(p, latency, isReplaceable);
+                    return;
                 }
             }
+
+            LogUtils.info(TAG, "Buckets Size :" + buckets.size());
+            LogUtils.info(TAG, "Total Size : " + size());
         }
-        // we weren't able to find place for the peer, remove it from the filter state.
-            /* TODO
-            if rt.df != nil {
-                rt.df.Remove(p)
 
-            */
-
-        LogUtils.info(TAG, "Buckets Size :" + buckets.size());
-        LogUtils.info(TAG, "Total Size : " + size());
-
-        // TODO check again should always add elements
-        return false; //throw new RuntimeException("ErrPeerRejectedNoCapacity");// TODO
     }
 
     private boolean removePeer(@NonNull PeerId p) {
         int bucketID = bucketIdForPeer(p);
-        Bucket bucket = buckets.get(bucketID);
+        Bucket bucket = getBucket(bucketID);
         Objects.requireNonNull(bucket);
-        if (bucket.removePeer(p)) {
-            /* TODO
-            if rt.df != nil {
-                rt.df.Remove(p)
-            }*/
-            while (true) {
-                int lastBucketIndex = buckets.size() - 1;
-
-                // remove the last bucket if it's empty and it isn't the only bucket we have
-                if (buckets.size() > 1 && buckets.get(lastBucketIndex).size() == 0) {
-                    buckets.remove(lastBucketIndex);
-                } else {
-                    break;
-                }
-            }
-
-            // peer removed callback notification
-            // TODO PeerRemoved(p);
-            return true;
-        }
-        return false;
+        return bucket.removePeer(p);
     }
 
-
-    public boolean UpdateLastSuccessfulOutboundQueryAt(@NonNull PeerId p, long time) {
-
-        int bucketID = bucketIdForPeer(p);
-        Bucket bucket = buckets.get(bucketID);
-
-        Bucket.PeerInfo peer = bucket.getPeer(p);
-        if (peer != null) {
-            peer.LastSuccessfulOutboundQueryAt = time;
-            return true;
-        }
-
-        return false;
-    }
-
-    public boolean UpdateLastUsefulAt(@NonNull PeerId p, long time) {
-        int bucketID = bucketIdForPeer(p);
-        Bucket bucket = buckets.get(bucketID);
-        Bucket.PeerInfo peer = bucket.getPeer(p);
-        if (peer != null) {
-            peer.LastUsefulAt = time;
-            return true;
-        }
-        return false;
-    }
 
     public void RemovePeer(@NonNull PeerId p) {
         removePeer(p);

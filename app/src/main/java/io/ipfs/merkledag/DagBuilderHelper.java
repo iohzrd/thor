@@ -51,7 +51,7 @@ public class DagBuilderHelper {
         return null;
     }
 
-    private Node NewLeafNode(byte[] data, UnixfsProtos.Data.DataType fsNodeType) {
+    private Node NewLeafNode(byte[] data, @NonNull UnixfsProtos.Data.DataType fsNodeType) {
 
         if (data.length > IPFS.BLOCK_SIZE_LIMIT) {
             throw new RuntimeException("ErrSizeLimitExceeded"); // TODO

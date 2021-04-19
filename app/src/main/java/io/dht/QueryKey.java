@@ -3,36 +3,22 @@ package io.dht;
 import androidx.annotation.NonNull;
 
 import java.math.BigInteger;
-import java.security.MessageDigest;
 
 public class QueryKey {
 
-    // Original is the original value of the identifier
-    private byte[] Original;
+    private final ID key;
 
-    // Bytes is the new value of the identifier, in the KeySpace.
-    private final byte[] Bytes;
-
-    private QueryKey(@NonNull byte[] original, @NonNull byte[] bytes) {
-
-        this.Original = original;
-        this.Bytes = bytes;
+    private QueryKey(@NonNull ID key) {
+        this.key = key;
     }
 
-    // Key converts an identifier into a Key in this space.
+    @NonNull
     public static QueryKey createQueryKey(byte[] id) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] key = digest.digest(id);
-            return new QueryKey(id, key);
-        } catch (Throwable throwable) {
-            throw new RuntimeException(throwable);
-        }
+        return new QueryKey(Util.ConvertKey(id));
     }
 
+    @NonNull
     public BigInteger Distance(@NonNull QueryKey key) {
-        // XOR the keys
-        byte[] k3 = Util.xor(this.Bytes, key.Bytes);
-        return new BigInteger(k3);
+        return Util.Distance(this.key, key.key);
     }
 }

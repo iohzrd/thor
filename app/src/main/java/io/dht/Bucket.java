@@ -13,7 +13,7 @@ import io.LogUtils;
 import io.libp2p.core.PeerId;
 
 public class Bucket {
-    private static final String TAG = Bucket.class.getSimpleName();
+
     private final ConcurrentHashMap<PeerId, PeerInfo> peers = new ConcurrentHashMap<>();
 
     @Nullable
@@ -62,11 +62,9 @@ public class Bucket {
                 '}';
     }
 
-    public void addPeer(@NonNull PeerId p, long latency, boolean isReplaceable, long lastUsefulAt, long now) {
+    public void addPeer(@NonNull PeerId p, long latency, boolean isReplaceable) {
         Bucket.PeerInfo peerInfo = new Bucket.PeerInfo(p, latency, isReplaceable);
-        peerInfo.LastUsefulAt = lastUsefulAt;
-        peerInfo.LastSuccessfulOutboundQueryAt = now;
-        peerInfo.AddedAt = now;
+
         if (LogUtils.isDebug()) {
             if (peers.containsKey(p)) {
                 throw new RuntimeException("invalid state");
@@ -119,17 +117,6 @@ public class Bucket {
         public long getLatency() {
             return latency;
         }
-
-        // LastUsefulAt is the time instant at which the peer was last "useful" to us.
-        // Please see the DHT docs for the definition of usefulness.
-        long LastUsefulAt;
-
-        // LastSuccessfulOutboundQueryAt is the time instant at which we last got a
-        // successful query response from the peer.
-        long LastSuccessfulOutboundQueryAt;
-
-        // AddedAt is the time this peer was added to the routing table.
-        long AddedAt;
 
         // if a bucket is full, this peer can be replaced to make space for a new peer.
         private final boolean replaceable;

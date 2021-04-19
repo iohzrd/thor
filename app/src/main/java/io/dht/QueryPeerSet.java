@@ -34,12 +34,12 @@ public class QueryPeerSet {
     // If the peer is already present, no action is taken.
     // Otherwise, the peer is added with state set to PeerHeard.
     // TryAdd returns true iff the peer was not already present.
-    public boolean TryAdd(@NonNull PeerId p, @NonNull PeerId referredBy) {
+    public boolean TryAdd(@NonNull PeerId p) {
         QueryPeerState peerset = all.get(p);
         if (peerset != null) {
             return false;
         } else {
-            peerset = new QueryPeerState(p, distanceToKey(p), referredBy);
+            peerset = new QueryPeerState(p, distanceToKey(p));
             all.put(p, peerset);
             return true;
         }
