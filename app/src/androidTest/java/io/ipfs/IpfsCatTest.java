@@ -47,7 +47,7 @@ public class IpfsCatTest {
         LogUtils.error(TAG, "Time Providers : " + (System.currentTimeMillis() - time) + " [ms]");
 
         time = System.currentTimeMillis();
-        List<Link> res = ipfs.getLinks(cid, new TimeoutCloseable(10));
+        List<Link> res = ipfs.getLinks(cid, new TimeoutCloseable(15));
         LogUtils.error(TAG, "Time : " + (System.currentTimeMillis() - time) + " [ms]");
         assertNotNull(res);
         assertTrue(res.isEmpty());
