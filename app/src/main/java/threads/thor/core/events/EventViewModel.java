@@ -16,6 +16,11 @@ public class EventViewModel extends AndroidViewModel {
                 application.getApplicationContext()).getEventsDatabase();
     }
 
+
+    public LiveData<Event> getJavascript() {
+        return eventsDatabase.eventDao().getEvent(EVENTS.JAVASCRIPT);
+    }
+
     public LiveData<Event> getError() {
         return eventsDatabase.eventDao().getEvent(EVENTS.ERROR);
     }

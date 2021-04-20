@@ -12,7 +12,7 @@ public class EVENTS {
     public static final String INFO = "INFO";
     public static final String EXIT = "EXIT";
     public static final String PERMISSION = "PERMISSION";
-
+    public static final String JAVASCRIPT = "JAVASCRIPT";
     private static EVENTS INSTANCE = null;
     private final EventsDatabase mEventsDatabase;
 
@@ -54,6 +54,10 @@ public class EVENTS {
         mEventsDatabase.eventDao().insertEvent(event);
     }
 
+
+    public void javascript() {
+        storeEvent(createEvent(JAVASCRIPT, ""));
+    }
 
     public void exit(@NonNull String content) {
 

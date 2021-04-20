@@ -465,7 +465,7 @@ public class MainActivity extends AppCompatActivity implements
             String url = mWebView.getUrl();
             if (url != null && !url.isEmpty()) {
                 BOOKS books = BOOKS.getInstance(getApplicationContext());
-                Uri uri = docs.getOriginalUri(Uri.parse(url));
+                Uri uri = Uri.parse(url);
                 if (books.hasBookmark(uri.toString())) {
                     Drawable drawable = AppCompatResources.getDrawable(
                             getApplicationContext(), R.drawable.star);
@@ -731,7 +731,7 @@ public class MainActivity extends AppCompatActivity implements
                     mLastClickTime = SystemClock.elapsedRealtime();
 
                     String url = mWebView.getUrl();
-                    Uri uri = docs.getOriginalUri(Uri.parse(url));
+                    Uri uri = Uri.parse(url);
 
                     ComponentName[] names = {new ComponentName(getApplicationContext(), MainActivity.class)};
 
@@ -782,8 +782,7 @@ public class MainActivity extends AppCompatActivity implements
                     }
                     mLastClickTime = SystemClock.elapsedRealtime();
 
-                    Uri uri = DOCS.getInstance(getApplicationContext()).getOriginalUri(
-                            Uri.parse(mWebView.getUrl()));
+                    Uri uri = Uri.parse(mWebView.getUrl());
 
                     Uri uriImage = QRCodeService.getImage(getApplicationContext(), uri.toString());
                     ContentDialogFragment.newInstance(uriImage,
@@ -917,7 +916,7 @@ public class MainActivity extends AppCompatActivity implements
                 mLastClickTime = SystemClock.elapsedRealtime();
 
                 String url = mWebView.getUrl();
-                Uri uri = docs.getOriginalUri(Uri.parse(url));
+                Uri uri = Uri.parse(url);
 
                 BOOKS books = BOOKS.getInstance(getApplicationContext());
 
@@ -1012,6 +1011,19 @@ public class MainActivity extends AppCompatActivity implements
         EventViewModel eventViewModel =
                 new ViewModelProvider(this).get(EventViewModel.class);
 
+        eventViewModel.getJavascript().observe(this, (event) -> {
+            try {
+                if (event != null) {
+
+                    mWebView.getSettings().setJavaScriptEnabled(
+                            Settings.isJavascriptEnabled(getApplicationContext()));
+
+                    eventViewModel.removeEvent(event);
+                }
+            } catch (Throwable e) {
+                io.LogUtils.error(TAG, "" + e.getLocalizedMessage(), e);
+            }
+        });
 
         eventViewModel.getError().observe(this, (event) -> {
             try {
@@ -1277,7 +1289,7 @@ public class MainActivity extends AppCompatActivity implements
 
                 mProgressBar.setVisibility(View.VISIBLE);
                 releaseActionMode();
-                updateUri(docs.getOriginalUri(Uri.parse(uri)));
+                updateUri(Uri.parse(uri));
             }
 
 
@@ -1367,9 +1379,6 @@ public class MainActivity extends AppCompatActivity implements
                                 "    <head>\n" +
                                 "        <meta charset=\"UTF-8\">\n" +
                                 "        <meta http-equiv=\"refresh\" content=\"0; url=" + uri.toString() + "\">\n" +
-                                "        <script type=\"text/javascript\">\n" +
-                                "            window.location.href = \"" + uri.toString() + "\"\n" +
-                                "        </script>\n" +
                                 "        <title>Page Redirection</title>\n" +
                                 "    </head>\n" +
                                 "    <body>\n" +
@@ -1438,12 +1447,8 @@ public class MainActivity extends AppCompatActivity implements
 
                     try {
 
-                        Pair<Uri, Boolean> result = docs.redirectUri(uri, closeable);
-                        Uri redirectUri = result.first;
+                        Uri redirectUri = docs.redirectUri(uri, closeable);
                         if (!Objects.equals(uri, redirectUri)) {
-                            docs.storeRedirect(redirectUri, uri);
-                        }
-                        if (result.second) {
                             return createRedirectMessage(redirectUri);
                         }
                         docs.connectUri(redirectUri, closeable);

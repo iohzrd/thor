@@ -3,7 +3,6 @@ package threads.thor.core;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.net.Uri;
-import android.util.Pair;
 import android.webkit.WebResourceResponse;
 
 import androidx.annotation.NonNull;
@@ -54,7 +53,7 @@ public class DOCS {
     private final IPFS ipfs;
     private final PAGES pages;
     private final BOOKS books;
-    private final Hashtable<Uri, Uri> redirects = new Hashtable<>();
+
     private final Hashtable<String, String> resolves = new Hashtable<>();
     private boolean isRedirectIndex;
     private boolean isRedirectUrl;
@@ -509,6 +508,39 @@ public class DOCS {
     }
 
 
+    @NonNull
+    private String resolveUri(@NonNull Uri uri, @NonNull Closeable closeable)
+            throws ResolveNameException, InvalidNameException, ClosedException {
+        String host = uri.getHost();
+        Objects.requireNonNull(host);
+
+        if (!Objects.equals(uri.getScheme(), Content.IPNS)) {
+            throw new RuntimeException();
+        }
+
+        if (ipfs.decodeName(host).isEmpty()) {
+
+            String link = DnsAddrResolver.getDNSLink(host);
+            if (link.isEmpty()) {
+                // could not resolved, maybe no NETWORK
+                String dnsLink = books.getDnsLink(uri.toString());
+                if (dnsLink == null) {
+                    throw new DOCS.ResolveNameException(uri.toString());
+                } else {
+                    return resolveDnsLink(uri, dnsLink, closeable);
+                }
+            } else {
+                // try to store value
+                books.storeDnsLink(uri.toString(), link);
+                return resolveDnsLink(uri, link, closeable);
+            }
+
+        } else {
+            return resolveName(uri, host, closeable);
+        }
+    }
+
+
     @Nullable
     public String getRoot(@NonNull Uri uri, @NonNull Closeable closeable)
             throws ResolveNameException, InvalidNameException, ClosedException {
@@ -517,21 +549,14 @@ public class DOCS {
 
         String root;
         if (Objects.equals(uri.getScheme(), Content.IPNS)) {
-
-            if (ipfs.decodeName(host).isEmpty()) {
-                throw new InvalidNameException(uri.toString());
-            }
-            root = resolveName(uri, host, closeable);
-
+            root = resolveUri(uri, closeable);
         } else {
             if (!ipfs.isValidCID(host)) {
                 throw new InvalidNameException(uri.toString());
             }
             root = host;
         }
-
         return root;
-
     }
 
     @NonNull
@@ -642,22 +667,15 @@ public class DOCS {
     }
 
     @NonNull
-    public Pair<Uri, Boolean> redirectDnsLink(@NonNull Uri uri, @NonNull String link,
-                                              @NonNull Closeable closeable)
+    private String resolveDnsLink(@NonNull Uri uri, @NonNull String link,
+                                 @NonNull Closeable closeable)
             throws ClosedException, InvalidNameException, ResolveNameException {
 
         List<String> paths = uri.getPathSegments();
-        if (link.startsWith(Content.IPFS_PATH)) {
-            String cid = link.replaceFirst(Content.IPFS_PATH, "");
-            Uri.Builder builder = new Uri.Builder();
-            builder.scheme(Content.IPFS)
-                    .authority(cid);
-            for (String path : paths) {
-                builder.appendPath(path);
-            }
-            return redirect(builder.build(), cid, paths, closeable);
-        } else if (link.startsWith(Content.IPNS_PATH)) {
-            String cid = link.replaceFirst(Content.IPNS_PATH, "");
+        if (link.startsWith(IPFS.IPFS_PATH)) {
+            return link.replaceFirst(IPFS.IPFS_PATH, "");
+        } else if (link.startsWith(IPFS.IPNS_PATH)) {
+            String cid = link.replaceFirst(IPFS.IPNS_PATH, "");
             if (!ipfs.decodeName(cid).isEmpty()) {
                 Uri.Builder builder = new Uri.Builder();
                 builder.scheme(Content.IPNS)
@@ -665,21 +683,10 @@ public class DOCS {
                 for (String path : paths) {
                     builder.appendPath(path);
                 }
-                return redirect(builder.build(), cid, paths, closeable);
+                return resolveUri(builder.build(), closeable);
             } else {
                 // is is assume like /ipns/<dns_link> = > therefore <dns_link> is url
-
-                Uri dnsUri = Uri.parse(cid);
-                if (dnsUri != null) {
-                    Uri.Builder builder = new Uri.Builder();
-                    builder.scheme(Content.IPNS)
-                            .authority(dnsUri.getAuthority());
-                    for (String path : paths) {
-                        builder.appendPath(path);
-                    }
-                    return redirectUri(builder.build(), closeable);
-                }
-
+                return resolveName(uri, cid, closeable);
             }
         } else {
             // is is assume that links is  <dns_link> is url
@@ -692,81 +699,38 @@ public class DOCS {
                 for (String path : paths) {
                     builder.appendPath(path);
                 }
-                return redirectUri(builder.build(), closeable);
+                return resolveUri(builder.build(), closeable);
             }
         }
-        return Pair.create(uri, false);
+        throw new ResolveNameException(uri.toString());
     }
 
     @NonNull
-    public Pair<Uri, Boolean> redirectUri(@NonNull Uri uri, @NonNull Closeable closeable)
+    public Uri redirectUri(@NonNull Uri uri, @NonNull Closeable closeable)
             throws ResolveNameException, InvalidNameException, ClosedException {
 
 
         if (Objects.equals(uri.getScheme(), Content.IPNS) ||
                 Objects.equals(uri.getScheme(), Content.IPFS)) {
             List<String> paths = uri.getPathSegments();
-            String host = uri.getHost();
-            Objects.requireNonNull(host);
-            if (ipfs.decodeName(host).isEmpty()) {
-                String link = DnsAddrResolver.getDNSLink(host);
-                if (link.isEmpty()) {
-                    // could not resolved, maybe no NETWORK
-                    String dnsLink = books.getDnsLink(uri.toString());
-                    if (dnsLink == null) {
-                        if (Objects.equals(uri.getScheme(), Content.IPNS)) {
-                            throw new DOCS.ResolveNameException(uri.toString());
-                        } else {
-                            throw new DOCS.InvalidNameException(uri.toString());
-                        }
-                    } else {
-                        return redirectDnsLink(uri, dnsLink, closeable);
-                    }
-                } else {
-                    // try to store value
-                    books.storeDnsLink(uri.toString(), link);
-                    return redirectDnsLink(uri, link, closeable);
-                }
-            } else {
-                String root = getRoot(uri, closeable);
-                Objects.requireNonNull(root);
-                return redirect(uri, root, paths, closeable);
-            }
+            String root = getRoot(uri, closeable);
+            Objects.requireNonNull(root);
+            return redirect(uri, root, paths, closeable);
         }
-        return Pair.create(uri, false);
+        return uri;
     }
 
     @NonNull
-    private Pair<Uri, Boolean> redirect(@NonNull Uri uri, @NonNull String root,
-                                        @NonNull List<String> paths, @NonNull Closeable closeable)
+    private Uri redirect(@NonNull Uri uri, @NonNull String root,
+                         @NonNull List<String> paths, @NonNull Closeable closeable)
             throws ClosedException {
 
 
-        if (paths.isEmpty()) {
-
-            if (isRedirectIndex && ipfs.isDir(root, closeable)) {
-                boolean exists = ipfs.resolve(root, INDEX_HTML, closeable);
-
-                if (exists) {
-                    Uri.Builder builder = new Uri.Builder();
-                    builder.scheme(uri.getScheme())
-                            .authority(uri.getAuthority());
-                    for (String path : paths) {
-                        builder.appendPath(path);
-                    }
-                    builder.appendPath(INDEX_HTML);
-                    return Pair.create(builder.build(), true);
-                }
-            }
-
-
-        } else {
-
-            // check first paths
-            // if like this .../ipfs/Qa..../
-            // THIS IS A BIG HACK AND SHOULD NOT BE SUPPORTED
-            if (paths.size() >= 2) {
-                String protocol = paths.get(0);
+        // check first paths
+        // if like this .../ipfs/Qa..../
+        // THIS IS A BIG HACK AND SHOULD NOT BE SUPPORTED
+        if (paths.size() >= 2) {
+            String protocol = paths.get(0);
                 if (Objects.equals(protocol, Content.IPFS) ||
                         Objects.equals(protocol, Content.IPNS)) {
                     String authority = paths.get(1);
@@ -782,7 +746,7 @@ public class DOCS {
                             for (String path : subPaths) {
                                 builder.appendPath(path);
                             }
-                            return Pair.create(builder.build(), false);
+                            return builder.build();
                         } else if (Objects.equals(protocol, Content.IPNS)) {
                             Uri.Builder builder = new Uri.Builder();
                             builder.scheme(Content.IPNS)
@@ -791,7 +755,7 @@ public class DOCS {
                             for (String path : subPaths) {
                                 builder.appendPath(path);
                             }
-                            return Pair.create(builder.build(), false);
+                            return builder.build();
                         }
                     }
                 }
@@ -812,42 +776,16 @@ public class DOCS {
                                 builder.appendPath(path);
                             }
                             builder.appendPath(INDEX_HTML);
-                            return Pair.create(builder.build(), true);
+                            return builder.build();
                         }
                     }
                 }
             }
-        }
 
-        return Pair.create(uri, false);
+
+        return uri;
     }
 
-    public void storeRedirect(@NonNull Uri redirectUri, @NonNull Uri uri) {
-        redirects.put(redirectUri, uri);
-    }
-
-    @NonNull
-    public Uri getOriginalUri(@NonNull Uri redirectUri) {
-        Uri original = recursiveUri(redirectUri);
-        if (original != null) {
-            return original;
-        }
-        return redirectUri;
-    }
-
-    @Nullable
-    private Uri recursiveUri(@NonNull Uri redirectUri) {
-        Uri original = redirects.get(redirectUri);
-        if (original != null) {
-            Uri recursive = recursiveUri(original);
-            if (recursive != null) {
-                return recursive;
-            } else {
-                return original;
-            }
-        }
-        return null;
-    }
 
     public void bootstrap() {
 

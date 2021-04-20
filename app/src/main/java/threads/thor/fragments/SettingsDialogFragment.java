@@ -53,9 +53,7 @@ public class SettingsDialogFragment extends BottomSheetDialogFragment {
         enableJavascript.setChecked(Settings.isJavascriptEnabled(mContext));
         enableJavascript.setOnCheckedChangeListener((buttonView, isChecked) -> {
                     Settings.setJavascriptEnabled(mContext, isChecked);
-
-                    EVENTS.getInstance(mContext).exit(
-                            getString(R.string.restart_config_changed));
+                    EVENTS.getInstance(mContext).javascript();
                 }
         );
 

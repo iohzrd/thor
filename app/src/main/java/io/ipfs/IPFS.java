@@ -719,9 +719,12 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
     @NonNull
     public String decodeName(@NonNull String name) {
         try {
-            return decode(name).toBase58();
-        } catch (Throwable throwable) {
-            LogUtils.error(TAG, throwable);
+            PeerId peerId = decode(name);
+            if(peerId != null){
+                return peerId.toBase58();
+            }
+        } catch (Throwable ignore) {
+            // common use case to fail
         }
         return "";
     }
@@ -924,6 +927,9 @@ func ToCid(id ID) cid.Cid {
         }
     }
 
+    public void clearDatabase(){
+        blocks.clear();
+    }
 
     public void findProviders(@NonNull Closeable closeable, @NonNull Routing.Providers providers,
                               @NonNull String cid) throws ClosedException {

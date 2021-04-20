@@ -16,6 +16,7 @@ import io.LogUtils;
 import io.core.TimeoutCloseable;
 import io.ipfs.utils.Link;
 
+import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.fail;
@@ -104,6 +105,12 @@ public class IpfsCatTest {
     public void cat_empty() throws Exception {
 
         IPFS ipfs = TestEnv.getTestInstance(context);
+
+        String data = ipfs.storeText("");
+        assertNotNull(data);
+        assertFalse(data.isEmpty());
+
+
         String cid = "QmUNLLsPACCz1vLxQVkXqqLX5R1X345qqfHbsf67hvA3Nn";
         List<Link> res = ipfs.getLinks(cid, new TimeoutCloseable(10));
         assertNotNull(res);
