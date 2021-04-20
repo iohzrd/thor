@@ -38,6 +38,7 @@ import io.ipfs.IPFS;
 import io.ipfs.cid.Cid;
 import io.libp2p.AddrInfo;
 import io.libp2p.HostBuilder;
+import io.libp2p.Metrics;
 import io.libp2p.core.Connection;
 import io.libp2p.core.ConnectionClosedException;
 import io.libp2p.core.Host;
@@ -62,15 +63,17 @@ public class KadDHT implements Routing {
     public final int alpha;
 
     private final Validator validator;
+    private final Metrics metrics;
     public final RoutingTable routingTable;
 
-    public KadDHT(@NonNull Host host, @NonNull Validator validator, int alpha, int beta, int bucketSize) {
+    public KadDHT(@NonNull Host host, @NonNull Metrics metrics, @NonNull Validator validator, int alpha, int beta, int bucketSize) {
         this.host = host;
+        this.metrics = metrics;
         this.validator = validator;
         this.self = host.getPeerId();
         ID selfKey = Util.ConvertPeerID(host.getPeerId());
         this.bucketSize = bucketSize;
-        this.routingTable = new RoutingTable(bucketSize, selfKey);
+        this.routingTable = new RoutingTable(metrics, bucketSize, selfKey);
         this.beta = beta;
         this.alpha = alpha;
     }
@@ -80,7 +83,7 @@ public class KadDHT implements Routing {
 
         for (Connection conn : host.getNetwork().getConnections()) {
             PeerId peerId = conn.secureSession().getRemoteId();
-            routingTable.addLatency(peerId, 0L);
+            metrics.addLatency(peerId, 0L);
             peerFound(peerId, false);
         }
     }
@@ -391,7 +394,7 @@ public class KadDHT implements Routing {
             LogUtils.error(TAG, throwable);
             throw new RuntimeException(throwable);
         } finally {
-            routingTable.addLatency(p, System.currentTimeMillis() - start);
+            metrics.addLatency(p, System.currentTimeMillis() - start);
         }
     }
 

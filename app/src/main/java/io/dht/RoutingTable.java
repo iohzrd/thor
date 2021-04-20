@@ -10,6 +10,7 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 import io.LogUtils;
+import io.libp2p.Metrics;
 import io.libp2p.core.PeerId;
 
 public class RoutingTable {
@@ -17,23 +18,14 @@ public class RoutingTable {
     private static final String TAG = RoutingTable.class.getSimpleName();
     private final ID local;  // ID of the local peer
     private final ConcurrentHashMap<Integer, Bucket> buckets = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<PeerId, Long> metrics = new ConcurrentHashMap<>();
+
     public final long maxLatency = Duration.ofMinutes(1).toMillis();
     private final int bucketSize;
+    private final Metrics metrics;
 
-    public long getLatency(@NonNull PeerId peerId) {
-        Long duration = metrics.get(peerId);
-        if (duration != null) {
-            return duration;
-        }
-        return Long.MAX_VALUE;
-    }
 
-    public void addLatency(@NonNull PeerId peerId, long latency) {
-        metrics.put(peerId, latency);
-    }
-
-    public RoutingTable(int bucketSize, @NonNull ID local) {
+    public RoutingTable(@NonNull Metrics metrics, int bucketSize, @NonNull ID local) {
+        this.metrics = metrics;
         this.bucketSize = bucketSize;
         this.local = local;
     }
@@ -126,7 +118,7 @@ public class RoutingTable {
         synchronized (p.toBase58().intern()) {
 
             LogUtils.error(TAG, buckets.toString());
-            long latency = getLatency(p);
+            long latency = metrics.getLatency(p);
             int bucketID = bucketIdForPeer(p);
             Bucket bucket = getBucket(bucketID);
 

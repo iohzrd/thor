@@ -16,6 +16,7 @@ import io.ipfs.bitswap.BitSwapMessage;
 import io.ipfs.bitswap.BitSwapNetwork;
 import io.ipfs.bitswap.BitSwapProtocol;
 import io.ipfs.cid.Cid;
+import io.libp2p.ConnectionManager;
 import io.libp2p.HostBuilder;
 import io.libp2p.core.Connection;
 import io.libp2p.core.ConnectionClosedException;
@@ -33,20 +34,32 @@ public class LiteHost implements BitSwapNetwork {
     private final Host host;
     @NonNull
     private final Routing routing;
+    @NonNull
+    private final ConnectionManager connectionManager;
 
 
-    private LiteHost(@NonNull Host host, @NonNull Routing routing) {
+    private LiteHost(@NonNull Host host,
+                     @NonNull ConnectionManager connectionManager,
+                     @NonNull Routing routing) {
         this.host = host;
+        this.connectionManager = connectionManager;
         this.routing = routing;
     }
 
-    public static BitSwapNetwork NewLiteHost(@NonNull Host host, @NonNull Routing routing) {
-        return new LiteHost(host, routing);
+    public static BitSwapNetwork NewLiteHost(@NonNull Host host,
+                                             @NonNull ConnectionManager connectionManager,
+                                             @NonNull Routing routing) {
+        return new LiteHost(host, connectionManager, routing);
     }
 
     @Override
     public boolean ConnectTo(@NonNull Closeable closeable, @NonNull PeerId peerId, boolean protect)
             throws ClosedException, ConnectionIssue {
+
+        if (protect) {
+            connectionManager.protectPeer(peerId);
+        }
+
         return HostBuilder.connect(closeable, host, peerId) != null;
     }
 

@@ -63,6 +63,7 @@ import io.ipfs.utils.ReaderStream;
 import io.ipfs.utils.Resolver;
 import io.ipfs.utils.Stream;
 import io.ipns.Ipns;
+import io.libp2p.ConnectionManager;
 import io.libp2p.HostBuilder;
 import io.libp2p.core.Connection;
 import io.libp2p.core.Host;
@@ -96,7 +97,7 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
     public static final long TIMEOUT_DHT_PEER = 3;
     public static final int LOW_WATER = 50;
     public static final int HIGH_WATER = 300;
-    public static final String GRACE_PERIOD = "10s";
+    public static final int GRACE_PERIOD = 10;
     public static final int MIN_PEERS = 10;
     public static final long RESOLVE_MAX_TIME = 30000; // 30 sec
     public static final int RESOLVE_TIMEOUT = 1000; // 1 sec
@@ -172,6 +173,7 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
     private Pusher pusher;
     private boolean running;
     private final int port;
+    private final ConnectionManager connectionManager;
 
 
     private IPFS(@NonNull Context context) throws Exception {
@@ -236,11 +238,13 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
 
         int alpha = getConcurrencyValue(context);
 
-        this.routing = new KadDHT(host, new Ipns(), alpha, IPFS.KAD_DHT_BETA,
+        this.connectionManager = new ConnectionManager(host, LOW_WATER, HIGH_WATER, GRACE_PERIOD);
+        this.routing = new KadDHT(host, connectionManager.getMetrics(),
+                new Ipns(), alpha, IPFS.KAD_DHT_BETA,
                 IPFS.KAD_DHT_BUCKET_SIZE);
 
 
-        BitSwapNetwork bsm = LiteHost.NewLiteHost(host, routing);
+        BitSwapNetwork bsm = LiteHost.NewLiteHost(host, connectionManager, routing);
         BlockStore blockstore = BlockStore.NewBlockstore(blocks);
 
         this.exchange = BitSwap.New(bsm, blockstore);
@@ -803,16 +807,22 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
         }
 
         Multiaddr multiaddr = new Multiaddr(multiAddress);
+        String pid = multiaddr.getStringComponent(Protocol.P2P);
+        Objects.requireNonNull(pid);
+        PeerId peerId = decode(pid);
+        Objects.requireNonNull(peerId);
+
         try {
+
+            connectionManager.protectPeer(peerId);
+
             CompletableFuture<Connection> fdf = host.getNetwork().connect(multiaddr);
             return fdf.get() != null;
         } catch (Throwable e) {
             LogUtils.error(TAG, multiaddr + " " + e.getMessage());
             try {
                 if (multiAddress.startsWith(IPFS.P2P_PATH)) {
-                    String pid = multiaddr.getStringComponent(Protocol.P2P);
-                    Objects.requireNonNull(pid);
-                    return routing.FindPeer(closeable, decode(pid));
+                    return routing.FindPeer(closeable, peerId);
                 }
             } catch (ClosedException closedException) {
                 throw closedException;
@@ -1237,29 +1247,12 @@ func ToCid(id ID) cid.Cid {
             return 0;
         }
         return host.getNetwork().getConnections().size();
-        //return node.numSwarmPeers();
     }
-
-    /*
-    @Override
-    public void FindProvidersAsync(@NonNull io.dht.Providers providers, @NonNull Cid cid, int number) throws ClosedException {
-
-        dhtFindProviders(cid.String(), number, providers);
-
-    }
-
-    @Override
-    public void Provide(@NonNull Closeable closeable, @NonNull Cid cid) {
-        try {
-            dhtPublish(closeable, cid.String());
-        } catch (Throwable throwable) {
-            throw new RuntimeException(throwable);
-        }
-
-    }*/
 
     public void reset() {
         try {
+            connectionManager.trimConnections();
+
             if (exchange != null) {
                 exchange.reset();
             }
