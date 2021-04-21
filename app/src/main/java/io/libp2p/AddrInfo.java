@@ -8,8 +8,10 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 import io.LogUtils;
 import io.libp2p.core.PeerId;
@@ -21,7 +23,7 @@ public class AddrInfo {
     private static final String TAG = AddrInfo.class.getSimpleName();
     @NonNull
     private final PeerId peerId;
-    private final List<Multiaddr> addresses = new ArrayList<>();
+    private final Set<Multiaddr> addresses = new HashSet<>();
 
     private AddrInfo(@NonNull PeerId id) {
         this.peerId = id;
@@ -62,18 +64,9 @@ public class AddrInfo {
 
 
     private void addAddress(@NonNull Multiaddr address) {
-        if (address.has(Protocol.DNS6)) {
-            LogUtils.info(TAG, "DNS6 " + address.toString()); // maybe TODO
-        }
-        if (address.has(Protocol.DNSADDR)) {
-            LogUtils.info(TAG, "DNSADDR " + address.toString()); // TODO
-        }
         if (address.has(Protocol.WS)) {
             LogUtils.info(TAG, "WS " + address.toString()); // maybe TODO
             return;
-        }
-        if (address.has(Protocol.DNS4)) {
-            LogUtils.info(TAG, "DNS4 " + address.toString()); // maybe TODO
         }
         if (address.has(Protocol.P2PCIRCUIT)) { // TODO SUPPORT THIS
             LogUtils.info(TAG, "P2PCIRCUIT " + address.toString());
@@ -93,9 +86,7 @@ public class AddrInfo {
                 return;
             }
         }
-        if (!this.addresses.contains(address)) {
-            this.addresses.add(address);
-        }
+        this.addresses.add(address);
     }
 
     public boolean hasAddresses() {

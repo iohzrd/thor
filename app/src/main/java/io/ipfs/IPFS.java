@@ -93,7 +93,7 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
     public static final int PRELOAD = 25;
     public static final int PRELOAD_DIST = 5;
     public static final int WRITE_TIMEOUT = 60;
-    public static final String AGENT = "/go-ipfs/0.9.0-dev/thor"; // todo rename
+    public static final String AGENT = "/go-ipfs/0.9.0/thor"; // todo rename
     public static final String PROTOCOL_VERSION = "ipfs/0.1.0";  // todo check again
     public static final int TIMEOUT_BOOTSTRAP = 5;
     public static final long TIMEOUT_DHT_PEER = 3;
