@@ -164,7 +164,10 @@ public interface BitSwapMessage {
             // TODO check if Cid is correct
             return BitswapProtos.Message.Wantlist.Entry.newBuilder().setBlock(
                     ByteString.copyFrom(Cid.Bytes())
-            ).setPriority(Priority).setCancel(Cancel).setWantType(WantType).setSendDontHave(SendDontHave).build();
+            ).setPriority(Priority).
+                    setCancel(Cancel).
+                    setWantType(WantType).
+                    setSendDontHave(SendDontHave).build();
 
         }
     }
