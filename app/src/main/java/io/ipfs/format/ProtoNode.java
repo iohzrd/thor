@@ -28,8 +28,6 @@ public class ProtoNode implements Node {
     private Builder mBuilder;
 
     public ProtoNode() {
-
-        LogUtils.error(TAG, "");
     }
 
     public ProtoNode(@NonNull byte[] data) {
@@ -133,7 +131,7 @@ public class ProtoNode implements Node {
 
 
     // Marshal encodes a *Node instance into a new byte slice.
-// The conversion uses an intermediate PBNode.
+    // The conversion uses an intermediate PBNode.
     private byte[] Marshal() {
 
         MerkledagProtos.PBNode.Builder pbn = MerkledagProtos.PBNode.newBuilder();
