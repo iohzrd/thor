@@ -63,7 +63,7 @@ public class IpfsAddTest {
         }
         long size = inputFile.length();
 
-        LogUtils.error(TAG, "Bytes : " + inputFile.length() / 1000 + "[kb]");
+        LogUtils.debug(TAG, "Bytes : " + inputFile.length() / 1000 + "[kb]");
 
         String hash58Base = ipfs.storeFile(inputFile);
         assertNotNull(hash58Base);
@@ -118,7 +118,7 @@ public class IpfsAddTest {
         }
         long size = inputFile.length();
 
-        LogUtils.error(TAG, "Bytes : " + inputFile.length() / 1000 + "[kb]");
+        LogUtils.debug(TAG, "Bytes : " + inputFile.length() / 1000 + "[kb]");
 
         String hash58Base = ipfs.storeFile(inputFile);
         assertNotNull(hash58Base);
@@ -152,7 +152,7 @@ public class IpfsAddTest {
         long size = inputFile.length();
 
 
-        LogUtils.error(TAG, "Bytes : " + inputFile.length() / 1000 + "[kb]");
+        LogUtils.debug(TAG, "Bytes : " + inputFile.length() / 1000 + "[kb]");
 
         String hash58Base = ipfs.storeFile(inputFile);
         assertNotNull(hash58Base);
@@ -185,7 +185,7 @@ public class IpfsAddTest {
         }
         long size = inputFile.length();
 
-        LogUtils.error(TAG, "Bytes : " + inputFile.length() / 1000 + "[kb]");
+        LogUtils.debug(TAG, "Bytes : " + inputFile.length() / 1000 + "[kb]");
 
         String hash58Base = ipfs.storeFile(inputFile);
         assertNotNull(hash58Base);

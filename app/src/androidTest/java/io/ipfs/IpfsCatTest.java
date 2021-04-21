@@ -43,27 +43,27 @@ public class IpfsCatTest {
         List<String> provs = new ArrayList<>();
         ipfs.findProviders(() -> false, peerId -> provs.add(peerId.toBase58()), cid);
         for (String prov : provs) {
-            LogUtils.error(TAG, "Provider " + prov);
+            LogUtils.debug(TAG, "Provider " + prov);
         }
-        LogUtils.error(TAG, "Time Providers : " + (System.currentTimeMillis() - time) + " [ms]");
+        LogUtils.debug(TAG, "Time Providers : " + (System.currentTimeMillis() - time) + " [ms]");
 
         time = System.currentTimeMillis();
         List<Link> res = ipfs.getLinks(cid, new TimeoutCloseable(15));
-        LogUtils.error(TAG, "Time : " + (System.currentTimeMillis() - time) + " [ms]");
+        LogUtils.debug(TAG, "Time : " + (System.currentTimeMillis() - time) + " [ms]");
         assertNotNull(res);
         assertTrue(res.isEmpty());
 
         time = System.currentTimeMillis();
         byte[] content = ipfs.loadData(cid, new TimeoutCloseable(10));
 
-        LogUtils.error(TAG, "Time : " + (System.currentTimeMillis() - time) + " [ms]");
+        LogUtils.debug(TAG, "Time : " + (System.currentTimeMillis() - time) + " [ms]");
 
         assertNotNull(content);
 
 
         time = System.currentTimeMillis();
         ipfs.rm(cid, true);
-        LogUtils.error(TAG, "Time : " + (System.currentTimeMillis() - time) + " [ms]");
+        LogUtils.debug(TAG, "Time : " + (System.currentTimeMillis() - time) + " [ms]");
 
     }
 
