@@ -45,7 +45,7 @@ import threads.thor.utils.MimeType;
 
 public class DOCS {
 
-    private static final String INDEX_HTML = "index.html";
+
     private static final String TAG = DOCS.class.getSimpleName();
     private static final HashSet<Long> threads = new HashSet<>();
     private static final HashSet<Uri> uris = new HashSet<>();
@@ -766,7 +766,7 @@ public class DOCS {
 
                 if (!cid.isEmpty()) {
                     if (ipfs.isDir(cid, closeable)) {
-                        boolean exists = ipfs.resolve(cid, INDEX_HTML, closeable);
+                        boolean exists = ipfs.resolve(cid, IPFS.INDEX_HTML, closeable);
 
                         if (exists) {
                             Uri.Builder builder = new Uri.Builder();
@@ -775,7 +775,7 @@ public class DOCS {
                             for (String path : paths) {
                                 builder.appendPath(path);
                             }
-                            builder.appendPath(INDEX_HTML);
+                            builder.appendPath(IPFS.INDEX_HTML);
                             return builder.build();
                         }
                     }

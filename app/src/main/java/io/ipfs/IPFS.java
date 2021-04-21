@@ -90,6 +90,7 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
     // RFC3339Nano = "2006-01-02T15:04:05.999999999Z07:00"
     public static final String TimeFormatIpfs = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSS'Z'";
 
+    public static final String INDEX_HTML = "index.html";
     public static final int PRELOAD = 25;
     public static final int PRELOAD_DIST = 5;
     public static final int WRITE_TIMEOUT = 60;

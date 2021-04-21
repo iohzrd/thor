@@ -16,6 +16,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import io.LogUtils;
 import io.core.ClosedException;
 import io.core.TimeoutCloseable;
+import io.ipfs.format.Node;
 
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertNotNull;
@@ -26,7 +27,7 @@ import static junit.framework.TestCase.fail;
 @RunWith(AndroidJUnit4.class)
 public class IpfsRealTest {
 
-    private static final String TAG = IpfsResolveTest.class.getSimpleName();
+    private static final String TAG = IpfsRealTest.class.getSimpleName();
     private static Context context;
 
     @BeforeClass
@@ -50,7 +51,7 @@ public class IpfsRealTest {
         AtomicInteger num = new AtomicInteger(0);
         try {
             ipfs.findProviders(atomicBoolean::get, addrInfo -> {
-                LogUtils.error(TAG, addrInfo.toString());
+                LogUtils.debug(TAG, addrInfo.toString());
                 if (num.incrementAndGet() == 5) {
                     atomicBoolean.set(true);
                 }
@@ -63,7 +64,7 @@ public class IpfsRealTest {
     }
 
     @Test
-    public void test_2() {
+    public void test_2() throws ClosedException {
 
         IPFS ipfs = TestEnv.getTestInstance(context);
 
@@ -74,13 +75,12 @@ public class IpfsRealTest {
         assertNotNull(link);
         assertFalse(link.isEmpty());
 
-        String cid = link.replaceFirst(IPFS.IPFS_PATH, "");
-
-        String text = ipfs.getText(cid, new TimeoutCloseable(30));
+        Node node = ipfs.resolveNode(link.concat("/").concat(IPFS.INDEX_HTML), new TimeoutCloseable(30));
+        String text = ipfs.getText(node.Cid().String(), new TimeoutCloseable(30));
 
         assertNotNull(text);
         assertFalse(text.isEmpty());
-        LogUtils.error(TAG, text);
+        LogUtils.debug(TAG, text);
 
 
     }
