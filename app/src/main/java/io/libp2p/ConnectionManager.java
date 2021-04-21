@@ -80,7 +80,7 @@ public class ConnectionManager implements Metrics {
     public void trimConnections() {
 
         int connections = numConnections();
-        LogUtils.error(TAG, "numConnections (before) " + connections);
+        LogUtils.verbose(TAG, "numConnections (before) " + connections);
 
         if(connections > highWater) {
 
@@ -102,6 +102,6 @@ public class ConnectionManager implements Metrics {
                 }
             }
         }
-        LogUtils.error(TAG, "numConnections (after) " + numConnections());
+        LogUtils.verbose(TAG, "numConnections (after) " + numConnections());
     }
 }

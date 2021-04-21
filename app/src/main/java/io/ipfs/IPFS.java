@@ -176,6 +176,7 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
     private final ConnectionManager connectionManager;
 
 
+
     private IPFS(@NonNull Context context) throws Exception {
 
         blocks = BLOCKS.getInstance(context);
@@ -187,28 +188,20 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
             setPrivateKey(context, encoder.encodeToString(keys.getFirst().bytes()));
         }
         /* TODO
-        node.setPeerID(IPFS.getPeerID(context));
-        node.setPrivateKey(IPFS.getPrivateKey(context));
-        node.setPublicKey(IPFS.getPublicKey(context));
-
-
 
         node.setAgent(AGENT);
         node.setPushing(false);
-        node.setPort(IPFS.getSwarmPort(context));
-
-        node.setConcurrency(getConcurrencyValue(context));
-        node.setGracePeriod(GRACE_PERIOD);
-        node.setHighWater(HIGH_WATER);
-        node.setLowWater(LOW_WATER);
         node.setResponsive(200);
         node.setEnablePushService(false);
         node.setEnableReachService(false);
         node.setEnableConnService(false);*/
 
-
-        port = nextFreePort();
-
+        int checkPort = getSwarmPort(context);
+        if( isLocalPortFree(checkPort) ){
+            port = checkPort;
+        } else {
+            port = nextFreePort();
+        }
         byte[] data = Base64.getDecoder().decode(getPrivateKey(context));
         privateKey = Ed25519Kt.unmarshalEd25519PrivateKey(data);
 
@@ -682,17 +675,6 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
         }
     }
 
-
-
-    private static String deserialize(byte[] raw) {
-        try (InputStream inputStream = new ByteArrayInputStream(raw)) {
-            return deserialize(inputStream);
-        } catch (Throwable ignore) {
-            return "";
-        }
-
-    }
-
     private static String deserialize(InputStream din) throws IOException {
         int type = (int) Multihash.readVarint(din);
         if (type != 1) {
@@ -816,7 +798,7 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
 
             connectionManager.protectPeer(peerId);
 
-            CompletableFuture<Connection> fdf = host.getNetwork().connect(multiaddr);
+            CompletableFuture<Connection> fdf = host.getNetwork().connect(peerId, multiaddr);
             return fdf.get() != null;
         } catch (Throwable e) {
             LogUtils.error(TAG, multiaddr + " " + e.getMessage());
