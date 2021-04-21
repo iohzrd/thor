@@ -11,7 +11,6 @@ import com.google.protobuf.ByteString;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -29,7 +28,7 @@ import dht.pb.Dht;
 import io.LogUtils;
 import io.core.Closeable;
 import io.core.ClosedException;
-import io.core.ConnectionFailure;
+import io.core.TimeoutIssue;
 import io.core.ConnectionIssue;
 import io.core.InvalidRecord;
 import io.core.ProtocolIssue;
@@ -37,7 +36,6 @@ import io.core.Validator;
 import io.ipfs.IPFS;
 import io.ipfs.cid.Cid;
 import io.libp2p.AddrInfo;
-import io.libp2p.ConnectionManager;
 import io.libp2p.HostBuilder;
 import io.libp2p.Metrics;
 import io.libp2p.core.Connection;
@@ -187,7 +185,7 @@ public class KadDHT implements Routing {
     private void putValueToPeer(@NonNull Closeable ctx,
                                 @NonNull PeerId p,
                                 @NonNull RecordOuterClass.Record rec)
-            throws ConnectionFailure, ProtocolIssue, ClosedException, ConnectionIssue {
+            throws TimeoutIssue, ProtocolIssue, ClosedException, ConnectionIssue {
 
         Dht.Message pms = Dht.Message.newBuilder()
                 .setType(Dht.Message.MessageType.PUT_VALUE)
@@ -345,7 +343,7 @@ public class KadDHT implements Routing {
 
     private Dht.Message sendRequest(@NonNull Closeable closeable, @NonNull PeerId p,
                                     @NonNull Dht.Message message)
-            throws ClosedException, ProtocolIssue, ConnectionFailure, ConnectionIssue {
+            throws ClosedException, ProtocolIssue, TimeoutIssue, ConnectionIssue {
 
 
         Connection con = HostBuilder.connect(closeable, host, p);
@@ -382,10 +380,10 @@ public class KadDHT implements Routing {
                     throw new ConnectionIssue();
                 }
                 if (cause instanceof ConnectionClosedException) {
-                    throw new ConnectionFailure();
+                    throw new ConnectionIssue();
                 }
                 if (cause instanceof ReadTimeoutException) {
-                    throw new ConnectionFailure();
+                    throw new TimeoutIssue();
                 }
             }
             LogUtils.error(TAG, throwable);
@@ -397,7 +395,7 @@ public class KadDHT implements Routing {
 
 
     private Dht.Message getValueSingle(@NonNull Closeable ctx, @NonNull PeerId p, @NonNull byte[] key)
-            throws ConnectionFailure, ProtocolIssue, ClosedException, ConnectionIssue {
+            throws TimeoutIssue, ProtocolIssue, ClosedException, ConnectionIssue {
         Dht.Message pms = Dht.Message.newBuilder()
                 .setType(Dht.Message.MessageType.GET_VALUE)
                 .setKey(ByteString.copyFrom(key))
@@ -406,7 +404,7 @@ public class KadDHT implements Routing {
     }
 
     private Dht.Message findPeerSingle(@NonNull Closeable ctx, @NonNull PeerId p, @NonNull byte[] key)
-            throws ClosedException, ProtocolIssue, ConnectionFailure, ConnectionIssue {
+            throws ClosedException, ProtocolIssue, TimeoutIssue, ConnectionIssue {
         Dht.Message pms = Dht.Message.newBuilder()
                 .setType(Dht.Message.MessageType.FIND_NODE)
                 .setKey(ByteString.copyFrom(key))
@@ -416,7 +414,7 @@ public class KadDHT implements Routing {
     }
 
     private Dht.Message findProvidersSingle(@NonNull Closeable ctx, @NonNull PeerId p, @NonNull byte[] key)
-            throws ClosedException, ProtocolIssue, ConnectionFailure, ConnectionIssue {
+            throws ClosedException, ProtocolIssue, TimeoutIssue, ConnectionIssue {
         Dht.Message pms = Dht.Message.newBuilder()
                 .setType(Dht.Message.MessageType.GET_PROVIDERS)
                 .setKey(ByteString.copyFrom(key))
@@ -556,7 +554,7 @@ public class KadDHT implements Routing {
 
     private Pair<RecordOuterClass.Record, List<AddrInfo>> getValueOrPeers(
             @NonNull Closeable ctx, @NonNull PeerId p, @NonNull byte[] key)
-            throws ConnectionFailure, ClosedException, ProtocolIssue, ConnectionIssue {
+            throws TimeoutIssue, ClosedException, ProtocolIssue, ConnectionIssue {
 
 
         Dht.Message pms = getValueSingle(ctx, p, key);
@@ -644,7 +642,7 @@ public class KadDHT implements Routing {
     public interface QueryFunc {
         @NonNull
         List<AddrInfo> query(@NonNull Closeable ctx, @NonNull PeerId peerId)
-                throws ClosedException, ProtocolIssue, ConnectionFailure, InvalidRecord, ConnectionIssue;
+                throws ClosedException, ProtocolIssue, TimeoutIssue, InvalidRecord, ConnectionIssue;
     }
 
 

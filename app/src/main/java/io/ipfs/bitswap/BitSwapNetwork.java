@@ -6,7 +6,7 @@ import java.util.Set;
 
 import io.core.Closeable;
 import io.core.ClosedException;
-import io.core.ConnectionFailure;
+import io.core.TimeoutIssue;
 import io.core.ConnectionIssue;
 import io.core.ProtocolIssue;
 import io.dht.Routing;
@@ -20,7 +20,7 @@ public interface BitSwapNetwork {
 
     void WriteMessage(@NonNull Closeable closeable, @NonNull PeerId peer,
                       @NonNull BitSwapMessage message)
-            throws ClosedException, ProtocolIssue, ConnectionFailure, ConnectionIssue;
+            throws ClosedException, ProtocolIssue, TimeoutIssue, ConnectionIssue;
 
     void FindProviders(@NonNull Closeable closeable, @NonNull Routing.Providers providers,
                        @NonNull Cid cid) throws ClosedException;

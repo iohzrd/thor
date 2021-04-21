@@ -102,7 +102,6 @@ public class DhtProtocol implements ProtocolBinding<DhtProtocol.DhtController> {
 
         @Override
         public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-            LogUtils.error(TAG, cause);
             activationFut.completeExceptionally(cause);
             resFuture.completeExceptionally(cause);
         }

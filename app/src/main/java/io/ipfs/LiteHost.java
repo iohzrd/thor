@@ -5,10 +5,9 @@ import androidx.annotation.NonNull;
 import java.util.HashSet;
 import java.util.Set;
 
-import io.LogUtils;
 import io.core.Closeable;
 import io.core.ClosedException;
-import io.core.ConnectionFailure;
+import io.core.TimeoutIssue;
 import io.core.ConnectionIssue;
 import io.core.ProtocolIssue;
 import io.dht.Routing;
@@ -81,7 +80,7 @@ public class LiteHost implements BitSwapNetwork {
     @Override
     public void WriteMessage(@NonNull Closeable closeable, @NonNull PeerId peer,
                              @NonNull BitSwapMessage message)
-            throws ClosedException, ProtocolIssue, ConnectionFailure, ConnectionIssue {
+            throws ClosedException, ProtocolIssue, TimeoutIssue, ConnectionIssue {
 
         Connection con = HostBuilder.connect(closeable, host, peer);
         try {
@@ -110,10 +109,10 @@ public class LiteHost implements BitSwapNetwork {
                     throw new ConnectionIssue();
                 }
                 if (cause instanceof ConnectionClosedException) {
-                    throw new ConnectionFailure();
+                    throw new ConnectionIssue();
                 }
                 if (cause instanceof ReadTimeoutException) {
-                    throw new ConnectionFailure();
+                    throw new TimeoutIssue();
                 }
             }
             throw new RuntimeException(throwable);
