@@ -2,12 +2,9 @@ package io.ipfs;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.util.Pair;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-
-import org.jetbrains.annotations.NotNull;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -26,6 +23,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -69,7 +67,6 @@ import io.ipns.Ipns;
 import io.libp2p.ConnectionManager;
 import io.libp2p.HostBuilder;
 import io.libp2p.core.Connection;
-import io.libp2p.core.ConnectionHandler;
 import io.libp2p.core.Host;
 import io.libp2p.core.PeerId;
 import io.libp2p.core.crypto.KEY_TYPE;
@@ -131,9 +128,7 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
 
     ));
     // IPFS BOOTSTRAP DNS
-    public static final String LIB2P_DNS = "_dnsaddr.bootstrap.libp2p.io";
-    public static final String DNS_ADDR = "dnsaddr=/dnsaddr/";
-    public static final String DNS_LINK = "dnslink=";
+    public static final String LIB2P_DNS = "bootstrap.libp2p.io";
     public static final boolean SEND_DONT_HAVES = false;
     public static final boolean BITSWAP_ENGINE_ACTIVE = false;
 
@@ -713,14 +708,14 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
     public String decodeName(@NonNull String name) {
         try {
             PeerId peerId = decode(name);
-            if(peerId != null){
-                return peerId.toBase58();
-            }
+            return peerId.toBase58();
         } catch (Throwable ignore) {
             // common use case to fail
         }
         return "";
     }
+
+
 
 
     @NonNull
@@ -739,9 +734,10 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
             if (numSwarmPeers() < MIN_PEERS) {
 
                 try {
-                    Pair<List<String>, List<String>> result = DnsAddrResolver.getBootstrap();
 
-                    List<String> bootstrap = result.first;
+
+
+                    List<String> bootstrap = IPFS.IPFS_BOOTSTRAP_NODES;
                     List<Callable<Boolean>> tasks = new ArrayList<>();
                     ExecutorService executor = Executors.newFixedThreadPool(bootstrap.size());
                     for (String address : bootstrap) {
@@ -756,7 +752,7 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
                     routing.init();
 
 
-                    List<String> second = result.second;
+                    Set<String> second = DnsResolver.resolveDnsAddress(LIB2P_DNS);
                     tasks.clear();
                     if (!second.isEmpty()) {
                         executor = Executors.newFixedThreadPool(second.size());

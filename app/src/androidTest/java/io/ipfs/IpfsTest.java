@@ -1,7 +1,6 @@
 package io.ipfs;
 
 import android.content.Context;
-import android.util.Pair;
 
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -13,6 +12,7 @@ import org.junit.runner.RunWith;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 import io.LogUtils;
 import io.core.ClosedException;
@@ -68,21 +68,12 @@ public class IpfsTest {
 
         if (TestEnv.isConnected(context)) {
 
-            Pair<List<String>, List<String>> result = DnsAddrResolver.getMultiAddresses();
-            List<String> first = result.first;
-            List<String> second = result.second;
-            assertNotNull(first);
-            assertEquals(first.size(), 0);
-            assertNotNull(second);
-            assertEquals(second.size(), 5);
+            Set<String> result = DnsResolver.resolveDnsAddress(IPFS.LIB2P_DNS);
+            assertNotNull(result);
+            assertEquals(result.size(), 30);
 
 
-            for (String address : first) {
-                LogUtils.error(TAG, address);
-            }
-
-
-            for (String address : second) {
+            for (String address : result) {
                 LogUtils.error(TAG, address);
             }
         }

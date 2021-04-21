@@ -14,7 +14,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.LogUtils;
-import io.core.Closeable;
 import io.core.ClosedException;
 import io.core.TimeoutCloseable;
 
@@ -70,7 +69,7 @@ public class IpfsRealTest {
 
         ipfs.reset();
 
-        String link = DnsAddrResolver.getDNSLink("blog.ipfs.io");
+        String link = DnsResolver.resolveDnsLink("blog.ipfs.io");
 
         assertNotNull(link);
         assertFalse(link.isEmpty());

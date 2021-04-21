@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit;
 
 import io.core.Closeable;
 import io.core.ClosedException;
-import io.ipfs.DnsAddrResolver;
+import io.ipfs.DnsResolver;
 import io.ipfs.IPFS;
 import io.ipfs.format.Node;
 import io.ipfs.utils.Link;
@@ -520,7 +520,7 @@ public class DOCS {
 
         if (ipfs.decodeName(host).isEmpty()) {
 
-            String link = DnsAddrResolver.getDNSLink(host);
+            String link = DnsResolver.resolveDnsLink(host);
             if (link.isEmpty()) {
                 // could not resolved, maybe no NETWORK
                 String dnsLink = books.getDnsLink(uri.toString());
