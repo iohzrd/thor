@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.Set;
 
 import io.LogUtils;
-import io.core.Closeable;
+import io.core.TimeoutCloseable;
 import io.ipfs.IPFS;
 import io.ipfs.cid.Cid;
 import io.ipfs.format.Block;
@@ -94,7 +94,6 @@ public class BitSwapEngine {
 
     }
 
-    // Split the want-have / want-block entries from the cancel entries
     public Pair<List<BitSwapMessage.Entry>, List<BitSwapMessage.Entry>> splitWantsCancels(
             @NonNull List<BitSwapMessage.Entry> es) {
         List<BitSwapMessage.Entry> wants = new ArrayList<>();
@@ -138,10 +137,9 @@ public class BitSwapEngine {
         }
 
 
-        // Get block sizes
         Pair<List<BitSwapMessage.Entry>, List<BitSwapMessage.Entry>> result = splitWantsCancels(entries);
         List<BitSwapMessage.Entry> wants = result.first;
-        List<BitSwapMessage.Entry> cancels = result.second;
+
 
         Set<Cid> wantKs = new HashSet<>();
         for (BitSwapMessage.Entry entry : wants) {
@@ -152,13 +150,6 @@ public class BitSwapEngine {
         HashMap<Cid, Integer> blockSizes = getBlockSizes(wantKs);
 
 
-        // Remove cancelled blocks from the queue
-        for (BitSwapMessage.Entry entry : cancels) {
-            LogUtils.verbose(TAG, "Bitswap engine <- cancel " + " local " +
-                    self + " from " + peer.toBase58() + " cid " + entry.Cid.String());
-            // TODO handle cancels
-        }
-
 
         for (BitSwapMessage.Entry entry : wants) {
             // For each want-have / want-block
@@ -166,8 +157,6 @@ public class BitSwapEngine {
             Cid c = entry.Cid;
             Integer blockSize = blockSizes.get(entry.Cid);
 
-
-            // If the block was not found
             if (blockSize == null) {
                 LogUtils.verbose(TAG,
                         "Bitswap engine: block not found" + " local " + self.toBase58()
@@ -186,18 +175,14 @@ public class BitSwapEngine {
                             new TaskData(false, isWantBlock, entry.SendDontHave));
                     BitSwapMessage msg = createMessage(task);
                     if (!msg.Empty()) {
-                        // TODO closable
-                        Closeable closeable = () -> false;
                         try {
-                            network.WriteMessage(closeable, peer, msg);
+                            network.WriteMessage(new TimeoutCloseable(5), peer, msg);
                         } catch (Throwable throwable) {
                             LogUtils.error(TAG, throwable);
                         }
                     }
                 }
             } else {
-                // The block was found, add it to the queue
-
                 boolean isWantBlock = sendAsBlock(entry.WantType, blockSize);
 
                 LogUtils.verbose(TAG,
@@ -205,19 +190,15 @@ public class BitSwapEngine {
                                 "from " + peer + " cid " + entry.Cid.String()
                                 + " isWantBlock " + isWantBlock);
 
-
                 Task task = new Task(c, new TaskData(true, isWantBlock, entry.SendDontHave));
                 BitSwapMessage msg = createMessage(task);
                 if (!msg.Empty()) {
-                    // TODO closable
-                    Closeable closeable = () -> false;
                     try {
-                        network.WriteMessage(closeable, peer, msg);
+                        network.WriteMessage(new TimeoutCloseable(10), peer, msg);
                     } catch (Throwable throwable) {
                         LogUtils.error(TAG, throwable);
                     }
                 }
-
             }
         }
     }

@@ -91,20 +91,6 @@ public class Cid implements Comparable<Cid> {
         }
     }
 
-    public static void ValidateCid(Cid c) {
-        /* TODO
-        pref := c.Prefix();
-        if !IsGoodHash(pref.MhType) {
-            return ErrPossiblyInsecureHashFunction
-        }
-
-        if pref.MhType != mh.ID && pref.MhLength < minimumHashLength {
-            return ErrBelowMinimumHashLength
-        }
-
-        return nil*/
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

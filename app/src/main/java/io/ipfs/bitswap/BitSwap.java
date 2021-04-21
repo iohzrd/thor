@@ -92,8 +92,7 @@ public class BitSwap implements Interface {
 
     @Override
     public void ReceiveError(@NonNull PeerId peer, @NonNull String protocol, @NonNull String error) {
-
-        // TODO handle error
+        // TODO evaluate when this happens
         LogUtils.error(TAG, "ReceiveError " + peer.toBase58() + " " + protocol + " " + error);
     }
 
