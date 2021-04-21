@@ -51,20 +51,6 @@ public class IpfsTest {
 
     }
 
-    @Test
-    public void test_dnsAddress() throws ClosedException {
-        IPFS ipfs = TestEnv.getTestInstance(context);
-
-
-
-        boolean result = ipfs.swarmConnect(
-                "/dnsaddr/bootstrap.libp2p.io/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN",
-                ()-> false);
-        assertTrue(result);
-
-
-
-    }
 
     @Test
     public void test_versionAndPID() {
