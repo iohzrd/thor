@@ -1307,8 +1307,8 @@ func ToCid(id ID) cid.Cid {
     }
 
     @Override
-    public boolean acceptPusher(@NonNull PeerId remotePeerId) {
-        return false; // TODO adapt for implementation
+    public boolean acceptPusher(@NonNull PeerId peerId) {
+        return swarm.contains(peerId);
     }
 
     @Override
