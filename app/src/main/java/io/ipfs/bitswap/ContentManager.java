@@ -56,7 +56,7 @@ public class ContentManager {
             if (res != null) {
                 res.add(peer);
 
-                LogUtils.error(TAG, "HaveReceived " + cid.String() + " " + peer.toBase58());
+                LogUtils.info(TAG, "HaveReceived " + cid.String() + " " + peer.toBase58());
 
                 if (!Objects.equals(peer, priority.peek())) {
                     priority.push(peer); // top
@@ -73,7 +73,7 @@ public class ContentManager {
 
     public void reset() {
 
-        LogUtils.error(TAG, "Reset");
+        LogUtils.verbose(TAG, "Reset");
         try {
             loads.clear();
             priority.clear();
@@ -99,18 +99,18 @@ public class ContentManager {
                                 if (matches.containsKey(cid)) { // check still valid
                                     long start = System.currentTimeMillis();
                                     try {
-                                        LogUtils.error(TAG, "Provider Peer " +
+                                        LogUtils.info(TAG, "Provider Peer " +
                                                 peer.toBase58() + " cid " + cid.String());
 
                                         if (network.ConnectTo(closeable, peer)) {
                                             if (matches.containsKey(cid)) { // check still valid
-                                                LogUtils.error(TAG, "Found New Provider " + peer.toBase58()
+                                                LogUtils.info(TAG, "Found New Provider " + peer.toBase58()
                                                         + " for " + cid.String());
                                                 peers.add(peer);
                                                 Objects.requireNonNull(matches.get(cid)).add(peer);
                                             }
                                         } else {
-                                            LogUtils.error(TAG, "Provider Peer Connection Failed " +
+                                            LogUtils.info(TAG, "Provider Peer Connection Failed " +
                                                     peer.toBase58());
                                         }
                                     } catch (ClosedException | ConnectionIssue ignore) {
@@ -118,7 +118,7 @@ public class ContentManager {
                                     } catch (Throwable throwable) {
                                         LogUtils.error(TAG, throwable);
                                     } finally {
-                                        LogUtils.error(TAG, "Provider Peer " +
+                                        LogUtils.info(TAG, "Provider Peer " +
                                                 peer.toBase58() + " took " + (System.currentTimeMillis() - start));
                                     }
                                 }
@@ -167,7 +167,7 @@ public class ContentManager {
                         } catch (Throwable throwable) {
                             LogUtils.error(TAG, throwable);
                         } finally {
-                            LogUtils.error(TAG, "Match Peer " +
+                            LogUtils.info(TAG, "Match Peer " +
                                     peer.toBase58() + " took " + (System.currentTimeMillis() - start));
                         }
                     }
@@ -295,7 +295,7 @@ public class ContentManager {
 
     public void LoadBlocks(@NonNull Closeable closeable, @NonNull List<Cid> cids) {
 
-        LogUtils.error(TAG, "LoadBlocks " + cids.size());
+        LogUtils.verbose(TAG, "LoadBlocks " + cids.size());
 
         Executors.newSingleThreadExecutor().execute(() -> {
 
@@ -311,7 +311,7 @@ public class ContentManager {
                             createMatch(cid);
                         }
                     }
-                    LogUtils.error(TAG, "LoadBlocks " + peer.toBase58());
+                    LogUtils.verbose(TAG, "LoadBlocks " + peer.toBase58());
                     long start = System.currentTimeMillis();
                     try {
                         if (wantsMessage) {
@@ -327,7 +327,7 @@ public class ContentManager {
                     } catch (Throwable throwable) {
                         LogUtils.error(TAG, "LoadBlocks Error " + throwable.getLocalizedMessage());
                     } finally {
-                        LogUtils.error(TAG, "LoadBlocks " +
+                        LogUtils.info(TAG, "LoadBlocks " +
                                 peer.toBase58() + " took " + (System.currentTimeMillis() - start));
                     }
                 }
@@ -338,7 +338,7 @@ public class ContentManager {
     public void Load(@NonNull Closeable closeable, @NonNull Cid cid) {
         if (!loads.contains(cid)) {
             loads.add(cid);
-            LogUtils.error(TAG, "Load Provider Start " + cid.String());
+            LogUtils.info(TAG, "Load Provider Start " + cid.String());
             new Thread(() -> {
                 long start = System.currentTimeMillis();
                 try {
@@ -347,16 +347,16 @@ public class ContentManager {
                     network.FindProviders(loadCloseable, peer -> {
 
                         try {
-                            LogUtils.error(TAG, "Load Provider " + peer.toBase58() + " for " + cid.String());
+                            LogUtils.info(TAG, "Load Provider " + peer.toBase58() + " for " + cid.String());
                             new Thread(() -> {
                                 try {
                                     if (network.ConnectTo(loadCloseable, peer)) {
-                                        LogUtils.error(TAG, "Load Provider Found " + peer.toBase58()
+                                        LogUtils.info(TAG, "Load Provider Found " + peer.toBase58()
                                                 + " for " + cid.String());
                                         peers.add(peer);
                                         priority.add(peer);
                                     } else {
-                                        LogUtils.error(TAG, "Load Provider Connection Failed " +
+                                        LogUtils.info(TAG, "Load Provider Connection Failed " +
                                                 peer.toBase58());
                                     }
                                 } catch (ClosedException | ConnectionIssue ignore) {
