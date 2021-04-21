@@ -7,6 +7,8 @@ import android.util.Pair;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -21,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.Callable;
@@ -66,6 +69,7 @@ import io.ipns.Ipns;
 import io.libp2p.ConnectionManager;
 import io.libp2p.HostBuilder;
 import io.libp2p.core.Connection;
+import io.libp2p.core.ConnectionHandler;
 import io.libp2p.core.Host;
 import io.libp2p.core.PeerId;
 import io.libp2p.core.crypto.KEY_TYPE;
@@ -162,6 +166,7 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
     private static final String PRIVATE_KEY = "privateKey";
     private static final String CONCURRENCY_KEY = "concurrencyKey";
     private static final String TAG = IPFS.class.getSimpleName();
+    private static final boolean CONNECTION_SERVICE_ENABLED = false;
 
     private static IPFS INSTANCE = null;
 
@@ -245,6 +250,10 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
         running = true;
 
         setPeerID(context, getPeerID());
+
+        if(IPFS.CONNECTION_SERVICE_ENABLED){
+            host.addConnectionHandler(conn -> connected(conn.secureSession().getRemoteId()));
+        }
 
     }
 
@@ -1310,6 +1319,41 @@ func ToCid(id ID) cid.Cid {
             push(remotePeerId.toBase58(), new String(toByteArray));
         }
     }
+
+
+    public void swarmReduce(@NonNull PeerId pid) {
+        swarm.remove(pid);
+    }
+
+    public void swarmEnhance(@NonNull PeerId pid) {
+        swarm.add(pid);
+    }
+
+    public void swarmEnhance(@NonNull String[] users) {
+        for (String user:users) {
+            swarmEnhance(decode(user));
+        }
+    }
+    private final HashSet<PeerId> swarm = new HashSet<>();
+    private Connector connector;
+    public void setConnector(@Nullable Connector connector) {
+        this.connector = connector;
+    }
+
+
+    public void connected(@NonNull PeerId pid) {
+        if (swarm.contains(pid)) {
+            if (connector != null) {
+                ExecutorService executor = Executors.newSingleThreadExecutor();
+                executor.submit(() -> connector.connected(pid));
+            }
+        }
+    }
+
+    public interface Connector {
+        void connected(@NonNull PeerId pid);
+    }
+
 
     public interface Pusher {
         void push(@NonNull String pid, @NonNull String cid);
