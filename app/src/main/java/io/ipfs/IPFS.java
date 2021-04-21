@@ -239,7 +239,7 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
         int alpha = getConcurrencyValue(context);
 
         this.connectionManager = new ConnectionManager(host, LOW_WATER, HIGH_WATER, GRACE_PERIOD);
-        this.routing = new KadDHT(host, connectionManager.getMetrics(),
+        this.routing = new KadDHT(host, connectionManager,
                 new Ipns(), alpha, IPFS.KAD_DHT_BETA,
                 IPFS.KAD_DHT_BUCKET_SIZE);
 
@@ -1246,7 +1246,7 @@ func ToCid(id ID) cid.Cid {
         if (!isDaemonRunning()) {
             return 0;
         }
-        return host.getNetwork().getConnections().size();
+        return connectionManager.numConnections();
     }
 
     public void reset() {

@@ -16,8 +16,8 @@ import io.ipfs.bitswap.BitSwapMessage;
 import io.ipfs.bitswap.BitSwapNetwork;
 import io.ipfs.bitswap.BitSwapProtocol;
 import io.ipfs.cid.Cid;
-import io.libp2p.ConnectionManager;
 import io.libp2p.HostBuilder;
+import io.libp2p.Metrics;
 import io.libp2p.core.Connection;
 import io.libp2p.core.ConnectionClosedException;
 import io.libp2p.core.Host;
@@ -35,30 +35,27 @@ public class LiteHost implements BitSwapNetwork {
     @NonNull
     private final Routing routing;
     @NonNull
-    private final ConnectionManager connectionManager;
+    private final Metrics metrics;
 
 
     private LiteHost(@NonNull Host host,
-                     @NonNull ConnectionManager connectionManager,
+                     @NonNull Metrics metrics,
                      @NonNull Routing routing) {
         this.host = host;
-        this.connectionManager = connectionManager;
+        this.metrics = metrics;
         this.routing = routing;
     }
 
     public static BitSwapNetwork NewLiteHost(@NonNull Host host,
-                                             @NonNull ConnectionManager connectionManager,
+                                             @NonNull Metrics metrics,
                                              @NonNull Routing routing) {
-        return new LiteHost(host, connectionManager, routing);
+        return new LiteHost(host, metrics, routing);
     }
 
     @Override
-    public boolean ConnectTo(@NonNull Closeable closeable, @NonNull PeerId peerId, boolean protect)
+    public boolean ConnectTo(@NonNull Closeable closeable, @NonNull PeerId peerId)
             throws ClosedException, ConnectionIssue {
 
-        if (protect) {
-            connectionManager.protectPeer(peerId);
-        }
 
         return HostBuilder.connect(closeable, host, peerId) != null;
     }
@@ -88,12 +85,13 @@ public class LiteHost implements BitSwapNetwork {
 
         Connection con = HostBuilder.connect(closeable, host, peer);
         try {
+            synchronized (peer.toBase58().intern()) {
+                metrics.active(peer);
+                Object object = HostBuilder.stream(closeable, host, IPFS.ProtocolBitswap, con);
 
-            Object object = HostBuilder.stream(closeable, host, IPFS.ProtocolBitswap, con);
-
-            BitSwapProtocol.BitSwapController controller = (BitSwapProtocol.BitSwapController) object;
-            controller.sendRequest(message);
-
+                BitSwapProtocol.BitSwapController controller = (BitSwapProtocol.BitSwapController) object;
+                controller.sendRequest(message);
+            }
         } catch (ClosedException exception) {
             throw exception;
         } catch (Throwable throwable) {
@@ -120,6 +118,8 @@ public class LiteHost implements BitSwapNetwork {
                 }
             }
             throw new RuntimeException(throwable);
+        } finally {
+            metrics.done(peer);
         }
 
     }

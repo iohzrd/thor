@@ -16,8 +16,7 @@ import io.libp2p.core.PeerId;
 
 public interface BitSwapNetwork {
 
-    boolean ConnectTo(@NonNull Closeable closeable, @NonNull PeerId peerId,
-                      boolean protect) throws ClosedException, ConnectionIssue;
+    boolean ConnectTo(@NonNull Closeable closeable, @NonNull PeerId peerId) throws ClosedException, ConnectionIssue;
 
     void WriteMessage(@NonNull Closeable closeable, @NonNull PeerId peer,
                       @NonNull BitSwapMessage message)

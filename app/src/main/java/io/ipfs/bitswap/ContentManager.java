@@ -102,7 +102,7 @@ public class ContentManager {
                                         LogUtils.error(TAG, "Provider Peer " +
                                                 peer.toBase58() + " cid " + cid.String());
 
-                                        if (network.ConnectTo(closeable, peer, true)) {
+                                        if (network.ConnectTo(closeable, peer)) {
                                             if (matches.containsKey(cid)) { // check still valid
                                                 LogUtils.error(TAG, "Found New Provider " + peer.toBase58()
                                                         + " for " + cid.String());
@@ -351,7 +351,7 @@ public class ContentManager {
                             LogUtils.error(TAG, "Load Provider " + peer.toBase58() + " for " + cid.String());
                             new Thread(() -> {
                                 try {
-                                    if (network.ConnectTo(loadCloseable, peer, true)) {
+                                    if (network.ConnectTo(loadCloseable, peer)) {
                                         LogUtils.error(TAG, "Load Provider Found " + peer.toBase58()
                                                 + " for " + cid.String());
                                         peers.add(peer);

@@ -37,6 +37,7 @@ import io.core.Validator;
 import io.ipfs.IPFS;
 import io.ipfs.cid.Cid;
 import io.libp2p.AddrInfo;
+import io.libp2p.ConnectionManager;
 import io.libp2p.HostBuilder;
 import io.libp2p.Metrics;
 import io.libp2p.core.Connection;
@@ -66,7 +67,8 @@ public class KadDHT implements Routing {
     private final Metrics metrics;
     public final RoutingTable routingTable;
 
-    public KadDHT(@NonNull Host host, @NonNull Metrics metrics, @NonNull Validator validator, int alpha, int beta, int bucketSize) {
+    public KadDHT(@NonNull Host host, @NonNull Metrics metrics,
+                  @NonNull Validator validator, int alpha, int beta, int bucketSize) {
         this.host = host;
         this.metrics = metrics;
         this.validator = validator;
@@ -84,7 +86,8 @@ public class KadDHT implements Routing {
         for (Connection conn : host.getNetwork().getConnections()) {
             PeerId peerId = conn.secureSession().getRemoteId();
             metrics.addLatency(peerId, 0L);
-            peerFound(peerId, false);
+            boolean isReplaceable = !metrics.isProtected(peerId);
+            peerFound(peerId, isReplaceable);
         }
     }
 
@@ -330,15 +333,19 @@ public class KadDHT implements Routing {
     private void sendMessage(@NonNull Closeable closeable, @NonNull PeerId p, @NonNull Dht.Message message)
             throws ClosedException, ConnectionIssue {
 
+
         Connection con = HostBuilder.connect(closeable, host, p);
-
         try {
+            synchronized (p.toBase58().intern()) {
+                long start = System.currentTimeMillis();
+                metrics.active(p);
+                Object object = HostBuilder.stream(closeable, host, KadDHT.Protocol, con);
 
-            Object object = HostBuilder.stream(closeable, host, KadDHT.Protocol, con);
+                DhtProtocol.DhtController dhtController = (DhtProtocol.DhtController) object;
+                dhtController.sendMessage(message);
 
-            DhtProtocol.DhtController dhtController = (DhtProtocol.DhtController) object;
-            dhtController.sendMessage(message);
-
+                metrics.addLatency(p, System.currentTimeMillis() - start);
+            }
         } catch (ClosedException exception) {
             throw exception;
         } catch (Throwable throwable) {
@@ -346,6 +353,8 @@ public class KadDHT implements Routing {
                 throw new ClosedException();
             }
             throw new RuntimeException(throwable);
+        } finally {
+            metrics.done(p);
         }
     }
 
@@ -354,17 +363,20 @@ public class KadDHT implements Routing {
             throws ClosedException, ProtocolIssue, ConnectionFailure, ConnectionIssue {
 
 
-        long start = System.currentTimeMillis();
-
         Connection con = HostBuilder.connect(closeable, host, p);
         try {
-            Object object = HostBuilder.stream(closeable, host, KadDHT.Protocol, con);
+            synchronized (p.toBase58().intern()) {
+                long start = System.currentTimeMillis();
 
+                Object object = HostBuilder.stream(closeable, host, KadDHT.Protocol, con);
 
-            DhtProtocol.DhtController dhtController = (DhtProtocol.DhtController) object;
-            return dhtController.sendRequest(message).get();
+                DhtProtocol.DhtController dhtController = (DhtProtocol.DhtController) object;
+                Dht.Message response = dhtController.sendRequest(message).get();
 
+                metrics.addLatency(p, System.currentTimeMillis() - start);
 
+                return response;
+            }
         } catch (ClosedException exception) {
             throw exception;
         } catch (Throwable throwable) {
@@ -394,7 +406,7 @@ public class KadDHT implements Routing {
             LogUtils.error(TAG, throwable);
             throw new RuntimeException(throwable);
         } finally {
-            metrics.addLatency(p, System.currentTimeMillis() - start);
+            metrics.done(p);
         }
     }
 
