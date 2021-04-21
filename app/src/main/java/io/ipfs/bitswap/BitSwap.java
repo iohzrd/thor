@@ -80,7 +80,7 @@ public class BitSwap implements Interface {
 
 
         for (Block block : wanted) {
-            LogUtils.error(TAG, "ReceiveBlock " + peer.toBase58() +
+            LogUtils.verbose(TAG, "ReceiveBlock " + peer.toBase58() +
                     " " + block.Cid().String());
             contentManager.BlockReceived(peer, block);
         }

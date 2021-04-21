@@ -65,7 +65,7 @@ public class DnsResolver {
                     TXT text = (TXT) payload;
                     txtRecords.add(text.getText());
                 } else {
-                    LogUtils.error(TAG, payload.toString());
+                    LogUtils.warning(TAG, payload.toString());
                 }
             }
         } catch (Throwable throwable) {

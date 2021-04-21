@@ -113,8 +113,7 @@ public class Query {
             if (st == PeerState.PeerWaiting) {
                 queryPeers.SetState(p, PeerState.PeerQueried);
             } else {
-                throw new RuntimeException("kademlia protocol error: tried to transition to " +
-                        "the queried state from state " + st.toString());
+                throw new RuntimeException("internal state");
             }
         }
         for (PeerId p : up.unreachable) {
@@ -125,8 +124,7 @@ public class Query {
             if (st == PeerState.PeerWaiting) {
                 queryPeers.SetState(p, PeerState.PeerUnreachable);
             } else {
-                throw new RuntimeException("kademlia protocol error: tried to transition to the " +
-                        "unreachable state from state " + st.toString());
+                throw new RuntimeException("internal state");
             }
         }
     }
@@ -156,7 +154,6 @@ public class Query {
             Pair<Boolean, List<PeerId>> result = isReadyToTerminate(maxNumQueriesToSpawn);
 
             if (!result.first) {
-                // LogUtils.error(TAG, "num " + maxNumQueriesToSpawn + " " + result.second.toString());
 
                 // try spawning the queries, if there are no available peers to query then we won't spawn them
                 for (PeerId queryPeer : result.second) {
@@ -175,7 +172,7 @@ public class Query {
                     }).start();
                 }
             } else {
-                LogUtils.error(TAG, "Termination no succes");
+                LogUtils.warning(TAG, "Termination no succes");
                 break;
             }
         }

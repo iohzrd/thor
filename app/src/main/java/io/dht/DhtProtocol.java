@@ -117,7 +117,6 @@ public class DhtProtocol implements ProtocolBinding<DhtProtocol.DhtController> {
                 stream.closeWrite().get();
             } catch (Throwable throwable) {
                 LogUtils.error(TAG, throwable);
-                throw new NotImplementedError("" + throwable.getMessage());
             }
             return resFuture;
         }
@@ -132,7 +131,6 @@ public class DhtProtocol implements ProtocolBinding<DhtProtocol.DhtController> {
                 stream.close().get();
             } catch (Throwable throwable) {
                 LogUtils.error(TAG, throwable);
-                throw new NotImplementedError("" + throwable.getMessage());
             }
         }
 
@@ -173,7 +171,6 @@ public class DhtProtocol implements ProtocolBinding<DhtProtocol.DhtController> {
 
             } catch (Throwable throwable) {
                 LogUtils.error(TAG, throwable);
-                throw new RuntimeException(throwable);
             }
 
         }

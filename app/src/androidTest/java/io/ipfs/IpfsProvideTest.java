@@ -45,7 +45,7 @@ public class IpfsProvideTest {
             ipfs.provide(new TimeoutCloseable(30), cid);
         } catch (ClosedException ignore) {
         }
-        LogUtils.error(TAG, "Time provide " + (System.currentTimeMillis() - start));
+        LogUtils.debug(TAG, "Time provide " + (System.currentTimeMillis() - start));
 
         long time = System.currentTimeMillis();
         AtomicBoolean finished = new AtomicBoolean(false);
@@ -53,7 +53,7 @@ public class IpfsProvideTest {
             ipfs.findProviders(finished::get, peerId -> finished.set(true), cid);
         } catch (ClosedException ignore) {
         }
-        LogUtils.error(TAG, "Time Providers : " + (System.currentTimeMillis() - time) + " [ms]");
+        LogUtils.debug(TAG, "Time Providers : " + (System.currentTimeMillis() - time) + " [ms]");
         assertTrue(finished.get());
     }
 }
