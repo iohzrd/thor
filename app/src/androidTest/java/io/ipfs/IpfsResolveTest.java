@@ -56,7 +56,7 @@ public class IpfsResolveTest {
         } catch (ClosedException ignore) {
             // ignore
         }
-        LogUtils.error(TAG, "Time publish name " + (System.currentTimeMillis() - start));
+        LogUtils.debug(TAG, "Time publish name " + (System.currentTimeMillis() - start));
 
         String key = ipfs.getHost();
 

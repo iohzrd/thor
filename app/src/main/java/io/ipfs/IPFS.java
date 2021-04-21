@@ -770,7 +770,7 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
                 } catch (Throwable throwable) {
                     LogUtils.error(TAG, throwable);
                 } finally {
-                    LogUtils.error(TAG, "NumPeers " + numSwarmPeers() );
+                    LogUtils.info(TAG, "NumPeers " + numSwarmPeers());
                 }
             }
         }
@@ -862,43 +862,8 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
 
     @NonNull
     public String base32(@NonNull String pid) {
-        /*
-
-// Cast casts a buffer onto a multihash, and returns an error
-// if it does not work.
-func Cast(buf []byte) (Multihash, error) {
-	dm, err := Decode(buf)
-	if err != nil {
-		return Multihash{}, err
-	}
-
-	if !ValidCode(dm.Code) {
-		return Multihash{}, ErrUnknownCode
-	}
-
-	return Multihash(buf), nil
-}
-
-// ToCid encodes a peer ID as a CID of the public key.
-//
-// If the peer ID is invalid (e.g., empty), this will return the empty CID.
-func ToCid(id ID) cid.Cid {
-	m, err := mh.Cast([]byte(id))
-	if err != nil {
-		return cid.Cid{}
-	}
-	return cid.NewCidV1(cid.Libp2pKey, m)
-}
-         */
         try {
-
-            /*
-            id, err := peer.Decode(pid)
-            if err != nil {
-                return "", fmt.Errorf("invalid peer id")
-            }
-            return peer.ToCid(id).String(), nil*/
-           return Stream.base32(host.getPeerId());
+            return Stream.base32(decode(pid));
         } catch (Throwable e) {
             throw new RuntimeException(e);
         }
@@ -1146,7 +1111,7 @@ func ToCid(id ID) cid.Cid {
             return null;
         }
 
-        LogUtils.error(TAG, "resolveName " + name);
+        LogUtils.info(TAG, "resolveName " + name);
         long time = System.currentTimeMillis();
 
         AtomicReference<ResolvedName> resolvedName = new AtomicReference<>(null);
@@ -1170,7 +1135,7 @@ func ToCid(id ID) cid.Cid {
                         String hash = entry.getValue().toStringUtf8();
                         long seq = entry.getSequence();
 
-                        LogUtils.error(TAG, "IpnsEntry : " + seq + " " + hash + " " +
+                        LogUtils.info(TAG, "IpnsEntry : " + seq + " " + hash + " " +
                                 (System.currentTimeMillis() - time));
 
                         if (seq < last) {
@@ -1183,7 +1148,7 @@ func ToCid(id ID) cid.Cid {
                             timeout.set(System.currentTimeMillis() + RESOLVE_TIMEOUT);
                             setName(hash, seq);
                         } else {
-                            LogUtils.error(TAG, "invalid hash " + hash);
+                            LogUtils.info(TAG, "invalid hash " + hash);
                         }
 
                     } catch (Throwable throwable) {
@@ -1198,7 +1163,7 @@ func ToCid(id ID) cid.Cid {
         } catch (Throwable e) {
             LogUtils.error(TAG, e);
         }
-        LogUtils.error(TAG, "Finished resolve name " + name + " " +
+        LogUtils.info(TAG, "Finished resolve name " + name + " " +
                 (System.currentTimeMillis() - time));
 
         if(closeable.isClosed()){

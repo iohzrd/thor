@@ -72,7 +72,7 @@ public class IpfsFindPeer {
         assertTrue(result);
 
         while (ipfs.isConnected(local)) {
-            LogUtils.error(TAG, "Peer conntected with : " + local);
+            LogUtils.debug(TAG, "Peer conntected with : " + local);
             Thread.sleep(1000);
         }
     }
@@ -87,23 +87,23 @@ public class IpfsFindPeer {
         boolean connected = ipfs.isConnected(relay);
         assertFalse(connected);
 
-        LogUtils.error(TAG, "Stage 1");
+        LogUtils.debug(TAG, "Stage 1");
 
         boolean result = ipfs.swarmConnect(IPFS.P2P_PATH + relay, 1);
         assertFalse(result);
 
-        LogUtils.error(TAG, "Stage 2");
+        LogUtils.debug(TAG, "Stage 2");
 
         result = ipfs.swarmConnect(IPFS.P2P_PATH + relay, 10);
         assertFalse(result);
 
-        LogUtils.error(TAG, "Stage 3");
+        LogUtils.debug(TAG, "Stage 3");
 
         relay = DUMMY_PID;
         result = ipfs.swarmConnect(IPFS.P2P_PATH + relay, 10);
         assertFalse(result);
 
-        LogUtils.error(TAG, "Stage 4");
+        LogUtils.debug(TAG, "Stage 4");
 
     }
 

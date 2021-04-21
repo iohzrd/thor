@@ -64,11 +64,11 @@ public class IpfsPerformance {
         long size = inputFile.length();
 
 
-        LogUtils.error(TAG, "Bytes : " + inputFile.length() / 1000 + "[kb]");
+        LogUtils.debug(TAG, "Bytes : " + inputFile.length() / 1000 + "[kb]");
         long now = System.currentTimeMillis();
         String cid = ipfs.storeFile(inputFile);
         assertNotNull(cid);
-        LogUtils.error(TAG, "Add : " + cid +
+        LogUtils.debug(TAG, "Add : " + cid +
                 " Time : " + ((System.currentTimeMillis() - now) / 1000) + "[s]");
 
         File file = createCacheFile();
@@ -81,7 +81,7 @@ public class IpfsPerformance {
         byte[] data = ipfs.getData(cid, () -> false);
         Objects.requireNonNull(data);
 
-        LogUtils.error(TAG, "Cat : " + cid +
+        LogUtils.debug(TAG, "Cat : " + cid +
                 " Time : " + ((System.currentTimeMillis() - now) / 1000) + "[s]");
 
         assertEquals(data.length, size);
@@ -121,7 +121,7 @@ public class IpfsPerformance {
         long size = inputFile.length();
 
 
-        LogUtils.error(TAG, "Bytes : " + inputFile.length() / 1000 + "[kb]");
+        LogUtils.debug(TAG, "Bytes : " + inputFile.length() / 1000 + "[kb]");
 
         String cid = ipfs.storeFile(inputFile);
         assertNotNull(cid);
@@ -160,13 +160,13 @@ public class IpfsPerformance {
         long size = inputFile.length();
         assertEquals(packetSize * maxData, size);
 
-        LogUtils.error(TAG, "Bytes : " + inputFile.length() / 1000 + "[kb]");
+        LogUtils.debug(TAG, "Bytes : " + inputFile.length() / 1000 + "[kb]");
 
 
         long now = System.currentTimeMillis();
         String cid = ipfs.storeFile(inputFile);
         assertNotNull(cid);
-        LogUtils.error(TAG, "Add : " + cid +
+        LogUtils.debug(TAG, "Add : " + cid +
                 " Time : " + ((System.currentTimeMillis() - now) / 1000) + "[s]");
 
 
@@ -174,7 +174,7 @@ public class IpfsPerformance {
         ipfs.storeToFile(temp, cid, new Progress() {
             @Override
             public void setProgress(int percent) {
-                LogUtils.error(TAG, "Progress : " + percent);
+                LogUtils.debug(TAG, "Progress : " + percent);
             }
 
             @Override
@@ -201,7 +201,7 @@ public class IpfsPerformance {
                     if (percent > 50) {
                         closed.set(true);
                     }
-                    LogUtils.error(TAG, "Progress : " + percent);
+                    LogUtils.debug(TAG, "Progress : " + percent);
                 }
 
                 @Override
@@ -224,21 +224,21 @@ public class IpfsPerformance {
         now = System.currentTimeMillis();
         String hash58Base_2 = ipfs.storeFile(inputFile);
         assertNotNull(hash58Base_2);
-        LogUtils.error(TAG, "Add : " + hash58Base_2 +
+        LogUtils.debug(TAG, "Add : " + hash58Base_2 +
                 " Time : " + ((System.currentTimeMillis() - now) / 1000) + "[s]");
 
 
         now = System.currentTimeMillis();
         File outputFile1 = createCacheFile();
         ipfs.storeToFile(outputFile1, cid, () -> false);
-        LogUtils.error(TAG, "Cat : " + cid +
+        LogUtils.debug(TAG, "Cat : " + cid +
                 " Time : " + ((System.currentTimeMillis() - now) / 1000) + "[s]");
 
 
         now = System.currentTimeMillis();
         File outputFile2 = createCacheFile();
         ipfs.storeToFile(outputFile2, cid, () -> false);
-        LogUtils.error(TAG, "Cat : " + cid +
+        LogUtils.debug(TAG, "Cat : " + cid +
                 " Time : " + ((System.currentTimeMillis() - now) / 1000) + "[s]");
 
 
