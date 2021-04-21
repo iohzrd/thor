@@ -70,7 +70,7 @@ public class IpfsTest {
 
             Set<String> result = DnsResolver.resolveDnsAddress(IPFS.LIB2P_DNS);
             assertNotNull(result);
-            assertEquals(result.size(), 30);
+            assertEquals(result.size(), 25);
 
 
             for (String address : result) {

@@ -19,6 +19,8 @@ import java.util.List;
 import java.util.Set;
 
 import io.LogUtils;
+import io.libp2p.core.multiformats.Multiaddr;
+import io.libp2p.core.multiformats.Protocol;
 
 
 public class DnsResolver {
@@ -87,6 +89,37 @@ public class DnsResolver {
         return ip.concat(query.replaceFirst(host, hostAddress));
     }
 
+
+    public static Multiaddr resolveDns6(@NonNull Multiaddr multiaddr) throws UnknownHostException {
+        return new Multiaddr(resolveDns6Address(multiaddr.toString()));
+    }
+
+    public static Multiaddr resolveDns4(@NonNull Multiaddr multiaddr) throws UnknownHostException {
+        return new Multiaddr(resolveDns4Address(multiaddr.toString()));
+    }
+
+
+    public static List<Multiaddr> resolveDnsAddress(@NonNull Multiaddr multiaddr) {
+        List<Multiaddr> mAddrs = new ArrayList<>();
+        String host = multiaddr.getStringComponent(Protocol.DNSADDR);
+        if(host != null) {
+            Set<String> addresses = resolveDnsAddress(host);
+            String peerId = multiaddr.getStringComponent(Protocol.P2P);
+            for (String addr:addresses) {
+                if(peerId != null) {
+                    if (addr.endsWith(peerId)) {
+                        try {
+                            mAddrs.add(new Multiaddr(addr));
+                        } catch (Throwable throwable){
+                            LogUtils.verbose(TAG, throwable.getClass().getSimpleName());
+                        }
+                    }
+                }
+            }
+        }
+        return mAddrs;
+    }
+
     public static String resolveDns6Address(@NonNull String multiaddress) throws UnknownHostException {
         if(!multiaddress.startsWith(DNS6_PATH)){
             throw new RuntimeException();
@@ -148,7 +181,7 @@ public class DnsResolver {
                 if (INSTANCE == null) {
                     try {
                         INSTANCE = new DnsClient(new LruCache(128));
-                    } catch (Exception e) {
+                    } catch (Throwable e) {
                         throw new RuntimeException(e);
                     }
                 }

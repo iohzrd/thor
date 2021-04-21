@@ -100,21 +100,6 @@ public class KadDHT implements Routing {
 
     }
 
-    private void addAddrs(@NonNull AddrInfo addrInfo) {
-
-        try {
-            PeerId peerId = addrInfo.getPeerId();
-            Collection<Multiaddr> info = host.getAddressBook().getAddrs(peerId).get();
-
-            if (info != null) {
-                host.getAddressBook().addAddrs(peerId, Long.MAX_VALUE, addrInfo.getAddresses());
-            } else {
-                host.getAddressBook().setAddrs(peerId, Long.MAX_VALUE, addrInfo.getAddresses());
-            }
-        } catch (Throwable throwable) {
-            LogUtils.error(TAG, throwable);
-        }
-    }
 
     @NonNull
     private List<AddrInfo> evalClosestPeers(@NonNull Dht.Message pms) {
@@ -135,7 +120,7 @@ public class KadDHT implements Routing {
             AddrInfo addrInfo = AddrInfo.create(peerId, multiAddresses);
             if (addrInfo.hasAddresses()) {
                 peers.add(addrInfo);
-                addAddrs(addrInfo);
+                HostBuilder.addAddrs(host, addrInfo);
             }
         }
         return peers;
@@ -252,7 +237,7 @@ public class KadDHT implements Routing {
                 AddrInfo addrInfo = AddrInfo.create(peerId, multiAddresses);
                 if (addrInfo.hasAddresses()) {
                     provs.add(addrInfo);
-                    addAddrs(addrInfo);
+                    HostBuilder.addAddrs(host, addrInfo);
                 }
             }
 
@@ -439,16 +424,6 @@ public class KadDHT implements Routing {
         return sendRequest(ctx, p, pms);
     }
 
-    @Nullable
-    private AddrInfo FindLocal(@NonNull PeerId id) {
-        List<Connection> cons = host.getNetwork().getConnections();
-        for (Connection con : cons) {
-            if (Objects.equals(con.secureSession().getRemoteId(), id)) {
-                return AddrInfo.create(id, con.remoteAddress());
-            }
-        }
-        return null;
-    }
 
     @Nullable
     private Multiaddr preFilter(@NonNull ByteString address) {
@@ -463,8 +438,8 @@ public class KadDHT implements Routing {
     @Override
     public boolean FindPeer(@NonNull Closeable closeable, @NonNull PeerId id) throws ClosedException {
 
-        AddrInfo pi = FindLocal(id);
-        if (pi != null) {
+        boolean connected = HostBuilder.isConnected(host, id);
+        if (connected) {
             return true;
         }
 

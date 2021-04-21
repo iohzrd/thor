@@ -12,7 +12,9 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
@@ -22,6 +24,7 @@ import io.LogUtils;
 import io.core.Closeable;
 import io.core.ClosedException;
 import io.core.ConnectionIssue;
+import io.ipfs.DnsResolver;
 import io.libp2p.core.Connection;
 import io.libp2p.core.Host;
 import io.libp2p.core.PeerId;
@@ -185,11 +188,41 @@ public class HostBuilder {
         return ctrl.get();
     }
 
+    private static List<Multiaddr> prepareAddresses(@NonNull Host host, @NonNull PeerId peerId){
+        List<Multiaddr> all = new ArrayList<>();
+        for (Multiaddr ma:getAddresses(host, peerId)) {
+            try {
+                if (ma.has(Protocol.DNS6)) {
+                    all.add(DnsResolver.resolveDns6(ma));
+                } else if (ma.has(Protocol.DNS4)) {
+                    all.add(DnsResolver.resolveDns4(ma));
+                } else if (ma.has(Protocol.DNSADDR)) {
+                    all.addAll(DnsResolver.resolveDnsAddress(ma));
+                } else {
+                    all.add(ma);
+                }
+            } catch (Throwable throwable){
+                LogUtils.verbose(TAG, throwable.getClass().getSimpleName());
+            }
+        }
+
+        /*  todo seperate them by protocol QUIC when supported and rest
+        all.sort((o1, o2) -> {
+
+            // TODO better sorting
+            int result = Boolean.compare(o1.has(Protocol.QUIC), o2.has(Protocol.QUIC));
+            if (result == 0) {
+                result = Boolean.compare(o1.has(Protocol.TCP), o2.has(Protocol.TCP));
+            }
+            return result;
+        });*/
+        return all;
+    }
     public static Connection connect(@NonNull Closeable closeable, @NonNull Host host,
                                      @NonNull PeerId peerId) throws ClosedException, ConnectionIssue {
 
         try {
-            List<Multiaddr> addrInfo = getAddresses(host, peerId);
+            List<Multiaddr> addrInfo = prepareAddresses(host, peerId);
 
             if (!addrInfo.isEmpty()) {
 
@@ -219,32 +252,33 @@ public class HostBuilder {
 
     }
 
-    private static List<Multiaddr> getAddresses(@NonNull Host host, @NonNull PeerId peerId) {
-        List<Multiaddr> sorted = new ArrayList<>();
+
+    public static void addAddrs(@NonNull Host host, @NonNull AddrInfo addrInfo) {
+
         try {
-            Collection<Multiaddr> addrInfo = host.getAddressBook().get(peerId).get();
-            if (addrInfo != null) {
-                for (Multiaddr addr : addrInfo) {
-                    // TODO filter Ipv4/Ipv6 ??? and other stuff
-                    // LogUtils.error(TAG, addr.toString());
-                    sorted.add(addr);
-                }
+            PeerId peerId = addrInfo.getPeerId();
+            Collection<Multiaddr> info = host.getAddressBook().getAddrs(peerId).get();
+
+            if (info != null) {
+                host.getAddressBook().addAddrs(peerId, Long.MAX_VALUE, addrInfo.getAddresses());
+            } else {
+                host.getAddressBook().setAddrs(peerId, Long.MAX_VALUE, addrInfo.getAddresses());
             }
-
-
-            sorted.sort((o1, o2) -> {
-
-                // TODO better sorting
-                int result = Boolean.compare(o1.has(Protocol.QUIC), o2.has(Protocol.QUIC));
-                if (result == 0) {
-                    result = Boolean.compare(o1.has(Protocol.TCP), o2.has(Protocol.TCP));
-                }
-                return result;
-            });
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         }
-        return sorted;
+    }
+    public static Set<Multiaddr> getAddresses(@NonNull Host host, @NonNull PeerId peerId) {
+        Set<Multiaddr> all = new HashSet<>();
+        try {
+            Collection<Multiaddr> addrInfo = host.getAddressBook().get(peerId).get();
+            if (addrInfo != null) {
+                all.addAll(addrInfo);
+            }
+        } catch (Throwable throwable){
+            LogUtils.error(TAG, throwable);
+        }
+        return all;
     }
 
     private static void removeMultiaddress(@NonNull Host host, @NonNull PeerId peerId, @NonNull Multiaddr addr) {

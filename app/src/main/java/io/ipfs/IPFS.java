@@ -64,6 +64,7 @@ import io.ipfs.utils.ReaderStream;
 import io.ipfs.utils.Resolver;
 import io.ipfs.utils.Stream;
 import io.ipns.Ipns;
+import io.libp2p.AddrInfo;
 import io.libp2p.ConnectionManager;
 import io.libp2p.HostBuilder;
 import io.libp2p.core.Connection;
@@ -800,20 +801,20 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
         try {
 
             connectionManager.protectPeer(peerId);
-
-            CompletableFuture<Connection> fdf = host.getNetwork().connect(peerId, multiaddr);
-            return fdf.get() != null;
+            if (multiAddress.startsWith(IPFS.P2P_PATH)) {
+                Set<Multiaddr> addrInfo = HostBuilder.getAddresses(host, peerId);
+                if(addrInfo.isEmpty()) {
+                    return routing.FindPeer(closeable, peerId);
+                } else {
+                    return HostBuilder.connect(closeable, host, peerId) != null;
+                }
+            } else {
+                AddrInfo addrInfo = AddrInfo.create(peerId, multiaddr);
+                HostBuilder.addAddrs(host, addrInfo);
+                return HostBuilder.connect(closeable, host, peerId) != null;
+            }
         } catch (Throwable e) {
             LogUtils.error(TAG, multiaddr + " " + e.getMessage());
-            try {
-                if (multiAddress.startsWith(IPFS.P2P_PATH)) {
-                    return routing.FindPeer(closeable, peerId);
-                }
-            } catch (ClosedException closedException) {
-                throw closedException;
-            } catch (Throwable throwable) {
-                LogUtils.error(TAG, throwable);
-            }
         }
         if (closeable.isClosed()) {
             throw new ClosedException();
