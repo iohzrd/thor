@@ -19,6 +19,7 @@ import io.core.Closeable;
 import io.core.ClosedException;
 import io.core.ConnectionIssue;
 import io.core.ProtocolIssue;
+import io.core.TimeoutIssue;
 import io.libp2p.AddrInfo;
 import io.libp2p.core.PeerId;
 
@@ -211,6 +212,10 @@ public class Query {
             throw closedException;
         } catch (ProtocolIssue | ConnectionIssue ignore) {
             dht.removePeerFromDht(queryPeer);
+            QueryUpdate update = new QueryUpdate();
+            update.unreachable.add(queryPeer);
+            queue.offer(update);
+        } catch (TimeoutIssue ignore) {
             QueryUpdate update = new QueryUpdate();
             update.unreachable.add(queryPeer);
             queue.offer(update);
