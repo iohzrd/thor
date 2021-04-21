@@ -40,6 +40,7 @@ public class IpfsRealTest {
 
         IPFS ipfs = TestEnv.getTestInstance(context);
 
+        ipfs.reset();
 
         String key = "k2k4r8jllj4k33jxoa4vaeleqkrwu8b7tqz7tgczhptbfkhqr2i280fm";
 
@@ -66,6 +67,8 @@ public class IpfsRealTest {
     public void test_2() {
 
         IPFS ipfs = TestEnv.getTestInstance(context);
+
+        ipfs.reset();
 
         String link = DnsAddrResolver.getDNSLink("blog.ipfs.io");
 
