@@ -197,9 +197,7 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
         node.setAgent(AGENT);
         node.setPushing(false);
         node.setResponsive(200);
-        node.setEnablePushService(false);
-        node.setEnableReachService(false);
-        node.setEnableConnService(false);*/
+        node.setEnableReachService(false);*/
 
         int checkPort = getSwarmPort(context);
         if( isLocalPortFree(checkPort) ){
