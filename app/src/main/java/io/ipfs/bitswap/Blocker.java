@@ -19,7 +19,7 @@ public class Blocker {
             try {
                 // Calling wait() will block this thread until another thread
                 // calls notify() on the object.
-                LogUtils.error(TAG, "Lock " + cid.String());
+                LogUtils.verbose(TAG, "Lock " + cid.String());
                 Thread thread = new Thread(() -> {
                     try {
                         while (true) {
@@ -39,7 +39,7 @@ public class Blocker {
             } catch (Throwable throwable) {
                 LogUtils.error(TAG, throwable);
             } finally {
-                LogUtils.error(TAG, "Lock Finish " + cid.String() +
+                LogUtils.verbose(TAG, "Lock Finish " + cid.String() +
                         " took " + (System.currentTimeMillis() - start));
             }
         }
@@ -50,7 +50,6 @@ public class Blocker {
             String key = "B" + cid.String();
             synchronized (key.intern()) {
                 key.intern().notify();
-                LogUtils.error(TAG, "Release " + cid.String());
             }
         } catch (Throwable ignore) {
             // ignore

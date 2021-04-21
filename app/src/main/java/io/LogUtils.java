@@ -34,6 +34,13 @@ public class LogUtils {
         }
     }
 
+
+    public static void debug(@Nullable final String tag, @Nullable String message) {
+        if (isDebug()) {
+            Log.d(tag, "" + message);
+        }
+    }
+
     public static void error(@Nullable final String tag, @Nullable String message) {
         if (isDebug()) {
             Log.e(tag, "" + message);

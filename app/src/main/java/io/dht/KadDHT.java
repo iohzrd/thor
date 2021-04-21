@@ -173,7 +173,7 @@ public class KadDHT implements Routing {
                 handled.add(peerId);
                 try {
                     putValueToPeer(ctx, addrInfo.getPeerId(), rec);
-                    LogUtils.error(TAG, "PutValue Success to " + addrInfo.getPeerId().toBase58());
+                    LogUtils.info(TAG, "PutValue Success to " + addrInfo.getPeerId().toBase58());
                 } catch (ClosedException closedException) {
                     throw closedException;
                 } catch (Throwable throwable) {
@@ -225,7 +225,7 @@ public class KadDHT implements Routing {
             for (Dht.Message.Peer entry : list) {
 
                 PeerId peerId = new PeerId(entry.getId().toByteArray());
-                LogUtils.error(TAG, "got provider before filter : " + peerId.toBase58());
+                LogUtils.info(TAG, "got provider before filter : " + peerId.toBase58());
                 List<Multiaddr> multiAddresses = new ArrayList<>();
                 List<ByteString> addresses = entry.getAddrsList();
                 for (ByteString address : addresses) {
@@ -243,11 +243,11 @@ public class KadDHT implements Routing {
 
 
             for (AddrInfo prov : provs) {
-                LogUtils.error(TAG, "got provider : " + prov.getPeerId());
+                LogUtils.info(TAG, "got provider : " + prov.getPeerId());
                 PeerId peerId = prov.getPeerId();
                 if (!handled.contains(peerId)) {
                     handled.add(peerId);
-                    LogUtils.error(TAG, "got provider using: " + prov.getPeerId());
+                    LogUtils.info(TAG, "got provider using: " + prov.getPeerId());
                     providers.peer(peerId);
                 }
             }
@@ -303,7 +303,7 @@ public class KadDHT implements Routing {
                 handled.add(peerId);
                 try {
                     sendMessage(ctx, peerId, mes);
-                    LogUtils.error(TAG, "Provide Success to " + addrInfo.getPeerId().toBase58());
+                    LogUtils.info(TAG, "Provide Success to " + addrInfo.getPeerId().toBase58());
                 } catch (ClosedException closedException) {
                     throw closedException;
                 } catch (Throwable throwable) {
@@ -371,7 +371,7 @@ public class KadDHT implements Routing {
 
             Throwable cause = throwable.getCause();
             if (cause != null) {
-                LogUtils.error(TAG, cause.getClass().getSimpleName());
+                LogUtils.info(TAG, cause.getClass().getSimpleName());
                 if (cause instanceof NoSuchRemoteProtocolException) {
                     throw new ProtocolIssue();
                 }
@@ -430,7 +430,7 @@ public class KadDHT implements Routing {
         try {
             return new Multiaddr(address.toByteArray());
         } catch (Throwable ignore) {
-            LogUtils.error(TAG, address.toStringUtf8());
+            LogUtils.info(TAG, address.toStringUtf8());
         }
         return null;
     }
@@ -539,7 +539,7 @@ public class KadDHT implements Routing {
                     future.get();
                     followupsCompleted++;
                 } catch (Throwable throwable) {
-                    LogUtils.error(TAG, throwable.getClass().getSimpleName());
+                    LogUtils.info(TAG, throwable.getClass().getSimpleName());
                 }
             }
             if (!lookupRes.completed) {
@@ -571,7 +571,7 @@ public class KadDHT implements Routing {
                     return Pair.create(rec, peers);
                 }
             } catch (Throwable throwable) {
-                LogUtils.error(TAG, "" + throwable.getMessage());
+                LogUtils.info(TAG, "" + throwable.getMessage());
             }
         }
 

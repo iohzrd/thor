@@ -100,7 +100,6 @@ public class LiteHost implements BitSwapNetwork {
             }
             Throwable cause = throwable.getCause();
             if (cause != null) {
-                LogUtils.error(TAG, cause.getClass().getSimpleName());
                 if (cause instanceof NoSuchRemoteProtocolException) {
                     throw new ProtocolIssue();
                 }
@@ -128,9 +127,6 @@ public class LiteHost implements BitSwapNetwork {
     @Override
     public void FindProviders(@NonNull Closeable closeable, @NonNull Routing.Providers providers,
                               @NonNull Cid cid) throws ClosedException {
-        LogUtils.error(TAG, "Find Start Content Provider " + cid.String());
         routing.FindProviders(closeable, providers, cid);
-        LogUtils.error(TAG, "Find End Content Provider " + cid.String());
-
     }
 }

@@ -41,6 +41,7 @@ enum class Protocol(val code: Int, val size: Int, val typeName: String) {
     ONION(444, 96, "onion"),
     QUIC(460, 0, "quic"),
     WS(477, 0, "ws"),
+    WSS(478, 0, "wss"),
     P2PCIRCUIT(290, 0, "p2p-circuit"),
     HTTP(480, 0, "http");
 

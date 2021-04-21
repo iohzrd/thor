@@ -120,16 +120,12 @@ public class IpfsFindPeer {
             List<String> peers = ipfs.swarmPeers();
 
             assertNotNull(peers);
-            LogUtils.error(TAG, "Peers : " + peers.size());
+            LogUtils.debug(TAG, "Peers : " + peers.size());
             for (String peer : peers) {
 
                 long time = System.currentTimeMillis();
-                LogUtils.error(TAG, "isConnected : " + ipfs.isConnected(peer)
+                LogUtils.debug(TAG, "isConnected : " + ipfs.isConnected(peer)
                         + " " + (System.currentTimeMillis() - time));
-
-                LogUtils.error(TAG, peer);
-
-
             }
 
         }

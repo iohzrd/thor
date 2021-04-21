@@ -131,7 +131,7 @@ public class ContentManager {
             } catch (Throwable throwable) {
                 LogUtils.error(TAG, throwable);
             } finally {
-                LogUtils.error(TAG, "Finish Provider Search " + cid.String() +
+                LogUtils.info(TAG, "Finish Provider Search " + cid.String() +
                         " " + (System.currentTimeMillis() - begin));
             }
         }).start();
@@ -199,10 +199,9 @@ public class ContentManager {
                         } catch (Throwable throwable) {
                             LogUtils.error(TAG, throwable);
                         } finally {
-                            LogUtils.error(TAG, "Priority Peer " +
+                            LogUtils.info(TAG, "Priority Peer " +
                                     peer.toBase58() + " took " + (System.currentTimeMillis() - start));
                         }
-                        // check priority after each run
                         break;
                     }
                 }
@@ -233,7 +232,7 @@ public class ContentManager {
                         } catch (Throwable throwable) {
                             LogUtils.error(TAG, throwable);
                         } finally {
-                            LogUtils.error(TAG, "Network Peer " +
+                            LogUtils.info(TAG, "Network Peer " +
                                     peer.toBase58() + " took " + (System.currentTimeMillis() - start) +
                                     "  for cid " + cid.String());
                         }

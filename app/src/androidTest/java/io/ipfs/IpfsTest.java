@@ -44,7 +44,7 @@ public class IpfsTest {
         List<Multiaddr> result = ipfs.listenAddresses();
         assertNotNull(result);
         for (Multiaddr ma:result) {
-            LogUtils.error(TAG, "Listen Address : " + ma.toString());
+            LogUtils.debug(TAG, "Listen Address : " + ma.toString());
         }
 
         assertEquals(result.size(), 1); // TODO test is not correct (listen addresses should be improved)
@@ -58,7 +58,7 @@ public class IpfsTest {
 
 
         String pid = IPFS.getPeerID(context);
-        LogUtils.error(TAG, Objects.requireNonNull(pid));
+        LogUtils.debug(TAG, Objects.requireNonNull(pid));
 
         assertEquals(ipfs.getPeerID(), pid);
     }
@@ -74,7 +74,7 @@ public class IpfsTest {
 
 
             for (String address : result) {
-                LogUtils.error(TAG, address);
+                LogUtils.debug(TAG, address);
             }
         }
     }
@@ -129,7 +129,7 @@ public class IpfsTest {
 
         String hash58Base = ipfs.storeData(content);
         assertNotNull(hash58Base);
-        LogUtils.error(TAG, hash58Base);
+        LogUtils.debug(TAG, hash58Base);
 
         byte[] fileContents = ipfs.getData(hash58Base, () -> false);
         assertNotNull(fileContents);

@@ -29,12 +29,9 @@ class TestEnv {
 
     public static IPFS getTestInstance(@NonNull Context context) {
 
-        long time = System.currentTimeMillis();
         IPFS ipfs = IPFS.getInstance(context);
         ipfs.clearDatabase();
         ipfs.bootstrap();
-
-        LogUtils.error(TAG, "Time Daemon : " + (System.currentTimeMillis() - time));
 
         return ipfs;
     }

@@ -117,7 +117,7 @@ public class RoutingTable {
 
         synchronized (p.toBase58().intern()) {
 
-            LogUtils.error(TAG, buckets.toString());
+            LogUtils.info(TAG, buckets.toString());
             long latency = metrics.getLatency(p);
             int bucketID = bucketIdForPeer(p);
             Bucket bucket = getBucket(bucketID);

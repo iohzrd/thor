@@ -202,10 +202,8 @@ public class Cid implements Comparable<Cid> {
     public byte[] Hash() {
 
         if (Version() == 0) {
-            LogUtils.error(TAG, "Hash version 0");
             return multihash;
         } else {
-            LogUtils.error(TAG, "Hash version 1");
             byte[] data = Bytes();
             try (InputStream inputStream = new ByteArrayInputStream(data)) {
                 long version = Multihash.readVarint(inputStream);

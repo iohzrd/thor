@@ -68,6 +68,10 @@ public class AddrInfo {
             LogUtils.info(TAG, "WS " + address.toString()); // maybe TODO
             return;
         }
+        if (address.has(Protocol.WSS)) {
+            LogUtils.info(TAG, "WSS " + address.toString()); // maybe TODO
+            return;
+        }
         if (address.has(Protocol.P2PCIRCUIT)) { // TODO SUPPORT THIS
             LogUtils.info(TAG, "P2PCIRCUIT " + address.toString());
             return;
