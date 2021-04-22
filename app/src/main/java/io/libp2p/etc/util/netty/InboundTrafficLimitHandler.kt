@@ -9,7 +9,7 @@ import io.netty.channel.ChannelInboundHandlerAdapter
  * Limits the total inbound traffic for the Channel
  */
 class InboundTrafficLimitHandler(
-    private var inboundBytesLimit: Long
+        private var inboundBytesLimit: Long
 ) : ChannelInboundHandlerAdapter() {
 
     override fun channelRead(ctx: ChannelHandlerContext, msg: Any) {

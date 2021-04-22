@@ -6,8 +6,8 @@ import io.netty.channel.SimpleChannelInboundHandler
 import io.netty.util.ReferenceCounted
 
 class ProtocolMessageHandlerAdapter<TMessage>(
-    private val stream: Stream,
-    private val pmh: ProtocolMessageHandler<TMessage>
+        private val stream: Stream,
+        private val pmh: ProtocolMessageHandler<TMessage>
 ) : SimpleChannelInboundHandler<Any>() {
     override fun channelActive(ctx: ChannelHandlerContext) {
         pmh.onActivated(stream)

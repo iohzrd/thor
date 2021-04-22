@@ -17,8 +17,9 @@ fun interface ConnectionHandler {
                 }
             }
         }
+
         fun createBroadcast(handlers: List<ConnectionHandler> = listOf()): Broadcast =
-            BroadcastConnectionHandler().also { it += handlers }
+                BroadcastConnectionHandler().also { it += handlers }
     }
 
     interface Broadcast : ConnectionHandler, MutableList<ConnectionHandler>

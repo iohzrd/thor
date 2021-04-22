@@ -94,7 +94,7 @@ public class ContentManager {
             try {
                 network.FindProviders(closeable, peer -> {
 
-                    if(closeable.isClosed()){
+                    if (closeable.isClosed()) {
                         return;
                     }
                     if (!faulty.contains(peer)) {
@@ -105,7 +105,7 @@ public class ContentManager {
                                     long start = System.currentTimeMillis();
                                     try {
 
-                                        if(closeable.isClosed()){
+                                        if (closeable.isClosed()) {
                                             return;
                                         }
 
@@ -118,7 +118,7 @@ public class ContentManager {
                                                         + " for " + cid.String());
                                                 peers.add(peer);
                                                 ConcurrentLinkedDeque<PeerId> match = matches.get(cid);
-                                                if(match != null) {
+                                                if (match != null) {
                                                     match.add(peer);
                                                 }
                                             }
@@ -356,7 +356,7 @@ public class ContentManager {
             new Thread(() -> {
                 long start = System.currentTimeMillis();
                 try {
-                    if(closeable.isClosed()){
+                    if (closeable.isClosed()) {
                         return;
                     }
                     Closeable loadCloseable = new TimeoutCloseable(closeable, 15);
@@ -367,7 +367,7 @@ public class ContentManager {
                             LogUtils.info(TAG, "Load Provider " + peer.toBase58() + " for " + cid.String());
                             new Thread(() -> {
 
-                                if(loadCloseable.isClosed()){
+                                if (loadCloseable.isClosed()) {
                                     return;
                                 }
                                 try {

@@ -12,10 +12,10 @@ import io.netty.channel.SimpleChannelInboundHandler
 import java.util.concurrent.CompletableFuture
 
 fun <T : SimpleClientHandler> createSimpleHandler(handlerCtor: () -> T): P2PChannelHandler<T> =
-    SimpleClientProtocol(handlerCtor)
+        SimpleClientProtocol(handlerCtor)
 
 fun <T : SimpleClientHandler> createSimpleBinding(protocolName: String, handlerCtor: () -> T): ProtocolBinding<T> =
-    ProtocolBinding.createSimple(protocolName, createSimpleHandler(handlerCtor))
+        ProtocolBinding.createSimple(protocolName, createSimpleHandler(handlerCtor))
 
 abstract class SimpleClientHandler : SimpleChannelInboundHandler<ByteBuf>(ByteBuf::class.java) {
     val activeFuture = CompletableFuture<Unit>()
@@ -52,7 +52,7 @@ abstract class SimpleClientHandler : SimpleChannelInboundHandler<ByteBuf>(ByteBu
 }
 
 class SimpleClientProtocol<TController : SimpleClientHandler>(
-    val handlerCtor: () -> TController
+        val handlerCtor: () -> TController
 ) : P2PChannelHandler<TController> {
 
     override fun initChannel(ch: P2PChannel): CompletableFuture<TController> {

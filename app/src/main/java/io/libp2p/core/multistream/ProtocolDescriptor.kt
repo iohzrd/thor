@@ -30,8 +30,8 @@ typealias ProtocolId = String
  * In this case the announced protocol should be specified explicitly on each [Stream] initiation
  */
 class ProtocolDescriptor(
-    val announceProtocols: List<ProtocolId>,
-    val protocolMatcher: ProtocolMatcher
+        val announceProtocols: List<ProtocolId>,
+        val protocolMatcher: ProtocolMatcher
 ) {
 
     constructor(announce: ProtocolId) : this(listOf(announce), ProtocolMatcher.strict(announce))

@@ -5,8 +5,8 @@ import io.libp2p.core.P2PChannelHandler
 import java.util.concurrent.CompletableFuture
 
 abstract class StrictProtocolBinding<TController>(
-    announce: ProtocolId,
-    open val protocol: P2PChannelHandler<TController>
+        announce: ProtocolId,
+        open val protocol: P2PChannelHandler<TController>
 ) : ProtocolBinding<TController> {
 
     override val protocolDescriptor = ProtocolDescriptor(announce)

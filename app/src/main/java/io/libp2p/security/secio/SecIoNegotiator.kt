@@ -30,19 +30,19 @@ import spipe.pb.Spipe
 import java.security.SecureRandom
 
 data class SecioParams(
-    val permanentPubKey: PubKey,
-    val keys: StretchedKey,
+        val permanentPubKey: PubKey,
+        val keys: StretchedKey,
 
-    val mac: HMac
+        val mac: HMac
 )
 
 /**
  * Created by Anton Nashatyrev on 14.06.2019.
  */
 class SecIoNegotiator(
-    private val outboundChannel: (ByteBuf) -> Unit,
-    val localKey: PrivKey,
-    val remotePeerId: PeerId?
+        private val outboundChannel: (ByteBuf) -> Unit,
+        val localKey: PrivKey,
+        val remotePeerId: PeerId?
 ) {
 
     enum class State {
@@ -81,12 +81,12 @@ class SecIoNegotiator(
 
     fun start() {
         proposeMsg = Spipe.Propose.newBuilder()
-            .setRand(nonce.toProtobuf())
-            .setPubkey(localPubKeyBytes.toProtobuf())
-            .setExchanges(curves.joinToString(","))
-            .setHashes(hashes.joinToString(","))
-            .setCiphers(ciphers.joinToString(","))
-            .build()
+                .setRand(nonce.toProtobuf())
+                .setPubkey(localPubKeyBytes.toProtobuf())
+                .setExchanges(curves.joinToString(","))
+                .setHashes(hashes.joinToString(","))
+                .setCiphers(ciphers.joinToString(","))
+                .build()
 
         state = State.ProposeSent
         write(proposeMsg)
@@ -159,14 +159,14 @@ class SecIoNegotiator(
 
     private fun buildExchangeMessage(): Spipe.Exchange {
         return Spipe.Exchange.newBuilder()
-            .setEpubkey(ephPubKey.toUncompressedBytes().toProtobuf())
-            .setSignature(
-                localKey.sign(
-                    proposeMsg.toByteArray() +
-                        remotePropose.toByteArray() +
-                        ephPubKey.toUncompressedBytes()
-                ).toProtobuf()
-            ).build()
+                .setEpubkey(ephPubKey.toUncompressedBytes().toProtobuf())
+                .setSignature(
+                        localKey.sign(
+                                proposeMsg.toByteArray() +
+                                        remotePropose.toByteArray() +
+                                        ephPubKey.toUncompressedBytes()
+                        ).toProtobuf()
+                ).build()
     } // buildExchangeMessage
 
     private fun verifyKeyExchange(buf: ByteBuf): Pair<SecioParams, SecioParams> {
@@ -182,25 +182,25 @@ class SecIoNegotiator(
 
         state = State.KeysCreated
         return Pair(
-            SecioParams(
-                localKey.publicKey(),
-                localKeys,
-                calcHMac(localKeys.macKey)
-            ),
-            SecioParams(
-                remotePubKey,
-                remoteKeys,
-                calcHMac(remoteKeys.macKey)
-            )
+                SecioParams(
+                        localKey.publicKey(),
+                        localKeys,
+                        calcHMac(localKeys.macKey)
+                ),
+                SecioParams(
+                        remotePubKey,
+                        remoteKeys,
+                        calcHMac(remoteKeys.macKey)
+                )
         )
     } // verifyKeyExchange
 
     private fun validateExchangeMessage(exchangeMsg: Spipe.Exchange) {
         val signatureIsOk = remotePubKey.verify(
-            remotePropose.toByteArray() +
-                proposeMsg.toByteArray() +
-                exchangeMsg.epubkey.toByteArray(),
-            exchangeMsg.signature.toByteArray()
+                remotePropose.toByteArray() +
+                        proposeMsg.toByteArray() +
+                        exchangeMsg.epubkey.toByteArray(),
+                exchangeMsg.signature.toByteArray()
         )
 
         if (!signatureIsOk)
@@ -221,19 +221,19 @@ class SecIoNegotiator(
         val ecCurve = ECNamedCurveTable.getParameterSpec(curve).curve
 
         val remoteEphPublickKey =
-            decodeEcdsaPublicKeyUncompressed(
-                curve,
-                exchangeMsg.epubkey.toByteArray()
-            )
+                decodeEcdsaPublicKeyUncompressed(
+                        curve,
+                        exchangeMsg.epubkey.toByteArray()
+                )
         val remoteEphPubPoint =
-            ecCurve.validatePoint(
-                remoteEphPublickKey.pub.w.affineX,
-                remoteEphPublickKey.pub.w.affineY
-            )
+                ecCurve.validatePoint(
+                        remoteEphPublickKey.pub.w.affineX,
+                        remoteEphPublickKey.pub.w.affineY
+                )
 
         val sharedSecretPoint = ecCurve.multiplier.multiply(
-            remoteEphPubPoint,
-            ephPrivKey.priv.s
+                remoteEphPubPoint,
+                ephPrivKey.priv.s
         )
 
         val sharedSecret = sharedSecretPoint.normalize().affineXCoord.encoded
@@ -251,6 +251,7 @@ class SecIoNegotiator(
         val byteBuf = Unpooled.buffer().writeBytes(outMsg.toByteArray())
         outboundChannel.invoke(byteBuf)
     }
+
     private fun write(msg: ByteArray) {
         outboundChannel.invoke(msg.toByteBuf())
     }
@@ -262,20 +263,22 @@ class SecIoNegotiator(
     private fun selectCurve(): String {
         return selectBest(curves, remotePropose.exchanges.split(","))
     } // selectCurve
+
     private fun selectHash(): String {
         return selectBest(hashes, remotePropose.hashes.split(","))
     }
+
     private fun selectCipher(): String {
         return selectBest(ciphers, remotePropose.ciphers.split(","))
     }
 
     private fun selectBest(
-        p1: Collection<String>,
-        p2: Collection<String>
+            p1: Collection<String>,
+            p2: Collection<String>
     ): String {
         val intersect =
-            linkedSetOf(*(selectFirst(p1, p2)).toTypedArray())
-                .intersect(linkedSetOf(*(selectSecond(p1, p2)).toTypedArray()))
+                linkedSetOf(*(selectFirst(p1, p2)).toTypedArray())
+                        .intersect(linkedSetOf(*(selectSecond(p1, p2)).toTypedArray()))
         if (intersect.isEmpty()) throw NoCommonAlgos()
         return intersect.first()
     } // selectBest

@@ -1,12 +1,7 @@
 package io.libp2p.pubsub.gossip.builders
 
 import io.libp2p.core.PeerId
-import io.libp2p.pubsub.gossip.GossipParams
-import io.libp2p.pubsub.gossip.defaultDHigh
-import io.libp2p.pubsub.gossip.defaultDLazy
-import io.libp2p.pubsub.gossip.defaultDLow
-import io.libp2p.pubsub.gossip.defaultDOut
-import io.libp2p.pubsub.gossip.defaultDScore
+import io.libp2p.pubsub.gossip.*
 import java.time.Duration
 
 class GossipParamsBuilder {
@@ -176,37 +171,37 @@ class GossipParamsBuilder {
         calculateMissing()
         checkRequiredFields()
         return GossipParams(
-            D = D!!,
-            DLow = DLow!!,
-            DHigh = DHigh!!,
-            DScore = DScore!!,
-            DOut = DOut!!,
-            DLazy = DLazy!!,
-            fanoutTTL = fanoutTTL!!,
-            maxGossipMessageSize = maxGossipMessageSize!!,
-            gossipSize = gossipSize!!,
-            gossipHistoryLength = gossipHistoryLength!!,
-            heartbeatInterval = heartbeatInterval!!,
-            seenTTL = seenTTL!!,
-            floodPublish = floodPublish!!,
-            gossipFactor = gossipFactor!!,
-            opportunisticGraftPeers = opportunisticGraftPeers!!,
-            opportunisticGraftTicks = opportunisticGraftTicks!!,
-            graftFloodThreshold = graftFloodThreshold!!,
-            maxPublishedMessages = maxPublishedMessages,
-            maxTopicsPerPublishedMessage = maxTopicsPerPublishedMessage,
-            maxSubscriptions = maxSubscriptions,
-            maxIHaveLength = maxIHaveLength!!,
-            maxIHaveMessages = maxIHaveMessages!!,
-            maxIWantMessageIds = maxIWantMessageIds,
-            iWantFollowupTime = iWantFollowupTime!!,
-            maxGraftMessages = maxGraftMessages,
-            maxPrunePeers = maxPrunePeers!!,
-            maxPeersPerPruneMessage = maxPeersPerPruneMessage,
-            pruneBackoff = pruneBackoff!!,
-            maxPruneMessages = maxPruneMessages,
-            gossipRetransmission = gossipRetransmission!!,
-            connectCallback = connectCallback!!
+                D = D!!,
+                DLow = DLow!!,
+                DHigh = DHigh!!,
+                DScore = DScore!!,
+                DOut = DOut!!,
+                DLazy = DLazy!!,
+                fanoutTTL = fanoutTTL!!,
+                maxGossipMessageSize = maxGossipMessageSize!!,
+                gossipSize = gossipSize!!,
+                gossipHistoryLength = gossipHistoryLength!!,
+                heartbeatInterval = heartbeatInterval!!,
+                seenTTL = seenTTL!!,
+                floodPublish = floodPublish!!,
+                gossipFactor = gossipFactor!!,
+                opportunisticGraftPeers = opportunisticGraftPeers!!,
+                opportunisticGraftTicks = opportunisticGraftTicks!!,
+                graftFloodThreshold = graftFloodThreshold!!,
+                maxPublishedMessages = maxPublishedMessages,
+                maxTopicsPerPublishedMessage = maxTopicsPerPublishedMessage,
+                maxSubscriptions = maxSubscriptions,
+                maxIHaveLength = maxIHaveLength!!,
+                maxIHaveMessages = maxIHaveMessages!!,
+                maxIWantMessageIds = maxIWantMessageIds,
+                iWantFollowupTime = iWantFollowupTime!!,
+                maxGraftMessages = maxGraftMessages,
+                maxPrunePeers = maxPrunePeers!!,
+                maxPeersPerPruneMessage = maxPeersPerPruneMessage,
+                pruneBackoff = pruneBackoff!!,
+                maxPruneMessages = maxPruneMessages,
+                gossipRetransmission = gossipRetransmission!!,
+                connectCallback = connectCallback!!
         )
     }
 

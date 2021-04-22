@@ -41,6 +41,14 @@ import io.libp2p.transport.ConnectionUpgrader;
 
 public class HostBuilder {
     private static final String TAG = HostBuilder.class.getSimpleName();
+    private final DefaultMode defaultMode_;
+    private final List<Function<ConnectionUpgrader, Transport>> transports_ = new ArrayList<>();
+    private final List<Function<PrivKey, SecureChannel>> secureChannels_ = new ArrayList<>();
+
+    private final List<Supplier<StreamMuxerProtocol>> muxers_ = new ArrayList<>();
+    private final List<ProtocolBinding<?>> protocols_ = new ArrayList<>();
+    private final List<String> listenAddresses_ = new ArrayList<>();
+    private PrivKey privKey;
 
     public HostBuilder() {
         this(DefaultMode.Standard);
@@ -49,88 +57,6 @@ public class HostBuilder {
     public HostBuilder(DefaultMode defaultMode) {
         defaultMode_ = defaultMode;
     }
-
-    public enum DefaultMode {
-        None,
-        Standard;
-
-        private Builder.Defaults asBuilderDefault() {
-            if (this.equals(None)) {
-                return Builder.Defaults.None;
-            }
-            return Builder.Defaults.Standard;
-        }
-    };
-
-    @SafeVarargs
-    public final HostBuilder transport(
-            Function<ConnectionUpgrader, Transport>... transports) {
-        transports_.addAll(Arrays.asList(transports));
-        return this;
-    }
-
-    @SafeVarargs
-    public final HostBuilder secureChannel(
-            Function<PrivKey, SecureChannel>... secureChannels) {
-        secureChannels_.addAll(Arrays.asList(secureChannels));
-        return this;
-    }
-
-    @SafeVarargs
-    public final HostBuilder muxer(
-            Supplier<StreamMuxerProtocol>... muxers) {
-        muxers_.addAll(Arrays.asList(muxers));
-        return this;
-    }
-
-    public final HostBuilder protocol(
-            ProtocolBinding<?>... protocols) {
-        protocols_.addAll(Arrays.asList(protocols));
-        return this;
-    }
-
-    public final HostBuilder listen(
-            String... addresses) {
-        listenAddresses_.addAll(Arrays.asList(addresses));
-        return this;
-    }
-    public final HostBuilder identity(
-            PrivKey privKey) {
-        this.privKey = privKey;
-        return this;
-    }
-
-    public Host build() {
-        return BuilderJKt.hostJ(
-            defaultMode_.asBuilderDefault(),
-            b -> {
-                b.getIdentity().setFactory(() -> privKey);
-
-                transports_.forEach(t ->
-                    b.getTransports().add(t::apply)
-                );
-                secureChannels_.forEach(sc ->
-                    b.getSecureChannels().add(sc::apply)
-                );
-                muxers_.forEach(m ->
-                    b.getMuxers().add(m.get())
-                );
-                b.getProtocols().addAll(protocols_);
-                listenAddresses_.forEach(a ->
-                    b.getNetwork().listen(a)
-                );
-            }
-        );
-    } // build
-
-    private DefaultMode defaultMode_;
-    private List<Function<ConnectionUpgrader, Transport>> transports_ = new ArrayList<>();
-    private List<Function<PrivKey, SecureChannel>> secureChannels_ = new ArrayList<>();
-    private List<Supplier<StreamMuxerProtocol>> muxers_ = new ArrayList<>();
-    private List<ProtocolBinding<?>> protocols_ = new ArrayList<>();
-    private List<String> listenAddresses_ = new ArrayList<>();
-    private PrivKey privKey;
-
 
     // TODO not really working
     @NonNull
@@ -188,9 +114,9 @@ public class HostBuilder {
         return ctrl.get();
     }
 
-    private static List<Multiaddr> prepareAddresses(@NonNull Host host, @NonNull PeerId peerId){
+    private static List<Multiaddr> prepareAddresses(@NonNull Host host, @NonNull PeerId peerId) {
         List<Multiaddr> all = new ArrayList<>();
-        for (Multiaddr ma:getAddresses(host, peerId)) {
+        for (Multiaddr ma : getAddresses(host, peerId)) {
             try {
                 if (ma.has(Protocol.DNS6)) {
                     all.add(DnsResolver.resolveDns6(ma));
@@ -201,7 +127,7 @@ public class HostBuilder {
                 } else {
                     all.add(ma);
                 }
-            } catch (Throwable throwable){
+            } catch (Throwable throwable) {
                 LogUtils.verbose(TAG, throwable.getClass().getSimpleName());
             }
         }
@@ -218,6 +144,7 @@ public class HostBuilder {
         });*/
         return all;
     }
+
     public static Connection connect(@NonNull Closeable closeable, @NonNull Host host,
                                      @NonNull PeerId peerId) throws ClosedException, ConnectionIssue {
 
@@ -255,7 +182,6 @@ public class HostBuilder {
 
     }
 
-
     public static void addAddrs(@NonNull Host host, @NonNull AddrInfo addrInfo) {
 
         try {
@@ -271,6 +197,7 @@ public class HostBuilder {
             LogUtils.error(TAG, throwable);
         }
     }
+
     public static Set<Multiaddr> getAddresses(@NonNull Host host, @NonNull PeerId peerId) {
         Set<Multiaddr> all = new HashSet<>();
         try {
@@ -278,7 +205,7 @@ public class HostBuilder {
             if (addrInfo != null) {
                 all.addAll(addrInfo);
             }
-        } catch (Throwable throwable){
+        } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         }
         return all;
@@ -311,5 +238,79 @@ public class HostBuilder {
         }
         return host.listenAddresses();
 
+    }
+
+    @SafeVarargs
+    public final HostBuilder transport(
+            Function<ConnectionUpgrader, Transport>... transports) {
+        transports_.addAll(Arrays.asList(transports));
+        return this;
+    }
+
+    @SafeVarargs
+    public final HostBuilder secureChannel(
+            Function<PrivKey, SecureChannel>... secureChannels) {
+        secureChannels_.addAll(Arrays.asList(secureChannels));
+        return this;
+    }
+
+    @SafeVarargs
+    public final HostBuilder muxer(
+            Supplier<StreamMuxerProtocol>... muxers) {
+        muxers_.addAll(Arrays.asList(muxers));
+        return this;
+    }
+
+    public final HostBuilder protocol(
+            ProtocolBinding<?>... protocols) {
+        protocols_.addAll(Arrays.asList(protocols));
+        return this;
+    }
+
+    public final HostBuilder listen(
+            String... addresses) {
+        listenAddresses_.addAll(Arrays.asList(addresses));
+        return this;
+    }
+
+    public final HostBuilder identity(
+            PrivKey privKey) {
+        this.privKey = privKey;
+        return this;
+    }
+
+    public Host build() {
+        return BuilderJKt.hostJ(
+                defaultMode_.asBuilderDefault(),
+                b -> {
+                    b.getIdentity().setFactory(() -> privKey);
+
+                    transports_.forEach(t ->
+                            b.getTransports().add(t::apply)
+                    );
+                    secureChannels_.forEach(sc ->
+                            b.getSecureChannels().add(sc::apply)
+                    );
+                    muxers_.forEach(m ->
+                            b.getMuxers().add(m.get())
+                    );
+                    b.getProtocols().addAll(protocols_);
+                    listenAddresses_.forEach(a ->
+                            b.getNetwork().listen(a)
+                    );
+                }
+        );
+    } // build
+
+    public enum DefaultMode {
+        None,
+        Standard;
+
+        private Builder.Defaults asBuilderDefault() {
+            if (this.equals(None)) {
+                return Builder.Defaults.None;
+            }
+            return Builder.Defaults.Standard;
+        }
     }
 }

@@ -11,7 +11,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import io.LogUtils;
 import io.core.TimeoutCloseable;
@@ -98,21 +97,17 @@ public class IpfsFindPeer {
 
 
     @Test
-    public void test_find_swarm_peers() {
+    public void test_print_swarm_peers() {
         IPFS ipfs = TestEnv.getTestInstance(context);
 
 
-        AtomicInteger atomicInteger = new AtomicInteger(0);
+        List<String> peers = ipfs.swarmPeers();
 
+        assertNotNull(peers);
+        LogUtils.debug(TAG, "Peers : " + peers.size());
+        for (String peer : peers) {
 
-        while (atomicInteger.incrementAndGet() < 5) {
-            List<String> peers = ipfs.swarmPeers();
-
-            assertNotNull(peers);
-            LogUtils.debug(TAG, "Peers : " + peers.size());
-            for (String peer : peers) {
-
-                PeerInfo peerInfo = ipfs.getPeerInfo(new TimeoutCloseable(10), peer);
+            PeerInfo peerInfo = ipfs.getPeerInfo(new TimeoutCloseable(10), peer);
 
                 if (peerInfo != null) {
 
@@ -134,6 +129,5 @@ public class IpfsFindPeer {
 
         }
 
-    }
 
 }

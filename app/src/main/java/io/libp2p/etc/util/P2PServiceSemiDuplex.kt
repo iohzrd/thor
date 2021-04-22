@@ -18,9 +18,10 @@ abstract class P2PServiceSemiDuplex : P2PService() {
         var otherStreamHandler: StreamHandler? = null
 
         override fun writeAndFlush(msg: Any): CompletableFuture<Unit> =
-            getOutboundHandler()?.ctx?.writeAndFlush(msg)?.toVoidCompletableFuture() ?: completedExceptionally(
-                SemiDuplexNoOutboundStreamException("No active outbound stream to write data $msg")
-            )
+                getOutboundHandler()?.ctx?.writeAndFlush(msg)?.toVoidCompletableFuture()
+                        ?: completedExceptionally(
+                                SemiDuplexNoOutboundStreamException("No active outbound stream to write data $msg")
+                        )
 
         override fun isActive() = getOutboundHandler()?.ctx != null
 

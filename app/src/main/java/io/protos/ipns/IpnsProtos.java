@@ -9,7 +9,7 @@ public final class IpnsProtos {
     private static final
     com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
             internal_static_io_protos_ipns_IpnsEntry_fieldAccessorTable;
-    private static com.google.protobuf.Descriptors.FileDescriptor
+    private static final com.google.protobuf.Descriptors.FileDescriptor
             descriptor;
 
     static {
@@ -713,8 +713,7 @@ public final class IpnsProtos {
                 if (!getPubKey()
                         .equals(other.getPubKey())) return false;
             }
-            if (!unknownFields.equals(other.unknownFields)) return false;
-            return true;
+            return unknownFields.equals(other.unknownFields);
         }
 
         @java.lang.Override
@@ -820,7 +819,7 @@ public final class IpnsProtos {
             private static final ValidityType[] VALUES = values();
             private final int value;
 
-            private ValidityType(int value) {
+            ValidityType(int value) {
                 this.value = value;
             }
 
@@ -1088,10 +1087,7 @@ public final class IpnsProtos {
                 if (!hasValue()) {
                     return false;
                 }
-                if (!hasSignature()) {
-                    return false;
-                }
-                return true;
+                return hasSignature();
             }
 
             @java.lang.Override

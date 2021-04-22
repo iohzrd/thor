@@ -48,15 +48,15 @@ fun <C> CompletableFuture<C>.getX(timeoutSec: Double): C {
 }
 
 fun <C> ExecutorService.submitAsync(func: () -> CompletableFuture<C>): CompletableFuture<C> =
-    CompletableFuture.supplyAsync(Supplier { func() }, this).thenCompose { it }
+        CompletableFuture.supplyAsync(Supplier { func() }, this).thenCompose { it }
 
 fun <C> completedExceptionally(t: Throwable) = CompletableFuture<C>().also { it.completeExceptionally(t) }
 
 class NonCompleteException(cause: Throwable?) : RuntimeException(cause)
-class NothingToCompleteException() : RuntimeException()
+class NothingToCompleteException : RuntimeException()
 
 fun <C> anyComplete(all: List<CompletableFuture<C>>): CompletableFuture<C> =
-    anyComplete(*all.toTypedArray())
+        anyComplete(*all.toTypedArray())
 
 fun <C> anyComplete(vararg all: CompletableFuture<C>): CompletableFuture<C> {
     return if (all.isEmpty()) completedExceptionally(NothingToCompleteException())
@@ -77,5 +77,5 @@ fun <C> anyComplete(vararg all: CompletableFuture<C>): CompletableFuture<C> {
 }
 
 fun <C, R> Collection<CompletableFuture<C>>.thenApplyAll(func: (List<C>) -> R): CompletableFuture<R> =
-    CompletableFuture.allOf(*this.toTypedArray())
-        .thenApply { func(this.map { it.get() }) }
+        CompletableFuture.allOf(*this.toTypedArray())
+                .thenApply { func(this.map { it.get() }) }

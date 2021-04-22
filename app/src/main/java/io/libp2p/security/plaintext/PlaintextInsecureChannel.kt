@@ -30,9 +30,9 @@ class PlaintextInsecureChannel(private val localKey: PrivKey) : SecureChannel {
 
         val handshaker = PlaintextHandshakeHandler(handshakeCompleted, localKey)
         listOf(
-            LengthFieldPrepender(4),
-            LengthFieldBasedFrameDecoder(Integer.MAX_VALUE, 0, 4, 0, 4),
-            handshaker
+                LengthFieldPrepender(4),
+                LengthFieldBasedFrameDecoder(Integer.MAX_VALUE, 0, 4, 0, 4),
+                handshaker
         ).forEach { ch.pushHandler(it) }
 
         return handshakeCompleted
@@ -40,8 +40,8 @@ class PlaintextInsecureChannel(private val localKey: PrivKey) : SecureChannel {
 } // PlaintextInsecureChannel
 
 class PlaintextHandshakeHandler(
-    private val handshakeCompleted: CompletableFuture<SecureChannel.Session>,
-    localKey: PrivKey
+        private val handshakeCompleted: CompletableFuture<SecureChannel.Session>,
+        localKey: PrivKey
 ) : SimpleChannelInboundHandler<ByteBuf>() {
     private val localPubKey = localKey.publicKey()
     private val localPeerId = PeerId.fromPubKey(localPubKey)
@@ -57,14 +57,14 @@ class PlaintextHandshakeHandler(
         active = true
 
         val pubKeyMsg = Crypto.PublicKey.newBuilder()
-            .setType(localPubKey.keyType)
-            .setData(ByteString.copyFrom(localPubKey.raw()))
-            .build()
+                .setType(localPubKey.keyType)
+                .setData(ByteString.copyFrom(localPubKey.raw()))
+                .build()
 
         val exchangeMsg = Plaintext.Exchange.newBuilder()
-            .setId(localPeerId.bytes.toProtobuf())
-            .setPubkey(pubKeyMsg)
-            .build()
+                .setId(localPeerId.bytes.toProtobuf())
+                .setPubkey(pubKeyMsg)
+                .build()
 
         val byteBuf = Unpooled.buffer().writeBytes(exchangeMsg.toByteArray())
         ctx.writeAndFlush(byteBuf)
@@ -77,7 +77,7 @@ class PlaintextHandshakeHandler(
 
         read = true
         val exchangeRecv = Plaintext.Exchange.parser().parseFrom(msg.nioBuffer())
-            ?: throw InvalidInitialPacket()
+                ?: throw InvalidInitialPacket()
 
         if (!exchangeRecv.hasPubkey())
             throw InvalidRemotePubKey()
@@ -105,9 +105,9 @@ class PlaintextHandshakeHandler(
         if (!active || !read) return
 
         val session = SecureChannel.Session(
-            localPeerId,
-            remotePeerId,
-            remotePubKey
+                localPeerId,
+                remotePeerId,
+                remotePubKey
         )
 
         handshakeCompleted.complete(session)

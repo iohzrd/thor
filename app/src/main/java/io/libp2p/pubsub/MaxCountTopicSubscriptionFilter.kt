@@ -1,22 +1,22 @@
 package io.libp2p.pubsub
 
 class MaxCountTopicSubscriptionFilter(
-    private val maxSubscriptionsPerRequest: Int,
-    private val maxSubscribedTopics: Int,
-    private val delegateFilter: TopicSubscriptionFilter
+        private val maxSubscriptionsPerRequest: Int,
+        private val maxSubscribedTopics: Int,
+        private val delegateFilter: TopicSubscriptionFilter
 ) : TopicSubscriptionFilter {
     override fun canSubscribe(topic: Topic): Boolean =
-        delegateFilter.canSubscribe(topic)
+            delegateFilter.canSubscribe(topic)
 
     override fun filterIncomingSubscriptions(
-        subscriptions: Collection<PubsubSubscription>,
-        currentlySubscribedTopics: Collection<Topic>
+            subscriptions: Collection<PubsubSubscription>,
+            currentlySubscribedTopics: Collection<Topic>
     ): Collection<PubsubSubscription> {
         if (subscriptions.size > maxSubscriptionsPerRequest) {
             throw InvalidMessageException("Too many subscriptions per request")
         }
         val filteredSubscriptions =
-            delegateFilter.filterIncomingSubscriptions(subscriptions, currentlySubscribedTopics)
+                delegateFilter.filterIncomingSubscriptions(subscriptions, currentlySubscribedTopics)
 
         var unsubscribed = 0
         var newSubscribed = 0

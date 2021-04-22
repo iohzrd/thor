@@ -20,8 +20,8 @@ import io.ipfs.merkledag.DagService;
 
 public class Shard {
 
-    private static int SHARED_LINK = 1;
-    private static int SHARED_VALUE_LINK = 2;
+    private static final int SHARED_LINK = 1;
+    private static final int SHARED_VALUE_LINK = 2;
     private final int tableSize;
     private final DagService dserv;
     public Childer childer;

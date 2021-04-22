@@ -5,7 +5,7 @@ import io.libp2p.etc.types.get
 import io.libp2p.etc.types.mutableBiMultiMap
 import io.libp2p.etc.types.set
 import java.time.Duration
-import java.util.LinkedList
+import java.util.*
 
 /**
  * The interface which is very similar to `Map<PubsubMessage, TValue>`
@@ -51,7 +51,10 @@ class SimpleSeenCache<TValue> : SeenCache<TValue> {
     override fun put(msg: PubsubMessage, value: TValue) {
         map[msg.messageId] = msg to value
     }
-    override fun remove(msg: PubsubMessage) { map -= msg.messageId }
+
+    override fun remove(msg: PubsubMessage) {
+        map -= msg.messageId
+    }
 }
 
 class LRUSeenCache<TValue>(val delegate: SeenCache<TValue>, private val maxSize: Int) : SeenCache<TValue> by delegate {
@@ -75,9 +78,9 @@ class LRUSeenCache<TValue>(val delegate: SeenCache<TValue>, private val maxSize:
 }
 
 class TTLSeenCache<TValue>(
-    val delegate: SeenCache<TValue>,
-    private val ttl: Duration,
-    private val curTime: () -> Long
+        val delegate: SeenCache<TValue>,
+        private val ttl: Duration,
+        private val curTime: () -> Long
 ) : SeenCache<TValue> by delegate {
 
     data class TimedMessage(val time: Long, val message: PubsubMessage)
@@ -124,7 +127,8 @@ class FastIdSeenCache<TValue>(private val fastIdFunction: (PubsubMessage) -> Any
     }
 
     override fun isSeen(msg: PubsubMessage) =
-        fastIdFunction(msg) in fastIdMap || msg.messageId in slowIdMap
+            fastIdFunction(msg) in fastIdMap || msg.messageId in slowIdMap
+
     override fun isSeen(messageId: MessageId) = messageId in slowIdMap
 
     override fun put(msg: PubsubMessage, value: TValue) {

@@ -94,19 +94,19 @@ class GossipPeerScoreParamsBuilder() {
     fun build(): GossipPeerScoreParams {
         checkRequiredFields()
         return GossipPeerScoreParams(
-            topicScoreCap = topicScoreCap!!,
-            isDirect = isDirect!!,
-            appSpecificScore = appSpecificScore!!,
-            appSpecificWeight = appSpecificWeight!!,
-            ipWhitelisted = ipWhitelisted!!,
-            ipColocationFactorWeight = ipColocationFactorWeight!!,
-            ipColocationFactorThreshold = ipColocationFactorThreshold!!,
-            behaviourPenaltyWeight = behaviourPenaltyWeight!!,
-            behaviourPenaltyDecay = behaviourPenaltyDecay!!,
-            behaviourPenaltyThreshold = behaviourPenaltyThreshold!!,
-            decayInterval = decayInterval!!,
-            decayToZero = decayToZero!!,
-            retainScore = retainScore!!
+                topicScoreCap = topicScoreCap!!,
+                isDirect = isDirect!!,
+                appSpecificScore = appSpecificScore!!,
+                appSpecificWeight = appSpecificWeight!!,
+                ipWhitelisted = ipWhitelisted!!,
+                ipColocationFactorWeight = ipColocationFactorWeight!!,
+                ipColocationFactorThreshold = ipColocationFactorThreshold!!,
+                behaviourPenaltyWeight = behaviourPenaltyWeight!!,
+                behaviourPenaltyDecay = behaviourPenaltyDecay!!,
+                behaviourPenaltyThreshold = behaviourPenaltyThreshold!!,
+                decayInterval = decayInterval!!,
+                decayToZero = decayToZero!!,
+                retainScore = retainScore!!
         )
     }
 
@@ -118,8 +118,8 @@ class GossipPeerScoreParamsBuilder() {
         check(ipWhitelisted != null, { "ipWhitelisted must not be null" })
         check(ipColocationFactorWeight != null, { "ipColocationFactorWeight must not be null" })
         check(
-            ipColocationFactorThreshold != null,
-            { "ipColocationFactorThreshold must not be null" }
+                ipColocationFactorThreshold != null,
+                { "ipColocationFactorThreshold must not be null" }
         )
         check(behaviourPenaltyWeight != null, { "behaviourPenaltyWeight must not be null" })
         check(behaviourPenaltyDecay != null, { "behaviourPenaltyDecay must not be null" })

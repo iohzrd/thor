@@ -18,17 +18,17 @@ public class PeerInfo {
     @Nullable
     private final Multiaddr observed;
 
-    @Nullable
-    public Multiaddr getObserved() {
-        return observed;
-    }
-
     public PeerInfo(@NonNull PeerId peerId, @NonNull String agent, @NonNull Multiaddr address,
                     @Nullable Multiaddr observed) {
         this.peerId = peerId;
         this.agent = agent;
         this.address = address;
         this.observed = observed;
+    }
+
+    @Nullable
+    public Multiaddr getObserved() {
+        return observed;
     }
 
     @NotNull

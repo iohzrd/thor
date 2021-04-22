@@ -34,6 +34,6 @@ fun interface ChannelVisitor<TChannel : P2PChannel> {
 
     companion object {
         fun <TChannel : P2PChannel> createBroadcast(vararg handlers: ChannelVisitor<TChannel>) =
-            BroadcastChannelVisitor<TChannel>().also { it += handlers }
+                BroadcastChannelVisitor<TChannel>().also { it += handlers }
     }
 }

@@ -14,8 +14,8 @@ import java.util.concurrent.CompletableFuture
  *           to instantiateand this future would fail
  */
 data class StreamPromise<T>(
-    val stream: CompletableFuture<Stream> = CompletableFuture(),
-    val controller: CompletableFuture<T> = CompletableFuture()
+        val stream: CompletableFuture<Stream> = CompletableFuture(),
+        val controller: CompletableFuture<T> = CompletableFuture()
 )
 
 /**

@@ -5,7 +5,6 @@ import androidx.annotation.NonNull;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 
-import io.LogUtils;
 import io.libp2p.core.PeerId;
 
 public class Util {

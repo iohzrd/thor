@@ -15,8 +15,8 @@ typealias MuxChannelInitializer<TData> = (MuxChannel<TData>) -> Unit
 
 private val log = LogManager.getLogger(AbstractMuxHandler::class.java)
 
-abstract class AbstractMuxHandler<TData>() :
-    ChannelInboundHandlerAdapter() {
+abstract class AbstractMuxHandler<TData> :
+        ChannelInboundHandlerAdapter() {
 
     private val streamMap: MutableMap<MuxId, MuxChannel<TData>> = mutableMapOf()
     var ctx: ChannelHandlerContext? = null
@@ -50,11 +50,13 @@ abstract class AbstractMuxHandler<TData>() :
     }
 
     fun getChannelHandlerContext(): ChannelHandlerContext {
-        return ctx ?: throw InternalErrorException("Internal error: handler context should be initialized at this stage")
+        return ctx
+                ?: throw InternalErrorException("Internal error: handler context should be initialized at this stage")
     }
 
     protected fun childRead(id: MuxId, msg: TData) {
-        val child = streamMap[id] ?: throw ConnectionClosedException("Channel with id $id not opened")
+        val child = streamMap[id]
+                ?: throw ConnectionClosedException("Channel with id $id not opened")
         pendingReadComplete += id
         child.pipeline().fireChannelRead(msg)
     }
@@ -69,9 +71,9 @@ abstract class AbstractMuxHandler<TData>() :
     protected fun onRemoteOpen(id: MuxId) {
         val initializer = inboundInitializer
         val child = createChild(
-            id,
-            initializer,
-            false
+                id,
+                initializer,
+                false
         )
         onRemoteCreated(child)
     }
@@ -105,9 +107,9 @@ abstract class AbstractMuxHandler<TData>() :
     protected abstract fun onLocalDisconnect(child: MuxChannel<TData>)
 
     private fun createChild(
-        id: MuxId,
-        initializer: MuxChannelInitializer<TData>,
-        initiator: Boolean
+            id: MuxId,
+            initializer: MuxChannelInitializer<TData>,
+            initiator: Boolean
     ): MuxChannel<TData> {
         val child = MuxChannel(this, id, initializer, initiator)
         streamMap[id] = child
@@ -123,19 +125,19 @@ abstract class AbstractMuxHandler<TData>() :
         try {
             checkClosed() // if already closed then event loop is already down and async task may never execute
             return activeFuture.thenApplyAsync(
-                Function {
-                    checkClosed() // close may happen after above check and before this point
-                    val child = createChild(
-                        generateNextId(),
-                        {
-                            onLocalOpen(it)
-                            outboundInitializer(it)
-                        },
-                        true
-                    )
-                    child
-                },
-                getChannelHandlerContext().channel().eventLoop()
+                    Function {
+                        checkClosed() // close may happen after above check and before this point
+                        val child = createChild(
+                                generateNextId(),
+                                {
+                                    onLocalOpen(it)
+                                    outboundInitializer(it)
+                                },
+                                true
+                        )
+                        child
+                    },
+                    getChannelHandlerContext().channel().eventLoop()
             )
         } catch (e: Exception) {
             return completedExceptionally(e)

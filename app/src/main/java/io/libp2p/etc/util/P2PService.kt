@@ -61,6 +61,7 @@ abstract class P2PService {
                 streamActive(this)
             }
         }
+
         override fun channelUnregistered(ctx: ChannelHandlerContext?) {
             closed = true
             runOnEventThread(peerHandler) {
@@ -79,7 +80,8 @@ abstract class P2PService {
             peerHandler = handler
         }
 
-        fun getPeerHandler() = peerHandler ?: throw InternalErrorException("[peerHandler] not initialized yet")
+        fun getPeerHandler() = peerHandler
+                ?: throw InternalErrorException("[peerHandler] not initialized yet")
 
         /**
          * Close on stream initialize without setting the [peerHandler]
@@ -115,7 +117,7 @@ abstract class P2PService {
      */
     var executor: ScheduledExecutorService by lazyVarInit {
         Executors.newSingleThreadScheduledExecutor(
-            threadFactory
+                threadFactory
         )
     }
 
@@ -239,6 +241,7 @@ abstract class P2PService {
      * Executes the code on the service event thread
      */
     fun <C> submitOnEventThread(run: () -> C): CompletableFuture<C> = CompletableFuture.supplyAsync(Supplier { run() }, executor)
+
     /**
      * Executes the code on the service event thread
      */
@@ -246,6 +249,7 @@ abstract class P2PService {
 
     companion object {
         private val threadFactory = ThreadFactoryBuilder().setDaemon(true).setNameFormat("P2PService-event-thread-%d").build()
+
         @JvmStatic
         val logger = LogManager.getLogger(AbstractRouter::class.java)
     }

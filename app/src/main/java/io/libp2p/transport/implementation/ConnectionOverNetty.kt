@@ -19,9 +19,9 @@ import java.net.InetSocketAddress
  * It exposes libp2p components and semantics via methods and properties.
  */
 class ConnectionOverNetty(
-    ch: Channel,
-    private val transport: Transport,
-    initiator: Boolean
+        ch: Channel,
+        private val transport: Transport,
+        initiator: Boolean
 ) : Connection, P2PChannelOverNetty(ch, initiator) {
     private lateinit var muxerSession: StreamMuxer.Session
     private lateinit var secureSession: SecureChannel.Session
@@ -30,17 +30,23 @@ class ConnectionOverNetty(
         ch.attr(CONNECTION).set(this)
     }
 
-    fun setMuxerSession(ms: StreamMuxer.Session) { muxerSession = ms }
-    fun setSecureSession(ss: SecureChannel.Session) { secureSession = ss }
+    fun setMuxerSession(ms: StreamMuxer.Session) {
+        muxerSession = ms
+    }
+
+    fun setSecureSession(ss: SecureChannel.Session) {
+        secureSession = ss
+    }
 
     override fun muxerSession() = muxerSession
     override fun secureSession() = secureSession
     override fun transport() = transport
 
     override fun localAddress(): Multiaddr =
-        toMultiaddr(nettyChannel.localAddress() as InetSocketAddress)
+            toMultiaddr(nettyChannel.localAddress() as InetSocketAddress)
+
     override fun remoteAddress(): Multiaddr =
-        toMultiaddr(nettyChannel.remoteAddress() as InetSocketAddress)
+            toMultiaddr(nettyChannel.remoteAddress() as InetSocketAddress)
 
     private fun toMultiaddr(addr: InetSocketAddress): Multiaddr {
         if (transport is NettyTransport)
@@ -56,10 +62,10 @@ class ConnectionOverNetty(
             else -> throw InternalErrorException("Unknown address type $addr")
         }
         return Multiaddr(
-            listOf(
-                proto to proto.addressToBytes(addr.address.hostAddress),
-                Protocol.TCP to Protocol.TCP.addressToBytes(addr.port.toString())
-            )
+                listOf(
+                        proto to proto.addressToBytes(addr.address.hostAddress),
+                        Protocol.TCP to Protocol.TCP.addressToBytes(addr.port.toString())
+                )
         )
     } // toMultiaddr
 }

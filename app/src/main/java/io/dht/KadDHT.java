@@ -29,10 +29,10 @@ import dht.pb.Dht;
 import io.LogUtils;
 import io.core.Closeable;
 import io.core.ClosedException;
-import io.core.TimeoutIssue;
 import io.core.ConnectionIssue;
 import io.core.InvalidRecord;
 import io.core.ProtocolIssue;
+import io.core.TimeoutIssue;
 import io.core.Validator;
 import io.ipfs.IPFS;
 import io.ipfs.cid.Cid;
@@ -52,19 +52,16 @@ import record.pb.RecordOuterClass;
 
 
 public class KadDHT implements Routing {
-    private static final String TAG = KadDHT.class.getSimpleName();
     public static final String Protocol = "/ipfs/kad/1.0.0";
-
-
+    private static final String TAG = KadDHT.class.getSimpleName();
     public final Host host;
     public final PeerId self;
     public final int beta;
     public final int bucketSize;
     public final int alpha;
-
+    public final RoutingTable routingTable;
     private final Validator validator;
     private final Metrics metrics;
-    public final RoutingTable routingTable;
 
     public KadDHT(@NonNull Host host, @NonNull Metrics metrics,
                   @NonNull Validator validator, int alpha, int beta, int bucketSize) {
@@ -664,15 +661,15 @@ public class KadDHT implements Routing {
     }
 
 
+    public interface Channel {
+        void peer(@NonNull AddrInfo addrInfo) throws ClosedException;
+    }
+
     private static class RecordInfo {
         byte[] Val;
 
         public RecordInfo(@NonNull byte[] data) {
             this.Val = data;
         }
-    }
-
-    public interface Channel {
-        void peer(@NonNull AddrInfo addrInfo) throws ClosedException;
     }
 }

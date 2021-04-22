@@ -2,19 +2,10 @@ package io.libp2p.pubsub
 
 import io.libp2p.core.PeerId
 import io.libp2p.core.crypto.PrivKey
-import io.libp2p.core.pubsub.MessageApi
-import io.libp2p.core.pubsub.PubsubApi
-import io.libp2p.core.pubsub.PubsubPublisherApi
+import io.libp2p.core.pubsub.*
 import io.libp2p.core.pubsub.PubsubSubscription
 import io.libp2p.core.pubsub.Topic
-import io.libp2p.core.pubsub.ValidationResult
-import io.libp2p.core.pubsub.Validator
-import io.libp2p.etc.types.thenApplyAll
-import io.libp2p.etc.types.toByteArray
-import io.libp2p.etc.types.toByteBuf
-import io.libp2p.etc.types.toBytesBigEndian
-import io.libp2p.etc.types.toLongBigEndian
-import io.libp2p.etc.types.toProtobuf
+import io.libp2p.etc.types.*
 import io.netty.buffer.ByteBuf
 import pubsub.pb.Rpc
 import java.util.concurrent.CompletableFuture
@@ -22,7 +13,7 @@ import java.util.concurrent.CompletableFuture
 open class PubsubApiImpl(val router: PubsubRouter) : PubsubApi {
 
     inner class SubscriptionImpl(val topics: Array<out Topic>, val receiver: Validator) :
-        PubsubSubscription {
+            PubsubSubscription {
         var unsubscribed = false
         override fun unsubscribe() {
             if (unsubscribed) throw PubsubException("Already unsubscribed")
@@ -32,27 +23,27 @@ open class PubsubApiImpl(val router: PubsubRouter) : PubsubApi {
     }
 
     protected open inner class PublisherImpl(val privKey: PrivKey?, val seqIdGenerator: () -> Long?) :
-        PubsubPublisherApi {
+            PubsubPublisherApi {
 
         val from = privKey?.let { PeerId.fromPubKey(it.publicKey()).bytes.toProtobuf() }
 
         override fun publishExt(
-            data: ByteBuf,
-            from: ByteArray?,
-            seqId: Long?,
-            vararg topics: Topic
+                data: ByteBuf,
+                from: ByteArray?,
+                seqId: Long?,
+                vararg topics: Topic
         ): CompletableFuture<Unit> {
             val mFrom = from?.toProtobuf() ?: this.from
             val mSeqId = seqId ?: seqIdGenerator()
 
             val msgToSign = Rpc.Message.newBuilder()
-                .addAllTopicIDs(topics.map { it.topic })
-                .setData(data.toByteArray().toProtobuf())
+                    .addAllTopicIDs(topics.map { it.topic })
+                    .setData(data.toByteArray().toProtobuf())
             mSeqId?.also {
-                msgToSign.setSeqno(it.toBytesBigEndian().toProtobuf())
+                msgToSign.seqno = it.toBytesBigEndian().toProtobuf()
             }
             mFrom?.also {
-                msgToSign.setFrom(it)
+                msgToSign.from = it
             }
 
             return router.publish(router.messageFactory(sign(msgToSign.build())))
@@ -132,7 +123,7 @@ open class PubsubApiImpl(val router: PubsubRouter) : PubsubApi {
     }
 
     override fun createPublisher(privKey: PrivKey?, seqIdGenerator: () -> Long?): PubsubPublisherApi =
-        PublisherImpl(privKey, seqIdGenerator)
+            PublisherImpl(privKey, seqIdGenerator)
 }
 
 class MessageImpl(override val originalMessage: PubsubMessage) : MessageApi {

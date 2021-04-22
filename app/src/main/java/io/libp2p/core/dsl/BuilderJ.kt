@@ -7,8 +7,8 @@ import java.util.function.Consumer
  * Creates Java friendly [io.libp2p.core.Host] builder
  */
 fun hostJ(
-    defaultMode: Builder.Defaults,
-    fn: Consumer<BuilderJ>
+        defaultMode: Builder.Defaults,
+        fn: Consumer<BuilderJ>
 ): Host {
     val builder = BuilderJ()
     fn.accept(builder)

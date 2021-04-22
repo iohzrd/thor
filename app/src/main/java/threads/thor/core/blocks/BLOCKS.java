@@ -48,7 +48,7 @@ public class BLOCKS implements Storage {
     @Override
     public byte[] getData(@NonNull String id) {
         Block block = getBlock(id);
-        if( block != null){
+        if (block != null) {
             return block.getData();
         }
         return null;

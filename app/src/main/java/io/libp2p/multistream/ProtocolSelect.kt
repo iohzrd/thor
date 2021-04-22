@@ -19,7 +19,7 @@ import java.util.concurrent.CompletableFuture
  * Created by Anton Nashatyrev on 20.06.2019.
  */
 class ProtocolSelect<TController>(val protocols: List<ProtocolBinding<TController>> = mutableListOf()) :
-    ChannelInboundHandlerAdapter() {
+        ChannelInboundHandlerAdapter() {
 
     val selectedFuture = CompletableFuture<TController>()
     var activeFired = false
@@ -47,13 +47,13 @@ class ProtocolSelect<TController>(val protocols: List<ProtocolBinding<TControlle
         when (evt) {
             is ProtocolNegotiationSucceeded -> {
                 val protocolBinding = protocols.find { it.protocolDescriptor.protocolMatcher.matches(evt.proto) }
-                    ?: throw NoSuchLocalProtocolException("Protocol negotiation failed: not supported protocol ${evt.proto}")
+                        ?: throw NoSuchLocalProtocolException("Protocol negotiation failed: not supported protocol ${evt.proto}")
                 ctx.channel().attr(PROTOCOL).get()?.complete(evt.proto)
                 ctx.pipeline().addAfter(
-                    this, "ProtocolBindingInitializer",
-                    nettyInitializer {
-                        protocolBinding.initChannel(it.channel.getP2PChannel(), evt.proto).forward(selectedFuture)
-                    }
+                        this, "ProtocolBindingInitializer",
+                        nettyInitializer {
+                            protocolBinding.initChannel(it.channel.getP2PChannel(), evt.proto).forward(selectedFuture)
+                        }
                 )
             }
             is ProtocolNegotiationFailed -> throw NoSuchRemoteProtocolException("ProtocolNegotiationFailed: $evt")

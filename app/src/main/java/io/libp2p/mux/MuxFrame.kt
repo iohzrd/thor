@@ -8,7 +8,7 @@ import io.netty.buffer.DefaultByteBufHolder
 import io.netty.buffer.Unpooled
 
 open class MuxFrame(val id: MuxId, val flag: Flag, val data: ByteBuf? = null) :
-    DefaultByteBufHolder(data ?: Unpooled.EMPTY_BUFFER) {
+        DefaultByteBufHolder(data ?: Unpooled.EMPTY_BUFFER) {
 
     enum class Flag {
         OPEN,

@@ -13,10 +13,6 @@ class CachingChannelPipeline(channel: Channel) : DefaultChannelPipeline(channel)
         super.onUnhandledInboundMessage(msg)
     }
 
-    override fun onUnhandledInboundChannelReadComplete() {
-        super.onUnhandledInboundChannelReadComplete()
-    }
-
     override fun onUnhandledInboundUserEventTriggered(evt: Any?) {
         super.onUnhandledInboundUserEventTriggered(evt)
     }
@@ -25,15 +21,4 @@ class CachingChannelPipeline(channel: Channel) : DefaultChannelPipeline(channel)
         super.onUnhandledInboundException(cause)
     }
 
-    override fun onUnhandledChannelWritabilityChanged() {
-        super.onUnhandledChannelWritabilityChanged()
-    }
-
-    override fun onUnhandledInboundChannelActive() {
-        super.onUnhandledInboundChannelActive()
-    }
-
-    override fun onUnhandledInboundChannelInactive() {
-        super.onUnhandledInboundChannelInactive()
-    }
 }

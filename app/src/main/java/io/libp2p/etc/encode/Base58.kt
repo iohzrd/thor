@@ -1,6 +1,6 @@
 package io.libp2p.etc.encode
 
-import java.util.Arrays
+import java.util.*
 
 // Adapted from https://github.com/bitcoinj/bitcoinj/
 object Base58 {
@@ -34,12 +34,12 @@ object Base58 {
         var inputStart = zeros
         while (inputStart < work.size) {
             encoded[--outputStart] = ALPHABET[
-                divmod(
-                    work,
-                    inputStart,
-                    256,
-                    58
-                ).toInt()
+                    divmod(
+                            work,
+                            inputStart,
+                            256,
+                            58
+                    ).toInt()
             ]
             if (work[inputStart] == ZERO_BYTE) {
                 ++inputStart // optimization - skip leading zeros

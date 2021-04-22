@@ -20,14 +20,14 @@ interface IdentifyController {
 class Identify(idMessage: IdentifyOuterClass.Identify? = null) : IdentifyBinding(IdentifyProtocol(idMessage))
 
 open class IdentifyBinding(override val protocol: IdentifyProtocol) :
-    StrictProtocolBinding<IdentifyController>("/ipfs/id/1.0.0", protocol)
+        StrictProtocolBinding<IdentifyController>("/ipfs/id/1.0.0", protocol)
 
 class IdentifyProtocol(var idMessage: IdentifyOuterClass.Identify? = null) :
-    ProtobufProtocolHandler<IdentifyController>(
-        IdentifyOuterClass.Identify.getDefaultInstance(),
-        IDENTIFY_MAX_REQUEST_SIZE,
-        IDENTIFY_MAX_RESPONSE_SIZE
-    ) {
+        ProtobufProtocolHandler<IdentifyController>(
+                IdentifyOuterClass.Identify.getDefaultInstance(),
+                IDENTIFY_MAX_REQUEST_SIZE,
+                IDENTIFY_MAX_RESPONSE_SIZE
+        ) {
 
     override fun onStartInitiator(stream: Stream): CompletableFuture<IdentifyController> {
         val handler = IdentifyRequesterChannelHandler()
@@ -65,12 +65,12 @@ class IdentifyProtocol(var idMessage: IdentifyOuterClass.Identify? = null) :
     inner class IdentifyResponderChannelHandler(val remoteAddr: Multiaddr) : IdentifyHandler {
         override fun onActivated(stream: Stream) {
             val msg = idMessage ?: IdentifyOuterClass.Identify.newBuilder()
-                .setAgentVersion(IPFS.AGENT)
-                .build()
+                    .setAgentVersion(IPFS.AGENT)
+                    .build()
 
             val msgWithAddr = msg.toBuilder()
-                .setObservedAddr(remoteAddr.getBytes().toProtobuf())
-                .build()
+                    .setObservedAddr(remoteAddr.getBytes().toProtobuf())
+                    .build()
 
             stream.writeAndFlush(msgWithAddr)
             stream.closeWrite()

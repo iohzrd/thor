@@ -2,13 +2,7 @@ package io.libp2p.core.dsl
 
 import identify.pb.IdentifyOuterClass
 import io.ipfs.IPFS
-import io.libp2p.core.AddressBook
-import io.libp2p.core.ChannelVisitor
-import io.libp2p.core.Connection
-import io.libp2p.core.ConnectionHandler
-import io.libp2p.core.Host
-import io.libp2p.core.P2PChannel
-import io.libp2p.core.Stream
+import io.libp2p.core.*
 import io.libp2p.core.crypto.KEY_TYPE
 import io.libp2p.core.crypto.PrivKey
 import io.libp2p.core.crypto.generateKeyPair
@@ -140,24 +134,27 @@ open class Builder {
             (secureMultistreamProtocol as? MultistreamProtocolDebug)?.also {
                 val broadcast = ChannelVisitor.createBroadcast(*debug.beforeSecureHandler.handlers.toTypedArray())
                 secureMultistreamProtocol = it.copyWithHandlers(preHandler = broadcast.toChannelHandler())
-            } ?: throw IllegalStateException("beforeSecureHandler can't be installed as MultistreamProtocol doesn't support debugging interface: ${secureMultistreamProtocol.javaClass}")
+            }
+                    ?: throw IllegalStateException("beforeSecureHandler can't be installed as MultistreamProtocol doesn't support debugging interface: ${secureMultistreamProtocol.javaClass}")
         }
 
         if (debug.afterSecureHandler.handlers.isNotEmpty()) {
             (muxerMultistreamProtocol as? MultistreamProtocolDebug)?.also {
                 val broadcast = ChannelVisitor.createBroadcast(*debug.afterSecureHandler.handlers.toTypedArray())
                 muxerMultistreamProtocol = it.copyWithHandlers(preHandler = broadcast.toChannelHandler())
-            } ?: throw IllegalStateException("afterSecureHandler can't be installed as MultistreamProtocol doesn't support debugging interface: ${muxerMultistreamProtocol.javaClass}")
+            }
+                    ?: throw IllegalStateException("afterSecureHandler can't be installed as MultistreamProtocol doesn't support debugging interface: ${muxerMultistreamProtocol.javaClass}")
         }
 
         val streamVisitors = ChannelVisitor.createBroadcast<Stream>()
         (streamMultistreamProtocol as? MultistreamProtocolDebug)?.also {
             val broadcastPre =
-                ChannelVisitor.createBroadcast(*(debug.streamPreHandler.handlers + (streamVisitors as ChannelVisitor<Stream>)).toTypedArray())
+                    ChannelVisitor.createBroadcast(*(debug.streamPreHandler.handlers + (streamVisitors as ChannelVisitor<Stream>)).toTypedArray())
             val broadcast = ChannelVisitor.createBroadcast(*debug.streamHandler.handlers.toTypedArray())
             streamMultistreamProtocol =
-                it.copyWithHandlers(broadcastPre.toChannelHandler(), broadcast.toChannelHandler())
-        } ?: throw IllegalStateException("streamPreHandler or streamHandler can't be installed as MultistreamProtocol doesn't support debugging interface: ${streamMultistreamProtocol.javaClass}")
+                    it.copyWithHandlers(broadcastPre.toChannelHandler(), broadcast.toChannelHandler())
+        }
+                ?: throw IllegalStateException("streamPreHandler or streamHandler can't be installed as MultistreamProtocol doesn't support debugging interface: ${streamMultistreamProtocol.javaClass}")
 
         val privKey = identity.factory!!()
 
@@ -192,19 +189,19 @@ open class Builder {
 
         val connHandlerProtocols = protocols.values.mapNotNull { it as? ConnectionHandler }
         val broadcastConnHandler = ConnectionHandler.createBroadcast(
-            connHandlerProtocols +
-                connectionHandlers.values
+                connHandlerProtocols +
+                        connectionHandlers.values
         )
         val networkImpl = NetworkImpl(transports, broadcastConnHandler)
 
         return HostImpl(
-            privKey,
-            networkImpl,
-            addressBook,
-            network.listen.map { Multiaddr(it) },
-            protocols.values,
-            broadcastConnHandler,
-            streamVisitors
+                privKey,
+                networkImpl,
+                addressBook,
+                network.listen.map { Multiaddr(it) },
+                protocols.values,
+                broadcastConnHandler,
+                streamVisitors
         )
     }
 }
@@ -240,11 +237,13 @@ class DebugBuilder {
      * Could be primarily useful for security handshake debugging/monitoring
      */
     val beforeSecureHandler = DebugHandlerBuilder<Connection>("wire.sec.before")
+
     /**
      * Injects the [ChannelHandler] right after the connection cipher
      * to handle plain wire messages
      */
     val afterSecureHandler = DebugHandlerBuilder<Connection>("wire.sec.after")
+
     /**
      * Injects the [ChannelHandler] right after the [StreamMuxer] pipeline handler
      * It intercepts [io.libp2p.mux.MuxFrame] instances

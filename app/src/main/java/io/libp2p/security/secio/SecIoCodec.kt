@@ -41,10 +41,10 @@ class SecIoCodec(val local: SecioParams, val remote: SecioParams) : MessageToMes
         val macArr = updateMac(local, cipherText)
 
         out.add(
-            Unpooled.wrappedBuffer(
-                Unpooled.wrappedBuffer(cipherText),
-                Unpooled.wrappedBuffer(macArr)
-            )
+                Unpooled.wrappedBuffer(
+                        Unpooled.wrappedBuffer(cipherText),
+                        Unpooled.wrappedBuffer(macArr)
+                )
         )
     } // encode
 

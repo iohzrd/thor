@@ -30,18 +30,18 @@ class Multiaddr(val components: List<Pair<Protocol, ByteArray>>) {
      * Creates instance from serialized form from [ByteBuf]
      */
     constructor(bytes: ByteBuf) : this(parseBytes(bytes))
+
     /**
      * Creates instance from serialized form from [ByteBuf]
      */
     constructor(bytes: ByteArray) : this(parseBytes(bytes.toByteBuf()))
 
 
-
     constructor(parentAddr: Multiaddr, childAddr: Multiaddr) :
-        this(concatProtocols(parentAddr, childAddr))
+            this(concatProtocols(parentAddr, childAddr))
 
     constructor(parentAddr: Multiaddr, peerId: PeerId) :
-        this(concatPeerId(parentAddr, peerId))
+            this(concatPeerId(parentAddr, peerId))
 
     /**
      * Returns only components matching any of supplied protocols
@@ -64,7 +64,7 @@ class Multiaddr(val components: List<Pair<Protocol, ByteArray>>) {
      * is deserialized and represented as String
      */
     fun filterStringComponents(): List<Pair<Protocol, String?>> =
-        components.map { p -> p.first to if (p.first.size == 0) null else p.first.bytesToAddress(p.second) }
+            components.map { p -> p.first to if (p.first.size == 0) null else p.first.bytesToAddress(p.second) }
 
     /**
      * Returns only components (String representation) matching any of supplied protocols
@@ -97,25 +97,25 @@ class Multiaddr(val components: List<Pair<Protocol, ByteArray>>) {
             throw IllegalArgumentException("Multiaddr has no peer id")
 
         return Pair(
-            PeerId.fromBase58(getStringComponent(Protocol.IPFS)!!),
-            Multiaddr(components.subList(0, components.lastIndex))
+                PeerId.fromBase58(getStringComponent(Protocol.IPFS)!!),
+                Multiaddr(components.subList(0, components.lastIndex))
         )
     }
 
     internal fun split(pred: (Protocol) -> Boolean): List<Multiaddr> {
         val addresses = mutableListOf<Multiaddr>()
         split(
-            addresses,
-            components,
-            pred
+                addresses,
+                components,
+                pred
         )
         return addresses
     }
 
     private fun split(
-        accumulated: MutableList<Multiaddr>,
-        remainingComponents: List<Pair<Protocol, ByteArray>>,
-        pred: (Protocol) -> Boolean
+            accumulated: MutableList<Multiaddr>,
+            remainingComponents: List<Pair<Protocol, ByteArray>>,
+            pred: (Protocol) -> Boolean
     ) {
         val splitIndex = remainingComponents.indexOfLast { pred(it.first) }
 
@@ -123,9 +123,9 @@ class Multiaddr(val components: List<Pair<Protocol, ByteArray>>) {
             accumulated.add(0, Multiaddr(remainingComponents.subList(splitIndex, remainingComponents.size)))
 
             split(
-                accumulated,
-                remainingComponents.subList(0, splitIndex),
-                pred
+                    accumulated,
+                    remainingComponents.subList(0, splitIndex),
+                    pred
             )
         } else {
             accumulated.add(0, Multiaddr(remainingComponents))

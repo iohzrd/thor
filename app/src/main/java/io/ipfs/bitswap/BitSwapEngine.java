@@ -150,7 +150,6 @@ public class BitSwapEngine {
         HashMap<Cid, Integer> blockSizes = getBlockSizes(wantKs);
 
 
-
         for (BitSwapMessage.Entry entry : wants) {
             // For each want-have / want-block
 

@@ -39,7 +39,7 @@ import io.protos.ipns.IpnsProtos;
 public class Stream {
 
     private static final String TAG = Stream.class.getSimpleName();
-    private static Duration DefaultRecordEOL = Duration.ofHours(24);
+    private static final Duration DefaultRecordEOL = Duration.ofHours(24);
 
 
     public static String base32(@NonNull PeerId peerId) {
@@ -85,7 +85,6 @@ public class Stream {
         byte[] ipnsKey = Bytes.concat(ipns, id.getBytes());
         routing.PutValue(closable, ipnsKey, bytes);
     }
-
 
 
     public static Adder getFileAdder(@NonNull Storage storage) {

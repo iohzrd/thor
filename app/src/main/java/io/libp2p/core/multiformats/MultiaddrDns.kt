@@ -35,11 +35,11 @@ class MultiaddrDns {
 
         private fun resolve(proto: Protocol, hostname: String, address: Multiaddr, resolver: Resolver): List<Multiaddr> {
             return resolve(proto, hostname, resolver)
-                .map {
-                    val components = address.components.toMutableList()
-                    components[0] = it.components[0] // replace DNS portion with resolved address
-                    Multiaddr(components)
-                }
+                    .map {
+                        val components = address.components.toMutableList()
+                        components[0] = it.components[0] // replace DNS portion with resolved address
+                        Multiaddr(components)
+                    }
         }
 
         private fun resolve(proto: Protocol, hostname: String, resolver: Resolver): List<Multiaddr> {
@@ -72,7 +72,7 @@ class MultiaddrDns {
             else
                 addressMatrix[0].flatMap { parent ->
                     crossProduct(addressMatrix.subList(1, addressMatrix.size))
-                        .map { child -> Multiaddr(parent, child) }
+                            .map { child -> Multiaddr(parent, child) }
                 }
         }
 
@@ -83,35 +83,35 @@ class MultiaddrDns {
         val DefaultResolver = object : Resolver {
             override fun resolveDns4(hostname: String): List<Multiaddr> {
                 return resolveDns(
-                    hostname,
-                    Protocol.IP4,
-                    Inet4Address::class.java
+                        hostname,
+                        Protocol.IP4,
+                        Inet4Address::class.java
                 )
             }
 
             override fun resolveDns6(hostname: String): List<Multiaddr> {
                 return resolveDns(
-                    hostname,
-                    Protocol.IP6,
-                    Inet6Address::class.java
+                        hostname,
+                        Protocol.IP6,
+                        Inet6Address::class.java
                 )
             }
 
             private fun <T : InetAddress> resolveDns(
-                hostname: String,
-                resultantProto: Protocol,
-                desiredAddressType: Class<T>
+                    hostname: String,
+                    resultantProto: Protocol,
+                    desiredAddressType: Class<T>
             ): List<Multiaddr> {
                 val ipAddresses = InetAddress.getAllByName(hostname)
                 return ipAddresses
-                    .filter { desiredAddressType.isInstance(it) }
-                    .map {
-                        Multiaddr(
-                            listOf(
-                                Pair(resultantProto, it.address)
+                        .filter { desiredAddressType.isInstance(it) }
+                        .map {
+                            Multiaddr(
+                                    listOf(
+                                            Pair(resultantProto, it.address)
+                                    )
                             )
-                        )
-                    }
+                        }
             }
         }
     }

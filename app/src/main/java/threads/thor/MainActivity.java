@@ -21,7 +21,6 @@ import android.os.SystemClock;
 import android.provider.DocumentsContract;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Pair;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -80,9 +79,9 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.core.Closeable;
+import io.core.TimeoutCloseable;
 import io.ipfs.IPFS;
 import io.ipfs.format.Node;
-import io.core.TimeoutCloseable;
 import threads.LogUtils;
 import threads.thor.core.Content;
 import threads.thor.core.DOCS;
@@ -197,6 +196,15 @@ public class MainActivity extends AppCompatActivity implements
                     }
                 }
             });
+    private final ActivityResultLauncher<String> requestPermissionLauncher =
+            registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
+                if (isGranted) {
+                    invokeScan();
+                } else {
+                    EVENTS.getInstance(getApplicationContext()).permission(
+                            getString(R.string.permission_camera_denied));
+                }
+            });
     private WebView mWebView;
     private long mLastClickTime = 0;
     private TextView mBrowserText;
@@ -245,16 +253,8 @@ public class MainActivity extends AppCompatActivity implements
                 }
 
             });
-    private final ActivityResultLauncher<String> requestPermissionLauncher =
-            registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
-                if (isGranted) {
-                    invokeScan();
-                } else {
-                    EVENTS.getInstance(getApplicationContext()).permission(
-                            getString(R.string.permission_camera_denied));
-                }
-            });
     private boolean hasCamera;
+    private NsdManager mNsdManager;
 
     private void contentDownloader(@NonNull Uri uri) {
 
@@ -1441,7 +1441,7 @@ public class MainActivity extends AppCompatActivity implements
 
                     docs.attachThread(thread.getId());
 
-                    Closeable closeable = () ->  !docs.shouldRun(thread.getId());
+                    Closeable closeable = () -> !docs.shouldRun(thread.getId());
 
                     docs.connectUri(uri, closeable);
 
@@ -1547,7 +1547,6 @@ public class MainActivity extends AppCompatActivity implements
         }
     }
 
-
     private void releaseActionMode() {
         try {
             if (mActionMode != null) {
@@ -1558,7 +1557,6 @@ public class MainActivity extends AppCompatActivity implements
             LogUtils.error(TAG, throwable);
         }
     }
-
 
     @Override
     public void onNewIntent(Intent intent) {
@@ -1848,7 +1846,7 @@ public class MainActivity extends AppCompatActivity implements
         };
 
     }
-    private NsdManager mNsdManager;
+
     @Override
     public void onDestroy() {
         super.onDestroy();

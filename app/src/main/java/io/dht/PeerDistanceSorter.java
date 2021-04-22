@@ -15,6 +15,10 @@ public class PeerDistanceSorter extends ArrayList<PeerDistanceSorter.PeerDistanc
     private static final String TAG = PeerDistanceSorter.class.getSimpleName();
     private final ID target;
 
+    public PeerDistanceSorter(@NonNull ID target) {
+        this.target = target;
+    }
+
     @NotNull
     @Override
     public String toString() {
@@ -22,11 +26,6 @@ public class PeerDistanceSorter extends ArrayList<PeerDistanceSorter.PeerDistanc
                 "target=" + target +
                 '}';
     }
-
-    public PeerDistanceSorter(@NonNull ID target) {
-        this.target = target;
-    }
-
 
     public void appendPeer(@NonNull PeerId peerId, @NonNull ID id) {
         this.add(new PeerDistance(peerId, Util.xor(target, id)));

@@ -10,10 +10,10 @@ import java.net.SocketAddress
  * Alternative effort to start MultistreamChannel implementation from AbstractChannel
  */
 class MuxChannel<TData>(
-    private val parent: AbstractMuxHandler<TData>,
-    val id: MuxId,
-    private val initializer: MuxChannelInitializer<TData>,
-    val initiator: Boolean
+        private val parent: AbstractMuxHandler<TData>,
+        val id: MuxId,
+        private val initializer: MuxChannelInitializer<TData>,
+        val initiator: Boolean
 ) : AbstractChildChannel(parent.ctx!!.channel(), id) {
 
     private var remoteDisconnected = false
@@ -21,10 +21,10 @@ class MuxChannel<TData>(
 
     override fun metadata(): ChannelMetadata = ChannelMetadata(true)
     override fun localAddress0() =
-        MultiplexSocketAddress(parent.getChannelHandlerContext().channel().localAddress(), id)
+            MultiplexSocketAddress(parent.getChannelHandlerContext().channel().localAddress(), id)
 
     override fun remoteAddress0() =
-        MultiplexSocketAddress(parent.getChannelHandlerContext().channel().remoteAddress(), id)
+            MultiplexSocketAddress(parent.getChannelHandlerContext().channel().remoteAddress(), id)
 
     override fun doRegister() {
         super.doRegister()

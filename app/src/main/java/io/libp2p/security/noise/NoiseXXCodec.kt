@@ -16,7 +16,7 @@ import java.security.GeneralSecurityException
 private val logger = LogManager.getLogger(NoiseXXSecureChannel::class.java.name)
 
 class NoiseXXCodec(val aliceCipher: CipherState, val bobCipher: CipherState) :
-    MessageToMessageCodec<ByteBuf, ByteBuf>() {
+        MessageToMessageCodec<ByteBuf, ByteBuf>() {
 
     private var abruptlyClosing = false
 

@@ -83,7 +83,7 @@ public class LiteHost implements BitSwapNetwork {
         try {
             synchronized (peer.toBase58().intern()) {
 
-                if(closeable.isClosed()){
+                if (closeable.isClosed()) {
                     throw new ClosedException();
                 }
 

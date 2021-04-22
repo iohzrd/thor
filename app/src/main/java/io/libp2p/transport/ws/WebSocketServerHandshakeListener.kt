@@ -6,7 +6,7 @@ import io.netty.channel.ChannelInboundHandlerAdapter
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler
 
 internal class WebSocketServerHandshakeListener(
-    private val connectionBuilder: ChannelHandler
+        private val connectionBuilder: ChannelHandler
 ) : ChannelInboundHandlerAdapter() {
 
     override fun userEventTriggered(ctx: ChannelHandlerContext, evt: Any) {

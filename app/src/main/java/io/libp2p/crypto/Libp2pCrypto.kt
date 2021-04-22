@@ -48,7 +48,7 @@ object Libp2pCrypto {
 
 data class StretchedKey(val iv: ByteArray, val cipherKey: ByteArray, val macKey: ByteArray) {
     override fun toString(): String =
-        "StretchedKey[iv=" + iv.toHex() + ", cipherKey=" + cipherKey.toHex() + ", macKey=" + macKey.toHex() + "]"
+            "StretchedKey[iv=" + iv.toHex() + ", cipherKey=" + cipherKey.toHex() + ", macKey=" + macKey.toHex() + "]"
 }
 
 fun stretchKeys(cipherType: String, hashType: String, secret: ByteArray): Pair<StretchedKey, StretchedKey> {
@@ -101,15 +101,15 @@ fun stretchKeys(cipherType: String, hashType: String, secret: ByteArray): Pair<S
     val r2 = result.sliceArray(half until result.size)
 
     return Pair(
-        StretchedKey(
-            r1.sliceArray(0 until ivSize),
-            r1.sliceArray(ivSize until ivSize + cipherKeySize),
-            r1.sliceArray(ivSize + cipherKeySize until r1.size)
-        ),
-        StretchedKey(
-            r2.sliceArray(0 until ivSize),
-            r2.sliceArray(ivSize until ivSize + cipherKeySize),
-            r2.sliceArray(ivSize + cipherKeySize until r2.size)
-        )
+            StretchedKey(
+                    r1.sliceArray(0 until ivSize),
+                    r1.sliceArray(ivSize until ivSize + cipherKeySize),
+                    r1.sliceArray(ivSize + cipherKeySize until r1.size)
+            ),
+            StretchedKey(
+                    r2.sliceArray(0 until ivSize),
+                    r2.sliceArray(ivSize until ivSize + cipherKeySize),
+                    r2.sliceArray(ivSize + cipherKeySize until r2.size)
+            )
     )
 }

@@ -17,7 +17,7 @@ fun <T> lazyVar(defaultValueInit: () -> T) = LazyMutable(defaultValueInit)
 fun <T> lazyVarInit(defaultValueInit: () -> T) = LazyMutable(defaultValueInit)
 
 fun <T : Comparable<T>> cappedVar(value: T, lowerBound: T, upperBound: T) =
-    CappedValueDelegate(value, lowerBound = { lowerBound }, upperBound = { upperBound })
+        CappedValueDelegate(value, lowerBound = { lowerBound }, upperBound = { upperBound })
 
 /**
  * Creates a Double delegate which may drop value to [0.0] when the new value is less than [decayToZero]
@@ -31,15 +31,16 @@ fun cappedDouble(value: Double, decayToZero: Double = Double.MIN_VALUE, updateLi
  * and may drop value to [0.0] when the new value is less than [decayToZero]
  */
 fun cappedDouble(
-    value: Double,
-    decayToZero: Double = Double.MIN_VALUE,
-    upperBound: () -> Double,
-    updateListener: (Double) -> Unit = { }
+        value: Double,
+        decayToZero: Double = Double.MIN_VALUE,
+        upperBound: () -> Double,
+        updateListener: (Double) -> Unit = { }
 ) = CappedValueDelegate(value, { decayToZero }, { 0.0 }, upperBound, upperBound, updateListener)
 
 // thanks to https://stackoverflow.com/a/47948047/9630725
 class LazyMutable<T>(val initializer: () -> T, val rejectSetAfterGet: Boolean = false) : ReadWriteProperty<Any?, T> {
     private object UNINITIALIZED_VALUE
+
     private var prop: Any? = UNINITIALIZED_VALUE
     private var readAccessed = false
 
@@ -64,12 +65,12 @@ class LazyMutable<T>(val initializer: () -> T, val rejectSetAfterGet: Boolean = 
 }
 
 data class CappedValueDelegate<C : Comparable<C>>(
-    private var value: C,
-    private val lowerBound: () -> C,
-    private val lowerBoundVal: () -> C = lowerBound,
-    private val upperBound: () -> C,
-    private val upperBoundVal: () -> C = upperBound,
-    private val updateListener: (C) -> Unit = { }
+        private var value: C,
+        private val lowerBound: () -> C,
+        private val lowerBoundVal: () -> C = lowerBound,
+        private val upperBound: () -> C,
+        private val upperBoundVal: () -> C = upperBound,
+        private val updateListener: (C) -> Unit = { }
 ) : ReadWriteProperty<Any?, C> {
 
     override fun getValue(thisRef: Any?, property: KProperty<*>): C {

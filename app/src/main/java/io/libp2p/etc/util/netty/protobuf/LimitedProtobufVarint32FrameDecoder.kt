@@ -5,8 +5,6 @@ import io.netty.channel.ChannelHandlerContext
 import io.netty.handler.codec.ByteToMessageDecoder
 import io.netty.handler.codec.CorruptedFrameException
 import io.netty.handler.codec.TooLongFrameException
-import java.lang.Exception
-import kotlin.Throws
 
 /**
  * This class is a modified version of netty's `ProtobufVariant32FrameDecoder` that enforces limits on the

@@ -48,8 +48,8 @@ object Negotiator {
     fun createRequesterInitializer(vararg protocols: String): ChannelInitializer<Channel> {
         return nettyInitializer {
             initNegotiator(
-                it,
-                RequesterHandler(listOf(*protocols))
+                    it,
+                    RequesterHandler(listOf(*protocols))
             )
         }
     }
@@ -57,8 +57,8 @@ object Negotiator {
     fun createResponderInitializer(protocols: List<ProtocolMatcher>): ChannelInitializer<Channel> {
         return nettyInitializer {
             initNegotiator(
-                it,
-                ResponderHandler(protocols)
+                    it,
+                    ResponderHandler(protocols)
             )
         }
     }
@@ -72,12 +72,12 @@ object Negotiator {
         open val initialProtocolAnnounce: String? = null
 
         val prehandlers = listOf(
-            ReadTimeoutHandler(TIMEOUT_MILLIS, TimeUnit.MILLISECONDS),
-            ProtobufVarint32FrameDecoder(),
-            ProtobufVarint32LengthFieldPrepender(),
-            StringDecoder(Charsets.UTF_8),
-            StringEncoder(Charsets.UTF_8),
-            StringSuffixCodec('\n')
+                ReadTimeoutHandler(TIMEOUT_MILLIS, TimeUnit.MILLISECONDS),
+                ProtobufVarint32FrameDecoder(),
+                ProtobufVarint32LengthFieldPrepender(),
+                StringDecoder(Charsets.UTF_8),
+                StringEncoder(Charsets.UTF_8),
+                StringSuffixCodec('\n')
         )
 
         var headerRead = false

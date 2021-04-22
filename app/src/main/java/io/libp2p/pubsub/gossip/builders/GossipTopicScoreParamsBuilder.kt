@@ -125,23 +125,23 @@ class GossipTopicScoreParamsBuilder() {
     fun build(): GossipTopicScoreParams {
         checkRequiredFields()
         return GossipTopicScoreParams(
-            topicWeight = topicWeight!!,
-            timeInMeshWeight = timeInMeshWeight!!,
-            timeInMeshQuantum = timeInMeshQuantum!!,
-            timeInMeshCap = timeInMeshCap!!,
-            firstMessageDeliveriesWeight = firstMessageDeliveriesWeight!!,
-            firstMessageDeliveriesDecay = firstMessageDeliveriesDecay!!,
-            firstMessageDeliveriesCap = firstMessageDeliveriesCap!!,
-            meshMessageDeliveriesWeight = meshMessageDeliveriesWeight!!,
-            meshMessageDeliveriesDecay = meshMessageDeliveriesDecay!!,
-            meshMessageDeliveriesThreshold = meshMessageDeliveriesThreshold!!,
-            meshMessageDeliveriesCap = meshMessageDeliveriesCap!!,
-            meshMessageDeliveriesActivation = meshMessageDeliveriesActivation!!,
-            meshMessageDeliveryWindow = meshMessageDeliveryWindow!!,
-            meshFailurePenaltyWeight = meshFailurePenaltyWeight!!,
-            meshFailurePenaltyDecay = meshFailurePenaltyDecay!!,
-            invalidMessageDeliveriesWeight = invalidMessageDeliveriesWeight!!,
-            invalidMessageDeliveriesDecay = invalidMessageDeliveriesDecay!!
+                topicWeight = topicWeight!!,
+                timeInMeshWeight = timeInMeshWeight!!,
+                timeInMeshQuantum = timeInMeshQuantum!!,
+                timeInMeshCap = timeInMeshCap!!,
+                firstMessageDeliveriesWeight = firstMessageDeliveriesWeight!!,
+                firstMessageDeliveriesDecay = firstMessageDeliveriesDecay!!,
+                firstMessageDeliveriesCap = firstMessageDeliveriesCap!!,
+                meshMessageDeliveriesWeight = meshMessageDeliveriesWeight!!,
+                meshMessageDeliveriesDecay = meshMessageDeliveriesDecay!!,
+                meshMessageDeliveriesThreshold = meshMessageDeliveriesThreshold!!,
+                meshMessageDeliveriesCap = meshMessageDeliveriesCap!!,
+                meshMessageDeliveriesActivation = meshMessageDeliveriesActivation!!,
+                meshMessageDeliveryWindow = meshMessageDeliveryWindow!!,
+                meshFailurePenaltyWeight = meshFailurePenaltyWeight!!,
+                meshFailurePenaltyDecay = meshFailurePenaltyDecay!!,
+                invalidMessageDeliveriesWeight = invalidMessageDeliveriesWeight!!,
+                invalidMessageDeliveriesDecay = invalidMessageDeliveriesDecay!!
         )
     }
 
@@ -151,38 +151,38 @@ class GossipTopicScoreParamsBuilder() {
         check(timeInMeshQuantum != null, { "timeInMeshQuantum must not be null" })
         check(timeInMeshCap != null, { "timeInMeshCap must not be null" })
         check(
-            firstMessageDeliveriesWeight != null,
-            { "firstMessageDeliveriesWeight must not be null" }
+                firstMessageDeliveriesWeight != null,
+                { "firstMessageDeliveriesWeight must not be null" }
         )
         check(
-            firstMessageDeliveriesDecay != null,
-            { "firstMessageDeliveriesDecay must not be null" }
+                firstMessageDeliveriesDecay != null,
+                { "firstMessageDeliveriesDecay must not be null" }
         )
         check(firstMessageDeliveriesCap != null, { "firstMessageDeliveriesCap must not be null" })
         check(
-            meshMessageDeliveriesWeight != null,
-            { "meshMessageDeliveriesWeight must not be null" }
+                meshMessageDeliveriesWeight != null,
+                { "meshMessageDeliveriesWeight must not be null" }
         )
         check(meshMessageDeliveriesDecay != null, { "meshMessageDeliveriesDecay must not be null" })
         check(
-            meshMessageDeliveriesThreshold != null,
-            { "meshMessageDeliveriesThreshold must not be null" }
+                meshMessageDeliveriesThreshold != null,
+                { "meshMessageDeliveriesThreshold must not be null" }
         )
         check(meshMessageDeliveriesCap != null, { "meshMessageDeliveriesCap must not be null" })
         check(
-            meshMessageDeliveriesActivation != null,
-            { "meshMessageDeliveriesActivation must not be null" }
+                meshMessageDeliveriesActivation != null,
+                { "meshMessageDeliveriesActivation must not be null" }
         )
         check(meshMessageDeliveryWindow != null, { "meshMessageDeliveryWindow must not be null" })
         check(meshFailurePenaltyWeight != null, { "meshFailurePenaltyWeight must not be null" })
         check(meshFailurePenaltyDecay != null, { "meshFailurePenaltyDecay must not be null" })
         check(
-            invalidMessageDeliveriesWeight != null,
-            { "invalidMessageDeliveriesWeight must not be null" }
+                invalidMessageDeliveriesWeight != null,
+                { "invalidMessageDeliveriesWeight must not be null" }
         )
         check(
-            invalidMessageDeliveriesDecay != null,
-            { "invalidMessageDeliveriesDecay must not be null" }
+                invalidMessageDeliveriesDecay != null,
+                { "invalidMessageDeliveriesDecay must not be null" }
         )
     }
 }

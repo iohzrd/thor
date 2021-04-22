@@ -41,6 +41,6 @@ fun <T> defer(f: (Deferrable) -> T): T {
 }
 
 fun <T : Throwable> Throwable.hasCauseOfType(clazz: KClass<T>) =
-    Throwables.getCausalChain(this)
-        .filter(clazz::isInstance)
-        .any()
+        Throwables.getCausalChain(this)
+                .filter(clazz::isInstance)
+                .any()

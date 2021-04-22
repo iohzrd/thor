@@ -14,10 +14,10 @@ package io.libp2p.core
 
 open class Libp2pException : RuntimeException {
 
-    constructor(message: String, ex: Exception?) : super(message, ex) {}
-    constructor(message: String) : super(message) {}
-    constructor(ex: Exception) : super(ex) {}
-    constructor() : super("") {}
+    constructor(message: String, ex: Exception?) : super(message, ex)
+    constructor(message: String) : super(message)
+    constructor(ex: Exception) : super(ex)
+    constructor() : super("")
 }
 
 /**
@@ -50,6 +50,7 @@ open class NoSuchProtocolException(message: String) : Libp2pException(message)
  * Indicates that the protocol is not registered at local configuration
  */
 class NoSuchLocalProtocolException(message: String) : NoSuchProtocolException(message)
+
 /**
  * Indicates that the protocol is not known by the remote party
  */

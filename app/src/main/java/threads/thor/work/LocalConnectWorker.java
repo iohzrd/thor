@@ -73,13 +73,13 @@ public class LocalConnectWorker extends Worker {
             IPFS ipfs = IPFS.getInstance(getApplicationContext());
 
             String pre = "/ip4";
-                if (inet6) {
-                    pre = "/ip6";
-                }
-                String multiAddress = pre + host + "/tcp/" + port + "/p2p/" + pid;
+            if (inet6) {
+                pre = "/ip6";
+            }
+            String multiAddress = pre + host + "/tcp/" + port + "/p2p/" + pid;
 
 
-                ipfs.swarmConnect(multiAddress, 10);
+            ipfs.swarmConnect(multiAddress, 10);
 
         } catch (Throwable e) {
             LogUtils.error(TAG, e);

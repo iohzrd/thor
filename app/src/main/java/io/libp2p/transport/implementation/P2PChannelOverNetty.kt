@@ -14,14 +14,15 @@ import io.netty.channel.ChannelHandler
  * @param nettyChannel the underlying Netty channel
  */
 abstract class P2PChannelOverNetty(
-    val nettyChannel: Channel,
-    override val isInitiator: Boolean
+        val nettyChannel: Channel,
+        override val isInitiator: Boolean
 ) : P2PChannel {
     private val closeCompletableFuture by lazy { nettyChannel.closeFuture().toVoidCompletableFuture() }
 
     override fun pushHandler(handler: ChannelHandler) {
         nettyChannel.pipeline().addLast(handler)
     }
+
     override fun pushHandler(name: String, handler: ChannelHandler) {
         nettyChannel.pipeline().addLast(name, handler)
     }

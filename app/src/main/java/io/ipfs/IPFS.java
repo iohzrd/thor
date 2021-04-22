@@ -442,9 +442,9 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
                     // ignore
                 }
             }
-            if(success.get() >= 3 ){
+            if (success.get() >= 3) {
                 reachable = Reachable.PUBLIC;
-            } else if(failed.get() >= 3){
+            } else if (failed.get() >= 3) {
                 reachable = Reachable.PRIVATE;
             } else {
                 reachable = Reachable.UNKNOWN; // not 100 percent safe (but who cares)

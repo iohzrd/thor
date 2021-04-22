@@ -1,11 +1,6 @@
 package io.libp2p.network
 
-import io.LogUtils
-import io.libp2p.core.Connection
-import io.libp2p.core.ConnectionHandler
-import io.libp2p.core.Network
-import io.libp2p.core.PeerId
-import io.libp2p.core.TransportNotSupportedException
+import io.libp2p.core.*
 import io.libp2p.core.multiformats.Multiaddr
 import io.libp2p.core.transport.Transport
 import io.libp2p.etc.types.anyComplete
@@ -13,8 +8,8 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CopyOnWriteArrayList
 
 class NetworkImpl(
-    override val transports: List<Transport>,
-    override val connectionHandler: ConnectionHandler
+        override val transports: List<Transport>,
+        override val connectionHandler: ConnectionHandler
 ) : Network {
 
     /**
@@ -40,37 +35,38 @@ class NetworkImpl(
     }
 
     override fun listen(addr: Multiaddr): CompletableFuture<Unit> =
-        getTransport(addr).listen(addr, createHookedConnHandler(connectionHandler))
+            getTransport(addr).listen(addr, createHookedConnHandler(connectionHandler))
+
     override fun unlisten(addr: Multiaddr): CompletableFuture<Unit> = getTransport(addr).unlisten(addr)
     override fun disconnect(conn: Connection): CompletableFuture<Unit> =
-        conn.close()
+            conn.close()
 
     private fun getTransport(addr: Multiaddr) =
-        transports.firstOrNull { tpt -> tpt.handles(addr) }
-            ?: throw TransportNotSupportedException("no transport to handle addr: $addr")
+            transports.firstOrNull { tpt -> tpt.handles(addr) }
+                    ?: throw TransportNotSupportedException("no transport to handle addr: $addr")
 
     private fun createHookedConnHandler(handler: ConnectionHandler) =
-        ConnectionHandler.createBroadcast(
-            listOf(
-                handler,
-                ConnectionHandler.create { conn ->
-                    connections += conn
-                    conn.closeFuture().thenAccept { connections -= conn }
-                }
+            ConnectionHandler.createBroadcast(
+                    listOf(
+                            handler,
+                            ConnectionHandler.create { conn ->
+                                connections += conn
+                                conn.closeFuture().thenAccept { connections -= conn }
+                            }
+                    )
             )
-        )
 
     /**
      * Connects to a peerid with a provided set of {@code Multiaddr}, returning the existing connection if already connected.
      */
     override fun connect(
-        id: PeerId,
-        vararg addrs: Multiaddr
+            id: PeerId,
+            vararg addrs: Multiaddr
     ): CompletableFuture<Connection> {
 
         // we already have a connection for this peer, short circuit.
         connections.find { it.secureSession().remoteId == id }
-            ?.apply { return CompletableFuture.completedFuture(this) }
+                ?.apply { return CompletableFuture.completedFuture(this) }
 
         // 1. check that some transport can dial at least one addr.
         // 2. trigger dials in parallel via all transports.

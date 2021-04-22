@@ -8,8 +8,8 @@ import io.netty.handler.codec.http.HttpObjectAggregator
 import io.netty.handler.codec.http.websocketx.extensions.compression.WebSocketClientCompressionHandler
 
 internal class WebSocketClientInitializer(
-    private val connectionBuilder: ChannelHandler,
-    private val url: String
+        private val connectionBuilder: ChannelHandler,
+        private val url: String
 ) : ChannelInitializer<SocketChannel>() {
 
     public override fun initChannel(ch: SocketChannel) {
@@ -19,10 +19,10 @@ internal class WebSocketClientInitializer(
         pipeline.addLast(HttpObjectAggregator(65536))
         pipeline.addLast(WebSocketClientCompressionHandler.INSTANCE)
         pipeline.addLast(
-            WebSocketClientHandshake(
-                connectionBuilder,
-                url
-            )
+                WebSocketClientHandshake(
+                        connectionBuilder,
+                        url
+                )
         )
     } // initChannel
 } // WebSocketServerInitializer

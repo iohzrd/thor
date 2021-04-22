@@ -16,21 +16,13 @@ import crypto.pb.Crypto
 import io.libp2p.core.Libp2pException
 import io.libp2p.core.crypto.PrivKey
 import io.libp2p.core.crypto.PubKey
-import io.libp2p.crypto.ErrRsaKeyTooSmall
-import io.libp2p.crypto.KEY_PKCS8
-import io.libp2p.crypto.Libp2pCrypto
-import io.libp2p.crypto.RSA_ALGORITHM
-import io.libp2p.crypto.SHA_256_WITH_RSA
+import io.libp2p.crypto.*
 import org.bouncycastle.asn1.ASN1Primitive
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo
 import org.bouncycastle.asn1.pkcs.RSAPrivateKey
 import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters
 import org.bouncycastle.crypto.util.PrivateKeyInfoFactory
-import java.security.KeyFactory
-import java.security.KeyPair
-import java.security.KeyPairGenerator
-import java.security.SecureRandom
-import java.security.Signature
+import java.security.*
 import java.security.spec.PKCS8EncodedKeySpec
 import java.security.spec.RSAPublicKeySpec
 import java.security.spec.X509EncodedKeySpec
@@ -60,11 +52,11 @@ class RsaPrivateKey(private val sk: JavaPrivateKey, private val pk: JavaPublicKe
     override fun raw(): ByteArray = pkcs1PrivateKeyBytes
 
     override fun sign(data: ByteArray): ByteArray =
-        with(Signature.getInstance(SHA_256_WITH_RSA, Libp2pCrypto.provider)) {
-            initSign(sk)
-            update(data)
-            sign()
-        }
+            with(Signature.getInstance(SHA_256_WITH_RSA, Libp2pCrypto.provider)) {
+                initSign(sk)
+                update(data)
+                sign()
+            }
 
     override fun publicKey(): PubKey = rsaPublicKey
 
@@ -79,11 +71,11 @@ class RsaPublicKey(private val k: JavaPublicKey) : PubKey(Crypto.KeyType.RSA) {
     override fun raw(): ByteArray = k.encoded
 
     override fun verify(data: ByteArray, signature: ByteArray): Boolean =
-        with(Signature.getInstance(SHA_256_WITH_RSA, Libp2pCrypto.provider)) {
-            initVerify(k)
-            update(data)
-            verify(signature)
-        }
+            with(Signature.getInstance(SHA_256_WITH_RSA, Libp2pCrypto.provider)) {
+                initVerify(k)
+                update(data)
+                verify(signature)
+            }
 
     override fun hashCode(): Int = k.hashCode()
 }
@@ -100,18 +92,18 @@ fun generateRsaKeyPair(bits: Int, random: SecureRandom = SecureRandom()): Pair<P
     }
 
     val kp: KeyPair = with(
-        KeyPairGenerator.getInstance(
-            RSA_ALGORITHM,
-            Libp2pCrypto.provider
-        )
+            KeyPairGenerator.getInstance(
+                    RSA_ALGORITHM,
+                    Libp2pCrypto.provider
+            )
     ) {
         initialize(bits, random)
         genKeyPair()
     }
 
     return Pair(
-        RsaPrivateKey(kp.private, kp.public),
-        RsaPublicKey(kp.public)
+            RsaPrivateKey(kp.private, kp.public),
+            RsaPublicKey(kp.public)
     )
 }
 
@@ -121,12 +113,12 @@ fun generateRsaKeyPair(bits: Int, random: SecureRandom = SecureRandom()): Pair<P
  * @return a private key.
  */
 fun unmarshalRsaPublicKey(keyBytes: ByteArray): PubKey =
-    RsaPublicKey(
-        KeyFactory.getInstance(
-            RSA_ALGORITHM,
-            Libp2pCrypto.provider
-        ).generatePublic(X509EncodedKeySpec(keyBytes))
-    )
+        RsaPublicKey(
+                KeyFactory.getInstance(
+                        RSA_ALGORITHM,
+                        Libp2pCrypto.provider
+                ).generatePublic(X509EncodedKeySpec(keyBytes))
+        )
 
 /**
  * Unmarshals the given key bytes (in PKCS1 format) into an RSA PKCS8 private key instance.
@@ -137,14 +129,14 @@ fun unmarshalRsaPrivateKey(keyBytes: ByteArray): PrivKey {
     // Input is ASN1 DER encoded PKCS1 private key bytes.
     val rsaPrivateKey = RSAPrivateKey.getInstance(ASN1Primitive.fromByteArray(keyBytes))
     val privateKeyParameters = RSAPrivateCrtKeyParameters(
-        rsaPrivateKey.modulus,
-        rsaPrivateKey.publicExponent,
-        rsaPrivateKey.privateExponent,
-        rsaPrivateKey.prime1,
-        rsaPrivateKey.prime2,
-        rsaPrivateKey.exponent1,
-        rsaPrivateKey.exponent2,
-        rsaPrivateKey.coefficient
+            rsaPrivateKey.modulus,
+            rsaPrivateKey.publicExponent,
+            rsaPrivateKey.privateExponent,
+            rsaPrivateKey.prime1,
+            rsaPrivateKey.prime2,
+            rsaPrivateKey.exponent1,
+            rsaPrivateKey.exponent2,
+            rsaPrivateKey.coefficient
     )
 
     // Now convert to a PKSC#8 key.

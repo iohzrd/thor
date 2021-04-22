@@ -20,8 +20,8 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicLong
 
 open abstract class MuxHandler(
-    private val ready: CompletableFuture<StreamMuxer.Session>?,
-    inboundStreamHandler: StreamHandler<*>
+        private val ready: CompletableFuture<StreamMuxer.Session>?,
+        inboundStreamHandler: StreamHandler<*>
 ) : AbstractMuxHandler<ByteBuf>(), StreamMuxer.Session {
     private val idGenerator = AtomicLong(0xF)
 
@@ -48,11 +48,11 @@ open abstract class MuxHandler(
 
     override fun onChildWrite(child: MuxChannel<ByteBuf>, data: ByteBuf): Boolean {
         getChannelHandlerContext().writeAndFlush(
-            MuxFrame(
-                child.id,
-                MuxFrame.Flag.DATA,
-                data
-            )
+                MuxFrame(
+                        child.id,
+                        MuxFrame.Flag.DATA,
+                        data
+                )
         )
         return true
     }
@@ -73,7 +73,7 @@ open abstract class MuxHandler(
     }
 
     override fun generateNextId() =
-        MuxId(getChannelHandlerContext().channel().id(), idGenerator.incrementAndGet(), true)
+            MuxId(getChannelHandlerContext().channel().id(), idGenerator.incrementAndGet(), true)
 
     private fun createStream(channel: MuxChannel<ByteBuf>): Stream {
         val connection = ctx!!.channel().attr(CONNECTION).get()

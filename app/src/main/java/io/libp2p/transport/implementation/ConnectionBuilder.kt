@@ -12,11 +12,11 @@ import io.netty.channel.ChannelInitializer
 import java.util.concurrent.CompletableFuture
 
 class ConnectionBuilder(
-    private val transport: Transport,
-    private val upgrader: ConnectionUpgrader,
-    private val connHandler: ConnectionHandler,
-    private val initiator: Boolean,
-    private val remotePeerId: PeerId? = null
+        private val transport: Transport,
+        private val upgrader: ConnectionUpgrader,
+        private val connHandler: ConnectionHandler,
+        private val initiator: Boolean,
+        private val remotePeerId: PeerId? = null
 ) : ChannelInitializer<Channel>() {
     val connectionEstablished = CompletableFuture<Connection>()
 
@@ -25,14 +25,14 @@ class ConnectionBuilder(
         remotePeerId?.also { ch.attr(REMOTE_PEER_ID).set(it) }
 
         upgrader.establishSecureChannel(connection)
-            .thenCompose {
-                connection.setSecureSession(it)
-                upgrader.establishMuxer(connection)
-            }.thenApply {
-                connection.setMuxerSession(it)
-                connHandler.handleConnection(connection)
-                connection
-            }
-            .forward(connectionEstablished)
+                .thenCompose {
+                    connection.setSecureSession(it)
+                    upgrader.establishMuxer(connection)
+                }.thenApply {
+                    connection.setMuxerSession(it)
+                    connHandler.handleConnection(connection)
+                    connection
+                }
+                .forward(connectionEstablished)
     } // initChannel
 } // ConnectionBuilder

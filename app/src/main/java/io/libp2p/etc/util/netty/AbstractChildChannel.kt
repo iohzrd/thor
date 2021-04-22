@@ -1,13 +1,6 @@
 package io.libp2p.etc.util.netty
 
-import io.netty.channel.AbstractChannel
-import io.netty.channel.Channel
-import io.netty.channel.ChannelConfig
-import io.netty.channel.ChannelId
-import io.netty.channel.ChannelMetadata
-import io.netty.channel.ChannelPromise
-import io.netty.channel.DefaultChannelConfig
-import io.netty.channel.EventLoop
+import io.netty.channel.*
 import io.netty.util.concurrent.Future
 import io.netty.util.concurrent.GenericFutureListener
 import java.net.SocketAddress

@@ -56,13 +56,13 @@ class GossipScoreParamsBuilder() {
     fun build(): GossipScoreParams {
         checkRequiredFields()
         return GossipScoreParams(
-            peerScoreParams = peerScoreParams!!,
-            topicsScoreParams = topicsScoreParams!!,
-            gossipThreshold = gossipThreshold!!,
-            publishThreshold = publishThreshold!!,
-            graylistThreshold = graylistThreshold!!,
-            acceptPXThreshold = acceptPXThreshold!!,
-            opportunisticGraftThreshold = opportunisticGraftThreshold!!
+                peerScoreParams = peerScoreParams!!,
+                topicsScoreParams = topicsScoreParams!!,
+                gossipThreshold = gossipThreshold!!,
+                publishThreshold = publishThreshold!!,
+                graylistThreshold = graylistThreshold!!,
+                acceptPXThreshold = acceptPXThreshold!!,
+                opportunisticGraftThreshold = opportunisticGraftThreshold!!
         )
     }
 
@@ -74,8 +74,8 @@ class GossipScoreParamsBuilder() {
         check(graylistThreshold != null, { "graylistThreshold must not be null" })
         check(acceptPXThreshold != null, { "acceptPXThreshold must not be null" })
         check(
-            opportunisticGraftThreshold != null,
-            { "opportunisticGraftThreshold must not be null" }
+                opportunisticGraftThreshold != null,
+                { "opportunisticGraftThreshold must not be null" }
         )
     }
 }

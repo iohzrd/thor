@@ -2,7 +2,7 @@ package io.core;
 
 
 public class TimeoutIssue extends Exception {
-    public TimeoutIssue(){
+    public TimeoutIssue() {
         super();
     }
 }

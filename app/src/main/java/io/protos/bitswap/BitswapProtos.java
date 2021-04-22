@@ -29,7 +29,7 @@ public final class BitswapProtos {
     private static final
     com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
             internal_static_io_protos_bitswap_Message_BlockPresence_fieldAccessorTable;
-    private static com.google.protobuf.Descriptors.FileDescriptor
+    private static final com.google.protobuf.Descriptors.FileDescriptor
             descriptor;
 
     static {
@@ -786,8 +786,7 @@ public final class BitswapProtos {
                     .equals(other.getBlockPresencesList())) return false;
             if (getPendingBytes()
                     != other.getPendingBytes()) return false;
-            if (!unknownFields.equals(other.unknownFields)) return false;
-            return true;
+            return unknownFields.equals(other.unknownFields);
         }
 
         @java.lang.Override
@@ -882,7 +881,7 @@ public final class BitswapProtos {
             private static final BlockPresenceType[] VALUES = values();
             private final int value;
 
-            private BlockPresenceType(int value) {
+            BlockPresenceType(int value) {
                 this.value = value;
             }
 
@@ -1421,8 +1420,7 @@ public final class BitswapProtos {
                         .equals(other.getEntriesList())) return false;
                 if (getFull()
                         != other.getFull()) return false;
-                if (!unknownFields.equals(other.unknownFields)) return false;
-                return true;
+                return unknownFields.equals(other.unknownFields);
             }
 
             @java.lang.Override
@@ -1506,7 +1504,7 @@ public final class BitswapProtos {
                 private static final WantType[] VALUES = values();
                 private final int value;
 
-                private WantType(int value) {
+                WantType(int value) {
                     this.value = value;
                 }
 
@@ -2054,8 +2052,7 @@ public final class BitswapProtos {
                     if (wantType_ != other.wantType_) return false;
                     if (getSendDontHave()
                             != other.getSendDontHave()) return false;
-                    if (!unknownFields.equals(other.unknownFields)) return false;
-                    return true;
+                    return unknownFields.equals(other.unknownFields);
                 }
 
                 @java.lang.Override
@@ -3476,8 +3473,7 @@ public final class BitswapProtos {
                         .equals(other.getPrefix())) return false;
                 if (!getData()
                         .equals(other.getData())) return false;
-                if (!unknownFields.equals(other.unknownFields)) return false;
-                return true;
+                return unknownFields.equals(other.unknownFields);
             }
 
             @java.lang.Override
@@ -4094,8 +4090,7 @@ public final class BitswapProtos {
                 if (!getCid()
                         .equals(other.getCid())) return false;
                 if (type_ != other.type_) return false;
-                if (!unknownFields.equals(other.unknownFields)) return false;
-                return true;
+                return unknownFields.equals(other.unknownFields);
             }
 
             @java.lang.Override

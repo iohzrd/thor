@@ -11,8 +11,8 @@ import io.libp2p.core.mux.StreamMuxerDebug
 import java.util.concurrent.CompletableFuture
 
 class MplexStreamMuxer(
-    val inboundStreamHandler: StreamHandler<*>,
-    private val multistreamProtocol: MultistreamProtocol
+        val inboundStreamHandler: StreamHandler<*>,
+        private val multistreamProtocol: MultistreamProtocol
 ) : StreamMuxer, StreamMuxerDebug {
 
     override val protocolDescriptor = ProtocolDescriptor("/mplex/6.7.0")

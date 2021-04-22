@@ -1,9 +1,6 @@
 package io.libp2p.etc.types
 
-import java.util.Collections
-import java.util.LinkedHashMap
-import java.util.LinkedList
-import java.util.Random
+import java.util.*
 import java.util.function.Predicate
 
 fun <C> Collection<C>.copy(): Collection<C> = this.toMutableList()
@@ -11,11 +8,11 @@ fun <C> Collection<C>.copy(): Collection<C> = this.toMutableList()
 fun <C> createLRUSet(maxSize: Int): MutableSet<C> = Collections.newSetFromMap(createLRUMap(maxSize))
 
 fun <K, V> createLRUMap(maxSize: Int): MutableMap<K, V> =
-    object : LinkedHashMap<K, V>() {
-        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<K, V>?): Boolean {
-            return size > maxSize
+        object : LinkedHashMap<K, V>() {
+            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<K, V>?): Boolean {
+                return size > maxSize
+            }
         }
-    }
 
 class LimitedList<C>(val maxSize: Int) : LinkedList<C>() {
     var onDropCallback: ((C) -> Unit)? = null
@@ -105,9 +102,9 @@ class MultiSet<K, V> : Iterable<Map.Entry<K, MutableList<V>>> {
     private val holder = mutableMapOf<K, MutableList<V>>()
     private val values = holder.values
 
-    public operator fun get(key: K): MutableList<V> = holder.getOrPut(key, { MSList(key) })
+    operator fun get(key: K): MutableList<V> = holder.getOrPut(key, { MSList(key) })
 
-    public fun removeAll(key: K) = holder.remove(key)
+    fun removeAll(key: K) = holder.remove(key)
 
     override fun iterator(): Iterator<Map.Entry<K, MutableList<V>>> = holder.entries.iterator()
 }

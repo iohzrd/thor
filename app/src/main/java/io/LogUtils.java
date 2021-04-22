@@ -56,10 +56,10 @@ public class LogUtils {
 
     public static void error(final String tag, @Nullable Throwable throwable) {
         if (isDebug()) {
-            if(throwable != null) {
+            if (throwable != null) {
                 Log.e(tag, "" + throwable.getLocalizedMessage(), throwable);
             } else {
-                Log.e(tag, "no throwable" );
+                Log.e(tag, "no throwable");
             }
         }
     }

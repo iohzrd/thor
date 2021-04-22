@@ -14,7 +14,7 @@ public final class MerkledagProtos {
     private static final
     com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
             internal_static_io_protos_merkledag_PBNode_fieldAccessorTable;
-    private static com.google.protobuf.Descriptors.FileDescriptor
+    private static final com.google.protobuf.Descriptors.FileDescriptor
             descriptor;
 
     static {
@@ -637,8 +637,7 @@ public final class MerkledagProtos {
                 if (getTsize()
                         != other.getTsize()) return false;
             }
-            if (!unknownFields.equals(other.unknownFields)) return false;
-            return true;
+            return unknownFields.equals(other.unknownFields);
         }
 
         @java.lang.Override
@@ -1520,8 +1519,7 @@ public final class MerkledagProtos {
                 if (!getData()
                         .equals(other.getData())) return false;
             }
-            if (!unknownFields.equals(other.unknownFields)) return false;
-            return true;
+            return unknownFields.equals(other.unknownFields);
         }
 
         @java.lang.Override

@@ -95,7 +95,7 @@ public class DOCS {
                     String address = page.getAddress();
                     if (!address.isEmpty()) {
                         connected = ipfs.swarmConnect(
-                                    address.concat(Content.P2P_PATH).concat(page.getPid()), closeable);
+                                address.concat(Content.P2P_PATH).concat(page.getPid()), closeable);
                     }
                 }
                 if (!connected) {
@@ -668,7 +668,7 @@ public class DOCS {
 
     @NonNull
     private String resolveDnsLink(@NonNull Uri uri, @NonNull String link,
-                                 @NonNull Closeable closeable)
+                                  @NonNull Closeable closeable)
             throws ClosedException, InvalidNameException, ResolveNameException {
 
         List<String> paths = uri.getPathSegments();
@@ -731,56 +731,56 @@ public class DOCS {
         // THIS IS A BIG HACK AND SHOULD NOT BE SUPPORTED
         if (paths.size() >= 2) {
             String protocol = paths.get(0);
-                if (Objects.equals(protocol, Content.IPFS) ||
-                        Objects.equals(protocol, Content.IPNS)) {
-                    String authority = paths.get(1);
-                    List<String> subPaths = new ArrayList<>(paths);
-                    subPaths.remove(protocol);
-                    subPaths.remove(authority);
-                    if (ipfs.isValidCID(authority)) {
-                        if (Objects.equals(protocol, Content.IPFS)) {
-                            Uri.Builder builder = new Uri.Builder();
-                            builder.scheme(Content.IPFS)
-                                    .authority(authority);
+            if (Objects.equals(protocol, Content.IPFS) ||
+                    Objects.equals(protocol, Content.IPNS)) {
+                String authority = paths.get(1);
+                List<String> subPaths = new ArrayList<>(paths);
+                subPaths.remove(protocol);
+                subPaths.remove(authority);
+                if (ipfs.isValidCID(authority)) {
+                    if (Objects.equals(protocol, Content.IPFS)) {
+                        Uri.Builder builder = new Uri.Builder();
+                        builder.scheme(Content.IPFS)
+                                .authority(authority);
 
-                            for (String path : subPaths) {
-                                builder.appendPath(path);
-                            }
-                            return builder.build();
-                        } else if (Objects.equals(protocol, Content.IPNS)) {
-                            Uri.Builder builder = new Uri.Builder();
-                            builder.scheme(Content.IPNS)
-                                    .authority(authority);
-
-                            for (String path : subPaths) {
-                                builder.appendPath(path);
-                            }
-                            return builder.build();
+                        for (String path : subPaths) {
+                            builder.appendPath(path);
                         }
+                        return builder.build();
+                    } else if (Objects.equals(protocol, Content.IPNS)) {
+                        Uri.Builder builder = new Uri.Builder();
+                        builder.scheme(Content.IPNS)
+                                .authority(authority);
+
+                        for (String path : subPaths) {
+                            builder.appendPath(path);
+                        }
+                        return builder.build();
                     }
                 }
             }
+        }
 
-            if (isRedirectIndex) {
-                String cid = ipfs.resolve(root, paths, closeable);
+        if (isRedirectIndex) {
+            String cid = ipfs.resolve(root, paths, closeable);
 
-                if (!cid.isEmpty()) {
-                    if (ipfs.isDir(cid, closeable)) {
-                        boolean exists = ipfs.resolve(cid, IPFS.INDEX_HTML, closeable);
+            if (!cid.isEmpty()) {
+                if (ipfs.isDir(cid, closeable)) {
+                    boolean exists = ipfs.resolve(cid, IPFS.INDEX_HTML, closeable);
 
-                        if (exists) {
-                            Uri.Builder builder = new Uri.Builder();
-                            builder.scheme(uri.getScheme())
-                                    .authority(uri.getAuthority());
-                            for (String path : paths) {
-                                builder.appendPath(path);
-                            }
-                            builder.appendPath(IPFS.INDEX_HTML);
-                            return builder.build();
+                    if (exists) {
+                        Uri.Builder builder = new Uri.Builder();
+                        builder.scheme(uri.getScheme())
+                                .authority(uri.getAuthority());
+                        for (String path : paths) {
+                            builder.appendPath(path);
                         }
+                        builder.appendPath(IPFS.INDEX_HTML);
+                        return builder.build();
                     }
                 }
             }
+        }
 
 
         return uri;

@@ -6,8 +6,8 @@ interface TopicSubscriptionFilter {
 
     @JvmDefault
     fun filterIncomingSubscriptions(
-        subscriptions: Collection<PubsubSubscription>,
-        currentlySubscribedTopics: Collection<Topic>
+            subscriptions: Collection<PubsubSubscription>,
+            currentlySubscribedTopics: Collection<Topic>
     ): Collection<PubsubSubscription> {
         return subscriptions.filter { canSubscribe(it.topic) }
     }
@@ -15,8 +15,8 @@ interface TopicSubscriptionFilter {
     class AllowAllTopicSubscriptionFilter : TopicSubscriptionFilter {
         override fun canSubscribe(topic: Topic): Boolean = true
         override fun filterIncomingSubscriptions(
-            subscriptions: Collection<PubsubSubscription>,
-            currentlySubscribedTopics: Collection<Topic>
+                subscriptions: Collection<PubsubSubscription>,
+                currentlySubscribedTopics: Collection<Topic>
         ): Collection<PubsubSubscription> = subscriptions
     }
 }

@@ -24,7 +24,7 @@ public class TimeoutCloseable implements Closeable {
 
     @Override
     public boolean isClosed() {
-        if(closeable != null){
+        if (closeable != null) {
             return closeable.isClosed() || (System.currentTimeMillis() - start) > (timeout * 1000);
         }
         return (System.currentTimeMillis() - start) > (timeout * 1000);

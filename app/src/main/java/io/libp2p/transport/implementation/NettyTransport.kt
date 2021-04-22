@@ -26,7 +26,7 @@ import java.time.Duration
 import java.util.concurrent.CompletableFuture
 
 abstract class NettyTransport(
-    private val upgrader: ConnectionUpgrader
+        private val upgrader: ConnectionUpgrader
 ) : Transport {
     private var closed = false
     var connectTimeout = Duration.ofSeconds(15)
@@ -70,12 +70,12 @@ abstract class NettyTransport(
         closed = true
 
         val unbindsCompleted = listeners
-            .map { (_, ch) -> ch }
-            .map { it.close().toVoidCompletableFuture() }
+                .map { (_, ch) -> ch }
+                .map { it.close().toVoidCompletableFuture() }
 
         val channelsClosed = channels
-            .toMutableList() // need a copy to avoid potential co-modification problems
-            .map { it.close().toVoidCompletableFuture() }
+                .toMutableList() // need a copy to avoid potential co-modification problems
+                .map { it.close().toVoidCompletableFuture() }
 
         val everythingThatNeedsToClose = unbindsCompleted.union(channelsClosed)
         val allClosed = CompletableFuture.allOf(*everythingThatNeedsToClose.toTypedArray())
@@ -94,12 +94,12 @@ abstract class NettyTransport(
         val channelHandler = serverTransportBuilder(connectionBuilder, addr) ?: connectionBuilder
 
         val listener = server.clone()
-            .childHandler(
-                nettyInitializer { init ->
-                    registerChannel(init.channel)
-                    init.addLastLocal(channelHandler)
-                }
-            )
+                .childHandler(
+                        nettyInitializer { init ->
+                            registerChannel(init.channel)
+                            init.addLastLocal(channelHandler)
+                        }
+                )
 
         val bindComplete = listener.bind(fromMultiaddr(addr))
 
@@ -118,35 +118,35 @@ abstract class NettyTransport(
     } // listener
 
     protected abstract fun serverTransportBuilder(
-        connectionBuilder: ConnectionBuilder,
-        addr: Multiaddr
+            connectionBuilder: ConnectionBuilder,
+            addr: Multiaddr
     ): ChannelHandler?
 
     override fun unlisten(addr: Multiaddr): CompletableFuture<Unit> {
         return listeners[addr]?.close()?.toVoidCompletableFuture()
-            ?: throw Libp2pException("No listeners on address $addr")
+                ?: throw Libp2pException("No listeners on address $addr")
     } // unlisten
 
     override fun dial(addr: Multiaddr, connHandler: ConnectionHandler):
-        CompletableFuture<Connection> {
-            if (closed) throw Libp2pException("Transport is closed")
+            CompletableFuture<Connection> {
+        if (closed) throw Libp2pException("Transport is closed")
 
-            val remotePeerId = addr.getStringComponent(Protocol.P2P)?.let { PeerId.fromBase58(it) }
-            val connectionBuilder = makeConnectionBuilder(connHandler, true, remotePeerId)
-            val channelHandler = clientTransportBuilder(connectionBuilder, addr) ?: connectionBuilder
+        val remotePeerId = addr.getStringComponent(Protocol.P2P)?.let { PeerId.fromBase58(it) }
+        val connectionBuilder = makeConnectionBuilder(connHandler, true, remotePeerId)
+        val channelHandler = clientTransportBuilder(connectionBuilder, addr) ?: connectionBuilder
 
-            val chanFuture = client.clone()
+        val chanFuture = client.clone()
                 .handler(channelHandler)
                 .connect(fromMultiaddr(addr))
                 .also { registerChannel(it.channel()) }
 
-            return chanFuture.toCompletableFuture()
+        return chanFuture.toCompletableFuture()
                 .thenCompose { connectionBuilder.connectionEstablished }
-        } // dial
+    } // dial
 
     protected abstract fun clientTransportBuilder(
-        connectionBuilder: ConnectionBuilder,
-        addr: Multiaddr
+            connectionBuilder: ConnectionBuilder,
+            addr: Multiaddr
     ): ChannelHandler?
 
     private fun registerChannel(ch: Channel) {
@@ -166,19 +166,19 @@ abstract class NettyTransport(
     } // registerChannel
 
     private fun makeConnectionBuilder(
-        connHandler: ConnectionHandler,
-        initiator: Boolean,
-        remotePeerId: PeerId? = null
+            connHandler: ConnectionHandler,
+            initiator: Boolean,
+            remotePeerId: PeerId? = null
     ) = ConnectionBuilder(
-        this,
-        upgrader,
-        connHandler,
-        initiator,
-        remotePeerId
+            this,
+            upgrader,
+            connHandler,
+            initiator,
+            remotePeerId
     )
 
     protected fun handlesHost(addr: Multiaddr) =
-        addr.hasAny(Protocol.IP4, Protocol.IP6, Protocol.DNS4, Protocol.DNS6, Protocol.DNSADDR)
+            addr.hasAny(Protocol.IP4, Protocol.IP6, Protocol.DNS4, Protocol.DNS6, Protocol.DNSADDR)
 
     protected fun hostFromMultiaddr(addr: Multiaddr): String {
         val resolvedAddresses = MultiaddrDns.resolve(addr)
@@ -191,8 +191,8 @@ abstract class NettyTransport(
     }
 
     protected fun portFromMultiaddr(addr: Multiaddr) =
-        addr.filterStringComponents().find { p -> p.first == Protocol.TCP }
-            ?.second?.toInt() ?: throw Libp2pException("Missing TCP in multiaddress $addr")
+            addr.filterStringComponents().find { p -> p.first == Protocol.TCP }
+                    ?.second?.toInt() ?: throw Libp2pException("Missing TCP in multiaddress $addr")
 
     private fun fromMultiaddr(addr: Multiaddr): InetSocketAddress {
         val host = hostFromMultiaddr(addr)

@@ -111,6 +111,21 @@ public class Ipns implements Validator {
         }
     }
 
+    public static byte[] ipnsEntryDataForSig(IpnsProtos.IpnsEntry e) {
+        ByteString value = e.getValue();
+        ByteString validity = e.getValidity();
+        String type = e.getValidityType().toString();
+
+        try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+            outputStream.write(value.toByteArray());
+            outputStream.write(validity.toByteArray());
+            outputStream.write(type.getBytes());
+            return outputStream.toByteArray();
+        } catch (Throwable throwable) {
+            throw new RuntimeException(throwable);
+        }
+    }
+
     @Override
     public void Validate(@NonNull byte[] key, byte[] value) throws InvalidRecord {
 
@@ -239,21 +254,5 @@ public class Ipns implements Validator {
         }
         String date = new String(entry.getValidity().toByteArray());
         return getDate(date);
-    }
-
-
-    public static byte[] ipnsEntryDataForSig(IpnsProtos.IpnsEntry e) {
-        ByteString value = e.getValue();
-        ByteString validity = e.getValidity();
-        String type = e.getValidityType().toString();
-
-        try(ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
-            outputStream.write(value.toByteArray());
-            outputStream.write(validity.toByteArray());
-            outputStream.write(type.getBytes());
-            return outputStream.toByteArray();
-        } catch (Throwable throwable){
-            throw new RuntimeException( throwable);
-        }
     }
 }

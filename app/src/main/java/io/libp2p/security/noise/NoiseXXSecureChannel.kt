@@ -37,12 +37,12 @@ private const val NoiseCodeNettyHandlerName = "NoiseXXCodec"
 private const val MaxCipheredPacketLength = 65535
 
 class UShortLengthCodec : CombinedChannelDuplexHandler<LengthFieldBasedFrameDecoder, LengthFieldPrepender>(
-    LengthFieldBasedFrameDecoder(MaxCipheredPacketLength + 2, 0, 2, 0, 2),
-    LengthFieldPrepender(2)
+        LengthFieldBasedFrameDecoder(MaxCipheredPacketLength + 2, 0, 2, 0, 2),
+        LengthFieldPrepender(2)
 )
 
 class NoiseXXSecureChannel(private val localKey: PrivKey) :
-    SecureChannel {
+        SecureChannel {
 
     companion object {
         const val protocolName = "Noise_XX_25519_ChaChaPoly_SHA256"
@@ -64,16 +64,16 @@ class NoiseXXSecureChannel(private val localKey: PrivKey) :
     } // initChannel
 
     override fun initChannel(
-        ch: P2PChannel,
-        selectedProtocol: String
+            ch: P2PChannel,
+            selectedProtocol: String
     ): CompletableFuture<SecureChannel.Session> {
         val handshakeComplete = CompletableFuture<SecureChannel.Session>()
         // Packet length codec should stay forever.
         ch.pushHandler(UShortLengthCodec())
         // Handshake handle is to be removed when handshake is complete
         ch.pushHandler(
-            HandshakeNettyHandlerName,
-            NoiseIoHandshake(localKey, handshakeComplete, if (ch.isInitiator) Role.INIT else Role.RESP)
+                HandshakeNettyHandlerName,
+                NoiseIoHandshake(localKey, handshakeComplete, if (ch.isInitiator) Role.INIT else Role.RESP)
         )
 
         return handshakeComplete
@@ -81,9 +81,9 @@ class NoiseXXSecureChannel(private val localKey: PrivKey) :
 } // class NoiseXXSecureChannel
 
 private class NoiseIoHandshake(
-    private val localKey: PrivKey,
-    private val handshakeComplete: CompletableFuture<SecureChannel.Session>,
-    private val role: Role
+        private val localKey: PrivKey,
+        private val handshakeComplete: CompletableFuture<SecureChannel.Session>,
+        private val role: Role
 ) : SimpleChannelInboundHandler<ByteBuf>() {
     private val handshakeState = HandshakeState(NoiseXXSecureChannel.protocolName, role.intVal)
 
@@ -195,17 +195,17 @@ private class NoiseIoHandshake(
 
         // get noise static public key signature
         val localNoiseStaticKeySignature =
-            localKey.sign(noiseSignaturePhrase(localNoiseState))
+                localKey.sign(noiseSignaturePhrase(localNoiseState))
 
         // generate an appropriate protobuf element
         val noiseHandshakePayload =
-            Spipe.NoiseHandshakePayload.newBuilder()
-                .setLibp2PKey(ByteString.copyFrom(identityPublicKey))
-                .setNoiseStaticKeySignature(ByteString.copyFrom(localNoiseStaticKeySignature))
-                .setLibp2PData(ByteString.EMPTY)
-                .setLibp2PDataSignature(ByteString.EMPTY)
-                .build()
-                .toByteArray()
+                Spipe.NoiseHandshakePayload.newBuilder()
+                        .setLibp2PKey(ByteString.copyFrom(identityPublicKey))
+                        .setNoiseStaticKeySignature(ByteString.copyFrom(localNoiseStaticKeySignature))
+                        .setLibp2PData(ByteString.EMPTY)
+                        .setLibp2PDataSignature(ByteString.EMPTY)
+                        .build()
+                        .toByteArray()
 
         // create the message with the signed payload -
         // verification happens once the noise static key is shared
@@ -234,17 +234,17 @@ private class NoiseIoHandshake(
     } // sendNoiseMessage
 
     private fun verifyPayload(
-        ctx: ChannelHandlerContext,
-        payload: ByteArray,
-        remotePublicKeyState: DHState
+            ctx: ChannelHandlerContext,
+            payload: ByteArray,
+            remotePublicKeyState: DHState
     ): PeerId {
         log.debug("Verifying noise static key payload")
 
         val (pubKeyFromMessage, signatureFromMessage) = unpackKeyAndSignature(payload)
 
         val verified = pubKeyFromMessage.verify(
-            noiseSignaturePhrase(remotePublicKeyState),
-            signatureFromMessage
+                noiseSignaturePhrase(remotePublicKeyState),
+                signatureFromMessage
         )
 
         log.debug("Remote verification is $verified")
@@ -274,11 +274,11 @@ private class NoiseIoHandshake(
 
         // put alice and bob security sessions into the context and trigger the next action
         val secureSession = NoiseSecureChannelSession(
-            PeerId.fromPubKey(localKey.publicKey()),
-            remotePeerId!!,
-            localKey.publicKey(),
-            aliceSplit,
-            bobSplit
+                PeerId.fromPubKey(localKey.publicKey()),
+                remotePeerId!!,
+                localKey.publicKey(),
+                aliceSplit,
+                bobSplit
         )
 
         handshakeSucceeded(ctx, secureSession)
@@ -287,20 +287,20 @@ private class NoiseIoHandshake(
     private fun handshakeSucceeded(ctx: ChannelHandlerContext, session: NoiseSecureChannelSession) {
         handshakeComplete.complete(session)
         ctx.pipeline()
-            .addBefore(
-                HandshakeNettyHandlerName,
-                NoiseCodeNettyHandlerName,
-                NoiseXXCodec(session.aliceCipher, session.bobCipher)
-            )
+                .addBefore(
+                        HandshakeNettyHandlerName,
+                        NoiseCodeNettyHandlerName,
+                        NoiseXXCodec(session.aliceCipher, session.bobCipher)
+                )
         // according to Libp2p spec transport payload should also be length-prefixed
         // though Rust Libp2p implementation doesn't do it
         // https://github.com/libp2p/specs/tree/master/noise#wire-format
 //        ctx.pipeline()
 //            .addBefore(HandshakeNettyHandlerName, "NoiseXXPayloadLenCodec", UShortLengthCodec())
         ctx.pipeline().addAfter(
-            NoiseCodeNettyHandlerName,
-            "NoisePacketSplitter",
-            SplitEncoder(MaxCipheredPacketLength - session.aliceCipher.macLength)
+                NoiseCodeNettyHandlerName,
+                "NoisePacketSplitter",
+                SplitEncoder(MaxCipheredPacketLength - session.aliceCipher.macLength)
         )
         ctx.pipeline().remove(this)
         ctx.fireChannelActive()
@@ -309,6 +309,7 @@ private class NoiseIoHandshake(
     private fun handshakeFailed(ctx: ChannelHandlerContext, cause: String) {
         handshakeFailed(ctx, Exception(cause))
     }
+
     private fun handshakeFailed(ctx: ChannelHandlerContext, cause: Throwable) {
         log.debug("Noise handshake failed", cause)
 
@@ -318,7 +319,7 @@ private class NoiseIoHandshake(
 } // class NoiseIoHandshake
 
 private fun noiseSignaturePhrase(dhState: DHState) =
-    "noise-libp2p-static-key:".toByteArray() + dhState.publicKey
+        "noise-libp2p-static-key:".toByteArray() + dhState.publicKey
 
 private val DHState.publicKey: ByteArray
     get() {

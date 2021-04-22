@@ -17,6 +17,12 @@ public class QueryPeerState implements Comparable<QueryPeerState> {
     @NonNull
     private PeerState state;
 
+    public QueryPeerState(@NonNull PeerId id, @NonNull BigInteger distance) {
+        this.id = id;
+        this.distance = distance;
+        this.state = PeerState.PeerHeard;
+    }
+
     @NonNull
     public PeerState getState() {
         return state;
@@ -24,12 +30,6 @@ public class QueryPeerState implements Comparable<QueryPeerState> {
 
     public void setState(@NonNull PeerState state) {
         this.state = state;
-    }
-
-    public QueryPeerState(@NonNull PeerId id, @NonNull BigInteger distance) {
-        this.id = id;
-        this.distance = distance;
-        this.state = PeerState.PeerHeard;
     }
 
     @NotNull

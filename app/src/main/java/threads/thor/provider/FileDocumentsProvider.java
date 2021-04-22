@@ -29,8 +29,8 @@ import java.util.Hashtable;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import io.core.Closeable;
 import io.LogUtils;
+import io.core.Closeable;
 import io.ipfs.IPFS;
 import io.ipfs.format.Node;
 import io.ipfs.utils.Reader;
@@ -50,11 +50,10 @@ public class FileDocumentsProvider extends DocumentsProvider {
             Document.COLUMN_FLAGS,
             Document.COLUMN_SIZE
     };
-
+    private static final Hashtable<String, CidInfo> CID_INFO_HASHTABLE = new Hashtable<>();
     private String appName;
     private IPFS ipfs;
     private StorageManager mStorageManager;
-
 
     public static boolean isPartial(@NonNull Context context, @NonNull Uri uri) {
         ContentResolver contentResolver = context.getContentResolver();
@@ -169,18 +168,7 @@ public class FileDocumentsProvider extends DocumentsProvider {
         }
         return -1;
     }
-    private static class CidInfo {
-        private final String name;
-        private final String mimeType;
-        private final long size;
 
-        private CidInfo(String name, String mimeType, long size) {
-            this.name = name;
-            this.mimeType = mimeType;
-            this.size = size;
-        }
-    }
-    private static final Hashtable<String, CidInfo> CID_INFO_HASHTABLE = new Hashtable<>();
     public static Uri getUriForIpfs(@NonNull Node node, @NonNull String name, @NonNull String mimeType) {
 
         CID_INFO_HASHTABLE.put(node.Cid().String(), new CidInfo(name, mimeType, node.Size()));
@@ -193,7 +181,6 @@ public class FileDocumentsProvider extends DocumentsProvider {
 
         return builder.build();
     }
-
 
     @Override
     public Cursor queryRoots(String[] projection) {
@@ -242,7 +229,6 @@ public class FileDocumentsProvider extends DocumentsProvider {
     public Cursor queryChildDocuments(String parentDocumentId, String[] projection, String sortOrder) throws FileNotFoundException {
         return null;
     }
-
 
     @Override
     public ParcelFileDescriptor openDocument(String documentId, String mode,
@@ -299,6 +285,18 @@ public class FileDocumentsProvider extends DocumentsProvider {
         mStorageManager = (StorageManager) context.getSystemService(Context.STORAGE_SERVICE);
         ipfs = IPFS.getInstance(context);
         return true;
+    }
+
+    private static class CidInfo {
+        private final String name;
+        private final String mimeType;
+        private final long size;
+
+        private CidInfo(String name, String mimeType, long size) {
+            this.name = name;
+            this.mimeType = mimeType;
+            this.size = size;
+        }
     }
 
 }

@@ -9,7 +9,6 @@ import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Objects;
 
-import io.LogUtils;
 import io.ipfs.multibase.Multibase;
 import io.ipfs.multihash.Multihash;
 
@@ -91,6 +90,18 @@ public class Cid implements Comparable<Cid> {
         }
     }
 
+    public static byte[] Encode(byte[] buf, long code) {
+
+        try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            Multihash.putUvarint(out, code);
+            Multihash.putUvarint(out, buf.length);
+            out.write(buf);
+            return out.toByteArray();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -144,7 +155,6 @@ public class Cid implements Comparable<Cid> {
         return type;
     }
 
-
     public byte[] Bytes() {
         return multihash;
     }
@@ -180,23 +190,9 @@ public class Cid implements Comparable<Cid> {
         }
     }
 
-
     @Override
     public int compareTo(Cid o) {
         return Integer.compare(this.hashCode(), o.hashCode());
-    }
-
-
-    public static byte[] Encode(byte[] buf, long code) {
-
-        try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-            Multihash.putUvarint(out, code);
-            Multihash.putUvarint(out, buf.length);
-            out.write(buf);
-            return out.toByteArray();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     public byte[] Hash() {
@@ -220,13 +216,13 @@ public class Cid implements Comparable<Cid> {
                     int n;
                     while ((n = inputStream.read(buf)) > 0) {
                         outputStream.write(buf, 0, n);
-                        }
-                        return outputStream.toByteArray();
                     }
-                } catch (Throwable throwable) {
-                    throw new RuntimeException(throwable);
+                    return outputStream.toByteArray();
                 }
+            } catch (Throwable throwable) {
+                throw new RuntimeException(throwable);
             }
+        }
 
     }
 }

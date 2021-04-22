@@ -12,31 +12,31 @@ import java.util.concurrent.CompletableFuture
  * capabilities are not provided natively by the transport.
  */
 open class ConnectionUpgrader(
-    private val secureMultistream: MultistreamProtocol,
-    private val secureChannels: List<SecureChannel>,
-    private val muxerMultistream: MultistreamProtocol,
-    private val muxers: List<StreamMuxer>,
+        private val secureMultistream: MultistreamProtocol,
+        private val secureChannels: List<SecureChannel>,
+        private val muxerMultistream: MultistreamProtocol,
+        private val muxers: List<StreamMuxer>,
 ) {
     open fun establishSecureChannel(connection: Connection): CompletableFuture<SecureChannel.Session> {
         return establish(
-            secureMultistream,
-            connection,
-            secureChannels
+                secureMultistream,
+                connection,
+                secureChannels
         )
     } // establishSecureChannel
 
     open fun establishMuxer(connection: Connection): CompletableFuture<StreamMuxer.Session> {
         return establish(
-            muxerMultistream,
-            connection,
-            muxers
+                muxerMultistream,
+                connection,
+                muxers
         )
     } // establishMuxer
 
     private fun <T : ProtocolBinding<R>, R> establish(
-        multistreamProtocol: MultistreamProtocol,
-        connection: Connection,
-        channels: List<T>
+            multistreamProtocol: MultistreamProtocol,
+            connection: Connection,
+            channels: List<T>
     ): CompletableFuture<R> {
         val multistream = multistreamProtocol.createMultistream(channels)
         return multistream.initChannel(connection)

@@ -9,7 +9,7 @@ import io.libp2p.etc.types.millis
 import io.libp2p.etc.util.P2PService
 import io.libp2p.pubsub.PubsubMessage
 import io.libp2p.pubsub.Topic
-import java.util.Optional
+import java.util.*
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
@@ -18,12 +18,12 @@ import kotlin.math.min
 import kotlin.math.pow
 
 fun P2PService.PeerHandler.getIP(): String? =
-    streamHandler.stream.connection.remoteAddress().getStringComponent(Protocol.IP4)
+        streamHandler.stream.connection.remoteAddress().getStringComponent(Protocol.IP4)
 
 class GossipScore(
-    val params: GossipScoreParams = GossipScoreParams(),
-    val executor: ScheduledExecutorService,
-    val curTimeMillis: () -> Long
+        val params: GossipScoreParams = GossipScoreParams(),
+        val executor: ScheduledExecutorService,
+        val curTimeMillis: () -> Long
 ) {
 
     inner class TopicScores(val topic: Topic) {
@@ -42,43 +42,43 @@ class GossipScore(
             }
 
         var firstMessageDeliveries: Double by cappedDouble(
-            0.0,
-            this@GossipScore.peerParams.decayToZero,
-            { params.firstMessageDeliveriesCap },
-            { cacheValid = false }
+                0.0,
+                this@GossipScore.peerParams.decayToZero,
+                { params.firstMessageDeliveriesCap },
+                { cacheValid = false }
         )
         var meshMessageDeliveries: Double by cappedDouble(
-            0.0,
-            this@GossipScore.peerParams.decayToZero,
-            { params.meshMessageDeliveriesCap },
-            { cacheValid = false }
+                0.0,
+                this@GossipScore.peerParams.decayToZero,
+                { params.meshMessageDeliveriesCap },
+                { cacheValid = false }
         )
         var meshFailurePenalty: Double by cappedDouble(
-            0.0,
-            this@GossipScore.peerParams.decayToZero,
-            { _ -> cacheValid = false }
+                0.0,
+                this@GossipScore.peerParams.decayToZero,
+                { _ -> cacheValid = false }
         )
 
         var invalidMessages: Double by cappedDouble(
-            0.0,
-            this@GossipScore.peerParams.decayToZero,
-            { _ -> cacheValid = false }
+                0.0,
+                this@GossipScore.peerParams.decayToZero,
+                { _ -> cacheValid = false }
         )
 
         fun inMesh() = joinedMeshTimeMillis > 0
 
         private fun meshTimeNorm() = min(
-            (if (inMesh()) curTimeMillis() - joinedMeshTimeMillis else 0).toDouble() / params.timeInMeshQuantum.toMillis(),
-            params.timeInMeshCap
+                (if (inMesh()) curTimeMillis() - joinedMeshTimeMillis else 0).toDouble() / params.timeInMeshQuantum.toMillis(),
+                params.timeInMeshCap
         )
 
         private fun isMeshMessageDeliveriesActive() =
-            inMesh() && ((curTimeMillis() - joinedMeshTimeMillis).millis > params.meshMessageDeliveriesActivation)
+                inMesh() && ((curTimeMillis() - joinedMeshTimeMillis).millis > params.meshMessageDeliveriesActivation)
 
         private fun meshMessageDeliveriesDeficit() =
-            if (isMeshMessageDeliveriesActive())
-                max(0.0, params.meshMessageDeliveriesThreshold - meshMessageDeliveries)
-            else 0.0
+                if (isMeshMessageDeliveriesActive())
+                    max(0.0, params.meshMessageDeliveriesThreshold - meshMessageDeliveries)
+                else 0.0
 
         fun meshMessageDeliveriesDeficitSqr() = meshMessageDeliveriesDeficit().pow(2)
 
@@ -95,12 +95,12 @@ class GossipScore(
             val p3b = meshFailurePenalty
             val p4 = invalidMessages.pow(2)
             cachedScore = params.topicWeight * (
-                p1 * params.timeInMeshWeight +
-                    p2 * params.firstMessageDeliveriesWeight +
-                    p3 * params.meshMessageDeliveriesWeight +
-                    p3b * params.meshFailurePenaltyWeight +
-                    p4 * params.invalidMessageDeliveriesWeight
-                )
+                    p1 * params.timeInMeshWeight +
+                            p2 * params.firstMessageDeliveriesWeight +
+                            p3 * params.meshMessageDeliveriesWeight +
+                            p3b * params.meshFailurePenaltyWeight +
+                            p4 * params.invalidMessageDeliveriesWeight
+                    )
             cacheValid = true
             return cachedScore
         }
@@ -124,8 +124,8 @@ class GossipScore(
         fun isConnected() = connectedTimeMillis > 0 && disconnectedTimeMillis == 0L
         fun isDisconnected() = disconnectedTimeMillis > 0
         fun getDisconnectDuration() =
-            if (isDisconnected()) (curTimeMillis() - disconnectedTimeMillis).millis
-            else throw IllegalStateException("Peer is not disconnected")
+                if (isDisconnected()) (curTimeMillis() - disconnectedTimeMillis).millis
+                else throw IllegalStateException("Peer is not disconnected")
     }
 
     val peerParams = params.peerScoreParams
@@ -143,12 +143,12 @@ class GossipScore(
     }
 
     private fun getPeerScores(peer: P2PService.PeerHandler) =
-        peerScores.computeIfAbsent(peer.peerId) { PeerScores() }
+            peerScores.computeIfAbsent(peer.peerId) { PeerScores() }
 
     private fun getPeerIp(peer: P2PService.PeerHandler): String? = peerIpCache[peer.peerId]
 
     private fun getTopicScores(peer: P2PService.PeerHandler, topic: Topic) =
-        getPeerScores(peer).topicScores.computeIfAbsent(topic) { TopicScores(it) }
+            getPeerScores(peer).topicScores.computeIfAbsent(topic) { TopicScores(it) }
 
     private fun isInMesh(peer: P2PService.PeerHandler, topic: Topic) = getTopicScores(peer, topic).inMesh()
 
@@ -163,8 +163,8 @@ class GossipScore(
     fun score(peer: P2PService.PeerHandler): Double {
         val peerScore = getPeerScores(peer)
         val topicsScore = min(
-            if (peerParams.topicScoreCap > 0) peerParams.topicScoreCap else Double.MAX_VALUE,
-            peerScore.topicScores.values.map { it.calcTopicScore() }.sum()
+                if (peerParams.topicScoreCap > 0) peerParams.topicScoreCap else Double.MAX_VALUE,
+                peerScore.topicScores.values.map { it.calcTopicScore() }.sum()
         )
         val appScore = peerParams.appSpecificScore(peer.peerId) * peerParams.appSpecificWeight
 
@@ -173,14 +173,14 @@ class GossipScore(
                 peerScores.values.count { thisIp in it.ips }
         } ?: 0
         val ipColocationPenalty = max(
-            0,
-            (peersInIp - peerParams.ipColocationFactorThreshold)
+                0,
+                (peersInIp - peerParams.ipColocationFactorThreshold)
         ).toDouble().pow(2) * peerParams.ipColocationFactorWeight
 
         val behaviorExcess = peerScore.behaviorPenalty - peerParams.behaviourPenaltyThreshold
         val routerPenalty =
-            if (behaviorExcess < 0) 0.0
-            else behaviorExcess.pow(2) * peerParams.behaviourPenaltyWeight
+                if (behaviorExcess < 0) 0.0
+                else behaviorExcess.pow(2) * peerParams.behaviourPenaltyWeight
 
         return topicsScore + appScore + ipColocationPenalty + routerPenalty
     }
@@ -218,18 +218,19 @@ class GossipScore(
 
     fun notifySeenMessage(peer: P2PService.PeerHandler, msg: PubsubMessage, validationResult: Optional<ValidationResult>) {
         msg.topics
-            .filter { isInMesh(peer, it) }
-            .forEach { topic ->
-                val topicScores = getTopicScores(peer, topic)
-                val durationAfterValidation = (curTimeMillis() - (validationTime[msg] ?: 0)).millis
-                when {
-                    validationResult.isPresent && validationResult.get() == ValidationResult.Invalid ->
-                        topicScores.invalidMessages++
-                    !validationResult.isPresent
-                        || durationAfterValidation < topicParams[topic].meshMessageDeliveryWindow ->
-                        topicScores.meshMessageDeliveries++
+                .filter { isInMesh(peer, it) }
+                .forEach { topic ->
+                    val topicScores = getTopicScores(peer, topic)
+                    val durationAfterValidation = (curTimeMillis() - (validationTime[msg]
+                            ?: 0)).millis
+                    when {
+                        validationResult.isPresent && validationResult.get() == ValidationResult.Invalid ->
+                            topicScores.invalidMessages++
+                        !validationResult.isPresent
+                                || durationAfterValidation < topicParams[topic].meshMessageDeliveryWindow ->
+                            topicScores.meshMessageDeliveries++
+                    }
                 }
-            }
     }
 
     fun notifyUnseenInvalidMessage(peer: P2PService.PeerHandler, msg: PubsubMessage) {
@@ -240,9 +241,9 @@ class GossipScore(
     fun notifyUnseenValidMessage(peer: P2PService.PeerHandler, msg: PubsubMessage) {
         validationTime[msg] = curTimeMillis()
         msg.topics
-            .onEach { getTopicScores(peer, it).firstMessageDeliveries++ }
-            .filter { isInMesh(peer, it) }
-            .onEach { getTopicScores(peer, it).meshMessageDeliveries++ }
+                .onEach { getTopicScores(peer, it).firstMessageDeliveries++ }
+                .filter { isInMesh(peer, it) }
+                .onEach { getTopicScores(peer, it).meshMessageDeliveries++ }
     }
 
     fun notifyMeshed(peer: P2PService.PeerHandler, topic: Topic) {

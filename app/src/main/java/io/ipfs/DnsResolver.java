@@ -24,13 +24,13 @@ import io.libp2p.core.multiformats.Protocol;
 
 
 public class DnsResolver {
-    private static final String IPv4 = "/ip4/";
-    private static final String IPv6 = "/ip6/";
     public static final String DNS_ADDR = "dnsaddr=";
     public static final String DNS_LINK = "dnslink=";
-    private static  final String DNS_ADDR_PATH = "/dnsaddr/";
-    private static  final String DNS4_PATH = "/dns4/";
-    private static  final String DNS6_PATH = "/dns6/";
+    private static final String IPv4 = "/ip4/";
+    private static final String IPv6 = "/ip6/";
+    private static final String DNS_ADDR_PATH = "/dnsaddr/";
+    private static final String DNS4_PATH = "/dns4/";
+    private static final String DNS6_PATH = "/dns6/";
     private static final String TAG = DnsResolver.class.getSimpleName();
     private static DnsClient INSTANCE = null;
 
@@ -61,7 +61,7 @@ public class DnsResolver {
             List<Record<? extends Data>> records = response.answerSection;
             for (Record<? extends Data> record : records) {
                 Data payload = record.getPayload();
-                if(payload instanceof TXT) {
+                if (payload instanceof TXT) {
                     TXT text = (TXT) payload;
                     txtRecords.add(text.getText());
                 } else {
@@ -75,10 +75,10 @@ public class DnsResolver {
     }
 
     public static String resolveDns4Address(@NonNull String multiaddress) throws UnknownHostException {
-        if(!multiaddress.startsWith(DNS4_PATH)){
+        if (!multiaddress.startsWith(DNS4_PATH)) {
             throw new RuntimeException();
         }
-        String query = multiaddress.replaceFirst(DNS4_PATH,"");
+        String query = multiaddress.replaceFirst(DNS4_PATH, "");
         String host = query.split("/")[0];
         InetAddress address = InetAddress.getByName(host);
         String ip = IPv4;
@@ -102,15 +102,15 @@ public class DnsResolver {
     public static List<Multiaddr> resolveDnsAddress(@NonNull Multiaddr multiaddr) {
         List<Multiaddr> mAddrs = new ArrayList<>();
         String host = multiaddr.getStringComponent(Protocol.DNSADDR);
-        if(host != null) {
+        if (host != null) {
             Set<String> addresses = resolveDnsAddress(host);
             String peerId = multiaddr.getStringComponent(Protocol.P2P);
-            for (String addr:addresses) {
-                if(peerId != null) {
+            for (String addr : addresses) {
+                if (peerId != null) {
                     if (addr.endsWith(peerId)) {
                         try {
                             mAddrs.add(new Multiaddr(addr));
-                        } catch (Throwable throwable){
+                        } catch (Throwable throwable) {
                             LogUtils.verbose(TAG, throwable.getClass().getSimpleName());
                         }
                     }
@@ -121,10 +121,10 @@ public class DnsResolver {
     }
 
     public static String resolveDns6Address(@NonNull String multiaddress) throws UnknownHostException {
-        if(!multiaddress.startsWith(DNS6_PATH)){
+        if (!multiaddress.startsWith(DNS6_PATH)) {
             throw new RuntimeException();
         }
-        String query = multiaddress.replaceFirst(DNS6_PATH,"");
+        String query = multiaddress.replaceFirst(DNS6_PATH, "");
         String host = query.split("/")[0];
         InetAddress address = InetAddress.getByName(host);
         String ip = IPv4;
@@ -146,7 +146,7 @@ public class DnsResolver {
         Set<String> multiAddresses = new HashSet<>();
 
         // recursion protection
-        if(hosts.contains(host)){
+        if (hosts.contains(host)) {
             hosts.add(host);
         }
 
@@ -155,13 +155,13 @@ public class DnsResolver {
             try {
                 if (txtRecord.startsWith(DNS_ADDR)) {
                     String testRecordReduced = txtRecord.replaceFirst(DNS_ADDR, "");
-                    if(testRecordReduced.startsWith(DNS_ADDR_PATH)) {
-                        String query = testRecordReduced.replaceFirst(DNS_ADDR_PATH,"");
+                    if (testRecordReduced.startsWith(DNS_ADDR_PATH)) {
+                        String query = testRecordReduced.replaceFirst(DNS_ADDR_PATH, "");
                         String child = query.split("/")[0];
                         multiAddresses.addAll(resolveDnsAddressInternal(child, hosts));
-                    } else if(testRecordReduced.startsWith(DNS4_PATH)) {
+                    } else if (testRecordReduced.startsWith(DNS4_PATH)) {
                         multiAddresses.add(resolveDns4Address(testRecordReduced));
-                    } else if(testRecordReduced.startsWith(DNS6_PATH)) {
+                    } else if (testRecordReduced.startsWith(DNS6_PATH)) {
                         multiAddresses.add(resolveDns6Address(testRecordReduced));
                     } else {
                         multiAddresses.add(testRecordReduced);

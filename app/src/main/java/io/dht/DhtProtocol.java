@@ -83,10 +83,23 @@ public class DhtProtocol implements ProtocolBinding<DhtProtocol.DhtController> {
         private final CompletableFuture<Dht.Message> resFuture = new CompletableFuture<>();
         private final CompletableFuture<DhtController> activationFut;
         private final Stream stream;
+        private final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        private long expectedLength;
 
         public ClientHandler(@NonNull Stream stream, @NonNull CompletableFuture<DhtController> fut) {
             this.stream = stream;
             this.activationFut = fut;
+        }
+
+        public static long copy(InputStream source, OutputStream sink) throws IOException {
+            long nread = 0L;
+            byte[] buf = new byte[4096];
+            int n;
+            while ((n = source.read(buf)) > 0) {
+                sink.write(buf, 0, n);
+                nread += n;
+            }
+            return nread;
         }
 
         @Override
@@ -131,20 +144,6 @@ public class DhtProtocol implements ProtocolBinding<DhtProtocol.DhtController> {
             } catch (Throwable throwable) {
                 LogUtils.error(TAG, throwable);
             }
-        }
-
-        private final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-        private long expectedLength;
-
-        public static long copy(InputStream source, OutputStream sink) throws IOException {
-            long nread = 0L;
-            byte[] buf = new byte[4096];
-            int n;
-            while ((n = source.read(buf)) > 0) {
-                sink.write(buf, 0, n);
-                nread += n;
-            }
-            return nread;
         }
 
         @Override

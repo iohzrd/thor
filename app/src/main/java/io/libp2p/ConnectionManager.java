@@ -64,16 +64,16 @@ public class ConnectionManager implements Metrics {
         actives.remove(peerId);
     }
 
-    private boolean isActive(@NonNull PeerId peerId){
+    private boolean isActive(@NonNull PeerId peerId) {
         Long time = actives.get(peerId);
-        if(time != null){
-            return (System.currentTimeMillis() - time) <  (gracePeriod * 1000);
+        if (time != null) {
+            return (System.currentTimeMillis() - time) < (gracePeriod * 1000);
         }
         return false;
     }
 
 
-    public int numConnections(){
+    public int numConnections() {
         return host.getNetwork().getConnections().size();
     }
 
@@ -82,14 +82,14 @@ public class ConnectionManager implements Metrics {
         int connections = numConnections();
         LogUtils.verbose(TAG, "numConnections (before) " + connections);
 
-        if(connections > highWater) {
+        if (connections > highWater) {
 
             int hasToBeClosed = connections - lowWater;
 
             // TODO maybe sort connections how fast they are (the fastest will not be closed)
 
             for (Connection connection : host.getNetwork().getConnections()) {
-                if(hasToBeClosed > 0) {
+                if (hasToBeClosed > 0) {
                     try {
                         PeerId peerId = connection.secureSession().getRemoteId();
                         if (!isProtected(peerId) && !isActive(peerId)) {

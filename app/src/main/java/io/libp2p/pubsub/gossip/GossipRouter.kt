@@ -3,29 +3,17 @@ package io.libp2p.pubsub.gossip
 import io.libp2p.core.InternalErrorException
 import io.libp2p.core.PeerId
 import io.libp2p.core.pubsub.ValidationResult
-import io.libp2p.etc.types.anyComplete
-import io.libp2p.etc.types.copy
-import io.libp2p.etc.types.createLRUMap
-import io.libp2p.etc.types.median
-import io.libp2p.etc.types.seconds
-import io.libp2p.etc.types.toProtobuf
-import io.libp2p.etc.types.toWBytes
-import io.libp2p.etc.types.whenTrue
+import io.libp2p.etc.types.*
 import io.libp2p.etc.util.P2PService
-import io.libp2p.pubsub.AbstractRouter
-import io.libp2p.pubsub.MessageId
-import io.libp2p.pubsub.PubsubMessage
-import io.libp2p.pubsub.PubsubProtocol
-import io.libp2p.pubsub.SeenCache
-import io.libp2p.pubsub.SimpleSeenCache
-import io.libp2p.pubsub.TTLSeenCache
-import io.libp2p.pubsub.Topic
-import io.libp2p.pubsub.TopicSubscriptionFilter
+import io.libp2p.pubsub.*
 import pubsub.pb.Rpc
-import java.util.Optional
+import java.util.*
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.collections.component1
+import kotlin.collections.component2
+import kotlin.collections.set
 import kotlin.math.max
 import kotlin.math.min
 
@@ -39,9 +27,9 @@ fun P2PService.PeerHandler.isOutbound() = streamHandler.stream.connection.isInit
 fun P2PService.PeerHandler.getPeerProtocol(): PubsubProtocol {
     fun P2PService.StreamHandler.getProtocol(): String? = stream.getProtocol().getNow(null)
     val proto =
-        getOutboundHandler()?.getProtocol()
-            ?: getInboundHandler()?.getProtocol()
-            ?: throw InternalErrorException("Couldn't get peer gossip protocol")
+            getOutboundHandler()?.getProtocol()
+                    ?: getInboundHandler()?.getProtocol()
+                    ?: throw InternalErrorException("Couldn't get peer gossip protocol")
     return PubsubProtocol.fromProtocol(proto)
 }
 
@@ -49,10 +37,10 @@ fun P2PService.PeerHandler.getPeerProtocol(): PubsubProtocol {
  * Router implementing this protocol: https://github.com/libp2p/specs/tree/master/pubsub/gossipsub
  */
 open class GossipRouter @JvmOverloads constructor(
-    val params: GossipParams = GossipParams(),
-    val scoreParams: GossipScoreParams = GossipScoreParams(),
-    override val protocol: PubsubProtocol = PubsubProtocol.Gossip_V_1_1,
-    subscriptionTopicSubscriptionFilter: TopicSubscriptionFilter = TopicSubscriptionFilter.AllowAllTopicSubscriptionFilter()
+        val params: GossipParams = GossipParams(),
+        val scoreParams: GossipScoreParams = GossipScoreParams(),
+        override val protocol: PubsubProtocol = PubsubProtocol.Gossip_V_1_1,
+        subscriptionTopicSubscriptionFilter: TopicSubscriptionFilter = TopicSubscriptionFilter.AllowAllTopicSubscriptionFilter()
 ) : AbstractRouter(subscriptionTopicSubscriptionFilter, params.maxGossipMessageSize) {
 
     // The idea behind choosing these specific default values for acceptRequestsWhitelist was
@@ -77,10 +65,10 @@ open class GossipRouter @JvmOverloads constructor(
     private val iWantRequests = createLRUMap<Pair<PeerHandler, MessageId>, Long>(MaxIWantRequestsEntries)
     private val heartbeatTask by lazy {
         executor.scheduleWithFixedDelay(
-            ::catchingHeartbeat,
-            params.heartbeatInterval.toMillis(),
-            params.heartbeatInterval.toMillis(),
-            TimeUnit.MILLISECONDS
+                ::catchingHeartbeat,
+                params.heartbeatInterval.toMillis(),
+                params.heartbeatInterval.toMillis(),
+                TimeUnit.MILLISECONDS
         )
     }
     private val acceptRequestsWhitelist = mutableMapOf<PeerHandler, AcceptRequestsWhitelistEntry>()
@@ -95,7 +83,7 @@ open class GossipRouter @JvmOverloads constructor(
     }
 
     private fun isBackOff(peer: PeerHandler, topic: Topic) =
-        curTimeMillis() < (backoffExpireTimes[peer.peerId to topic] ?: 0)
+            curTimeMillis() < (backoffExpireTimes[peer.peerId to topic] ?: 0)
 
     private fun isBackOffFlood(peer: PeerHandler, topic: Topic): Boolean {
         val expire = backoffExpireTimes[peer.peerId to topic] ?: return false
@@ -127,9 +115,9 @@ open class GossipRouter @JvmOverloads constructor(
     }
 
     override fun notifySeenMessage(
-        peer: PeerHandler,
-        msg: PubsubMessage,
-        validationResult: Optional<ValidationResult>
+            peer: PeerHandler,
+            msg: PubsubMessage,
+            validationResult: Optional<ValidationResult>
     ) {
         score.notifySeenMessage(peer, msg, validationResult)
         notifyAnyMessage(peer, msg)
@@ -187,8 +175,8 @@ open class GossipRouter @JvmOverloads constructor(
         val curTime = curTimeMillis()
         val whitelistEntry = acceptRequestsWhitelist[peer]
         if (whitelistEntry != null &&
-            curTime <= whitelistEntry.whitelistedTill &&
-            whitelistEntry.messagesAccepted < acceptRequestsWhitelistMaxMessages
+                curTime <= whitelistEntry.whitelistedTill &&
+                whitelistEntry.messagesAccepted < acceptRequestsWhitelistMaxMessages
         ) {
 
             acceptRequestsWhitelist[peer] = whitelistEntry.incrementMessageCount()
@@ -198,7 +186,7 @@ open class GossipRouter @JvmOverloads constructor(
         val peerScore = score.score(peer)
         if (peerScore >= acceptRequestsWhitelistThresholdScore) {
             acceptRequestsWhitelist[peer] =
-                AcceptRequestsWhitelistEntry(curTime + acceptRequestsWhitelistDuration.toMillis())
+                    AcceptRequestsWhitelistEntry(curTime + acceptRequestsWhitelistDuration.toMillis())
         } else {
             acceptRequestsWhitelist -= peer
         }
@@ -208,13 +196,13 @@ open class GossipRouter @JvmOverloads constructor(
 
     override fun validateMessageListLimits(msg: Rpc.RPC): Boolean {
         return params.maxPublishedMessages?.let { msg.publishCount <= it } ?: true &&
-            params.maxTopicsPerPublishedMessage?.let { msg.publishList.none { m -> m.topicIDsCount > it } } ?: true &&
-            params.maxSubscriptions?.let { msg.subscriptionsCount <= it } ?: true &&
-            params.maxIHaveLength.let { countIHaveMessageIds(msg) <= it } &&
-            params.maxIWantMessageIds?.let { countIWantMessageIds(msg) <= it } ?: true &&
-            params.maxGraftMessages?.let { msg.control?.graftCount ?: 0 <= it } ?: true &&
-            params.maxPruneMessages?.let { msg.control?.pruneCount ?: 0 <= it } ?: true &&
-            params.maxPeersPerPruneMessage?.let { msg.control?.pruneList?.none { p -> p.peersCount > it } } ?: true
+                params.maxTopicsPerPublishedMessage?.let { msg.publishList.none { m -> m.topicIDsCount > it } } ?: true &&
+                params.maxSubscriptions?.let { msg.subscriptionsCount <= it } ?: true &&
+                params.maxIHaveLength.let { countIHaveMessageIds(msg) <= it } &&
+                params.maxIWantMessageIds?.let { countIWantMessageIds(msg) <= it } ?: true &&
+                params.maxGraftMessages?.let { msg.control?.graftCount ?: 0 <= it } ?: true &&
+                params.maxPruneMessages?.let { msg.control?.pruneCount ?: 0 <= it } ?: true &&
+                params.maxPeersPerPruneMessage?.let { msg.control?.pruneList?.none { p -> p.peersCount > it } } ?: true
     }
 
     private fun countIWantMessageIds(msg: Rpc.RPC): Int {
@@ -293,8 +281,8 @@ open class GossipRouter @JvmOverloads constructor(
         }
 
         val iWant = msg.messageIDsList
-            .map { it.toWBytes() }
-            .filterNot { seenMessages.isSeen(it) }
+                .map { it.toWBytes() }
+                .filterNot { seenMessages.isSeen(it) }
         val maxToAsk = min(iWant.size, params.maxIHaveLength - asked.get())
         asked.addAndGet(maxToAsk)
         iWant(peer, iWant.shuffled(random).subList(0, maxToAsk))
@@ -304,17 +292,17 @@ open class GossipRouter @JvmOverloads constructor(
         val peerScore = score.score(peer)
         if (peerScore < score.params.gossipThreshold) return
         msg.messageIDsList
-            .mapNotNull { mCache.getMessageForPeer(peer.peerId, it.toWBytes()) }
-            .filter { it.sentCount < params.gossipRetransmission }
-            .map { it.msg }
-            .forEach { submitPublishMessage(peer, it) }
+                .mapNotNull { mCache.getMessageForPeer(peer.peerId, it.toWBytes()) }
+                .filter { it.sentCount < params.gossipRetransmission }
+                .map { it.msg }
+                .forEach { submitPublishMessage(peer, it) }
     }
 
     private fun processPrunePeers(peersList: List<Rpc.PeerInfo>) {
         peersList.shuffled(random).take(params.maxPrunePeers)
-            .map { PeerId(it.peerID.toByteArray()) to it.signedPeerRecord.toByteArray() }
-            .filter { (id, _) -> !isConnected(id) }
-            .forEach { (id, record) -> params.connectCallback(id, record) }
+                .map { PeerId(it.peerID.toByteArray()) to it.signedPeerRecord.toByteArray() }
+                .filter { (id, _) -> !isConnected(id) }
+                .forEach { (id, record) -> params.connectCallback(id, record) }
     }
 
     override fun processControl(ctrl: Rpc.ControlMessage, receivedFrom: PeerHandler) {
@@ -326,12 +314,12 @@ open class GossipRouter @JvmOverloads constructor(
     override fun broadcastInbound(msgs: List<PubsubMessage>, receivedFrom: PeerHandler) {
         msgs.forEach { pubMsg ->
             pubMsg.topics
-                .mapNotNull { mesh[it] }
-                .flatten()
-                .distinct()
-                .plus(getDirectPeers())
-                .filter { it != receivedFrom }
-                .forEach { submitPublishMessage(it, pubMsg) }
+                    .mapNotNull { mesh[it] }
+                    .flatten()
+                    .distinct()
+                    .plus(getDirectPeers())
+                    .filter { it != receivedFrom }
+                    .forEach { submitPublishMessage(it, pubMsg) }
             mCache += pubMsg
         }
         flushAllPending()
@@ -341,21 +329,22 @@ open class GossipRouter @JvmOverloads constructor(
         msg.topics.forEach { lastPublished[it] = curTimeMillis() }
 
         val peers =
-            if (params.floodPublish) {
-                msg.topics
-                    .flatMap { getTopicPeers(it) }
-                    .filter { score.score(it) >= score.params.publishThreshold }
-                    .plus(getDirectPeers())
-            } else {
-                msg.topics
-                    .mapNotNull { topic ->
-                        mesh[topic] ?: fanout[topic] ?: getTopicPeers(topic).shuffled(random).take(params.D)
-                            .also {
-                                if (it.isNotEmpty()) fanout[topic] = it.toMutableSet()
+                if (params.floodPublish) {
+                    msg.topics
+                            .flatMap { getTopicPeers(it) }
+                            .filter { score.score(it) >= score.params.publishThreshold }
+                            .plus(getDirectPeers())
+                } else {
+                    msg.topics
+                            .mapNotNull { topic ->
+                                mesh[topic] ?: fanout[topic]
+                                ?: getTopicPeers(topic).shuffled(random).take(params.D)
+                                        .also {
+                                            if (it.isNotEmpty()) fanout[topic] = it.toMutableSet()
+                                        }
                             }
-                    }
-                    .flatten()
-            }
+                            .flatten()
+                }
         val list = peers.map { submitPublishMessage(it, msg) }
 
         mCache += msg
@@ -366,16 +355,16 @@ open class GossipRouter @JvmOverloads constructor(
     override fun subscribe(topic: Topic) {
         super.subscribe(topic)
         val fanoutPeers = (fanout[topic] ?: mutableSetOf())
-            .filter { score.score(it) >= 0 && !isDirect(it) }
+                .filter { score.score(it) >= 0 && !isDirect(it) }
         val meshPeers = mesh.getOrPut(topic) { mutableSetOf() }
         val otherPeers = (getTopicPeers(topic) - meshPeers - fanoutPeers)
-            .filter { score.score(it) >= 0 && !isDirect(it) }
+                .filter { score.score(it) >= 0 && !isDirect(it) }
 
         if (meshPeers.size < params.D) {
             val addFromFanout = fanoutPeers.shuffled(random)
-                .take(params.D - meshPeers.size)
+                    .take(params.D - meshPeers.size)
             val addFromOthers = otherPeers.shuffled(random)
-                .take(params.D - meshPeers.size - addFromFanout.size)
+                    .take(params.D - meshPeers.size - addFromFanout.size)
 
             (addFromFanout + addFromOthers).forEach {
                 graft(it, topic)
@@ -407,7 +396,7 @@ open class GossipRouter @JvmOverloads constructor(
         val staleIWantTime = this.curTimeMillis() - params.iWantFollowupTime.toMillis()
         iWantRequests.entries.removeIf { (key, time) ->
             (time < staleIWantTime)
-                .whenTrue { notifyIWantTimeout(key.first, key.second) }
+                    .whenTrue { notifyIWantTimeout(key.first, key.second) }
         }
 
         try {
@@ -415,28 +404,28 @@ open class GossipRouter @JvmOverloads constructor(
 
                 // drop underscored peers from mesh
                 peers.filter { score.score(it) < 0 }
-                    .forEach { prune(it, topic) }
+                        .forEach { prune(it, topic) }
 
                 if (peers.size < params.DLow) {
                     // need more mesh peers
                     (getTopicPeers(topic) - peers)
-                        .filter { score.score(it) >= 0 && !isDirect(it) && !isBackOff(it, topic) }
-                        .shuffled(random)
-                        .take(params.D - peers.size)
-                        .forEach { graft(it, topic) }
+                            .filter { score.score(it) >= 0 && !isDirect(it) && !isBackOff(it, topic) }
+                            .shuffled(random)
+                            .take(params.D - peers.size)
+                            .forEach { graft(it, topic) }
                 } else if (peers.size > params.DHigh) {
                     // too many mesh peers
                     val sortedPeers = peers
-                        .shuffled(random)
-                        .sortedBy { score.score(it) }
-                        .reversed()
+                            .shuffled(random)
+                            .sortedBy { score.score(it) }
+                            .reversed()
 
                     val bestDPeers = sortedPeers.take(params.DScore)
                     val restPeers = sortedPeers.drop(params.DScore).shuffled(random)
                     val outboundCount = (bestDPeers + restPeers).take(params.D).count { it.isOutbound() }
                     val outPeers = restPeers
-                        .filter { it.isOutbound() }
-                        .take(max(0, params.DOut - outboundCount))
+                            .filter { it.isOutbound() }
+                            .take(max(0, params.DOut - outboundCount))
 
                     val toDropPeers = (outPeers + bestDPeers + restPeers).drop(params.D)
                     toDropPeers.forEach { prune(it, topic) }
@@ -445,19 +434,19 @@ open class GossipRouter @JvmOverloads constructor(
                 // keep outbound peers > DOut
                 val outboundCount = peers.count { it.isOutbound() }
                 (getTopicPeers(topic) - peers)
-                    .filter { it.isOutbound() && score.score(it) >= 0 && !isDirect(it) && !isBackOff(it, topic) }
-                    .shuffled(random)
-                    .take(max(0, params.DOut - outboundCount))
-                    .forEach { graft(it, topic) }
+                        .filter { it.isOutbound() && score.score(it) >= 0 && !isDirect(it) && !isBackOff(it, topic) }
+                        .shuffled(random)
+                        .take(max(0, params.DOut - outboundCount))
+                        .forEach { graft(it, topic) }
 
                 // opportunistic grafting
                 if (heartbeatsCount % params.opportunisticGraftTicks == 0 && peers.size > 1) {
                     val scoreMedian = peers.map { score.score(it) }.median()
                     if (scoreMedian < scoreParams.opportunisticGraftThreshold) {
                         (getTopicPeers(topic) - peers)
-                            .filter { score.score(it) > scoreMedian && !isDirect(it) && !isBackOff(it, topic) }
-                            .take(params.opportunisticGraftPeers)
-                            .forEach { graft(it, topic) }
+                                .filter { score.score(it) > scoreMedian && !isDirect(it) && !isBackOff(it, topic) }
+                                .take(params.opportunisticGraftPeers)
+                                .forEach { graft(it, topic) }
                     }
                 }
 
@@ -470,15 +459,15 @@ open class GossipRouter @JvmOverloads constructor(
                 val needMore = params.D - peers.size
                 if (needMore > 0) {
                     peers += (getTopicPeers(topic) - peers)
-                        .filter { score.score(it) >= scoreParams.publishThreshold && !isDirect(it) }
-                        .shuffled(random)
-                        .take(needMore)
+                            .filter { score.score(it) >= scoreParams.publishThreshold && !isDirect(it) }
+                            .shuffled(random)
+                            .take(needMore)
                 }
                 emitGossip(topic, peers)
             }
             lastPublished.entries.removeIf { (topic, lastPub) ->
                 (curTimeMillis() - lastPub > params.fanoutTTL.toMillis())
-                    .whenTrue { fanout.remove(topic) }
+                        .whenTrue { fanout.remove(topic) }
             }
 
             mCache.shift()
@@ -495,11 +484,11 @@ open class GossipRouter @JvmOverloads constructor(
 
         val shuffledMessageIds = ids.shuffled(random).take(params.maxIHaveLength)
         val peers = (getTopicPeers(topic) - excludePeers)
-            .filter { score.score(it) >= score.params.gossipThreshold && !isDirect(it) }
+                .filter { score.score(it) >= score.params.gossipThreshold && !isDirect(it) }
 
         peers.shuffled(random)
-            .take(max((params.gossipFactor * peers.size).toInt(), params.DLazy))
-            .forEach { enqueueIhave(it, shuffledMessageIds) }
+                .take(max((params.gossipFactor * peers.size).toInt(), params.DLazy))
+                .forEach { enqueueIhave(it, shuffledMessageIds) }
     }
 
     private fun graft(peer: PeerHandler, topic: Topic) {
@@ -519,7 +508,7 @@ open class GossipRouter @JvmOverloads constructor(
     private fun iWant(peer: PeerHandler, messageIds: List<MessageId>) {
         if (messageIds.isEmpty()) return
         messageIds[random.nextInt(messageIds.size)]
-            .also { iWantRequests[peer to it] = curTimeMillis() }
+                .also { iWantRequests[peer to it] = curTimeMillis() }
         enqueueIwant(peer, messageIds)
     }
 
@@ -529,55 +518,55 @@ open class GossipRouter @JvmOverloads constructor(
             // add v1.1 specific fields
             pruneBuilder.backoff = params.pruneBackoff.seconds
             (getTopicPeers(topic) - peer)
-                .filter { score.score(it) >= 0 }
-                .forEach {
-                    pruneBuilder.addPeers(
-                        Rpc.PeerInfo.newBuilder()
-                            .setPeerID(it.peerId.bytes.toProtobuf())
-                        // TODO skipping address record for now
-                    )
-                }
+                    .filter { score.score(it) >= 0 }
+                    .forEach {
+                        pruneBuilder.addPeers(
+                                Rpc.PeerInfo.newBuilder()
+                                        .setPeerID(it.peerId.bytes.toProtobuf())
+                                // TODO skipping address record for now
+                        )
+                    }
         }
         addPendingRpcPart(
-            peer,
-            Rpc.RPC.newBuilder().setControl(
-                Rpc.ControlMessage.newBuilder().addPrune(
-                    pruneBuilder
-                )
-            ).build()
+                peer,
+                Rpc.RPC.newBuilder().setControl(
+                        Rpc.ControlMessage.newBuilder().addPrune(
+                                pruneBuilder
+                        )
+                ).build()
         )
     }
 
     private fun enqueueGraft(peer: PeerHandler, topic: Topic) = addPendingRpcPart(
-        peer,
-        Rpc.RPC.newBuilder().setControl(
-            Rpc.ControlMessage.newBuilder().addGraft(
-                Rpc.ControlGraft.newBuilder().setTopicID(topic)
-            )
-        ).build()
+            peer,
+            Rpc.RPC.newBuilder().setControl(
+                    Rpc.ControlMessage.newBuilder().addGraft(
+                            Rpc.ControlGraft.newBuilder().setTopicID(topic)
+                    )
+            ).build()
     )
 
     private fun enqueueIwant(peer: PeerHandler, messageIds: List<MessageId>) {
         if (messageIds.isNotEmpty()) {
             addPendingRpcPart(
-                peer,
-                Rpc.RPC.newBuilder().setControl(
-                    Rpc.ControlMessage.newBuilder().addIwant(
-                        Rpc.ControlIWant.newBuilder().addAllMessageIDs(messageIds.map { it.toProtobuf() })
-                    )
-                ).build()
+                    peer,
+                    Rpc.RPC.newBuilder().setControl(
+                            Rpc.ControlMessage.newBuilder().addIwant(
+                                    Rpc.ControlIWant.newBuilder().addAllMessageIDs(messageIds.map { it.toProtobuf() })
+                            )
+                    ).build()
             )
         }
     }
 
     private fun enqueueIhave(peer: PeerHandler, messageIds: List<MessageId>) {
         addPendingRpcPart(
-            peer,
-            Rpc.RPC.newBuilder().setControl(
-                Rpc.ControlMessage.newBuilder().addIhave(
-                    Rpc.ControlIHave.newBuilder().addAllMessageIDs(messageIds.map { it.toProtobuf() })
-                )
-            ).build()
+                peer,
+                Rpc.RPC.newBuilder().setControl(
+                        Rpc.ControlMessage.newBuilder().addIhave(
+                                Rpc.ControlIHave.newBuilder().addAllMessageIDs(messageIds.map { it.toProtobuf() })
+                        )
+                ).build()
         )
     }
 

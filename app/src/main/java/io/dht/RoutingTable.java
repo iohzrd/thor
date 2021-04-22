@@ -16,10 +16,9 @@ import io.libp2p.core.PeerId;
 public class RoutingTable {
 
     private static final String TAG = RoutingTable.class.getSimpleName();
+    public final long maxLatency = Duration.ofMinutes(1).toMillis();
     private final ID local;  // ID of the local peer
     private final ConcurrentHashMap<Integer, Bucket> buckets = new ConcurrentHashMap<>();
-
-    public final long maxLatency = Duration.ofMinutes(1).toMillis();
     private final int bucketSize;
     private final Metrics metrics;
 

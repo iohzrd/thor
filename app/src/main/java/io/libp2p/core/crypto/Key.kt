@@ -15,18 +15,7 @@ package io.libp2p.core.crypto
 import com.google.protobuf.ByteString
 import crypto.pb.Crypto
 import io.libp2p.core.BadKeyTypeException
-import io.libp2p.crypto.keys.generateEcdsaKeyPair
-import io.libp2p.crypto.keys.generateEd25519KeyPair
-import io.libp2p.crypto.keys.generateRsaKeyPair
-import io.libp2p.crypto.keys.generateSecp256k1KeyPair
-import io.libp2p.crypto.keys.unmarshalEcdsaPrivateKey
-import io.libp2p.crypto.keys.unmarshalEcdsaPublicKey
-import io.libp2p.crypto.keys.unmarshalEd25519PrivateKey
-import io.libp2p.crypto.keys.unmarshalEd25519PublicKey
-import io.libp2p.crypto.keys.unmarshalRsaPrivateKey
-import io.libp2p.crypto.keys.unmarshalRsaPublicKey
-import io.libp2p.crypto.keys.unmarshalSecp256k1PrivateKey
-import io.libp2p.crypto.keys.unmarshalSecp256k1PublicKey
+import io.libp2p.crypto.keys.*
 import java.security.SecureRandom
 import crypto.pb.Crypto.PrivateKey as PbPrivateKey
 import crypto.pb.Crypto.PublicKey as PbPublicKey
@@ -150,11 +139,11 @@ fun unmarshalPublicKey(data: ByteArray): PubKey {
  * @return the protobuf bytes.
  */
 fun marshalPublicKey(pubKey: PubKey): ByteArray =
-    PbPublicKey.newBuilder()
-        .setType(pubKey.keyType)
-        .setData(ByteString.copyFrom(pubKey.raw()))
-        .build()
-        .toByteArray()
+        PbPublicKey.newBuilder()
+                .setType(pubKey.keyType)
+                .setData(ByteString.copyFrom(pubKey.raw()))
+                .build()
+                .toByteArray()
 
 /**
  * Converts a protobuf serialized private key into its representative object.
@@ -181,8 +170,8 @@ fun unmarshalPrivateKey(data: ByteArray): PrivKey {
  * @return the protobuf bytes.
  */
 fun marshalPrivateKey(privKey: PrivKey): ByteArray =
-    PbPrivateKey.newBuilder()
-        .setType(privKey.keyType)
-        .setData(ByteString.copyFrom(privKey.raw()))
-        .build()
-        .toByteArray()
+        PbPrivateKey.newBuilder()
+                .setType(privKey.keyType)
+                .setData(ByteString.copyFrom(privKey.raw()))
+                .build()
+                .toByteArray()

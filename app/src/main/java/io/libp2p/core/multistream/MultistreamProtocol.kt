@@ -18,7 +18,7 @@ interface MultistreamProtocol {
 interface MultistreamProtocolDebug : MultistreamProtocol {
 
     fun copyWithHandlers(
-        preHandler: P2PChannelHandler<*>? = null,
-        postHandler: P2PChannelHandler<*>? = null
+            preHandler: P2PChannelHandler<*>? = null,
+            postHandler: P2PChannelHandler<*>? = null
     ): MultistreamProtocol
 }

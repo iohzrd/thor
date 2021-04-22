@@ -10,16 +10,16 @@ import io.netty.handler.codec.http.websocketx.WebSocketVersion
 import java.net.URI
 
 internal class WebSocketClientHandshake(
-    private val connectionHandler: ChannelHandler,
-    val url: String
+        private val connectionHandler: ChannelHandler,
+        val url: String
 ) : SimpleChannelInboundHandler<Any>() {
 
     private val handshaker = WebSocketClientHandshakerFactory.newHandshaker(
-        URI(url),
-        WebSocketVersion.V13,
-        null,
-        true,
-        DefaultHttpHeaders()
+            URI(url),
+            WebSocketVersion.V13,
+            null,
+            true,
+            DefaultHttpHeaders()
     )
 
     override fun channelActive(ctx: ChannelHandlerContext) {

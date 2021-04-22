@@ -14,10 +14,7 @@ package io.libp2p.mux.mplex
 
 import io.libp2p.core.Libp2pException
 import io.libp2p.mux.MuxFrame
-import io.libp2p.mux.MuxFrame.Flag.CLOSE
-import io.libp2p.mux.MuxFrame.Flag.DATA
-import io.libp2p.mux.MuxFrame.Flag.OPEN
-import io.libp2p.mux.MuxFrame.Flag.RESET
+import io.libp2p.mux.MuxFrame.Flag.*
 
 /**
  * Contains all the permissible values for flags in the <code>mplex</code> protocol.
@@ -34,19 +31,19 @@ object MplexFlags {
     fun isInitiator(mplexFlag: Int) = mplexFlag % 2 == 0
 
     fun toAbstractFlag(mplexFlag: Int): MuxFrame.Flag =
-        when (mplexFlag) {
-            NewStream -> OPEN
-            MessageReceiver, MessageInitiator -> DATA
-            CloseReceiver, CloseInitiator -> CLOSE
-            ResetReceiver, ResetInitiator -> RESET
-            else -> throw Libp2pException("Unknown mplex flag: $mplexFlag")
-        }
+            when (mplexFlag) {
+                NewStream -> OPEN
+                MessageReceiver, MessageInitiator -> DATA
+                CloseReceiver, CloseInitiator -> CLOSE
+                ResetReceiver, ResetInitiator -> RESET
+                else -> throw Libp2pException("Unknown mplex flag: $mplexFlag")
+            }
 
     fun toMplexFlag(abstractFlag: MuxFrame.Flag, initiator: Boolean): Int =
-        when (abstractFlag) {
-            OPEN -> NewStream
-            DATA -> if (initiator) MessageInitiator else MessageReceiver
-            CLOSE -> if (initiator) CloseInitiator else CloseReceiver
-            RESET -> if (initiator) ResetInitiator else ResetReceiver
-        }
+            when (abstractFlag) {
+                OPEN -> NewStream
+                DATA -> if (initiator) MessageInitiator else MessageReceiver
+                CLOSE -> if (initiator) CloseInitiator else CloseReceiver
+                RESET -> if (initiator) ResetInitiator else ResetReceiver
+            }
 }

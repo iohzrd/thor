@@ -6,10 +6,8 @@ import com.google.common.collect.Iterables;
 
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
@@ -32,7 +30,7 @@ public class AddrInfo {
 
     public static AddrInfo create(@NonNull PeerId id, @NonNull Collection<Multiaddr> addresses) {
         AddrInfo addrInfo = new AddrInfo(id);
-        for (Multiaddr ma:addresses) {
+        for (Multiaddr ma : addresses) {
             addrInfo.addAddress(ma);
         }
         return addrInfo;

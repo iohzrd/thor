@@ -1,11 +1,6 @@
 package io.libp2p.core.multistream
 
-import io.libp2p.core.Host
-import io.libp2p.core.Libp2pException
-import io.libp2p.core.P2PChannel
-import io.libp2p.core.P2PChannelHandler
-import io.libp2p.core.PeerId
-import io.libp2p.core.StreamPromise
+import io.libp2p.core.*
 import io.libp2p.core.multiformats.Multiaddr
 import java.util.concurrent.CompletableFuture
 
@@ -36,9 +31,9 @@ interface ProtocolBinding<out TController> {
     @JvmDefault
     fun dial(host: Host, peer: PeerId, vararg addr: Multiaddr): StreamPromise<out TController> {
         return host.newStream(
-            protocolDescriptor.announceProtocols,
-            peer,
-            *addr
+                protocolDescriptor.announceProtocols,
+                peer,
+                *addr
         )
     } // dial
 
@@ -59,7 +54,7 @@ interface ProtocolBinding<out TController> {
         return object : ProtocolBinding<TController> {
             override val protocolDescriptor = ProtocolDescriptor(protocols, srcBinding.protocolDescriptor.protocolMatcher)
             override fun initChannel(ch: P2PChannel, selectedProtocol: String): CompletableFuture<out TController> =
-                srcBinding.initChannel(ch, selectedProtocol)
+                    srcBinding.initChannel(ch, selectedProtocol)
         }
     }
 

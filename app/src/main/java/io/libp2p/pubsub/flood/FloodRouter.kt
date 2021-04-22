@@ -31,8 +31,8 @@ class FloodRouter : AbstractRouter(subscriptionFilter = TopicSubscriptionFilter.
 
     private fun broadcast(msg: PubsubMessage, receivedFrom: PeerHandler?): CompletableFuture<Unit> {
         val sentFutures = getTopicsPeers(msg.topics)
-            .filter { it != receivedFrom }
-            .map { submitPublishMessage(it, msg) }
+                .filter { it != receivedFrom }
+                .map { submitPublishMessage(it, msg) }
         return anyComplete(sentFutures)
     }
 }

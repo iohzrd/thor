@@ -9,19 +9,19 @@ import io.libp2p.core.multistream.ProtocolBinding
  */
 interface SecureChannel : ProtocolBinding<SecureChannel.Session> {
     open class Session(
-        /**
-         * The peer ID of the local peer.
-         */
-        val localId: PeerId,
+            /**
+             * The peer ID of the local peer.
+             */
+            val localId: PeerId,
 
-        /**
-         * The peer ID of the remote peer.
-         */
-        val remoteId: PeerId,
+            /**
+             * The peer ID of the remote peer.
+             */
+            val remoteId: PeerId,
 
-        /**
-         * The public key of the
-         */
-        val remotePubKey: PubKey
+            /**
+             * The public key of the
+             */
+            val remotePubKey: PubKey
     )
 }

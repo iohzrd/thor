@@ -8,8 +8,8 @@ import io.libp2p.etc.util.netty.InboundTrafficLimitHandler
 import java.util.concurrent.CompletableFuture
 
 abstract class ProtocolHandler<TController>(
-    private val initiatorTrafficLimit: Long,
-    private val responderTrafficLimit: Long
+        private val initiatorTrafficLimit: Long,
+        private val responderTrafficLimit: Long
 ) : P2PChannelHandler<TController> {
 
     override fun initChannel(ch: P2PChannel): CompletableFuture<TController> {
@@ -32,10 +32,11 @@ abstract class ProtocolHandler<TController>(
 
     protected open fun initProtocolStream(stream: Stream) {}
 
-    protected open fun onStartInitiator(@Suppress("UNUSED_PARAMETER")stream: Stream): CompletableFuture<TController> {
+    protected open fun onStartInitiator(@Suppress("UNUSED_PARAMETER") stream: Stream): CompletableFuture<TController> {
         throw Libp2pException("This protocol has no initiator")
     }
-    protected open fun onStartResponder(@Suppress("UNUSED_PARAMETER")stream: Stream): CompletableFuture<TController> {
+
+    protected open fun onStartResponder(@Suppress("UNUSED_PARAMETER") stream: Stream): CompletableFuture<TController> {
         throw Libp2pException("This protocol has no responder")
     }
 }

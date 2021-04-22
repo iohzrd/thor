@@ -7,7 +7,7 @@ import io.libp2p.mux.MuxHandler
 import java.util.concurrent.CompletableFuture
 
 open class MplexHandler(
-    override val multistreamProtocol: MultistreamProtocol,
-    ready: CompletableFuture<StreamMuxer.Session>?,
-    inboundStreamHandler: StreamHandler<*>
+        override val multistreamProtocol: MultistreamProtocol,
+        ready: CompletableFuture<StreamMuxer.Session>?,
+        inboundStreamHandler: StreamHandler<*>
 ) : MuxHandler(ready, inboundStreamHandler)

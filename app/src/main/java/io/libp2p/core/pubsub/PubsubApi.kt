@@ -13,7 +13,7 @@ import java.util.function.Function
 import kotlin.random.Random.Default.nextLong
 
 fun createPubsubApi(router: PubsubRouter): PubsubApi =
-    PubsubApiImpl(router)
+        PubsubApiImpl(router)
 
 /**
  * Application message validation result
@@ -76,11 +76,11 @@ interface PubsubSubscriberApi {
      */
     fun subscribe(receiver: Subscriber, vararg topics: Topic): PubsubSubscription {
         return subscribe(
-            Validator {
-                receiver.accept(it)
-                RESULT_VALID
-            },
-            *topics
+                Validator {
+                    receiver.accept(it)
+                    RESULT_VALID
+                },
+                *topics
         )
     }
 
@@ -120,7 +120,7 @@ interface PubsubPublisherApi {
      * is transmitted to at least one peer
      */
     fun publish(data: ByteBuf, vararg topics: Topic): CompletableFuture<Unit> =
-        publishExt(data, null, null, *topics)
+            publishExt(data, null, null, *topics)
 
     /**
      * Extended [publish] method where `from` and `seqId` may be customized
@@ -173,14 +173,17 @@ interface MessageApi {
      * Message body
      */
     val data: ByteBuf
+
     /**
      * Sender identity. Usually it a [PeerId] derived from the sender's public key
      */
     val from: ByteArray?
+
     /**
      * Sequence id for the sender. A pair [from]` + `[seqId] should be globally unique
      */
     val seqId: Long?
+
     /**
      * A set of message topics
      */

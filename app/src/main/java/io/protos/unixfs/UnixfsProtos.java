@@ -14,7 +14,7 @@ public final class UnixfsProtos {
     private static final
     com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
             internal_static_io_protos_unixfs_Metadata_fieldAccessorTable;
-    private static com.google.protobuf.Descriptors.FileDescriptor
+    private static final com.google.protobuf.Descriptors.FileDescriptor
             descriptor;
 
     static {
@@ -705,8 +705,7 @@ public final class UnixfsProtos {
                 if (getFanout()
                         != other.getFanout()) return false;
             }
-            if (!unknownFields.equals(other.unknownFields)) return false;
-            return true;
+            return unknownFields.equals(other.unknownFields);
         }
 
         @java.lang.Override
@@ -841,7 +840,7 @@ public final class UnixfsProtos {
             private static final DataType[] VALUES = values();
             private final int value;
 
-            private DataType(int value) {
+            DataType(int value) {
                 this.value = value;
             }
 
@@ -1114,10 +1113,7 @@ public final class UnixfsProtos {
 
             @java.lang.Override
             public final boolean isInitialized() {
-                if (!hasType()) {
-                    return false;
-                }
-                return true;
+                return hasType();
             }
 
             @java.lang.Override
@@ -1789,8 +1785,7 @@ public final class UnixfsProtos {
                 if (!getMimeType()
                         .equals(other.getMimeType())) return false;
             }
-            if (!unknownFields.equals(other.unknownFields)) return false;
-            return true;
+            return unknownFields.equals(other.unknownFields);
         }
 
         @java.lang.Override

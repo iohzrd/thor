@@ -43,7 +43,7 @@ public class Bucket {
 
         Bucket newbie = new Bucket();
 
-        for (PeerInfo e :  elements()) {
+        for (PeerInfo e : elements()) {
             ID pDhtId = e.getID();
             int peerCPL = Util.CommonPrefixLen(pDhtId, target);
             if (peerCPL > cpl) {
@@ -104,7 +104,8 @@ public class Bucket {
         private final PeerId peerId;
         @NonNull
         private final ID id;
-
+        // if a bucket is full, this peer can be replaced to make space for a new peer.
+        private final boolean replaceable;
         private long latency;
 
         public PeerInfo(@NonNull PeerId peerId, long latency, boolean replaceable) {
@@ -117,9 +118,6 @@ public class Bucket {
         public long getLatency() {
             return latency;
         }
-
-        // if a bucket is full, this peer can be replaced to make space for a new peer.
-        private final boolean replaceable;
 
         public void setLatency(long latency) {
             this.latency = latency;

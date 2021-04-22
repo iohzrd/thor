@@ -192,7 +192,6 @@ public class Query {
             List<AddrInfo> newPeers = queryFn.query(ctx, queryPeer);
 
 
-
             // query successful, try to add to routing table
             dht.peerFound(queryPeer, true);
 

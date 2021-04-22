@@ -6,9 +6,9 @@ import java.util.Set;
 
 import io.core.Closeable;
 import io.core.ClosedException;
-import io.core.TimeoutIssue;
 import io.core.ConnectionIssue;
 import io.core.ProtocolIssue;
+import io.core.TimeoutIssue;
 import io.dht.Routing;
 import io.ipfs.cid.Cid;
 import io.libp2p.core.PeerId;

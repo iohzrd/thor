@@ -5,18 +5,14 @@ import io.libp2p.core.ConnectionClosedException
 import io.libp2p.core.Libp2pException
 import io.libp2p.core.Stream
 import io.libp2p.core.multistream.StrictProtocolBinding
-import io.libp2p.etc.types.completedExceptionally
-import io.libp2p.etc.types.lazyVar
-import io.libp2p.etc.types.toByteArray
-import io.libp2p.etc.types.toByteBuf
-import io.libp2p.etc.types.toHex
+import io.libp2p.etc.types.*
 import io.netty.buffer.ByteBuf
 import java.time.Duration
-import java.util.Collections
-import java.util.Random
+import java.util.*
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import kotlin.collections.set
 
 interface PingController {
     fun ping(): CompletableFuture<Long>
@@ -25,7 +21,7 @@ interface PingController {
 class Ping : PingBinding(PingProtocol())
 
 open class PingBinding(ping: PingProtocol) :
-    StrictProtocolBinding<PingController>("/ipfs/ping/1.0.0", ping)
+        StrictProtocolBinding<PingController>("/ipfs/ping/1.0.0", ping)
 
 class PingTimeoutException : Libp2pException()
 
@@ -72,7 +68,7 @@ open class PingProtocol : ProtocolHandler<PingController>(Long.MAX_VALUE, Long.M
         override fun onMessage(stream: Stream, msg: ByteBuf) {
             val dataS = msg.toByteArray().toHex()
             val (sentT, future) = requests.remove(dataS)
-                ?: throw BadPeerException("Unknown or expired ping data in response: $dataS")
+                    ?: throw BadPeerException("Unknown or expired ping data in response: $dataS")
             future.complete(curTime() - sentT)
         }
 
@@ -97,10 +93,10 @@ open class PingProtocol : ProtocolHandler<PingController>(Long.MAX_VALUE, Long.M
                 requests[dataS] = curTime() to ret
 
                 timeoutScheduler.schedule(
-                    {
-                        requests.remove(dataS)?.second?.completeExceptionally(PingTimeoutException())
-                    },
-                    pingTimeout.toMillis(), TimeUnit.MILLISECONDS
+                        {
+                            requests.remove(dataS)?.second?.completeExceptionally(PingTimeoutException())
+                        },
+                        pingTimeout.toMillis(), TimeUnit.MILLISECONDS
                 )
             }
 

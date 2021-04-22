@@ -25,9 +25,9 @@ class SecIoSecureChannel(private val localKey: PrivKey) : SecureChannel {
         val handshakeComplete = CompletableFuture<SecureChannel.Session>()
 
         listOf(
-            "PacketLenEncoder" to LengthFieldPrepender(4),
-            "PacketLenDecoder" to LengthFieldBasedFrameDecoder(Integer.MAX_VALUE, 0, 4, 0, 4),
-            HandshakeHandlerName to SecIoHandshake(localKey, handshakeComplete)
+                "PacketLenEncoder" to LengthFieldPrepender(4),
+                "PacketLenDecoder" to LengthFieldBasedFrameDecoder(Integer.MAX_VALUE, 0, 4, 0, 4),
+                HandshakeHandlerName to SecIoHandshake(localKey, handshakeComplete)
         ).forEach { ch.pushHandler(it.first, it.second) }
 
         return handshakeComplete
@@ -35,8 +35,8 @@ class SecIoSecureChannel(private val localKey: PrivKey) : SecureChannel {
 } // class SecIoSecureChannel
 
 private class SecIoHandshake(
-    private val localKey: PrivKey,
-    private val handshakeComplete: CompletableFuture<SecureChannel.Session>
+        private val localKey: PrivKey,
+        private val handshakeComplete: CompletableFuture<SecureChannel.Session>
 ) : SimpleChannelInboundHandler<ByteBuf>() {
     private lateinit var negotiator: SecIoNegotiator
     private var activated = false
@@ -47,7 +47,7 @@ private class SecIoHandshake(
             activated = true
             val remotePeerId = ctx.channel().attr(REMOTE_PEER_ID).get()
             negotiator =
-                SecIoNegotiator({ buf -> writeAndFlush(ctx, buf) }, localKey, remotePeerId)
+                    SecIoNegotiator({ buf -> writeAndFlush(ctx, buf) }, localKey, remotePeerId)
             negotiator.start()
         }
     }
@@ -66,9 +66,9 @@ private class SecIoHandshake(
 
         if (negotiator.isComplete()) {
             val session = SecureChannel.Session(
-                PeerId.fromPubKey(secIoCodec.local.permanentPubKey),
-                PeerId.fromPubKey(secIoCodec.remote.permanentPubKey),
-                secIoCodec.remote.permanentPubKey
+                    PeerId.fromPubKey(secIoCodec.local.permanentPubKey),
+                    PeerId.fromPubKey(secIoCodec.remote.permanentPubKey),
+                    secIoCodec.remote.permanentPubKey
             )
             handshakeComplete.complete(session)
             ctx.channel().pipeline().remove(HandshakeHandlerName)

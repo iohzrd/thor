@@ -8,9 +8,9 @@ import io.netty.handler.codec.protobuf.ProtobufVarint32FrameDecoder
 import io.netty.handler.codec.protobuf.ProtobufVarint32LengthFieldPrepender
 
 abstract class ProtobufProtocolHandler<TController>(
-    private val protobufMessagePrototype: MessageLite,
-    initiatorTrafficLimit: Long,
-    responderTrafficLimit: Long
+        private val protobufMessagePrototype: MessageLite,
+        initiatorTrafficLimit: Long,
+        responderTrafficLimit: Long
 ) : ProtocolHandler<TController>(initiatorTrafficLimit, responderTrafficLimit) {
 
     override fun initProtocolStream(stream: Stream) {

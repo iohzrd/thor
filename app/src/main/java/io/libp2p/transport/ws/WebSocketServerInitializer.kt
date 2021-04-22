@@ -9,7 +9,7 @@ import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler
 import io.netty.handler.codec.http.websocketx.extensions.compression.WebSocketServerCompressionHandler
 
 internal class WebSocketServerInitializer(
-    private val connectionBuilder: ChannelHandler
+        private val connectionBuilder: ChannelHandler
 ) : ChannelInitializer<SocketChannel>() {
 
     public override fun initChannel(ch: SocketChannel) {

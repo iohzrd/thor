@@ -65,8 +65,8 @@ fun generateEd25519KeyPair(random: SecureRandom = SecureRandom()): Pair<PrivKey,
     val keypair = generateKeyPair()
     val privateKey = keypair.private as Ed25519PrivateKeyParameters
     Pair(
-        Ed25519PrivateKey(privateKey),
-        Ed25519PublicKey(keypair.public as Ed25519PublicKeyParameters)
+            Ed25519PrivateKey(privateKey),
+            Ed25519PublicKey(keypair.public as Ed25519PublicKeyParameters)
     )
 }
 
@@ -76,7 +76,7 @@ fun generateEd25519KeyPair(random: SecureRandom = SecureRandom()): Pair<PrivKey,
  * @return a private key.
  */
 fun unmarshalEd25519PrivateKey(keyBytes: ByteArray): PrivKey =
-    Ed25519PrivateKey(Ed25519PrivateKeyParameters(keyBytes, 0))
+        Ed25519PrivateKey(Ed25519PrivateKeyParameters(keyBytes, 0))
 
 /**
  * Unmarshals the given key bytes into an ED25519 public key instance.
@@ -84,4 +84,4 @@ fun unmarshalEd25519PrivateKey(keyBytes: ByteArray): PrivKey =
  * @return a public key.
  */
 fun unmarshalEd25519PublicKey(keyBytes: ByteArray): PubKey =
-    Ed25519PublicKey(Ed25519PublicKeyParameters(keyBytes, 0))
+        Ed25519PublicKey(Ed25519PublicKeyParameters(keyBytes, 0))

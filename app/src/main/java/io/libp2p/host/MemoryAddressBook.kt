@@ -3,13 +3,12 @@ package io.libp2p.host
 import io.libp2p.core.AddressBook
 import io.libp2p.core.PeerId
 import io.libp2p.core.multiformats.Multiaddr
-import java.util.*
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 
 class MemoryAddressBook : AddressBook {
     val map =
-        ConcurrentHashMap<PeerId, Collection<Multiaddr>>()
+            ConcurrentHashMap<PeerId, Collection<Multiaddr>>()
 
     override fun getAddrs(id: PeerId): CompletableFuture<Collection<Multiaddr>?> {
         return CompletableFuture.completedFuture(map[id])

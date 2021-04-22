@@ -5,12 +5,7 @@ import io.libp2p.core.PeerId
 import io.libp2p.core.Stream
 import io.libp2p.core.pubsub.RESULT_VALID
 import io.libp2p.core.pubsub.ValidationResult
-import io.libp2p.etc.types.MultiSet
-import io.libp2p.etc.types.completedExceptionally
-import io.libp2p.etc.types.copy
-import io.libp2p.etc.types.forward
-import io.libp2p.etc.types.lazyVarInit
-import io.libp2p.etc.types.toWBytes
+import io.libp2p.etc.types.*
 import io.libp2p.etc.util.P2PServiceSemiDuplex
 import io.libp2p.etc.util.netty.protobuf.LimitedProtobufVarint32FrameDecoder
 import io.netty.channel.ChannelHandler
@@ -19,12 +14,13 @@ import io.netty.handler.codec.protobuf.ProtobufEncoder
 import io.netty.handler.codec.protobuf.ProtobufVarint32LengthFieldPrepender
 import org.apache.logging.log4j.LogManager
 import pubsub.pb.Rpc
+import java.util.*
 import java.util.Collections.singletonList
-import java.util.Optional
-import java.util.Random
 import java.util.concurrent.CompletableFuture
 import java.util.function.BiConsumer
 import java.util.function.Consumer
+import kotlin.collections.HashSet
+import kotlin.collections.set
 
 // 1 MB default max message size
 const val DEFAULT_MAX_PUBSUB_MESSAGE_SIZE = 1 shl 20
@@ -37,8 +33,8 @@ open class DefaultPubsubMessage(override val protobufMessage: Rpc.Message) : Abs
  * Implements common logic for pubsub routers
  */
 abstract class AbstractRouter(
-    val subscriptionFilter: TopicSubscriptionFilter,
-    val maxMsgSize: Int = DEFAULT_MAX_PUBSUB_MESSAGE_SIZE
+        val subscriptionFilter: TopicSubscriptionFilter,
+        val maxMsgSize: Int = DEFAULT_MAX_PUBSUB_MESSAGE_SIZE
 ) : P2PServiceSemiDuplex(), PubsubRouter, PubsubRouterDebug {
     private val logger = LogManager.getLogger(AbstractRouter::class.java)
 
@@ -163,9 +159,9 @@ abstract class AbstractRouter(
 
     override fun onPeerActive(peer: PeerHandler) {
         val helloPubsubMsg = Rpc.RPC.newBuilder().addAllSubscriptions(
-            subscribedTopics.map {
-                Rpc.RPC.SubOpts.newBuilder().setSubscribe(true).setTopicid(it).build()
-            }
+                subscribedTopics.map {
+                    Rpc.RPC.SubOpts.newBuilder().setSubscribe(true).setTopicid(it).build()
+                }
         ).build()
 
         peer.writeAndFlush(helloPubsubMsg)
@@ -193,7 +189,7 @@ abstract class AbstractRouter(
         try {
             val subscriptions = msg.subscriptionsList.map { PubsubSubscription(it.topicid, it.subscribe) }
             subscriptionFilter.filterIncomingSubscriptions(subscriptions, peerTopics[peer])
-                .forEach { handleMessageSubscriptions(peer, it) }
+                    .forEach { handleMessageSubscriptions(peer, it) }
         } catch (e: Exception) {
             logger.debug("Subscription filter error, ignoring message from peer $peer", e)
             return
@@ -204,25 +200,25 @@ abstract class AbstractRouter(
         }
 
         val (msgSubscribed, nonSubscribed) = msg.publishList
-            .partition { it.topicIDsList.any { it in subscribedTopics } }
+                .partition { it.topicIDsList.any { it in subscribedTopics } }
 
         nonSubscribed.forEach { notifyNonSubscribedMessage(peer, it) }
 
         val pMsgSubscribed = msgSubscribed.map { messageFactory(it) }
         val msgUnseen = pMsgSubscribed
-            .filter { subscribedMessage ->
-                val validationResult = seenMessages[subscribedMessage]
-                if (validationResult != null) {
-                    // Message has been seen
-                    notifySeenMessage(peer, seenMessages.getSeenMessage(subscribedMessage), validationResult)
-                    false
-                } else {
-                    // Message is unseen
-                    seenMessages[subscribedMessage] = Optional.empty()
-                    notifyUnseenMessage(peer, subscribedMessage)
-                    true
+                .filter { subscribedMessage ->
+                    val validationResult = seenMessages[subscribedMessage]
+                    if (validationResult != null) {
+                        // Message has been seen
+                        notifySeenMessage(peer, seenMessages.getSeenMessage(subscribedMessage), validationResult)
+                        false
+                    } else {
+                        // Message is unseen
+                        seenMessages[subscribedMessage] = Optional.empty()
+                        notifyUnseenMessage(peer, subscribedMessage)
+                        true
+                    }
                 }
-            }
 
         val msgValid = msgUnseen.filter {
             try {
@@ -243,11 +239,11 @@ abstract class AbstractRouter(
 
         validFuts.forEach { (msg, validationFut) ->
             validationFut.thenAcceptAsync(
-                Consumer { res ->
-                    seenMessages[msg] = Optional.of(res)
-                    if (res == ValidationResult.Invalid) notifyUnseenInvalidMessage(peer, msg)
-                },
-                executor
+                    Consumer { res ->
+                        seenMessages[msg] = Optional.of(res)
+                        if (res == ValidationResult.Invalid) notifyUnseenInvalidMessage(peer, msg)
+                    },
+                    executor
             )
         }
 
@@ -260,25 +256,25 @@ abstract class AbstractRouter(
                 false
             }
         }
-            .map { it.first }
+                .map { it.first }
         newValidatedMessages(validatedMsgs, peer)
         flushAllPending()
 
         // broadcast others on completion
         undone.forEach {
             it.second.whenCompleteAsync(
-                BiConsumer { res, err ->
-                    when {
-                        err != null -> logger.warn("Exception while handling message from peer $peer: ${it.first}", err)
-                        res == ValidationResult.Invalid -> logger.debug("Invalid pubsub message from peer $peer: ${it.first}")
-                        res == ValidationResult.Ignore -> logger.debug("Ingnoring pubsub message from peer $peer: ${it.first}")
-                        else -> {
-                            newValidatedMessages(singletonList(it.first), peer)
-                            flushAllPending()
+                    BiConsumer { res, err ->
+                        when {
+                            err != null -> logger.warn("Exception while handling message from peer $peer: ${it.first}", err)
+                            res == ValidationResult.Invalid -> logger.debug("Invalid pubsub message from peer $peer: ${it.first}")
+                            res == ValidationResult.Ignore -> logger.debug("Ingnoring pubsub message from peer $peer: ${it.first}")
+                            else -> {
+                                newValidatedMessages(singletonList(it.first), peer)
+                                flushAllPending()
+                            }
                         }
-                    }
-                },
-                executor
+                    },
+                    executor
             )
         }
     }
@@ -320,10 +316,10 @@ abstract class AbstractRouter(
     }
 
     protected fun getTopicsPeers(topics: Collection<String>) =
-        activePeers.filter { topics.intersect(peerTopics[it]).isNotEmpty() }
+            activePeers.filter { topics.intersect(peerTopics[it]).isNotEmpty() }
 
     protected fun getTopicPeers(topic: String) =
-        activePeers.filter { topic in peerTopics[it] }
+            activePeers.filter { topic in peerTopics[it] }
 
     override fun subscribe(vararg topics: String) {
         runOnEventThread {
@@ -335,8 +331,8 @@ abstract class AbstractRouter(
     protected open fun subscribe(topic: String) {
         activePeers.forEach {
             addPendingRpcPart(
-                it,
-                Rpc.RPC.newBuilder().addSubscriptions(Rpc.RPC.SubOpts.newBuilder().setSubscribe(true).setTopicid(topic)).build()
+                    it,
+                    Rpc.RPC.newBuilder().addSubscriptions(Rpc.RPC.SubOpts.newBuilder().setSubscribe(true).setTopicid(topic)).build()
             )
         }
         subscribedTopics += topic
@@ -352,8 +348,8 @@ abstract class AbstractRouter(
     protected open fun unsubscribe(topic: String) {
         activePeers.forEach {
             addPendingRpcPart(
-                it,
-                Rpc.RPC.newBuilder().addSubscriptions(Rpc.RPC.SubOpts.newBuilder().setSubscribe(false).setTopicid(topic)).build()
+                    it,
+                    Rpc.RPC.newBuilder().addSubscriptions(Rpc.RPC.SubOpts.newBuilder().setSubscribe(false).setTopicid(topic)).build()
             )
         }
         subscribedTopics -= topic

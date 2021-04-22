@@ -1,7 +1,7 @@
 package io.core;
 
 public class ClosedException extends Exception {
-    public ClosedException(){
+    public ClosedException() {
         super("Context closed");
     }
 }

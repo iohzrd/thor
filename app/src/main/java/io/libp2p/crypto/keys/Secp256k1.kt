@@ -18,19 +18,11 @@ import io.libp2p.core.crypto.PrivKey
 import io.libp2p.core.crypto.PubKey
 import io.libp2p.core.crypto.sha256
 import io.libp2p.crypto.SECP_256K1_ALGORITHM
-import org.bouncycastle.asn1.ASN1InputStream
-import org.bouncycastle.asn1.ASN1Integer
-import org.bouncycastle.asn1.ASN1Primitive
-import org.bouncycastle.asn1.ASN1Sequence
-import org.bouncycastle.asn1.DERSequenceGenerator
+import org.bouncycastle.asn1.*
 import org.bouncycastle.asn1.sec.SECNamedCurves
 import org.bouncycastle.crypto.ec.CustomNamedCurves
 import org.bouncycastle.crypto.generators.ECKeyPairGenerator
-import org.bouncycastle.crypto.params.ECDomainParameters
-import org.bouncycastle.crypto.params.ECKeyGenerationParameters
-import org.bouncycastle.crypto.params.ECPrivateKeyParameters
-import org.bouncycastle.crypto.params.ECPublicKeyParameters
-import org.bouncycastle.crypto.params.ParametersWithRandom
+import org.bouncycastle.crypto.params.*
 import org.bouncycastle.crypto.signers.ECDSASigner
 import org.bouncycastle.math.ec.FixedPointCombMultiplier
 import org.bouncycastle.math.ec.FixedPointUtil
@@ -101,13 +93,13 @@ class Secp256k1PublicKey(private val pub: ECPublicKeyParameters) : PubKey(Crypto
         }
 
         val asn1: ASN1Primitive =
-            ByteArrayInputStream(signature)
-                .use { inStream ->
-                    ASN1InputStream(inStream)
-                        .use { asnInputStream ->
-                            asnInputStream.readObject()
+                ByteArrayInputStream(signature)
+                        .use { inStream ->
+                            ASN1InputStream(inStream)
+                                    .use { asnInputStream ->
+                                        asnInputStream.readObject()
+                                    }
                         }
-                }
 
         val asn1Encodables = (asn1 as ASN1Sequence).toArray().also {
             if (it.size != 2) {
@@ -137,8 +129,8 @@ fun generateSecp256k1KeyPair(random: SecureRandom = SecureRandom()): Pair<PrivKe
 
     val privateKey = keypair.private as ECPrivateKeyParameters
     return Pair(
-        Secp256k1PrivateKey(privateKey),
-        Secp256k1PublicKey(keypair.public as ECPublicKeyParameters)
+            Secp256k1PrivateKey(privateKey),
+            Secp256k1PublicKey(keypair.public as ECPublicKeyParameters)
     )
 }
 
@@ -148,7 +140,7 @@ fun generateSecp256k1KeyPair(random: SecureRandom = SecureRandom()): Pair<PrivKe
  * @return a private key instance.
  */
 fun unmarshalSecp256k1PrivateKey(data: ByteArray): PrivKey =
-    Secp256k1PrivateKey(ECPrivateKeyParameters(BigInteger(1, data), CURVE))
+        Secp256k1PrivateKey(ECPrivateKeyParameters(BigInteger(1, data), CURVE))
 
 /**
  * Unmarshals the given key bytes into a SECP256K1 public key instance.
@@ -156,17 +148,17 @@ fun unmarshalSecp256k1PrivateKey(data: ByteArray): PrivKey =
  * @return a public key instance.
  */
 fun unmarshalSecp256k1PublicKey(data: ByteArray): PubKey =
-    Secp256k1PublicKey(
-        ECPublicKeyParameters(
-            CURVE.curve.decodePoint(data),
-            CURVE
+        Secp256k1PublicKey(
+                ECPublicKeyParameters(
+                        CURVE.curve.decodePoint(data),
+                        CURVE
+                )
         )
-    )
 
 fun secp256k1PublicKeyFromCoordinates(x: BigInteger, y: BigInteger): PubKey =
-    Secp256k1PublicKey(
-        ECPublicKeyParameters(
-            CURVE.curve.createPoint(x, y),
-            CURVE
+        Secp256k1PublicKey(
+                ECPublicKeyParameters(
+                        CURVE.curve.createPoint(x, y),
+                        CURVE
+                )
         )
-    )
