@@ -21,7 +21,10 @@ import java.util.List;
 import java.util.UUID;
 
 import io.LogUtils;
+import io.core.ClosedException;
+import io.core.TimeoutCloseable;
 import io.ipfs.utils.Link;
+import io.ipfs.utils.Progress;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNotNull;
@@ -49,6 +52,35 @@ public class IpfsAddTest {
         return File.createTempFile("temp", ".io.ipfs.cid", context.getCacheDir());
     }
 
+    @Test
+    public void add_dir() throws Exception {
+
+        IPFS ipfs = TestEnv.getTestInstance(context);
+        String dir = ipfs.createEmptyDir();
+        assertNotNull(dir);
+
+        String content = "Hallo";
+        String text = ipfs.storeText(content);
+        assertNotNull(text);
+
+        byte[] data = ipfs.loadData(text, new TimeoutCloseable(1));
+        assertEquals(content, new String(data));
+
+        dir = ipfs.addLinkToDir(dir,"text.txt", text);
+        assertNotNull(dir);
+
+        List<Link> links = ipfs.links(dir, new TimeoutCloseable(1));
+        assertNotNull(links);
+        assertEquals(links.size(), 1);
+
+        dir = ipfs.rmLinkFromDir(dir, "text.txt");
+        assertNotNull(dir);
+
+        links = ipfs.links(dir, new TimeoutCloseable(1));
+        assertNotNull(links);
+        assertEquals(links.size(), 0);
+
+    }
     @Test
     public void add_wrap_test() throws Exception {
 

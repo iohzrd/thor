@@ -7,9 +7,9 @@ import java.util.Set;
 
 import io.core.Closeable;
 import io.core.ClosedException;
-import io.core.TimeoutIssue;
 import io.core.ConnectionIssue;
 import io.core.ProtocolIssue;
+import io.core.TimeoutIssue;
 import io.dht.Routing;
 import io.ipfs.bitswap.BitSwapMessage;
 import io.ipfs.bitswap.BitSwapNetwork;
@@ -37,24 +37,21 @@ public class LiteHost implements BitSwapNetwork {
     private final Metrics metrics;
 
 
-    private LiteHost(@NonNull Host host,
-                     @NonNull Metrics metrics,
+    private LiteHost(@NonNull Host host, @NonNull Metrics metrics,
                      @NonNull Routing routing) {
         this.host = host;
         this.metrics = metrics;
         this.routing = routing;
     }
 
-    public static BitSwapNetwork NewLiteHost(@NonNull Host host,
-                                             @NonNull Metrics metrics,
-                                             @NonNull Routing routing) {
+    public static BitSwapNetwork create(@NonNull Host host, @NonNull Metrics metrics,
+                                        @NonNull Routing routing) {
         return new LiteHost(host, metrics, routing);
     }
 
     @Override
     public boolean ConnectTo(@NonNull Closeable closeable, @NonNull PeerId peerId)
             throws ClosedException, ConnectionIssue {
-
 
         return HostBuilder.connect(closeable, host, peerId) != null;
     }
@@ -85,6 +82,11 @@ public class LiteHost implements BitSwapNetwork {
         Connection con = HostBuilder.connect(closeable, host, peer);
         try {
             synchronized (peer.toBase58().intern()) {
+
+                if(closeable.isClosed()){
+                    throw new ClosedException();
+                }
+
                 metrics.active(peer);
                 Object object = HostBuilder.stream(closeable, host, IPFS.ProtocolBitswap, con);
 
@@ -94,9 +96,7 @@ public class LiteHost implements BitSwapNetwork {
         } catch (ClosedException exception) {
             throw exception;
         } catch (Throwable throwable) {
-            if (closeable.isClosed()) {
-                throw new ClosedException();
-            }
+
             Throwable cause = throwable.getCause();
             if (cause != null) {
                 if (cause instanceof NoSuchRemoteProtocolException) {

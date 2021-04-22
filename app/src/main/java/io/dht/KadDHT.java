@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -134,6 +135,7 @@ public class KadDHT implements Routing {
         runLookupWithFollowup(ctx, key, (ctx1, p) -> {
 
             Dht.Message pms = findPeerSingle(ctx1, p, key);
+
             List<AddrInfo> peers = evalClosestPeers(pms);
 
             for (AddrInfo addrInfo : peers) {
@@ -175,7 +177,7 @@ public class KadDHT implements Routing {
                 } catch (ClosedException closedException) {
                     throw closedException;
                 } catch (Throwable throwable) {
-                    LogUtils.error(TAG, "PutValue Error " + throwable.getMessage());
+                    LogUtils.error(TAG, "PutValue Error " + throwable.getClass().getName());
                 }
             }
         });
@@ -332,9 +334,6 @@ public class KadDHT implements Routing {
         } catch (ClosedException exception) {
             throw exception;
         } catch (Throwable throwable) {
-            if (closeable.isClosed()) {
-                throw new ClosedException();
-            }
             throw new RuntimeException(throwable);
         } finally {
             metrics.done(p);
@@ -354,7 +353,19 @@ public class KadDHT implements Routing {
                 Object object = HostBuilder.stream(closeable, host, KadDHT.Protocol, con);
 
                 DhtProtocol.DhtController dhtController = (DhtProtocol.DhtController) object;
-                Dht.Message response = dhtController.sendRequest(message).get();
+                CompletableFuture<Dht.Message> ctrl = dhtController.sendRequest(message);
+
+
+                while (!ctrl.isDone()) {
+                    if (closeable.isClosed()) {
+                        ctrl.cancel(true);
+                    }
+                }
+
+                if (closeable.isClosed()) {
+                    throw new ClosedException();
+                }
+                Dht.Message response = ctrl.get();
 
                 metrics.addLatency(p, System.currentTimeMillis() - start);
 
@@ -363,10 +374,6 @@ public class KadDHT implements Routing {
         } catch (ClosedException exception) {
             throw exception;
         } catch (Throwable throwable) {
-            if (closeable.isClosed()) {
-                throw new ClosedException();
-            }
-
             Throwable cause = throwable.getCause();
             if (cause != null) {
                 LogUtils.info(TAG, cause.getClass().getSimpleName());
@@ -446,6 +453,7 @@ public class KadDHT implements Routing {
         LookupWithFollowupResult lookupRes = runLookupWithFollowup(closeable, key,
                 (ctx, p) -> {
                     Dht.Message pms = findPeerSingle(ctx, p, id.getBytes());
+
                     return evalClosestPeers(pms);
                 }, () -> closeable.isClosed() || HostBuilder.isConnected(host, id));
 
@@ -558,6 +566,7 @@ public class KadDHT implements Routing {
 
 
         Dht.Message pms = getValueSingle(ctx, p, key);
+
         List<AddrInfo> peers = evalClosestPeers(pms);
 
         if (pms.hasRecord()) {

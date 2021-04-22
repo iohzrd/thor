@@ -15,17 +15,16 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -93,11 +92,10 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
     public static final String INDEX_HTML = "index.html";
     public static final int PRELOAD = 25;
     public static final int PRELOAD_DIST = 5;
-    public static final int WRITE_TIMEOUT = 60;
     public static final String AGENT = "/go-ipfs/0.9.0/thor"; // todo rename
     public static final String PROTOCOL_VERSION = "ipfs/0.1.0";  // todo check again
     public static final int TIMEOUT_BOOTSTRAP = 5;
-    public static final long TIMEOUT_DHT_PEER = 3;
+    public static final long TIMEOUT_PUSH = 3;
     public static final int LOW_WATER = 50;
     public static final int HIGH_WATER = 300;
     public static final int GRACE_PERIOD = 10;
@@ -117,7 +115,6 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
     // IPFS BOOTSTRAP
     @NonNull
     public static final List<String> IPFS_BOOTSTRAP_NODES = new ArrayList<>(Arrays.asList(
-            "/ip4/147.75.80.110/tcp/4001/p2p/QmbFgm5zan8P6eWWmeyfncR5feYEMPbht5b1FW1C37aQ7y", // default relay  libp2p
             "/ip4/147.75.195.153/tcp/4001/p2p/QmW9m57aiBDHAkKj9nmFSEn7ZqrcF1fZS4bipsTCHburei",// default relay  libp2p
             "/ip4/147.75.70.221/tcp/4001/p2p/Qme8g49gm3q4Acp7xWBKg3nAa9fxZ1YmyDJdyGgoG6LsXh",// default relay  libp2p
 
@@ -159,7 +156,6 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
     private static final String PREF_KEY = "prefKey";
     private static final String PID_KEY = "pidKey";
     private static final String SWARM_PORT_KEY = "swarmPortKey";
-    private static final String PUBLIC_KEY = "publicKey";
     private static final String PRIVATE_KEY = "privateKey";
     private static final String CONCURRENCY_KEY = "concurrencyKey";
     private static final String TAG = IPFS.class.getSimpleName();
@@ -176,86 +172,13 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
     private boolean running;
     private final int port;
     private final ConnectionManager connectionManager;
-
-
-
-    private IPFS(@NonNull Context context) throws Exception {
-
-        blocks = BLOCKS.getInstance(context);
-
-
-        if (getPrivateKey(context).isEmpty()) {
-            kotlin.Pair<PrivKey, PubKey> keys = KeyKt.generateKeyPair(KEY_TYPE.ED25519);
-            Base64.Encoder encoder =  Base64.getEncoder();
-            setPrivateKey(context, encoder.encodeToString(keys.getFirst().bytes()));
-        }
-        /* TODO
-
-        node.setAgent(AGENT);
-        node.setPushing(false);
-        node.setResponsive(200);
-        node.setEnableReachService(false);*/
-
-        int checkPort = getSwarmPort(context);
-        if( isLocalPortFree(checkPort) ){
-            port = checkPort;
-        } else {
-            port = nextFreePort();
-        }
-        byte[] data = Base64.getDecoder().decode(getPrivateKey(context));
-        privateKey = Ed25519Kt.unmarshalEd25519PrivateKey(data);
-
-
-        // TODO shit not really working for IPv6 and IPv4
-        // best would be that just the port is given
-        // together with the transport the services can
-        // be run (anouncing the public adderesses to other KAD
-        // should be done dynamacially with information
-        // from other peers
-        //String address = HostBuilder.getLocalIpAddress();
-
-        //  TODO QUIC and IPV6
-        host = new HostBuilder()
-                .protocol(new Identify(), new DhtProtocol(),
-                        new BitSwapProtocol(this, ProtocolBitswap))
-                .identity(privateKey)
-                .transport(TcpTransport::new) // TODO QUIC Transport when available
-                .secureChannel(NoiseXXSecureChannel::new, SecIoSecureChannel::new) // TODO add TLS when available, and remove Secio
-                .muxer(StreamMuxerProtocol::getMplex)
-                .listen("/ip4/0.0.0.0/tcp/" + port /*,,
-                        "/ip4/0.0.0.0/udp/" + port+ "/quic"
-                        "/ip6/::/tcp/"+ port,
-                        "/ip4/0.0.0.0/udp/"+port+"/quic",
-                        "/ip6/::/udp/"+port+"/quic"*/)
-                .build();
-
-        int alpha = getConcurrencyValue(context);
-
-        this.connectionManager = new ConnectionManager(host, LOW_WATER, HIGH_WATER, GRACE_PERIOD);
-        this.routing = new KadDHT(host, connectionManager,
-                new Ipns(), alpha, IPFS.KAD_DHT_BETA,
-                IPFS.KAD_DHT_BUCKET_SIZE);
-
-
-        BitSwapNetwork bsm = LiteHost.NewLiteHost(host, connectionManager, routing);
-        BlockStore blockstore = BlockStore.NewBlockstore(blocks);
-
-        this.exchange = BitSwap.New(bsm, blockstore);
-        host.start().get();
-        running = true;
-
-        setPeerID(context, getPeerID());
-
-        if(IPFS.CONNECTION_SERVICE_ENABLED){
-            host.addConnectionHandler(conn -> connected(conn.secureSession().getRemoteId()));
-        }
-
-    }
+    private final Set<PeerId> swarm = ConcurrentHashMap.newKeySet();
 
     @NonNull
     public List<Multiaddr> listenAddresses(){
         return HostBuilder.listenAddresses(host);
     }
+
     public int getPort(){
         return port;
     }
@@ -294,7 +217,6 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
         List<String> peers = new ArrayList<>();
         if (isDaemonRunning()) {
             try {
-
                 for (Connection connection : host.getNetwork().getConnections()) {
                     peers.add(connection.secureSession().getRemoteId().toBase58()); // TODO return PeerId
                 }
@@ -493,30 +415,77 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
 
     }
 
-    @Nullable
-    public byte[] loadData(@NonNull String cid, @NonNull Closeable closeable) throws Exception {
-        if (!isDaemonRunning()) {
-            return null;
+    private IPFS(@NonNull Context context) throws Exception {
+
+        blocks = BLOCKS.getInstance(context);
+
+
+        if (getPrivateKey(context).isEmpty()) {
+            kotlin.Pair<PrivKey, PubKey> keys = KeyKt.generateKeyPair(KEY_TYPE.ED25519);
+            Base64.Encoder encoder =  Base64.getEncoder();
+            setPrivateKey(context, encoder.encodeToString(keys.getFirst().bytes()));
         }
-        try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
-            storeToOutputStream(outputStream, new Progress() {
-                @Override
-                public void setProgress(int progress) {
+        /* TODO
 
-                }
+        node.setAgent(AGENT);
+        node.setPushing(false);
+        node.setEnableReachService(false);*/
 
-                @Override
-                public boolean doProgress() {
-                    return false;
-                }
-
-                @Override
-                public boolean isClosed() {
-                    return closeable.isClosed();
-                }
-            }, cid);
-            return outputStream.toByteArray();
+        int checkPort = getSwarmPort(context);
+        if( isLocalPortFree(checkPort) ){
+            port = checkPort;
+        } else {
+            port = nextFreePort();
         }
+        byte[] data = Base64.getDecoder().decode(getPrivateKey(context));
+        privateKey = Ed25519Kt.unmarshalEd25519PrivateKey(data);
+
+
+        // TODO shit not really working for IPv6 and IPv4
+        // best would be that just the port is given
+        // together with the transport the services can
+        // be run (anouncing the public adderesses to other KAD
+        // should be done dynamacially with information
+        // from other peers
+        //String address = HostBuilder.getLocalIpAddress();
+
+        //  TODO QUIC and IPV6
+        // TODO set AGENT and PROTOCOL_VERSION
+        host = new HostBuilder()
+                .protocol(new Identify(), new DhtProtocol(),
+                        new BitSwapProtocol(this, ProtocolBitswap))
+                .identity(privateKey)
+                .transport(TcpTransport::new) // TODO QUIC Transport when available
+                .secureChannel(NoiseXXSecureChannel::new, SecIoSecureChannel::new) // TODO add TLS when available, and remove Secio
+                .muxer(StreamMuxerProtocol::getMplex)
+                .listen("/ip4/0.0.0.0/tcp/" + port /*,,
+                        "/ip4/0.0.0.0/udp/" + port+ "/quic"
+                        "/ip6/::/tcp/"+ port,
+                        "/ip4/0.0.0.0/udp/"+port+"/quic",
+                        "/ip6/::/udp/"+port+"/quic"*/)
+                .build();
+
+        int alpha = getConcurrencyValue(context);
+
+        this.connectionManager = new ConnectionManager(host, LOW_WATER, HIGH_WATER, GRACE_PERIOD);
+        this.routing = new KadDHT(host, connectionManager,
+                new Ipns(), alpha, IPFS.KAD_DHT_BETA,
+                IPFS.KAD_DHT_BUCKET_SIZE);
+
+
+        BitSwapNetwork bsm = LiteHost.create(host, connectionManager, routing);
+        BlockStore blockstore = BlockStore.NewBlockstore(blocks);
+
+        this.exchange = BitSwap.New(bsm, blockstore);
+        host.start().get();
+        running = true;
+
+        setPeerID(context, getPeerID());
+
+        if(IPFS.CONNECTION_SERVICE_ENABLED){
+            host.addConnectionHandler(conn -> connected(conn.secureSession().getRemoteId()));
+        }
+
     }
 
     @Nullable
@@ -679,22 +648,6 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
         }
     }
 
-    private static String deserialize(InputStream din) throws IOException {
-        int type = (int) Multihash.readVarint(din);
-        if (type != 1) {
-            throw new RuntimeException();
-        }
-        Multihash.readVarint(din);
-        ByteBuffer byteBuffer = ByteBuffer.allocate(din.available());
-
-        int res = din.read(byteBuffer.array());
-        if (res <= 0) {
-            throw new RuntimeException();
-        }
-
-        return Base58.encode(byteBuffer.array());
-    }
-
     @Nullable
     public String createEmptyDir() {
         try {
@@ -814,8 +767,10 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
                 HostBuilder.addAddrs(host, addrInfo);
                 return HostBuilder.connect(closeable, host, peerId) != null;
             }
+        } catch(ClosedException closedException){
+            throw closedException;
         } catch (Throwable e) {
-            LogUtils.error(TAG, multiaddr + " " + e.getMessage());
+            LogUtils.error(TAG, multiaddr + " " + e.getClass().getName());
         }
         if (closeable.isClosed()) {
             throw new ClosedException();
@@ -906,6 +861,7 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         }
+
         if (closeable.isClosed()) {
             throw new ClosedException();
         }
@@ -1054,10 +1010,9 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
                 }
             }, blockstore, exchange, cid, resolveChildren);
 
+        } catch(ClosedException closedException){
+            throw closedException;
         } catch (Throwable e) {
-            if (closeable.isClosed()) {
-                throw new ClosedException();
-            }
             return null;
         }
         if (closeable.isClosed()) {
@@ -1203,11 +1158,13 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
 
     public void reset() {
         try {
-            connectionManager.trimConnections();
 
             if (exchange != null) {
                 exchange.reset();
             }
+
+            connectionManager.trimConnections();
+
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         }
@@ -1227,42 +1184,46 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
         return HostBuilder.isConnected(host, decode(pid));
     }
 
+    @Nullable
+    public byte[] loadData(@NonNull String cid, @NonNull Closeable closeable) throws Exception {
+        if (!isDaemonRunning()) {
+            return null;
+        }
+        return loadData(cid, new Progress() {
+            @Override
+            public void setProgress(int progress) {
+            }
+
+            @Override
+            public boolean doProgress() {
+                return false;
+            }
+
+            @Override
+            public boolean isClosed() {
+                return closeable.isClosed();
+            }
+        });
+    }
+
     public boolean notify(@NonNull String pid, @NonNull String content) {
         if (!isDaemonRunning()) {
             return false;
         }
         try {
             synchronized (pid.intern()) {
-
                 PeerId peerId = decode(pid);
                 CompletableFuture<Object> ctrl = host.newStream(
                         Collections.singletonList(IPFS.ProtocolBitswap), peerId).getController();
-                Object object = ctrl.get(3, TimeUnit.SECONDS); // TODO timeout
-                //Object object = ctrl.get();
+                Object object = ctrl.get(TIMEOUT_PUSH, TimeUnit.SECONDS);
 
                 PushProtocol.PushController controller = (PushProtocol.PushController) object;
                 return controller.push(content);
-
             }
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         }
         return false;
-    }
-
-    public void push(String pid, String content) {
-        try {
-            // CID and PID are both valid objects (code done in go)
-            Objects.requireNonNull(pid);
-            Objects.requireNonNull(content);
-            if (pusher != null) {
-                ExecutorService executor = Executors.newSingleThreadExecutor();
-                executor.submit(() -> pusher.push(pid, content));
-            }
-        } catch (Throwable throwable) {
-            LogUtils.error(TAG, throwable);
-        }
-
     }
 
     public void setPusher(@Nullable Pusher pusher) {
@@ -1290,13 +1251,29 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
         swarm.add(pid);
     }
 
+    public void push(@NonNull String pid, @NonNull String content) {
+        try {
+            Objects.requireNonNull(pid);
+            Objects.requireNonNull(content);
+
+            if (pusher != null) {
+                ExecutorService executor = Executors.newSingleThreadExecutor();
+                executor.submit(() -> pusher.push(pid, content));
+            }
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable);
+        }
+
+    }
+
     public void swarmEnhance(@NonNull String[] users) {
-        for (String user:users) {
+        for (String user : users) {
             swarmEnhance(decode(user));
         }
     }
-    private final HashSet<PeerId> swarm = new HashSet<>();
+
     private Connector connector;
+
     public void setConnector(@Nullable Connector connector) {
         this.connector = connector;
     }
@@ -1314,7 +1291,6 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
     public interface Connector {
         void connected(@NonNull PeerId pid);
     }
-
 
     public interface Pusher {
         void push(@NonNull String pid, @NonNull String cid);

@@ -222,6 +222,9 @@ public class HostBuilder {
                                      @NonNull PeerId peerId) throws ClosedException, ConnectionIssue {
 
         try {
+            if (closeable.isClosed()) {
+                throw new ClosedException();
+            }
             List<Multiaddr> addrInfo = prepareAddresses(host, peerId);
 
             if (!addrInfo.isEmpty()) {

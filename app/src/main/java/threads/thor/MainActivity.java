@@ -1441,7 +1441,7 @@ public class MainActivity extends AppCompatActivity implements
 
                     docs.attachThread(thread.getId());
 
-                    Closeable closeable = () -> !docs.shouldRun(thread.getId());
+                    Closeable closeable = () ->  !docs.shouldRun(thread.getId());
 
                     docs.connectUri(uri, closeable);
 
