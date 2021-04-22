@@ -28,7 +28,8 @@ public class BitSwap implements Interface {
         engine = BitSwapEngine.NewEngine(blockstore, network, network.Self());
     }
 
-    public static Interface New(@NonNull BitSwapNetwork bitSwapNetwork, @NonNull BlockStore blockstore) {
+    public static Interface create(@NonNull BitSwapNetwork bitSwapNetwork,
+                                   @NonNull BlockStore blockstore) {
         return new BitSwap(blockstore, bitSwapNetwork);
     }
 

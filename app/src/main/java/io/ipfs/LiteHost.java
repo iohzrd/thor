@@ -4,6 +4,7 @@ import androidx.annotation.NonNull;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 
 import io.core.Closeable;
 import io.core.ClosedException;
@@ -15,6 +16,7 @@ import io.ipfs.bitswap.BitSwapMessage;
 import io.ipfs.bitswap.BitSwapNetwork;
 import io.ipfs.bitswap.BitSwapProtocol;
 import io.ipfs.cid.Cid;
+import io.ipfs.relay.Relay;
 import io.libp2p.HostBuilder;
 import io.libp2p.Metrics;
 import io.libp2p.core.Connection;
@@ -22,6 +24,7 @@ import io.libp2p.core.ConnectionClosedException;
 import io.libp2p.core.Host;
 import io.libp2p.core.NoSuchRemoteProtocolException;
 import io.libp2p.core.PeerId;
+import io.libp2p.core.PeerInfo;
 import io.libp2p.etc.types.NonCompleteException;
 import io.libp2p.etc.types.NothingToCompleteException;
 import io.netty.handler.timeout.ReadTimeoutException;
@@ -35,18 +38,14 @@ public class LiteHost implements BitSwapNetwork {
     private final Routing routing;
     @NonNull
     private final Metrics metrics;
+    @NonNull
+    private final Relay relay;
 
-
-    private LiteHost(@NonNull Host host, @NonNull Metrics metrics,
-                     @NonNull Routing routing) {
+    LiteHost(@NonNull Host host, @NonNull Metrics metrics, @NonNull Routing routing) {
         this.host = host;
         this.metrics = metrics;
         this.routing = routing;
-    }
-
-    public static BitSwapNetwork create(@NonNull Host host, @NonNull Metrics metrics,
-                                        @NonNull Routing routing) {
-        return new LiteHost(host, metrics, routing);
+        this.relay = new Relay(this);
     }
 
     @Override
@@ -88,7 +87,7 @@ public class LiteHost implements BitSwapNetwork {
                 }
 
                 metrics.active(peer);
-                Object object = HostBuilder.stream(closeable, host, IPFS.ProtocolBitswap, con);
+                Object object = stream(closeable, IPFS.ProtocolBitswap, con);
 
                 BitSwapProtocol.BitSwapController controller = (BitSwapProtocol.BitSwapController) object;
                 controller.sendRequest(message);
@@ -127,5 +126,23 @@ public class LiteHost implements BitSwapNetwork {
     public void FindProviders(@NonNull Closeable closeable, @NonNull Routing.Providers providers,
                               @NonNull Cid cid) throws ClosedException {
         routing.FindProviders(closeable, providers, cid);
+    }
+
+    @NonNull
+    public Connection connect(@NonNull Closeable closeable, @NonNull PeerId peerId)
+            throws ConnectionIssue, ClosedException {
+        return HostBuilder.connect(closeable, host, peerId);
+    }
+
+    @NonNull
+    public Object stream(@NonNull Closeable closeable, @NonNull String protocol,
+                         @NonNull Connection conn)
+            throws InterruptedException, ExecutionException, ClosedException {
+        return HostBuilder.stream(closeable, host, protocol, conn);
+    }
+
+    public boolean canHop(@NonNull Closeable closeable, @NonNull PeerId peerId)
+            throws ClosedException, ConnectionIssue {
+        return relay.canHop(closeable, peerId);
     }
 }

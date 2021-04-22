@@ -38,13 +38,13 @@ import identify.pb.IdentifyOuterClass;
 import io.LogUtils;
 import io.core.Closeable;
 import io.core.ClosedException;
+import io.core.ConnectionIssue;
 import io.core.TimeoutCloseable;
 import io.dht.DhtProtocol;
 import io.dht.KadDHT;
 import io.dht.Routing;
 import io.ipfs.bitswap.BitSwap;
 import io.ipfs.bitswap.BitSwapMessage;
-import io.ipfs.bitswap.BitSwapNetwork;
 import io.ipfs.bitswap.BitSwapProtocol;
 import io.ipfs.bitswap.BitSwapReceiver;
 import io.ipfs.cid.Cid;
@@ -175,6 +175,7 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
     private final PrivKey privateKey;
     private final int port;
     private final ConnectionManager connectionManager;
+    private final LiteHost liteHost;
     private final Set<PeerId> swarm = ConcurrentHashMap.newKeySet();
     private Pusher pusher;
     private boolean running;
@@ -241,10 +242,10 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
                 IPFS.KAD_DHT_BUCKET_SIZE);
 
 
-        BitSwapNetwork bsm = LiteHost.create(host, connectionManager, routing);
+        this.liteHost = new LiteHost(host, connectionManager, routing);
         BlockStore blockstore = BlockStore.NewBlockstore(blocks);
 
-        this.exchange = BitSwap.New(bsm, blockstore);
+        this.exchange = BitSwap.create(liteHost, blockstore);
         host.start().get();
         running = true;
 
@@ -457,6 +458,11 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
         return reachable;
     }
 
+    public boolean canHop(@NonNull Closeable closeable, @NonNull PeerId peerId)
+            throws ConnectionIssue, ClosedException {
+        return liteHost.canHop(closeable, peerId);
+    }
+
     @NonNull
     public Reachable getReachable() {
         return reachable;
@@ -470,7 +476,7 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
     private PeerInfo getPeerInfo(@NonNull Closeable closeable, @NonNull Connection conn) throws ClosedException {
 
         try {
-            Object object = HostBuilder.stream(closeable, host, "/ipfs/id/1.0.0", conn);
+            Object object = liteHost.stream(closeable, "/ipfs/id/1.0.0", conn);
 
             IdentifyController identifyController = (IdentifyController) object;
             CompletableFuture<IdentifyOuterClass.Identify> result = identifyController.id();
@@ -504,14 +510,18 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
         }
     }
 
+    @NonNull
+    public PeerId getPeerId(@NonNull String pid){
+        return decode(pid);
+    }
+
     @Nullable
-    public PeerInfo getPeerInfo(@NonNull Closeable closeable, @NonNull String pid) {
+    public PeerInfo getPeerInfo(@NonNull Closeable closeable, @NonNull PeerId peerId) {
 
         if (!isDaemonRunning()) {
             return null;
         }
         try {
-            PeerId peerId = decode(pid);
 
             Connection conn = HostBuilder.connect(closeable, host, peerId);
 

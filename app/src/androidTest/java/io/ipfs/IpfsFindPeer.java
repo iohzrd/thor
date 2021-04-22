@@ -15,6 +15,7 @@ import java.util.List;
 import io.LogUtils;
 import io.core.TimeoutCloseable;
 import io.libp2p.PeerInfo;
+import io.libp2p.core.PeerId;
 import io.libp2p.core.multiformats.Multiaddr;
 
 import static junit.framework.TestCase.assertNotNull;
@@ -107,17 +108,18 @@ public class IpfsFindPeer {
         LogUtils.debug(TAG, "Peers : " + peers.size());
         for (String peer : peers) {
 
-            PeerInfo peerInfo = ipfs.getPeerInfo(new TimeoutCloseable(10), peer);
+            PeerId peerId = ipfs.getPeerId(peer);
+            PeerInfo peerInfo = ipfs.getPeerInfo(new TimeoutCloseable(10), peerId);
 
-                if (peerInfo != null) {
+            if (peerInfo != null) {
 
-                    LogUtils.debug(TAG, peerInfo.toString());
-                    assertNotNull(peerInfo.getAddress());
-                    assertNotNull(peerInfo.getAgent());
-                    assertNotNull(peerInfo.getPeerId());
+                LogUtils.debug(TAG, peerInfo.toString());
+                assertNotNull(peerInfo.getAddress());
+                assertNotNull(peerInfo.getAgent());
+                assertNotNull(peerInfo.getPeerId());
 
-                    Multiaddr observed = peerInfo.getObserved();
-                    if (observed != null) {
+                Multiaddr observed = peerInfo.getObserved();
+                if (observed != null) {
                         LogUtils.debug(TAG, observed.toString());
                     }
                 }

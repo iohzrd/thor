@@ -10,7 +10,11 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.List;
+
+import io.LogUtils;
 import io.ipfs.utils.Reachable;
+import io.libp2p.core.multiformats.Multiaddr;
 
 import static org.junit.Assert.assertSame;
 
@@ -38,5 +42,10 @@ public class IpfsIdentifyService {
         res = ipfs.evaluateReachable();
         assertSame(res, Reachable.PRIVATE); // at least on my smartphone
 
+
+        List<Multiaddr> list = ipfs.listenAddresses();
+        for (Multiaddr addr : list) {
+            LogUtils.info(TAG, addr.toString());
+        }
     }
 }
