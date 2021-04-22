@@ -30,9 +30,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
+import identify.pb.IdentifyOuterClass;
 import io.LogUtils;
 import io.core.Closeable;
 import io.core.ClosedException;
@@ -58,6 +60,7 @@ import io.ipfs.utils.Link;
 import io.ipfs.utils.LinkCloseable;
 import io.ipfs.utils.Progress;
 import io.ipfs.utils.ProgressStream;
+import io.ipfs.utils.Reachable;
 import io.ipfs.utils.ReaderProgress;
 import io.ipfs.utils.ReaderStream;
 import io.ipfs.utils.Resolver;
@@ -66,6 +69,7 @@ import io.ipns.Ipns;
 import io.libp2p.AddrInfo;
 import io.libp2p.ConnectionManager;
 import io.libp2p.HostBuilder;
+import io.libp2p.PeerInfo;
 import io.libp2p.core.Connection;
 import io.libp2p.core.Host;
 import io.libp2p.core.PeerId;
@@ -78,6 +82,7 @@ import io.libp2p.core.multiformats.Protocol;
 import io.libp2p.core.mux.StreamMuxerProtocol;
 import io.libp2p.crypto.keys.Ed25519Kt;
 import io.libp2p.protocol.Identify;
+import io.libp2p.protocol.IdentifyController;
 import io.libp2p.security.noise.NoiseXXSecureChannel;
 import io.libp2p.security.secio.SecIoSecureChannel;
 import io.libp2p.transport.tcp.TcpTransport;
@@ -130,10 +135,9 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
     public static final String LIB2P_DNS = "bootstrap.libp2p.io";
     public static final boolean SEND_DONT_HAVES = false;
     public static final boolean BITSWAP_ENGINE_ACTIVE = false;
-
+    public static final int KAD_DHT_BUCKET_SIZE = 20;
     // The number of peers closest to a target that must have responded for a query path to terminate
     private static final int KAD_DHT_BETA = 20;
-    public static final int KAD_DHT_BUCKET_SIZE = 20;
     // rough estimates on expected sizes
     private static final int roughLinkBlockSize = 1 << 13; // 8KB
     private static final int roughLinkSize = 34 + 8 + 5;// sha256 multihash + size + no name + protobuf framing
@@ -160,6 +164,7 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
     private static final String CONCURRENCY_KEY = "concurrencyKey";
     private static final String TAG = IPFS.class.getSimpleName();
     private static final boolean CONNECTION_SERVICE_ENABLED = false;
+    private static final boolean IDENTIFY_SERVICE_ENABLE = false;
 
     private static IPFS INSTANCE = null;
 
@@ -168,18 +173,361 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
     private final Routing routing;
     private final Host host;
     private final PrivKey privateKey;
-    private Pusher pusher;
-    private boolean running;
     private final int port;
     private final ConnectionManager connectionManager;
     private final Set<PeerId> swarm = ConcurrentHashMap.newKeySet();
+    private Pusher pusher;
+    private boolean running;
+    private Connector connector;
+    @NonNull
+    private Reachable reachable = Reachable.UNKNOWN;
+
+    private IPFS(@NonNull Context context) throws Exception {
+
+
+        blocks = BLOCKS.getInstance(context);
+
+
+        if (getPrivateKey(context).isEmpty()) {
+            kotlin.Pair<PrivKey, PubKey> keys = KeyKt.generateKeyPair(KEY_TYPE.ED25519);
+            Base64.Encoder encoder = Base64.getEncoder();
+            setPrivateKey(context, encoder.encodeToString(keys.getFirst().bytes()));
+        }
+        /* TODO
+
+        node.setAgent(AGENT);
+        node.setPushing(false);
+        node.setEnableReachService(false);*/
+
+        int checkPort = getSwarmPort(context);
+        if (isLocalPortFree(checkPort)) {
+            port = checkPort;
+        } else {
+            port = nextFreePort();
+        }
+        byte[] data = Base64.getDecoder().decode(getPrivateKey(context));
+        privateKey = Ed25519Kt.unmarshalEd25519PrivateKey(data);
+
+
+        // TODO shit not really working for IPv6 and IPv4
+        // best would be that just the port is given
+        // together with the transport the services can
+        // be run (anouncing the public adderesses to other KAD
+        // should be done dynamacially with information
+        // from other peers
+        //String address = HostBuilder.getLocalIpAddress();
+
+        //  TODO QUIC and IPV6
+        // TODO set AGENT and PROTOCOL_VERSION
+        host = new HostBuilder()
+                .protocol(new Identify(), new DhtProtocol(),
+                        new BitSwapProtocol(this, ProtocolBitswap))
+                .identity(privateKey)
+                .transport(TcpTransport::new) // TODO QUIC Transport when available
+                .secureChannel(NoiseXXSecureChannel::new, SecIoSecureChannel::new) // TODO add TLS when available, and remove Secio
+                .muxer(StreamMuxerProtocol::getMplex)
+                .listen("/ip4/0.0.0.0/tcp/" + port /*,,
+                        "/ip4/0.0.0.0/udp/" + port+ "/quic"
+                        "/ip6/::/tcp/"+ port,
+                        "/ip4/0.0.0.0/udp/"+port+"/quic",
+                        "/ip6/::/udp/"+port+"/quic"*/)
+                .build();
+
+        int alpha = getConcurrencyValue(context);
+
+        this.connectionManager = new ConnectionManager(host, LOW_WATER, HIGH_WATER, GRACE_PERIOD);
+        this.routing = new KadDHT(host, connectionManager,
+                new Ipns(), alpha, IPFS.KAD_DHT_BETA,
+                IPFS.KAD_DHT_BUCKET_SIZE);
+
+
+        BitSwapNetwork bsm = LiteHost.create(host, connectionManager, routing);
+        BlockStore blockstore = BlockStore.NewBlockstore(blocks);
+
+        this.exchange = BitSwap.New(bsm, blockstore);
+        host.start().get();
+        running = true;
+
+        setPeerID(context, getPeerID());
+
+
+        if (IPFS.CONNECTION_SERVICE_ENABLED) {
+            host.addConnectionHandler(conn -> connected(conn.secureSession().getRemoteId()));
+        }
+
+    }
 
     @NonNull
-    public List<Multiaddr> listenAddresses(){
+    public static PeerId decode(@NonNull String name) {
+
+        if (name.startsWith("Qm") || name.startsWith("1")) {
+            // base58 encoded sha256 or identity multihash
+            return PeerId.fromBase58(name);
+        }
+        byte[] data = Multibase.decode(name);
+
+        if (data[0] == 0) {
+            Multihash mh = new Multihash(Multihash.Type.id, data);
+            return PeerId.fromBase58(Base58.encode(mh.getHash()));
+        } else {
+            try (InputStream inputStream = new ByteArrayInputStream(data)) {
+                long version = Multihash.readVarint(inputStream);
+                if (version != 1) {
+                    throw new Exception("invalid version");
+                }
+                long codecType = Multihash.readVarint(inputStream);
+                if (!(codecType == Cid.DagProtobuf || codecType == Cid.Raw || codecType == Cid.Libp2pKey)) {
+                    throw new Exception("not supported codec");
+                }
+                Multihash mh = Multihash.deserialize(inputStream);
+                return PeerId.fromBase58(mh.toBase58());
+
+            } catch (Throwable throwable) {
+                throw new RuntimeException(throwable);
+            }
+        }
+    }
+
+    public static int getConcurrencyValue(@NonNull Context context) {
+        Objects.requireNonNull(context);
+        SharedPreferences sharedPref = context.getSharedPreferences(PREF_KEY, Context.MODE_PRIVATE);
+        return sharedPref.getInt(CONCURRENCY_KEY, 25);
+    }
+
+    public static void setConcurrencyValue(@NonNull Context context, int timeout) {
+        Objects.requireNonNull(context);
+        SharedPreferences sharedPref = context.getSharedPreferences(PREF_KEY, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putInt(CONCURRENCY_KEY, timeout);
+        editor.apply();
+    }
+
+    public static int getSwarmPort(@NonNull Context context) {
+
+        SharedPreferences sharedPref = context.getSharedPreferences(PREF_KEY, Context.MODE_PRIVATE);
+        return sharedPref.getInt(SWARM_PORT_KEY, 5001);
+    }
+
+    @SuppressWarnings("UnusedReturnValue")
+    public static long copy(InputStream source, OutputStream sink) throws IOException {
+        long nread = 0L;
+        byte[] buf = new byte[4096];
+        int n;
+        while ((n = source.read(buf)) > 0) {
+            sink.write(buf, 0, n);
+            nread += n;
+        }
+        return nread;
+    }
+
+    public static void copy(@NonNull InputStream source, @NonNull OutputStream sink, @NonNull ReaderProgress progress) throws IOException {
+        long nread = 0L;
+        byte[] buf = new byte[4096];
+        int remember = 0;
+        int n;
+        while ((n = source.read(buf)) > 0) {
+            sink.write(buf, 0, n);
+            nread += n;
+
+            if (progress.doProgress()) {
+                if (progress.getSize() > 0) {
+                    int percent = (int) ((nread * 100.0f) / progress.getSize());
+                    if (remember < percent) {
+                        remember = percent;
+                        progress.setProgress(percent);
+                    }
+                }
+            }
+        }
+    }
+
+    private static void setPrivateKey(@NonNull Context context, @NonNull String key) {
+        SharedPreferences sharedPref = context.getSharedPreferences(
+                PREF_KEY, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putString(PRIVATE_KEY, key);
+        editor.apply();
+    }
+
+    @NonNull
+    private static String getPrivateKey(@NonNull Context context) {
+        SharedPreferences sharedPref = context.getSharedPreferences(
+                PREF_KEY, Context.MODE_PRIVATE);
+        return Objects.requireNonNull(sharedPref.getString(PRIVATE_KEY, ""));
+
+    }
+
+    private static void setPeerID(@NonNull Context context, @NonNull String peerID) {
+        SharedPreferences sharedPref = context.getSharedPreferences(
+                PREF_KEY, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putString(PID_KEY, peerID);
+        editor.apply();
+    }
+
+    @Nullable
+    public static String getPeerID(@NonNull Context context) {
+        SharedPreferences sharedPref = context.getSharedPreferences(
+                PREF_KEY, Context.MODE_PRIVATE);
+        return sharedPref.getString(PID_KEY, null);
+    }
+
+    @NonNull
+    public static IPFS getInstance(@NonNull Context context) {
+        if (INSTANCE == null) {
+            synchronized (IPFS.class) {
+                if (INSTANCE == null) {
+                    try {
+                        INSTANCE = new IPFS(context);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            }
+        }
+        return INSTANCE;
+    }
+
+    private static int nextFreePort() {
+        int port = ThreadLocalRandom.current().nextInt(4001, 65535);
+        while (true) {
+            if (isLocalPortFree(port)) {
+                return port;
+            } else {
+                port = ThreadLocalRandom.current().nextInt(4001, 65535);
+            }
+        }
+    }
+
+    private static boolean isLocalPortFree(int port) {
+        try {
+            new ServerSocket(port).close();
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    public Reachable evaluateReachable() {
+        reachable = Reachable.UNKNOWN;
+        try {
+
+
+            AtomicInteger success = new AtomicInteger(0);
+            AtomicInteger failed = new AtomicInteger(0);
+            AtomicReference<String> result = new AtomicReference<>("");
+
+            List<Connection> connections = host.getNetwork().getConnections();
+            for (Connection conn : connections) {
+
+                try {
+                    PeerInfo peerInfo = getPeerInfo(new TimeoutCloseable(5), conn);
+                    Multiaddr observed = peerInfo.getObserved();
+                    if (observed != null) {
+                        if (Objects.equals(result.get(), observed.toString())) {
+                            int value = success.incrementAndGet();
+                            if (value >= 3) {
+                                break;
+                            }
+                        } else {
+                            result.set(observed.toString());
+                            success.set(0);
+                            int value = failed.incrementAndGet();
+                            if (value >= 3) {
+                                break;
+                            }
+                        }
+                    }
+                } catch (Throwable ignore) {
+                    // ignore
+                }
+            }
+            if(success.get() >= 3 ){
+                reachable = Reachable.PUBLIC;
+            } else if(failed.get() >= 3){
+                reachable = Reachable.PRIVATE;
+            } else {
+                reachable = Reachable.UNKNOWN; // not 100 percent safe (but who cares)
+            }
+
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable);
+            reachable = Reachable.UNKNOWN;
+        }
+        return reachable;
+    }
+
+    @NonNull
+    public Reachable getReachable() {
+        return reachable;
+    }
+
+    void setReachable(@NonNull Reachable reachable) {
+        this.reachable = reachable;
+    }
+
+    @NonNull
+    private PeerInfo getPeerInfo(@NonNull Closeable closeable, @NonNull Connection conn) throws ClosedException {
+
+        try {
+            Object object = HostBuilder.stream(closeable, host, "/ipfs/id/1.0.0", conn);
+
+            IdentifyController identifyController = (IdentifyController) object;
+            CompletableFuture<IdentifyOuterClass.Identify> result = identifyController.id();
+
+
+            while (!result.isDone()) {
+                if (closeable.isClosed()) {
+                    result.cancel(true);
+                }
+            }
+
+            if (closeable.isClosed()) {
+                throw new ClosedException();
+            }
+
+
+            IdentifyOuterClass.Identify identify = result.get();
+            String agent = identify.getAgentVersion();
+
+            Multiaddr observedAddr = null;
+            if (identify.hasObservedAddr()) {
+                observedAddr = new Multiaddr(identify.getObservedAddr().toByteArray());
+            }
+
+            return new PeerInfo(conn.secureSession().getRemoteId(), agent,
+                    conn.remoteAddress(), observedAddr);
+        } catch (ClosedException closedException) {
+            throw closedException;
+        } catch (Throwable throwable) {
+            throw new RuntimeException(throwable);
+        }
+    }
+
+    @Nullable
+    public PeerInfo getPeerInfo(@NonNull Closeable closeable, @NonNull String pid) {
+
+        if (!isDaemonRunning()) {
+            return null;
+        }
+        try {
+            PeerId peerId = decode(pid);
+
+            Connection conn = HostBuilder.connect(closeable, host, peerId);
+
+            return getPeerInfo(closeable, conn);
+        } catch (Throwable ignore) {
+            // ignore
+        }
+        return null;
+    }
+
+    @NonNull
+    public List<Multiaddr> listenAddresses() {
         return HostBuilder.listenAddresses(host);
     }
 
-    public int getPort(){
+    public int getPort() {
         return port;
     }
 
@@ -227,7 +575,6 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
         return peers;
     }
 
-
     public void provide(@NonNull Closeable closable, @NonNull String cid) throws ClosedException {
 
         if (!isDaemonRunning()) {
@@ -239,38 +586,6 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
             throw closedException;
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
-        }
-    }
-
-
-    @NonNull
-    public static PeerId decode(@NonNull String name) {
-
-        if (name.startsWith("Qm") || name.startsWith("1")) {
-            // base58 encoded sha256 or identity multihash
-            return PeerId.fromBase58(name);
-        }
-        byte[] data = Multibase.decode(name);
-
-        if (data[0] == 0) {
-            Multihash mh = new Multihash(Multihash.Type.id, data);
-            return PeerId.fromBase58(Base58.encode(mh.getHash()));
-        } else {
-            try (InputStream inputStream = new ByteArrayInputStream(data)) {
-                long version = Multihash.readVarint(inputStream);
-                if (version != 1) {
-                    throw new Exception("invalid version");
-                }
-                long codecType = Multihash.readVarint(inputStream);
-                if (!(codecType == Cid.DagProtobuf || codecType == Cid.Raw || codecType == Cid.Libp2pKey)) {
-                    throw new Exception("not supported codec");
-                }
-                Multihash mh = Multihash.deserialize(inputStream);
-                return PeerId.fromBase58(mh.toBase58());
-
-            } catch (Throwable throwable) {
-                throw new RuntimeException(throwable);
-            }
         }
     }
 
@@ -415,79 +730,6 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
 
     }
 
-    private IPFS(@NonNull Context context) throws Exception {
-
-        blocks = BLOCKS.getInstance(context);
-
-
-        if (getPrivateKey(context).isEmpty()) {
-            kotlin.Pair<PrivKey, PubKey> keys = KeyKt.generateKeyPair(KEY_TYPE.ED25519);
-            Base64.Encoder encoder =  Base64.getEncoder();
-            setPrivateKey(context, encoder.encodeToString(keys.getFirst().bytes()));
-        }
-        /* TODO
-
-        node.setAgent(AGENT);
-        node.setPushing(false);
-        node.setEnableReachService(false);*/
-
-        int checkPort = getSwarmPort(context);
-        if( isLocalPortFree(checkPort) ){
-            port = checkPort;
-        } else {
-            port = nextFreePort();
-        }
-        byte[] data = Base64.getDecoder().decode(getPrivateKey(context));
-        privateKey = Ed25519Kt.unmarshalEd25519PrivateKey(data);
-
-
-        // TODO shit not really working for IPv6 and IPv4
-        // best would be that just the port is given
-        // together with the transport the services can
-        // be run (anouncing the public adderesses to other KAD
-        // should be done dynamacially with information
-        // from other peers
-        //String address = HostBuilder.getLocalIpAddress();
-
-        //  TODO QUIC and IPV6
-        // TODO set AGENT and PROTOCOL_VERSION
-        host = new HostBuilder()
-                .protocol(new Identify(), new DhtProtocol(),
-                        new BitSwapProtocol(this, ProtocolBitswap))
-                .identity(privateKey)
-                .transport(TcpTransport::new) // TODO QUIC Transport when available
-                .secureChannel(NoiseXXSecureChannel::new, SecIoSecureChannel::new) // TODO add TLS when available, and remove Secio
-                .muxer(StreamMuxerProtocol::getMplex)
-                .listen("/ip4/0.0.0.0/tcp/" + port /*,,
-                        "/ip4/0.0.0.0/udp/" + port+ "/quic"
-                        "/ip6/::/tcp/"+ port,
-                        "/ip4/0.0.0.0/udp/"+port+"/quic",
-                        "/ip6/::/udp/"+port+"/quic"*/)
-                .build();
-
-        int alpha = getConcurrencyValue(context);
-
-        this.connectionManager = new ConnectionManager(host, LOW_WATER, HIGH_WATER, GRACE_PERIOD);
-        this.routing = new KadDHT(host, connectionManager,
-                new Ipns(), alpha, IPFS.KAD_DHT_BETA,
-                IPFS.KAD_DHT_BUCKET_SIZE);
-
-
-        BitSwapNetwork bsm = LiteHost.create(host, connectionManager, routing);
-        BlockStore blockstore = BlockStore.NewBlockstore(blocks);
-
-        this.exchange = BitSwap.New(bsm, blockstore);
-        host.start().get();
-        running = true;
-
-        setPeerID(context, getPeerID());
-
-        if(IPFS.CONNECTION_SERVICE_ENABLED){
-            host.addConnectionHandler(conn -> connected(conn.secureSession().getRemoteId()));
-        }
-
-    }
-
     @Nullable
     public byte[] loadData(@NonNull String cid, @NonNull Progress progress) throws Exception {
         if (!isDaemonRunning()) {
@@ -524,130 +766,6 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
         return exchange.GatePeer(peerID);
     }
 
-    public static int getConcurrencyValue(@NonNull Context context) {
-        Objects.requireNonNull(context);
-        SharedPreferences sharedPref = context.getSharedPreferences(PREF_KEY, Context.MODE_PRIVATE);
-        return sharedPref.getInt(CONCURRENCY_KEY, 25);
-    }
-
-    public static void setConcurrencyValue(@NonNull Context context, int timeout) {
-        Objects.requireNonNull(context);
-        SharedPreferences sharedPref = context.getSharedPreferences(PREF_KEY, Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPref.edit();
-        editor.putInt(CONCURRENCY_KEY, timeout);
-        editor.apply();
-    }
-
-    public static int getSwarmPort(@NonNull Context context) {
-
-        SharedPreferences sharedPref = context.getSharedPreferences(PREF_KEY, Context.MODE_PRIVATE);
-        return sharedPref.getInt(SWARM_PORT_KEY, 5001);
-    }
-
-    @SuppressWarnings("UnusedReturnValue")
-    public static long copy(InputStream source, OutputStream sink) throws IOException {
-        long nread = 0L;
-        byte[] buf = new byte[4096];
-        int n;
-        while ((n = source.read(buf)) > 0) {
-            sink.write(buf, 0, n);
-            nread += n;
-        }
-        return nread;
-    }
-
-    public static void copy(@NonNull InputStream source, @NonNull OutputStream sink, @NonNull ReaderProgress progress) throws IOException {
-        long nread = 0L;
-        byte[] buf = new byte[4096];
-        int remember = 0;
-        int n;
-        while ((n = source.read(buf)) > 0) {
-            sink.write(buf, 0, n);
-            nread += n;
-
-            if (progress.doProgress()) {
-                if (progress.getSize() > 0) {
-                    int percent = (int) ((nread * 100.0f) / progress.getSize());
-                    if (remember < percent) {
-                        remember = percent;
-                        progress.setProgress(percent);
-                    }
-                }
-            }
-        }
-    }
-
-
-    private static void setPrivateKey(@NonNull Context context, @NonNull String key) {
-        SharedPreferences sharedPref = context.getSharedPreferences(
-                PREF_KEY, Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPref.edit();
-        editor.putString(PRIVATE_KEY, key);
-        editor.apply();
-    }
-
-
-
-    @NonNull
-    private static String getPrivateKey(@NonNull Context context) {
-        SharedPreferences sharedPref = context.getSharedPreferences(
-                PREF_KEY, Context.MODE_PRIVATE);
-        return Objects.requireNonNull(sharedPref.getString(PRIVATE_KEY, ""));
-
-    }
-
-    private static void setPeerID(@NonNull Context context, @NonNull String peerID) {
-        SharedPreferences sharedPref = context.getSharedPreferences(
-                PREF_KEY, Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPref.edit();
-        editor.putString(PID_KEY, peerID);
-        editor.apply();
-    }
-
-    @Nullable
-    public static String getPeerID(@NonNull Context context) {
-        SharedPreferences sharedPref = context.getSharedPreferences(
-                PREF_KEY, Context.MODE_PRIVATE);
-        return sharedPref.getString(PID_KEY, null);
-    }
-
-
-    @NonNull
-    public static IPFS getInstance(@NonNull Context context) {
-        if (INSTANCE == null) {
-            synchronized (IPFS.class) {
-                if (INSTANCE == null) {
-                    try {
-                        INSTANCE = new IPFS(context);
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-            }
-        }
-        return INSTANCE;
-    }
-
-    private static int nextFreePort() {
-        int port = ThreadLocalRandom.current().nextInt(4001, 65535);
-        while (true) {
-            if (isLocalPortFree(port)) {
-                return port;
-            } else {
-                port = ThreadLocalRandom.current().nextInt(4001, 65535);
-            }
-        }
-    }
-
-    private static boolean isLocalPortFree(int port) {
-        try {
-            new ServerSocket(port).close();
-            return true;
-        } catch (IOException e) {
-            return false;
-        }
-    }
-
     @Nullable
     public String createEmptyDir() {
         try {
@@ -657,7 +775,6 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
         }
         return null;
     }
-
 
     @NonNull
     public String decodeName(@NonNull String name) {
@@ -670,9 +787,6 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
         return "";
     }
 
-
-
-
     @NonNull
     public String getPeerID() {
         return host.getPeerId().toBase58();
@@ -683,13 +797,11 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
         return host.getPeerId();
     }
 
-
     public void bootstrap() {
         if (isDaemonRunning()) {
             if (numSwarmPeers() < MIN_PEERS) {
 
                 try {
-
 
 
                     List<String> bootstrap = IPFS.IPFS_BOOTSTRAP_NODES;
@@ -757,7 +869,7 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
             connectionManager.protectPeer(peerId);
             if (multiAddress.startsWith(IPFS.P2P_PATH)) {
                 Set<Multiaddr> addrInfo = HostBuilder.getAddresses(host, peerId);
-                if(addrInfo.isEmpty()) {
+                if (addrInfo.isEmpty()) {
                     return routing.FindPeer(closeable, peerId);
                 } else {
                     return HostBuilder.connect(closeable, host, peerId) != null;
@@ -767,7 +879,7 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
                 HostBuilder.addAddrs(host, addrInfo);
                 return HostBuilder.connect(closeable, host, peerId) != null;
             }
-        } catch(ClosedException closedException){
+        } catch (ClosedException closedException) {
             throw closedException;
         } catch (Throwable e) {
             LogUtils.error(TAG, multiaddr + " " + e.getClass().getName());
@@ -788,7 +900,6 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
         }
         return false;
     }
-
 
     @Nullable
     public Node resolveNode(@NonNull String root, @NonNull List<String> path, @NonNull Closeable closeable) throws ClosedException {
@@ -844,7 +955,7 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
         }
     }
 
-    public void clearDatabase(){
+    public void clearDatabase() {
         blocks.clear();
     }
 
@@ -879,7 +990,6 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
         }
         return null;
     }
-
 
     @NonNull
     public String resolve(@NonNull String root, @NonNull List<String> path,
@@ -917,7 +1027,6 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
         return !res.isEmpty();
     }
 
-
     public boolean isDir(@NonNull String cid, @NonNull Closeable closeable) throws ClosedException {
 
         if (!isDaemonRunning()) {
@@ -937,7 +1046,6 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
         return result;
     }
 
-
     public long getSize(@NonNull String cid, @NonNull Closeable closeable) throws ClosedException {
         List<Link> links = ls(cid, closeable, true);
         int size = -1;
@@ -948,7 +1056,6 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
         }
         return size;
     }
-
 
     @Nullable
     public List<Link> links(@NonNull String cid, @NonNull Closeable closeable) throws ClosedException {
@@ -987,7 +1094,6 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
         return result;
     }
 
-
     @Nullable
     public List<Link> ls(@NonNull String cid, @NonNull Closeable closeable,
                          boolean resolveChildren) throws ClosedException {
@@ -1010,7 +1116,7 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
                 }
             }, blockstore, exchange, cid, resolveChildren);
 
-        } catch(ClosedException closedException){
+        } catch (ClosedException closedException) {
             throw closedException;
         } catch (Throwable e) {
             return null;
@@ -1020,7 +1126,6 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
         }
         return infoList;
     }
-
 
     @NonNull
     public io.ipfs.utils.Reader getReader(@NonNull String cid, @NonNull Closeable closeable) throws ClosedException {
@@ -1034,7 +1139,6 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
             IPFS.copy(inputStream, outputStream);
         }
     }
-
 
     @NonNull
     public InputStream getLoaderStream(@NonNull String cid, @NonNull Closeable closeable) throws ClosedException {
@@ -1114,7 +1218,7 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
                 }
             }, decode(name), 8);
 
-        } catch (ClosedException ignore){
+        } catch (ClosedException ignore) {
             // ignore exception here
         } catch (Throwable e) {
             LogUtils.error(TAG, e);
@@ -1122,13 +1226,12 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
         LogUtils.info(TAG, "Finished resolve name " + name + " " +
                 (System.currentTimeMillis() - time));
 
-        if(closeable.isClosed()){
+        if (closeable.isClosed()) {
             throw new ClosedException();
         }
 
         return resolvedName.get();
     }
-
 
     @NonNull
     public InputStream getInputStream(@NonNull String cid, @NonNull Closeable closeable) throws ClosedException {
@@ -1147,7 +1250,6 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
             return false;
         }
     }
-
 
     public long numSwarmPeers() {
         if (!isDaemonRunning()) {
@@ -1242,7 +1344,6 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
         }
     }
 
-
     public void swarmReduce(@NonNull PeerId pid) {
         swarm.remove(pid);
     }
@@ -1271,8 +1372,6 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
             swarmEnhance(decode(user));
         }
     }
-
-    private Connector connector;
 
     public void setConnector(@Nullable Connector connector) {
         this.connector = connector;

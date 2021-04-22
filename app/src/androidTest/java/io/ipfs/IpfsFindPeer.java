@@ -14,6 +14,9 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.LogUtils;
+import io.core.TimeoutCloseable;
+import io.libp2p.PeerInfo;
+import io.libp2p.core.multiformats.Multiaddr;
 
 import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertTrue;
@@ -35,17 +38,7 @@ public class IpfsFindPeer {
     }
 
 
-    @Test
-    public void dummy() {
-        assertNotNull(context);
-    }
 
-    @Test
-    public void test_id() {
-
-        IPFS ipfs = TestEnv.getTestInstance(context);
-
-    }
 
     @Test
     public void swarm_connect() {
@@ -61,7 +54,7 @@ public class IpfsFindPeer {
 
 
     //@Test
-    public void test_local_peer() throws Exception {
+    public void test_local_peer() {
         IPFS ipfs = TestEnv.getTestInstance(context);
 
         String local = "Qmf5TsSK8dVm3btzuUrnvS8wfUW6e2vMxMRkzV9rsG6eDa";
@@ -71,10 +64,6 @@ public class IpfsFindPeer {
 
         assertTrue(result);
 
-        while (ipfs.isConnected(local)) {
-            LogUtils.debug(TAG, "Peer conntected with : " + local);
-            Thread.sleep(1000);
-        }
     }
 
     @Test
@@ -122,6 +111,21 @@ public class IpfsFindPeer {
             assertNotNull(peers);
             LogUtils.debug(TAG, "Peers : " + peers.size());
             for (String peer : peers) {
+
+                PeerInfo peerInfo = ipfs.getPeerInfo(new TimeoutCloseable(10), peer);
+
+                if (peerInfo != null) {
+
+                    LogUtils.debug(TAG, peerInfo.toString());
+                    assertNotNull(peerInfo.getAddress());
+                    assertNotNull(peerInfo.getAgent());
+                    assertNotNull(peerInfo.getPeerId());
+
+                    Multiaddr observed = peerInfo.getObserved();
+                    if (observed != null) {
+                        LogUtils.debug(TAG, observed.toString());
+                    }
+                }
 
                 long time = System.currentTimeMillis();
                 LogUtils.debug(TAG, "isConnected : " + ipfs.isConnected(peer)
