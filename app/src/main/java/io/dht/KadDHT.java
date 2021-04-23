@@ -181,8 +181,7 @@ public class KadDHT implements Routing {
 
     }
 
-    private void putValueToPeer(@NonNull Closeable ctx,
-                                @NonNull PeerId p,
+    private void putValueToPeer(@NonNull Closeable ctx, @NonNull PeerId p,
                                 @NonNull RecordOuterClass.Record rec)
             throws TimeoutIssue, ProtocolIssue, ClosedException, ConnectionIssue {
 
@@ -222,7 +221,7 @@ public class KadDHT implements Routing {
             for (Dht.Message.Peer entry : list) {
 
                 PeerId peerId = new PeerId(entry.getId().toByteArray());
-                LogUtils.info(TAG, "got provider before filter : " + peerId.toBase58());
+
                 List<Multiaddr> multiAddresses = new ArrayList<>();
                 List<ByteString> addresses = entry.getAddrsList();
                 for (ByteString address : addresses) {
@@ -232,6 +231,9 @@ public class KadDHT implements Routing {
                     }
                 }
                 AddrInfo addrInfo = AddrInfo.create(peerId, multiAddresses);
+
+                LogUtils.info(TAG, "got provider before filter : " + addrInfo.toString());
+
                 if (addrInfo.hasAddresses()) {
                     provs.add(addrInfo);
                     HostBuilder.addAddrs(host, addrInfo);

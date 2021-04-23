@@ -3,18 +3,12 @@ package io.ipfs.utils;
 
 import androidx.annotation.NonNull;
 
-import com.google.common.primitives.Bytes;
-
-import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 
 import io.core.Closeable;
 import io.core.ClosedException;
-import io.dht.Routing;
-import io.ipfs.IPFS;
 import io.ipfs.blockservice.BlockService;
 import io.ipfs.cid.Cid;
 import io.ipfs.cid.Prefix;
@@ -29,17 +23,12 @@ import io.ipfs.multihash.Multihash;
 import io.ipfs.offline.Exchange;
 import io.ipfs.unixfs.Directory;
 import io.ipfs.unixfs.FSNode;
-import io.ipns.Ipns;
 import io.libp2p.core.PeerId;
-import io.libp2p.core.crypto.PrivKey;
-import io.libp2p.core.crypto.PubKey;
-import io.protos.ipns.IpnsProtos;
 
 
 public class Stream {
 
     private static final String TAG = Stream.class.getSimpleName();
-    private static final Duration DefaultRecordEOL = Duration.ofHours(24);
 
 
     public static String base32(@NonNull PeerId peerId) {
@@ -52,39 +41,7 @@ public class Stream {
         }
     }
 
-    public static void ResolveName(@NonNull Closeable closeable,
-                                   @NonNull Routing routing,
-                                   @NonNull Routing.ResolveInfo info,
-                                   @NonNull PeerId id,
-                                   int dhtRecords) throws ClosedException {
 
-
-        byte[] ipns = IPFS.IPNS_PATH.getBytes();
-        byte[] ipnsKey = Bytes.concat(ipns, id.getBytes());
-        routing.SearchValue(closeable, info, ipnsKey, dhtRecords);
-
-    }
-
-    public static void PublishName(@NonNull Closeable closable, @NonNull Routing routing,
-                                   @NonNull PrivKey privKey, @NonNull String path,
-                                   @NonNull PeerId id, int sequence) throws ClosedException {
-
-
-        Date eol = Date.from(new Date().toInstant().plus(DefaultRecordEOL));
-
-        IpnsProtos.IpnsEntry
-                record = Ipns.Create(privKey, path.getBytes(), sequence, eol);
-
-        PubKey pk = privKey.publicKey();
-
-        record = Ipns.EmbedPublicKey(pk, record);
-
-        byte[] bytes = record.toByteArray();
-
-        byte[] ipns = IPFS.IPNS_PATH.getBytes();
-        byte[] ipnsKey = Bytes.concat(ipns, id.getBytes());
-        routing.PutValue(closable, ipnsKey, bytes);
-    }
 
 
     public static Adder getFileAdder(@NonNull Storage storage) {

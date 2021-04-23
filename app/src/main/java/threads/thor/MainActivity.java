@@ -1347,7 +1347,6 @@ public class MainActivity extends AppCompatActivity implements
                             return true;
                         }
                         mProgressBar.setVisibility(View.VISIBLE);
-                        docs.releaseThreads();
                         return false;
                     } else {
                         // all other stuff
@@ -1377,13 +1376,13 @@ public class MainActivity extends AppCompatActivity implements
                         new ByteArrayInputStream(("<!DOCTYPE HTML>\n" +
                                 "<html lang=\"en-US\">\n" +
                                 "    <head>\n" +
+                                "        <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">" +
                                 "        <meta charset=\"UTF-8\">\n" +
                                 "        <meta http-equiv=\"refresh\" content=\"0; url=" + uri.toString() + "\">\n" +
                                 "        <title>Page Redirection</title>\n" +
                                 "    </head>\n" +
                                 "    <body>\n" +
-                                "        <!-- Note: don't tell people to `click` the link, just tell them that it is a link. -->\n" +
-                                "        If you are not redirected automatically, follow this <a href='" + uri.toString() + "'>link to example</a>.\n" +
+                                "        Automatically redirected to the <a href='" + uri.toString() + "'>index.html</a> file\n" +
                                 "    </body>\n" +
                                 "</html>").getBytes()));
             }

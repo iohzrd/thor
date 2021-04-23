@@ -10,16 +10,14 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.LogUtils;
 import io.core.ClosedException;
 import io.core.TimeoutCloseable;
 
-import static junit.framework.TestCase.assertTrue;
 import static junit.framework.TestCase.assertNotNull;
+import static junit.framework.TestCase.assertTrue;
 
 @SuppressWarnings("SpellCheckingInspection")
 @RunWith(AndroidJUnit4.class)
@@ -36,6 +34,7 @@ public class IpfsProvideTest {
     public void test_resolve_provide() throws ClosedException {
         IPFS ipfs = TestEnv.getTestInstance(context);
 
+        LogUtils.error(TAG, ipfs.getPeerID());
         String test = "Moin Wurdfasdfsadfasst jdöldöflas" + Math.random();
         String cid = ipfs.storeText(test);
         assertNotNull(cid);

@@ -6,6 +6,8 @@ import android.content.SharedPreferences;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.google.common.primitives.Bytes;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -41,7 +43,6 @@ import io.core.ClosedException;
 import io.core.ConnectionIssue;
 import io.core.TimeoutCloseable;
 import io.dht.DhtProtocol;
-import io.dht.KadDHT;
 import io.dht.Routing;
 import io.ipfs.bitswap.BitSwap;
 import io.ipfs.bitswap.BitSwapMessage;
@@ -56,6 +57,7 @@ import io.ipfs.multibase.Multibase;
 import io.ipfs.multihash.Multihash;
 import io.ipfs.push.PushProtocol;
 import io.ipfs.push.PushReceiver;
+import io.ipfs.relay.RelayProtocol;
 import io.ipfs.utils.Link;
 import io.ipfs.utils.LinkCloseable;
 import io.ipfs.utils.Progress;
@@ -65,7 +67,6 @@ import io.ipfs.utils.ReaderProgress;
 import io.ipfs.utils.ReaderStream;
 import io.ipfs.utils.Resolver;
 import io.ipfs.utils.Stream;
-import io.ipns.Ipns;
 import io.libp2p.AddrInfo;
 import io.libp2p.ConnectionManager;
 import io.libp2p.HostBuilder;
@@ -123,6 +124,7 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
             "/ip4/147.75.195.153/tcp/4001/p2p/QmW9m57aiBDHAkKj9nmFSEn7ZqrcF1fZS4bipsTCHburei",// default relay  libp2p
             "/ip4/147.75.70.221/tcp/4001/p2p/Qme8g49gm3q4Acp7xWBKg3nAa9fxZ1YmyDJdyGgoG6LsXh",// default relay  libp2p
 
+
             "/ip4/104.131.131.82/tcp/4001/p2p/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ", // mars.i.ipfs.io
 
             "/dnsaddr/bootstrap.libp2p.io/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN", // default dht peer
@@ -137,7 +139,7 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
     public static final boolean BITSWAP_ENGINE_ACTIVE = false;
     public static final int KAD_DHT_BUCKET_SIZE = 20;
     // The number of peers closest to a target that must have responded for a query path to terminate
-    private static final int KAD_DHT_BETA = 20;
+    public static final int KAD_DHT_BETA = 20;
     // rough estimates on expected sizes
     private static final int roughLinkBlockSize = 1 << 13; // 8KB
     private static final int roughLinkSize = 34 + 8 + 5;// sha256 multihash + size + no name + protobuf framing
@@ -164,13 +166,11 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
     private static final String CONCURRENCY_KEY = "concurrencyKey";
     private static final String TAG = IPFS.class.getSimpleName();
     private static final boolean CONNECTION_SERVICE_ENABLED = false;
-    private static final boolean IDENTIFY_SERVICE_ENABLE = false;
 
     private static IPFS INSTANCE = null;
 
     private final BLOCKS blocks;
     private final Interface exchange;
-    private final Routing routing;
     private final Host host;
     private final PrivKey privateKey;
     private final int port;
@@ -221,13 +221,14 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
         //  TODO QUIC and IPV6
         // TODO set AGENT and PROTOCOL_VERSION
         host = new HostBuilder()
-                .protocol(new Identify(), new DhtProtocol(),
+                .protocol(new Identify(), new DhtProtocol(), new RelayProtocol(),
                         new BitSwapProtocol(this, ProtocolBitswap))
                 .identity(privateKey)
                 .transport(TcpTransport::new) // TODO QUIC Transport when available
                 .secureChannel(NoiseXXSecureChannel::new, SecIoSecureChannel::new) // TODO add TLS when available, and remove Secio
                 .muxer(StreamMuxerProtocol::getMplex)
-                .listen("/ip4/0.0.0.0/tcp/" + port /*,,
+                .listen("/ip4/0.0.0.0/tcp/" + port /*,
+                        "/ip6/::/tcp/" + port ,
                         "/ip4/0.0.0.0/udp/" + port+ "/quic"
                         "/ip6/::/tcp/"+ port,
                         "/ip4/0.0.0.0/udp/"+port+"/quic",
@@ -237,12 +238,8 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
         int alpha = getConcurrencyValue(context);
 
         this.connectionManager = new ConnectionManager(host, LOW_WATER, HIGH_WATER, GRACE_PERIOD);
-        this.routing = new KadDHT(host, connectionManager,
-                new Ipns(), alpha, IPFS.KAD_DHT_BETA,
-                IPFS.KAD_DHT_BUCKET_SIZE);
 
-
-        this.liteHost = new LiteHost(host, connectionManager, routing);
+        this.liteHost = new LiteHost(host, connectionManager, alpha);
         BlockStore blockstore = BlockStore.NewBlockstore(blocks);
 
         this.exchange = BitSwap.create(liteHost, blockstore);
@@ -591,7 +588,7 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
             return;
         }
         try {
-            routing.Provide(closable, Cid.Decode(cid));
+            liteHost.getRouting().Provide(closable, Cid.Decode(cid));
         } catch (ClosedException closedException) {
             throw closedException;
         } catch (Throwable throwable) {
@@ -826,7 +823,7 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
                         LogUtils.info(TAG, "\nBootstrap done " + future.isDone());
                     }
 
-                    routing.init();
+                    liteHost.getRouting().init();
 
 
                     Set<String> second = DnsResolver.resolveDnsAddress(LIB2P_DNS);
@@ -880,7 +877,7 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
             if (multiAddress.startsWith(IPFS.P2P_PATH)) {
                 Set<Multiaddr> addrInfo = HostBuilder.getAddresses(host, peerId);
                 if (addrInfo.isEmpty()) {
-                    return routing.FindPeer(closeable, peerId);
+                    return liteHost.getRouting().FindPeer(closeable, peerId);
                 } else {
                     return HostBuilder.connect(closeable, host, peerId) != null;
                 }
@@ -951,13 +948,14 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
         return base32(getPeerID());
     }
 
+
     public void publishName(@NonNull Closeable closeable, @NonNull String cid, int sequence)
             throws ClosedException {
         if (!isDaemonRunning()) {
             return;
         }
         try {
-            Stream.PublishName(closeable, routing, privateKey, IPFS_PATH + cid, getPID(), sequence);
+            liteHost.PublishName(closeable, privateKey, IPFS_PATH + cid, getPID(), sequence);
         } catch (ClosedException closedException) {
             throw closedException;
         } catch (Throwable throwable) {
@@ -971,12 +969,17 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
 
     public void findProviders(@NonNull Closeable closeable, @NonNull Routing.Providers providers,
                               @NonNull String cid) throws ClosedException {
+        findProviders(closeable, providers, Cid.Decode(cid));
+    }
+
+    public void findProviders(@NonNull Closeable closeable, @NonNull Routing.Providers providers,
+                              @NonNull Cid cid) throws ClosedException {
         if (!isDaemonRunning()) {
             return;
         }
 
         try {
-            routing.FindProviders(closeable, providers, Cid.Decode(cid));
+            liteHost.FindProviders(closeable, providers, cid);
         } catch (ClosedException closedException) {
             throw closedException;
         } catch (Throwable throwable) {
@@ -1188,8 +1191,12 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
         try {
             AtomicLong timeout = new AtomicLong(System.currentTimeMillis() + RESOLVE_MAX_TIME);
 
-            Stream.ResolveName(() -> (timeout.get() < System.currentTimeMillis())
-                    || closeable.isClosed(), routing, new Routing.ResolveInfo() {
+            PeerId id = decode(name);
+            byte[] ipns = IPFS.IPNS_PATH.getBytes();
+            byte[] ipnsKey = Bytes.concat(ipns, id.getBytes());
+
+            liteHost.getRouting().SearchValue(() -> (timeout.get() < System.currentTimeMillis())
+                    || closeable.isClosed(), new Routing.ResolveInfo() {
 
                 private void setName(@NonNull String hash, long sequence) {
                     resolvedName.set(new ResolvedName(sequence,
@@ -1226,7 +1233,7 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
                     }
 
                 }
-            }, decode(name), 8);
+            }, ipnsKey, 8);
 
         } catch (ClosedException ignore) {
             // ignore exception here
@@ -1271,9 +1278,7 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
     public void reset() {
         try {
 
-            if (exchange != null) {
-                exchange.reset();
-            }
+            exchange.reset();
 
             connectionManager.trimConnections();
 

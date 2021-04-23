@@ -10,9 +10,13 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import io.LogUtils;
+import io.core.ClosedException;
 import io.core.TimeoutCloseable;
-import io.libp2p.PeerInfo;
+import io.ipfs.cid.Cid;
+import io.ipfs.relay.AutoRelay;
 import io.libp2p.core.PeerId;
 
 import static junit.framework.TestCase.assertTrue;
@@ -33,17 +37,51 @@ public class IpfsRelayTest {
     public void test_relay_canHop() {
         IPFS ipfs = TestEnv.getTestInstance(context);
         long start = System.currentTimeMillis();
-        PeerId relay = PeerId.fromBase58("Qme8g49gm3q4Acp7xWBKg3nAa9fxZ1YmyDJdyGgoG6LsXh");
+        PeerId relay1 = PeerId.fromBase58("QmW9m57aiBDHAkKj9nmFSEn7ZqrcF1fZS4bipsTCHburei");
         try {
 
-            PeerInfo peerInfo = ipfs.getPeerInfo(new TimeoutCloseable(10), relay);
-
-
-            boolean result = ipfs.canHop(new TimeoutCloseable(10), relay);
+            boolean result = ipfs.canHop(new TimeoutCloseable(10), relay1);
             assertTrue(result);
 
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
+            fail();
+        } finally {
+            LogUtils.info(TAG, "Time " + (System.currentTimeMillis() - start));
+        }
+
+        start = System.currentTimeMillis();
+        PeerId relay2 = PeerId.fromBase58("Qme8g49gm3q4Acp7xWBKg3nAa9fxZ1YmyDJdyGgoG6LsXh");
+        try {
+
+            boolean result = ipfs.canHop(new TimeoutCloseable(10), relay2);
+            assertTrue(result);
+
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable);
+            fail();
+        } finally {
+            LogUtils.info(TAG, "Time " + (System.currentTimeMillis() - start));
+        }
+    }
+
+    // @Test (not working, waiting for new relay + punchhole concept)
+    public void test_findRelays() {
+        IPFS ipfs = TestEnv.getTestInstance(context);
+        long start = System.currentTimeMillis();
+
+        try {
+            AtomicBoolean find = new AtomicBoolean(false);
+
+            ipfs.findProviders(new TimeoutCloseable(120), peerId -> {
+                find.set(true);
+                throw new ClosedException();
+            }, Cid.nsToCid(AutoRelay.RelayRendezvous));
+
+            LogUtils.info(TAG, "NumSwarmPeers " + ipfs.numSwarmPeers());
+
+            assertTrue(find.get());
+        } catch (Throwable throwable) {
             fail();
         } finally {
             LogUtils.info(TAG, "Time " + (System.currentTimeMillis() - start));

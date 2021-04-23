@@ -6,6 +6,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -39,6 +40,16 @@ public class Cid implements Comparable<Cid> {
                 throw new RuntimeException("invalid hash for cidv0");
             }
             return new Cid(dec.toBytes());
+        } catch (Throwable throwable) {
+            throw new RuntimeException(throwable);
+        }
+    }
+
+    public static Cid nsToCid(@NonNull String ns) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(ns.getBytes());
+            return NewCidV1(Raw, hash);
         } catch (Throwable throwable) {
             throw new RuntimeException(throwable);
         }

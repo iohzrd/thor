@@ -8,9 +8,7 @@ import io.core.Closeable;
 import io.core.ClosedException;
 import io.core.ConnectionIssue;
 import io.ipfs.LiteHost;
-import io.libp2p.HostBuilder;
 import io.libp2p.core.Connection;
-import io.libp2p.core.Host;
 import io.libp2p.core.PeerId;
 
 public class Relay {
@@ -19,7 +17,6 @@ public class Relay {
     public Relay(@NonNull LiteHost host){
         this.host = host;
     }
-
 
 
     public boolean canHop(@NonNull Closeable closeable, @NonNull PeerId peerId)
