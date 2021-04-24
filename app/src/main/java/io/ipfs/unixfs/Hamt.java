@@ -7,7 +7,7 @@ import java.util.Objects;
 import io.ipfs.format.Node;
 import io.ipfs.format.ProtoNode;
 import io.ipfs.merkledag.DagService;
-import io.protos.unixfs.UnixfsProtos;
+
 
 public class Hamt {
 
@@ -20,7 +20,7 @@ public class Hamt {
 
         FSNode fsn = FSNode.FSNodeFromBytes(pn.getData());
 
-        if (fsn.Type() != UnixfsProtos.Data.DataType.HAMTShard) {
+        if (fsn.Type() != unixfs.pb.Unixfs.Data.DataType.HAMTShard) {
             throw new RuntimeException();
         }
 

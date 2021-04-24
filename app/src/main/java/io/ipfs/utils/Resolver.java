@@ -24,7 +24,7 @@ import io.ipfs.merkledag.DagService;
 import io.ipfs.unixfs.FSNode;
 import io.ipfs.unixfs.Hamt;
 import io.ipfs.unixfs.Shard;
-import io.protos.unixfs.UnixfsProtos;
+
 
 public class Resolver {
 
@@ -132,7 +132,7 @@ public class Resolver {
             try {
                 FSNode fsn = FSNode.FSNodeFromBytes(pn.getData());
 
-                if (fsn.Type() == UnixfsProtos.Data.DataType.HAMTShard) {
+                if (fsn.Type() == unixfs.pb.Unixfs.Data.DataType.HAMTShard) {
 
                     DagService rods = DagService.createReadOnlyDagService(nodeGetter);
                     Shard s = Hamt.NewHamtFromDag(rods, nd);

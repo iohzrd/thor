@@ -1,8 +1,6 @@
 syntax = "proto3";
 
-package io.protos.bitswap;
-option java_outer_classname = "BitswapProtos";
-option java_package = "io.protos.bitswap";
+package bitswap.pb;
 
 
 message Message {

@@ -90,7 +90,7 @@ import io.libp2p.protocol.IdentifyController;
 import io.libp2p.security.noise.NoiseXXSecureChannel;
 import io.libp2p.security.secio.SecIoSecureChannel;
 import io.libp2p.transport.tcp.TcpTransport;
-import io.protos.ipns.IpnsProtos;
+import ipns.pb.Ipns;
 import threads.thor.core.blocks.BLOCKS;
 
 public class IPFS implements BitSwapReceiver, PushReceiver {
@@ -1217,7 +1217,7 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
                 public void resolved(byte[] data) {
 
                     try {
-                        IpnsProtos.IpnsEntry entry = IpnsProtos.IpnsEntry.parseFrom(data);
+                        Ipns.IpnsEntry entry = Ipns.IpnsEntry.parseFrom(data);
                         Objects.requireNonNull(entry);
                         String hash = entry.getValue().toStringUtf8();
                         long seq = entry.getSequence();

@@ -45,7 +45,7 @@ import io.libp2p.core.transport.Transport;
 import io.libp2p.etc.types.NonCompleteException;
 import io.libp2p.etc.types.NothingToCompleteException;
 import io.netty.handler.timeout.ReadTimeoutException;
-import io.protos.ipns.IpnsProtos;
+
 
 
 public class LiteHost implements BitSwapNetwork {
@@ -279,7 +279,7 @@ public class LiteHost implements BitSwapNetwork {
 
         Date eol = Date.from(new Date().toInstant().plus(DefaultRecordEOL));
 
-        IpnsProtos.IpnsEntry
+        ipns.pb.Ipns.IpnsEntry
                 record = Ipns.Create(privKey, path.getBytes(), sequence, eol);
 
         PubKey pk = privKey.publicKey();

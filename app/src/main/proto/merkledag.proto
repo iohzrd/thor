@@ -1,8 +1,7 @@
 syntax = "proto2";
 
-package io.protos.merkledag;
-option java_outer_classname = "MerkledagProtos";
-option java_package = "io.protos.merkledag";
+package merkledag.pb;
+
 
 // An IPFS MerkleDAG Link
 message PBLink {

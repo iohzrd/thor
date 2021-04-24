@@ -1,10 +1,11 @@
 package io.ipfs.bitswap;
 
-import io.protos.bitswap.BitswapProtos;
+import bitswap.pb.MessageOuterClass;
+
 
 public class Entry {
     public io.ipfs.cid.Cid Cid;
     public int Priority;
-    public BitswapProtos.Message.Wantlist.WantType WantType;
+    public MessageOuterClass.Message.Wantlist.WantType WantType;
 }
 

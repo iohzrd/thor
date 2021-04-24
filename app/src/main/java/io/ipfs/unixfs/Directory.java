@@ -6,7 +6,7 @@ import androidx.annotation.Nullable;
 import io.ipfs.cid.Builder;
 import io.ipfs.format.Node;
 import io.ipfs.format.ProtoNode;
-import io.protos.unixfs.UnixfsProtos;
+
 
 
 public interface Directory {
@@ -22,7 +22,7 @@ public interface Directory {
         ProtoNode protoNode = (ProtoNode) node;
         FSNode fsNode = FSNode.FSNodeFromBytes(protoNode.getData());
 
-        if (fsNode.Type() == UnixfsProtos.Data.DataType.Directory) {
+        if (fsNode.Type() == unixfs.pb.Unixfs.Data.DataType.Directory) {
             return new BasicDirectory((ProtoNode) protoNode.Copy());
         }
         return null;

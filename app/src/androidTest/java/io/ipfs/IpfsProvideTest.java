@@ -34,7 +34,7 @@ public class IpfsProvideTest {
     public void test_resolve_provide() throws ClosedException {
         IPFS ipfs = TestEnv.getTestInstance(context);
 
-        LogUtils.error(TAG, ipfs.getPeerID());
+        LogUtils.debug(TAG, ipfs.getPeerID());
         String test = "Moin Wurdfasdfsadfasst jdöldöflas" + Math.random();
         String cid = ipfs.storeText(test);
         assertNotNull(cid);

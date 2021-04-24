@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import bitswap.pb.MessageOuterClass;
 import io.LogUtils;
 import io.ipfs.IPFS;
 import io.ipfs.cid.Cid;
@@ -18,7 +19,7 @@ import io.ipfs.core.TimeoutCloseable;
 import io.ipfs.format.Block;
 import io.ipfs.format.BlockStore;
 import io.libp2p.core.PeerId;
-import io.protos.bitswap.BitswapProtos;
+
 
 public class BitSwapEngine {
     public static final int MaxBlockSizeReplaceHasWithBlock = 1024;
@@ -117,7 +118,7 @@ public class BitSwapEngine {
             for (BitSwapMessage.Entry et : entries) {
                 if (!et.Cancel) {
 
-                    if (et.WantType == BitswapProtos.Message.Wantlist.WantType.Have) {
+                    if (et.WantType == MessageOuterClass.Message.Wantlist.WantType.Have) {
                         LogUtils.verbose(TAG,
                                 "Bitswap engine <- want-have" +
                                         "  local " + self.toBase58() + " from " + peer.toBase58()
@@ -166,7 +167,7 @@ public class BitSwapEngine {
                 if (IPFS.SEND_DONT_HAVES && entry.SendDontHave) {
 
                     boolean isWantBlock = false;
-                    if (entry.WantType == BitswapProtos.Message.Wantlist.WantType.Block) {
+                    if (entry.WantType == MessageOuterClass.Message.Wantlist.WantType.Block) {
                         isWantBlock = true;
                     }
 
@@ -202,8 +203,8 @@ public class BitSwapEngine {
         }
     }
 
-    private boolean sendAsBlock(BitswapProtos.Message.Wantlist.WantType wantType, Integer blockSize) {
-        boolean isWantBlock = wantType == BitswapProtos.Message.Wantlist.WantType.Block;
+    private boolean sendAsBlock(MessageOuterClass.Message.Wantlist.WantType wantType, Integer blockSize) {
+        boolean isWantBlock = wantType == MessageOuterClass.Message.Wantlist.WantType.Block;
         return isWantBlock || blockSize <= MaxBlockSizeReplaceHasWithBlock;
     }
 

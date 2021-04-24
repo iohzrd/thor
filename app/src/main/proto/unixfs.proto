@@ -1,8 +1,6 @@
 syntax = "proto2";
 
-package io.protos.unixfs;
-option java_outer_classname = "UnixfsProtos";
-option java_package = "io.protos.unixfs";
+package unixfs.pb;
 
 message Data {
 	enum DataType {

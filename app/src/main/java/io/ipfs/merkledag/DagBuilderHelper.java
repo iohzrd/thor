@@ -12,7 +12,7 @@ import io.ipfs.format.ProtoNode;
 import io.ipfs.format.RawNode;
 import io.ipfs.unixfs.FSNode;
 import io.ipfs.utils.Splitter;
-import io.protos.unixfs.UnixfsProtos;
+
 
 
 public class DagBuilderHelper {
@@ -33,12 +33,12 @@ public class DagBuilderHelper {
     }
 
 
-    public FSNodeOverDag NewFSNodeOverDag(@NonNull UnixfsProtos.Data.DataType fsNodeType) {
+    public FSNodeOverDag NewFSNodeOverDag(@NonNull unixfs.pb.Unixfs.Data.DataType fsNodeType) {
         return new FSNodeOverDag(new ProtoNode(), FSNode.NewFSNode(fsNodeType), builder);
     }
 
     @Nullable
-    public Pair<Node, Integer> NewLeafDataNode(@NonNull UnixfsProtos.Data.DataType dataType) {
+    public Pair<Node, Integer> NewLeafDataNode(@NonNull unixfs.pb.Unixfs.Data.DataType dataType) {
 
         byte[] fileData = Next();
         if (fileData != null) {
@@ -51,7 +51,7 @@ public class DagBuilderHelper {
         return null;
     }
 
-    private Node NewLeafNode(byte[] data, @NonNull UnixfsProtos.Data.DataType fsNodeType) {
+    private Node NewLeafNode(byte[] data, @NonNull unixfs.pb.Unixfs.Data.DataType fsNodeType) {
 
         if (data.length > IPFS.BLOCK_SIZE_LIMIT) {
             throw new RuntimeException();
@@ -78,7 +78,7 @@ public class DagBuilderHelper {
     public void FillNodeLayer(@NonNull FSNodeOverDag node) {
 
         while ((node.NumChildren() < IPFS.LINKS_PER_BLOCK) && !Done()) {
-            Pair<Node, Integer> result = NewLeafDataNode(UnixfsProtos.Data.DataType.Raw);
+            Pair<Node, Integer> result = NewLeafDataNode(unixfs.pb.Unixfs.Data.DataType.Raw);
             if (result != null) {
                 node.AddChild(result.first, result.second, this);
             }

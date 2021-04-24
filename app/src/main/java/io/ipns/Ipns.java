@@ -29,7 +29,8 @@ import io.libp2p.crypto.keys.EcdsaKt;
 import io.libp2p.crypto.keys.Ed25519Kt;
 import io.libp2p.crypto.keys.RsaKt;
 import io.libp2p.crypto.keys.Secp256k1Kt;
-import io.protos.ipns.IpnsProtos;
+import ipns.pb.Ipns.IpnsEntry;
+
 
 public class Ipns implements Validator {
 
@@ -79,13 +80,13 @@ public class Ipns implements Validator {
         return Objects.requireNonNull(new SimpleDateFormat(IPFS.TimeFormatIpfs).parse(format));
     }
 
-    public static IpnsProtos.IpnsEntry Create(@NonNull PrivKey sk, @NonNull byte[] bytes,
-                                              long sequence, @NonNull Date eol) {
+    public static ipns.pb.Ipns.IpnsEntry Create(@NonNull PrivKey sk, @NonNull byte[] bytes,
+                                                long sequence, @NonNull Date eol) {
 
         @SuppressLint("SimpleDateFormat") String format = new SimpleDateFormat(
                 IPFS.TimeFormatIpfs).format(eol);
-        IpnsProtos.IpnsEntry entry = IpnsProtos.IpnsEntry.newBuilder()
-                .setValidityType(IpnsProtos.IpnsEntry.ValidityType.EOL)
+        ipns.pb.Ipns.IpnsEntry entry = ipns.pb.Ipns.IpnsEntry.newBuilder()
+                .setValidityType(ipns.pb.Ipns.IpnsEntry.ValidityType.EOL)
                 .setSequence(sequence)
                 .setValue(ByteString.copyFrom(bytes))
                 .setValidity(ByteString.copyFrom(format.getBytes())).buildPartial();
@@ -94,8 +95,8 @@ public class Ipns implements Validator {
         return entry.toBuilder().setSignature(ByteString.copyFrom(sig)).build();
     }
 
-    public static IpnsProtos.IpnsEntry EmbedPublicKey(@NonNull PubKey pk,
-                                                      @NonNull IpnsProtos.IpnsEntry entry) {
+    public static ipns.pb.Ipns.IpnsEntry EmbedPublicKey(@NonNull PubKey pk,
+                                                        @NonNull ipns.pb.Ipns.IpnsEntry entry) {
 
         try {
             PeerId peerId = PeerId.fromPubKey(pk);
@@ -109,7 +110,7 @@ public class Ipns implements Validator {
         }
     }
 
-    public static byte[] ipnsEntryDataForSig(IpnsProtos.IpnsEntry e) {
+    public static byte[] ipnsEntryDataForSig(ipns.pb.Ipns.IpnsEntry e) {
         ByteString value = e.getValue();
         ByteString validity = e.getValidity();
         String type = e.getValidityType().toString();
@@ -133,9 +134,9 @@ public class Ipns implements Validator {
             throw new InvalidRecord();
         }
 
-        IpnsProtos.IpnsEntry entry;
+        ipns.pb.Ipns.IpnsEntry entry;
         try {
-            entry = IpnsProtos.IpnsEntry.parseFrom(value);
+            entry = IpnsEntry.parseFrom(value);
             Objects.requireNonNull(entry);
         } catch (Throwable throwable) {
             throw new InvalidRecord();
@@ -161,7 +162,7 @@ public class Ipns implements Validator {
 
     }
 
-    private int Compare(@NonNull IpnsProtos.IpnsEntry a, @NonNull IpnsProtos.IpnsEntry b) throws InvalidRecord, ParseException {
+    private int Compare(@NonNull ipns.pb.Ipns.IpnsEntry a, @NonNull ipns.pb.Ipns.IpnsEntry b) throws InvalidRecord, ParseException {
 
         long as = a.getSequence();
         long bs = b.getSequence();
@@ -188,8 +189,8 @@ public class Ipns implements Validator {
     public int Select(@NonNull byte[] rec, @NonNull byte[] cmp) {
 
         try {
-            return Compare(IpnsProtos.IpnsEntry.parseFrom(rec),
-                    IpnsProtos.IpnsEntry.parseFrom(cmp));
+            return Compare(ipns.pb.Ipns.IpnsEntry.parseFrom(rec),
+                    ipns.pb.Ipns.IpnsEntry.parseFrom(cmp));
 
         } catch (Throwable throwable) {
             throw new RuntimeException(throwable);
@@ -202,7 +203,7 @@ public class Ipns implements Validator {
     // This function returns (nil, nil) when no public key can be extracted and
     // nothing is malformed.
     @NonNull
-    private PubKey ExtractPublicKey(@NonNull PeerId pid, @NonNull IpnsProtos.IpnsEntry entry)
+    private PubKey ExtractPublicKey(@NonNull PeerId pid, @NonNull ipns.pb.Ipns.IpnsEntry entry)
             throws InvalidRecord, IOException {
 
 
@@ -223,12 +224,12 @@ public class Ipns implements Validator {
     }
 
     @NonNull
-    private PubKey getPublicKey(@NonNull PeerId pid, @NonNull IpnsProtos.IpnsEntry entry)
+    private PubKey getPublicKey(@NonNull PeerId pid, @NonNull ipns.pb.Ipns.IpnsEntry entry)
             throws IOException, InvalidRecord {
         return ExtractPublicKey(pid, entry);
     }
 
-    private void Validate(@NonNull PubKey pk, @NonNull IpnsProtos.IpnsEntry entry) throws InvalidRecord {
+    private void Validate(@NonNull PubKey pk, @NonNull ipns.pb.Ipns.IpnsEntry entry) throws InvalidRecord {
 
         if (!pk.verify(Ipns.ipnsEntryDataForSig(entry), entry.getSignature().toByteArray())) {
             throw new InvalidRecord();
@@ -246,8 +247,8 @@ public class Ipns implements Validator {
     }
 
     @NonNull
-    private Date GetEOL(@NonNull IpnsProtos.IpnsEntry entry) throws InvalidRecord, ParseException {
-        if (entry.getValidityType() != IpnsProtos.IpnsEntry.ValidityType.EOL) {
+    private Date GetEOL(@NonNull ipns.pb.Ipns.IpnsEntry entry) throws InvalidRecord, ParseException {
+        if (entry.getValidityType() != ipns.pb.Ipns.IpnsEntry.ValidityType.EOL) {
             throw new InvalidRecord();
         }
         String date = new String(entry.getValidity().toByteArray());

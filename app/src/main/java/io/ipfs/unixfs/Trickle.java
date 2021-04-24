@@ -6,7 +6,7 @@ import androidx.annotation.NonNull;
 
 import io.ipfs.format.Node;
 import io.ipfs.merkledag.DagBuilderHelper;
-import io.protos.unixfs.UnixfsProtos;
+
 
 
 public class Trickle {
@@ -15,7 +15,7 @@ public class Trickle {
 
     public static Node Layout(@NonNull DagBuilderHelper db) {
         DagBuilderHelper.FSNodeOverDag newRoot =
-                db.NewFSNodeOverDag(UnixfsProtos.Data.DataType.File);
+                db.NewFSNodeOverDag(unixfs.pb.Unixfs.Data.DataType.File);
         Pair<Node, Long> result = fillTrickleRec(db, newRoot, -1);
 
         Node root = result.first;
@@ -39,7 +39,7 @@ public class Trickle {
             for (int repeatIndex = 0; repeatIndex < depthRepeat && !db.Done(); repeatIndex++) {
 
                 Pair<Node, Long> result = fillTrickleRec(db, db.NewFSNodeOverDag(
-                        UnixfsProtos.Data.DataType.File), depth);
+                        unixfs.pb.Unixfs.Data.DataType.File), depth);
 
                 node.AddChild(result.first, result.second, db);
             }

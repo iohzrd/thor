@@ -4,6 +4,7 @@ import androidx.annotation.NonNull;
 
 import java.util.List;
 
+import bitswap.pb.MessageOuterClass;
 import io.ipfs.cid.Cid;
 import io.ipfs.core.Closeable;
 import io.ipfs.core.ClosedException;
@@ -11,7 +12,7 @@ import io.ipfs.core.ConnectionIssue;
 import io.ipfs.core.ProtocolIssue;
 import io.ipfs.core.TimeoutIssue;
 import io.libp2p.core.PeerId;
-import io.protos.bitswap.BitswapProtos;
+
 
 public class MessageWriter {
 
@@ -34,8 +35,8 @@ public class MessageWriter {
         for (Cid c : wantHaves) {
 
             // Broadcast wants are sent as want-have
-            BitswapProtos.Message.Wantlist.WantType wantType =
-                    BitswapProtos.Message.Wantlist.WantType.Have;
+            MessageOuterClass.Message.Wantlist.WantType wantType =
+                    MessageOuterClass.Message.Wantlist.WantType.Have;
 
             message.AddEntry(c, priority, wantType, false);
 
@@ -67,7 +68,7 @@ public class MessageWriter {
         for (Cid c : wantBlocks) {
 
             message.AddEntry(c, priority,
-                    BitswapProtos.Message.Wantlist.WantType.Block, true);
+                    MessageOuterClass.Message.Wantlist.WantType.Block, true);
 
             priority--;
         }

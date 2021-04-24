@@ -11,20 +11,21 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import bitswap.pb.MessageOuterClass;
 import io.ipfs.cid.Cid;
 import io.ipfs.cid.Prefix;
 import io.ipfs.format.BasicBlock;
 import io.ipfs.format.Block;
 import io.ipfs.multihash.Multihash;
-import io.protos.bitswap.BitswapProtos;
+
 
 public interface BitSwapMessage {
 
 
     static int BlockPresenceSize(@NonNull Cid c) {
-        return BitswapProtos.Message.BlockPresence.newBuilder()
+        return MessageOuterClass.Message.BlockPresence.newBuilder()
                 .setCid(ByteString.copyFrom(c.Bytes()))
-                .setType(BitswapProtos.Message.BlockPresenceType.Have).build().getSerializedSize();
+                .setType(MessageOuterClass.Message.BlockPresenceType.Have).build().getSerializedSize();
     }
 
 
@@ -33,9 +34,9 @@ public interface BitSwapMessage {
     }
 
 
-    static BitSwapMessage newMessageFromProto(BitswapProtos.Message pbm) {
+    static BitSwapMessage newMessageFromProto(MessageOuterClass.Message pbm) {
         BitSwapMessageImpl m = new BitSwapMessageImpl(pbm.getWantlist().getFull());
-        for (BitswapProtos.Message.Wantlist.Entry e :
+        for (MessageOuterClass.Message.Wantlist.Entry e :
                 pbm.getWantlist().getEntriesList()) {
             Cid cid = new Cid(e.getBlock().toByteArray());
             if (!cid.Defined()) {
@@ -49,7 +50,7 @@ public interface BitSwapMessage {
             Block block = BasicBlock.NewBlock(data.toByteArray());
             m.AddBlock(block);
         }
-        for (io.protos.bitswap.BitswapProtos.Message.Block b : pbm.getPayloadList()) {
+        for (MessageOuterClass.Message.Block b : pbm.getPayloadList()) {
             ByteString prefix = b.getPrefix();
             Prefix pref = Prefix.PrefixFromBytes(prefix.toByteArray());
             Cid cid = pref.Sum(b.getData().toByteArray());
@@ -57,7 +58,7 @@ public interface BitSwapMessage {
             m.AddBlock(block);
         }
 
-        for (io.protos.bitswap.BitswapProtos.Message.BlockPresence bi : pbm.getBlockPresencesList()) {
+        for (MessageOuterClass.Message.BlockPresence bi : pbm.getBlockPresencesList()) {
             Cid cid = new Cid(bi.getCid().toByteArray());
             if (!cid.Defined()) {
                 throw new RuntimeException("errCidMissing");
@@ -72,7 +73,7 @@ public interface BitSwapMessage {
     }
 
     static BitSwapMessage fromData(byte[] data) throws InvalidProtocolBufferException {
-        BitswapProtos.Message message = BitswapProtos.Message.parseFrom(data);
+        MessageOuterClass.Message message = MessageOuterClass.Message.parseFrom(data);
         return newMessageFromProto(message);
     }
 
@@ -98,7 +99,7 @@ public interface BitSwapMessage {
     int PendingBytes();
 
     // AddEntry adds an entry to the Wantlist.
-    int AddEntry(@NonNull Cid key, int priority, @NonNull BitswapProtos.Message.Wantlist.WantType wantType, boolean sendDontHave);
+    int AddEntry(@NonNull Cid key, int priority, @NonNull MessageOuterClass.Message.Wantlist.WantType wantType, boolean sendDontHave);
 
     // Cancel adds a CANCEL for the given CID to the message
     // Returns the size of the CANCEL entry in the protobuf
@@ -121,7 +122,7 @@ public interface BitSwapMessage {
     void AddBlock(@NonNull Block block);
 
     // AddBlockPresence adds a HAVE / DONT_HAVE for the given Cid to the message
-    void AddBlockPresence(@NonNull Cid cid, @NonNull BitswapProtos.Message.BlockPresenceType type);
+    void AddBlockPresence(@NonNull Cid cid, @NonNull MessageOuterClass.Message.BlockPresenceType type);
 
     // AddHave adds a HAVE for the given Cid to the message
     void AddHave(@NonNull Cid cid);
@@ -154,15 +155,15 @@ public interface BitSwapMessage {
 
         // Get the size of the entry on the wire
         public int Size() {
-            BitswapProtos.Message.Wantlist.Entry epb = ToPB();
+            MessageOuterClass.Message.Wantlist.Entry epb = ToPB();
             return epb.getSerializedSize();
         }
 
         // Get the entry in protobuf form
-        public BitswapProtos.Message.Wantlist.Entry ToPB() {
+        public MessageOuterClass.Message.Wantlist.Entry ToPB() {
 
             // TODO check if Cid is correct
-            return BitswapProtos.Message.Wantlist.Entry.newBuilder().setBlock(
+            return MessageOuterClass.Message.Wantlist.Entry.newBuilder().setBlock(
                     ByteString.copyFrom(Cid.Bytes())
             ).setPriority(Priority).
                     setCancel(Cancel).
@@ -178,7 +179,7 @@ public interface BitSwapMessage {
     // BlockPresence represents a HAVE / DONT_HAVE for a given Cid
     class BlockPresence {
         public Cid Cid;
-        public BitswapProtos.Message.BlockPresenceType Type;
+        public MessageOuterClass.Message.BlockPresenceType Type;
     }
 
     class BitSwapMessageImpl implements BitSwapMessage {
@@ -186,7 +187,7 @@ public interface BitSwapMessage {
         private static final String TAG = BitSwapMessage.class.getSimpleName();
         final HashMap<Cid, Entry> wantlist = new HashMap<>();
         final HashMap<Cid, Block> blocks = new HashMap<>();
-        final HashMap<Cid, BitswapProtos.Message.BlockPresenceType> blockPresences = new HashMap<>();
+        final HashMap<Cid, MessageOuterClass.Message.BlockPresenceType> blockPresences = new HashMap<>();
         boolean full;
         int pendingBytes;
 
@@ -196,7 +197,7 @@ public interface BitSwapMessage {
 
         public int addEntry(@NonNull Cid c,
                             int priority, boolean cancel,
-                            @NonNull BitswapProtos.Message.Wantlist.WantType wantType,
+                            @NonNull MessageOuterClass.Message.Wantlist.WantType wantType,
                             boolean sendDontHave) {
             Entry e = wantlist.get(c);
             if (e != null) {
@@ -213,8 +214,8 @@ public interface BitSwapMessage {
                     e.SendDontHave = sendDontHave;
                 }
                 // want-block overrides existing want-have
-                if (wantType == BitswapProtos.Message.Wantlist.WantType.Block
-                        && e.WantType == BitswapProtos.Message.Wantlist.WantType.Have) {
+                if (wantType == MessageOuterClass.Message.Wantlist.WantType.Block
+                        && e.WantType == MessageOuterClass.Message.Wantlist.WantType.Have) {
                     e.WantType = wantType;
                 }
                 wantlist.put(c, e); // TODO why (not really needed)
@@ -247,7 +248,7 @@ public interface BitSwapMessage {
         public List<BlockPresence> BlockPresences() {
 
             List<BlockPresence> result = new ArrayList<>();
-            for (Map.Entry<Cid, BitswapProtos.Message.BlockPresenceType> entry :
+            for (Map.Entry<Cid, MessageOuterClass.Message.BlockPresenceType> entry :
                     blockPresences.entrySet()) {
                 BlockPresence blockPresence = new BlockPresence();
                 blockPresence.Cid = entry.getKey();
@@ -257,10 +258,10 @@ public interface BitSwapMessage {
             return result;
         }
 
-        private List<Cid> getBlockPresenceByType(BitswapProtos.Message.BlockPresenceType type) {
+        private List<Cid> getBlockPresenceByType(MessageOuterClass.Message.BlockPresenceType type) {
 
             List<Cid> cids = new ArrayList<>();
-            for (Map.Entry<Cid, BitswapProtos.Message.BlockPresenceType> entry :
+            for (Map.Entry<Cid, MessageOuterClass.Message.BlockPresenceType> entry :
                     blockPresences.entrySet()) {
                 if (entry.getValue() == type) {
                     cids.add(entry.getKey());
@@ -271,12 +272,12 @@ public interface BitSwapMessage {
 
         @Override
         public List<Cid> Haves() {
-            return getBlockPresenceByType(BitswapProtos.Message.BlockPresenceType.Have);
+            return getBlockPresenceByType(MessageOuterClass.Message.BlockPresenceType.Have);
         }
 
         @Override
         public List<Cid> DontHaves() {
-            return getBlockPresenceByType(BitswapProtos.Message.BlockPresenceType.DontHave);
+            return getBlockPresenceByType(MessageOuterClass.Message.BlockPresenceType.DontHave);
         }
 
         @Override
@@ -285,13 +286,13 @@ public interface BitSwapMessage {
         }
 
         @Override
-        public int AddEntry(@NonNull Cid key, int priority, @NonNull BitswapProtos.Message.Wantlist.WantType wantType, boolean sendDontHave) {
+        public int AddEntry(@NonNull Cid key, int priority, @NonNull MessageOuterClass.Message.Wantlist.WantType wantType, boolean sendDontHave) {
             return addEntry(key, priority, false, wantType, sendDontHave);
         }
 
         @Override
         public int Cancel(@NonNull Cid key) {
-            return addEntry(key, 0, true, BitswapProtos.Message.Wantlist.WantType.Block, false);
+            return addEntry(key, 0, true, MessageOuterClass.Message.Wantlist.WantType.Block, false);
         }
 
         @Override
@@ -305,9 +306,9 @@ public interface BitSwapMessage {
         }
 
         private int BlockPresenceSize(@NonNull Cid c) {
-            return BitswapProtos.Message.BlockPresence
+            return MessageOuterClass.Message.BlockPresence
                     .newBuilder().setCid(ByteString.copyFrom(c.Bytes()))
-                    .setType(BitswapProtos.Message.BlockPresenceType.Have)
+                    .setType(MessageOuterClass.Message.BlockPresenceType.Have)
                     .build().getSerializedSize();
         }
 
@@ -339,7 +340,7 @@ public interface BitSwapMessage {
         }
 
         @Override
-        public void AddBlockPresence(@NonNull Cid cid, @NonNull BitswapProtos.Message.BlockPresenceType type) {
+        public void AddBlockPresence(@NonNull Cid cid, @NonNull MessageOuterClass.Message.BlockPresenceType type) {
             if (blocks.containsKey(cid)) {
                 return;
             }
@@ -352,12 +353,12 @@ public interface BitSwapMessage {
 
         @Override
         public void AddHave(@NonNull Cid cid) {
-            AddBlockPresence(cid, BitswapProtos.Message.BlockPresenceType.Have);
+            AddBlockPresence(cid, MessageOuterClass.Message.BlockPresenceType.Have);
         }
 
         @Override
         public void AddDontHave(@NonNull Cid cid) {
-            AddBlockPresence(cid, BitswapProtos.Message.BlockPresenceType.DontHave);
+            AddBlockPresence(cid, MessageOuterClass.Message.BlockPresenceType.DontHave);
         }
 
         @Override
@@ -366,12 +367,12 @@ public interface BitSwapMessage {
         }
 
 
-        private BitswapProtos.Message ToProtoV1() {
+        private MessageOuterClass.Message ToProtoV1() {
 
-            BitswapProtos.Message.Builder builder = BitswapProtos.Message.newBuilder();
+            MessageOuterClass.Message.Builder builder = MessageOuterClass.Message.newBuilder();
 
-            BitswapProtos.Message.Wantlist.Builder wantBuilder =
-                    BitswapProtos.Message.Wantlist.newBuilder();
+            MessageOuterClass.Message.Wantlist.Builder wantBuilder =
+                    MessageOuterClass.Message.Wantlist.newBuilder();
 
 
             for (Entry entry : wantlist.values()) {
@@ -382,15 +383,15 @@ public interface BitSwapMessage {
 
 
             for (Block block : Blocks()) {
-                builder.addPayload(BitswapProtos.Message.Block.newBuilder()
+                builder.addPayload(MessageOuterClass.Message.Block.newBuilder()
                         .setData(ByteString.copyFrom(block.RawData()))
                         .setPrefix(ByteString.copyFrom(block.Cid().Prefix().Bytes())).build());
             }
 
 
-            for (Map.Entry<Cid, BitswapProtos.Message.BlockPresenceType> mapEntry :
+            for (Map.Entry<Cid, MessageOuterClass.Message.BlockPresenceType> mapEntry :
                     blockPresences.entrySet()) {
-                builder.addBlockPresences(BitswapProtos.Message.BlockPresence.newBuilder()
+                builder.addBlockPresences(MessageOuterClass.Message.BlockPresence.newBuilder()
                         .setType(mapEntry.getValue())
                         .setCid(ByteString.copyFrom(mapEntry.getKey().Bytes())));
             }
@@ -414,10 +415,10 @@ public interface BitSwapMessage {
             }
         }
 
-        private BitswapProtos.Message ToProtoV0() {
-            BitswapProtos.Message.Builder builder = BitswapProtos.Message.newBuilder();
+        private MessageOuterClass.Message ToProtoV0() {
+            MessageOuterClass.Message.Builder builder = MessageOuterClass.Message.newBuilder();
 
-            BitswapProtos.Message.Wantlist.Builder wantBuilder = BitswapProtos.Message.Wantlist.newBuilder();
+            MessageOuterClass.Message.Wantlist.Builder wantBuilder = MessageOuterClass.Message.Wantlist.newBuilder();
 
 
             for (Entry entry : wantlist.values()) {

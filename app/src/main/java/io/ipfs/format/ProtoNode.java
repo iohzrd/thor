@@ -16,7 +16,7 @@ import java.util.Objects;
 import io.LogUtils;
 import io.ipfs.cid.Builder;
 import io.ipfs.cid.Cid;
-import io.protos.merkledag.MerkledagProtos;
+import merkledag.pb.Merkledag;
 
 
 public class ProtoNode implements Node {
@@ -70,9 +70,9 @@ public class ProtoNode implements Node {
 
         try {
 
-            MerkledagProtos.PBNode pbNode = MerkledagProtos.PBNode.parseFrom(encoded);
-            List<MerkledagProtos.PBLink> pbLinks = pbNode.getLinksList();
-            for (MerkledagProtos.PBLink pbLink : pbLinks) {
+            Merkledag.PBNode pbNode = Merkledag.PBNode.parseFrom(encoded);
+            List<Merkledag.PBLink> pbLinks = pbNode.getLinksList();
+            for (Merkledag.PBLink pbLink : pbLinks) {
                 links.add(Link.create(pbLink.getHash().toByteArray(), pbLink.getName(),
                         pbLink.getTsize()));
             }
@@ -134,14 +134,14 @@ public class ProtoNode implements Node {
     // The conversion uses an intermediate PBNode.
     private byte[] Marshal() {
 
-        MerkledagProtos.PBNode.Builder pbn = MerkledagProtos.PBNode.newBuilder();
+        Merkledag.PBNode.Builder pbn = Merkledag.PBNode.newBuilder();
 
         links.sort((o1, o2) -> o1.getName().compareTo(o2.getName()));// keep links sorted
 
         synchronized (links) {
             for (Link link : links) {
 
-                MerkledagProtos.PBLink.Builder lnb = MerkledagProtos.PBLink.newBuilder().setName(link.getName())
+                Merkledag.PBLink.Builder lnb = Merkledag.PBLink.newBuilder().setName(link.getName())
                         .setTsize(link.getSize());
 
                 if (link.getCid().Defined()) {

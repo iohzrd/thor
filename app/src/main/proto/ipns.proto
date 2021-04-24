@@ -1,8 +1,6 @@
 syntax = "proto2";
 
-package io.protos.ipns;
-option java_outer_classname = "IpnsProtos";
-option java_package = "io.protos.ipns";
+package ipns.pb;
 
 message IpnsEntry {
 	enum ValidityType {

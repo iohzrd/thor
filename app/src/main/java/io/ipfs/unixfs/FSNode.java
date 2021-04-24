@@ -7,26 +7,26 @@ import com.google.protobuf.ByteString;
 import io.ipfs.format.Node;
 import io.ipfs.format.ProtoNode;
 import io.ipfs.format.RawNode;
-import io.protos.unixfs.UnixfsProtos;
+
 
 public class FSNode {
-    private UnixfsProtos.Data data;
+    private unixfs.pb.Unixfs.Data data;
 
-    private FSNode(@NonNull UnixfsProtos.Data.DataType dataType) {
-        data = UnixfsProtos.Data.newBuilder().setType(dataType).
+    private FSNode(@NonNull unixfs.pb.Unixfs.Data.DataType dataType) {
+        data = unixfs.pb.Unixfs.Data.newBuilder().setType(dataType).
                 setFilesize(0L).build();
     }
 
     private FSNode(byte[] content) {
         try {
-            data = UnixfsProtos.Data.parseFrom(content);
+            data = unixfs.pb.Unixfs.Data.parseFrom(content);
         } catch (Throwable throwable) {
             throw new RuntimeException();
         }
     }
 
 
-    public static FSNode NewFSNode(@NonNull UnixfsProtos.Data.DataType dataType) {
+    public static FSNode NewFSNode(@NonNull unixfs.pb.Unixfs.Data.DataType dataType) {
         return new FSNode(dataType);
     }
 
@@ -71,7 +71,7 @@ public class FSNode {
         return data.getData().toByteArray();
     }
 
-    public UnixfsProtos.Data.DataType Type() {
+    public unixfs.pb.Unixfs.Data.DataType Type() {
         return data.getType();
     }
 
