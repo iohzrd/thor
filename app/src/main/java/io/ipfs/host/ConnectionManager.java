@@ -95,6 +95,7 @@ public class ConnectionManager implements Metrics {
                         if (!isProtected(peerId) && !isActive(peerId)) {
                             connection.close().get();
                             hasToBeClosed--;
+                            done(peerId);
                         }
                     } catch (Throwable throwable) {
                         LogUtils.error(TAG, throwable);
