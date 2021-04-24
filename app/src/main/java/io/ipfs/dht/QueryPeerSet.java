@@ -14,20 +14,20 @@ import io.libp2p.core.PeerId;
 
 public class QueryPeerSet {
 
-    private final QueryKey key;
+    private final ID key;
     private final ConcurrentHashMap<PeerId, QueryPeerState> all = new ConcurrentHashMap<>();
 
 
-    private QueryPeerSet(@NonNull QueryKey key) {
+    private QueryPeerSet(@NonNull ID key) {
         this.key = key;
     }
 
     public static QueryPeerSet create(@NonNull byte[] key) {
-        return new QueryPeerSet(QueryKey.createQueryKey(key));
+        return new QueryPeerSet(Util.ConvertKey(key));
     }
 
     private BigInteger distanceToKey(@NonNull PeerId p) {
-        return QueryKey.createQueryKey(p.getBytes()).Distance(key);
+        return Util.Distance(Util.ConvertKey(p.getBytes()),key);
     }
 
     // TryAdd adds the peer p to the peer set.
