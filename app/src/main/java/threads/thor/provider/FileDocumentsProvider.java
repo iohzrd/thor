@@ -30,6 +30,7 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.LogUtils;
+import io.ipfs.cid.Cid;
 import io.ipfs.core.Closeable;
 import io.ipfs.IPFS;
 import io.ipfs.format.Node;
@@ -244,7 +245,7 @@ public class FileDocumentsProvider extends DocumentsProvider {
                 if (signal != null) {
                     closeable = signal::isCanceled;
                 }
-                final Reader reader = ipfs.getReader(documentId, closeable);
+                final Reader reader = ipfs.getReader(Cid.Decode(documentId), closeable);
                 Handler handler = new Handler(getContext().getMainLooper());
 
                 return mStorageManager.openProxyFileDescriptor(

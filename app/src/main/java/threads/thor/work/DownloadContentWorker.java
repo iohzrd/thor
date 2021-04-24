@@ -27,6 +27,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
+import io.ipfs.cid.Cid;
 import io.ipfs.core.ClosedException;
 import io.ipfs.IPFS;
 import io.ipfs.utils.Link;
@@ -128,8 +129,8 @@ public class DownloadContentWorker extends Worker {
 
                 try {
 
-                    String content = docs.getContent(uri, this::isStopped);
-
+                    Cid content = docs.getContent(uri, this::isStopped);
+                    Objects.requireNonNull(content);
                     String mimeType = docs.getMimeType(getApplicationContext(),
                             uri, content, this::isStopped);
 
@@ -168,13 +169,13 @@ public class DownloadContentWorker extends Worker {
     }
 
 
-    private void downloadContent(@NonNull DocumentFile doc, @NonNull String root,
+    private void downloadContent(@NonNull DocumentFile doc, @NonNull Cid root,
                                  @NonNull String mimeType, @NonNull String name) throws ClosedException {
         downloadLinks(doc, root, mimeType, name);
     }
 
 
-    private void download(@NonNull DocumentFile doc, @NonNull String cid) throws ClosedException {
+    private void download(@NonNull DocumentFile doc, @NonNull Cid cid) throws ClosedException {
 
         long start = System.currentTimeMillis();
 
@@ -343,14 +344,15 @@ public class DownloadContentWorker extends Worker {
 
         for (Link link : links) {
             if (!isStopped()) {
-                if (ipfs.isDir(link.getContent(), this::isStopped)) {
+                Cid cid = Cid.Decode(link.getContent());
+                if (ipfs.isDir(cid, this::isStopped)) {
                     DocumentFile dir = doc.createDirectory(link.getName());
                     Objects.requireNonNull(dir);
-                    downloadLinks(dir, link.getContent(), MimeType.DIR_MIME_TYPE, link.getName());
+                    downloadLinks(dir, cid, MimeType.DIR_MIME_TYPE, link.getName());
                 } else {
                     String mimeType = MimeTypeService.getMimeType(link.getName());
                     download(Objects.requireNonNull(doc.createFile(mimeType, link.getName())),
-                            link.getContent());
+                            cid);
                 }
             }
         }
@@ -359,7 +361,7 @@ public class DownloadContentWorker extends Worker {
 
 
     private void downloadLinks(@NonNull DocumentFile doc,
-                               @NonNull String cid,
+                               @NonNull Cid cid,
                                @NonNull String mimeType,
                                @NonNull String name) throws ClosedException {
 

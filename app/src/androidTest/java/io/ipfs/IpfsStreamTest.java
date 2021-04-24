@@ -11,6 +11,7 @@ import org.junit.runner.RunWith;
 
 import java.util.List;
 
+import io.ipfs.cid.Cid;
 import io.ipfs.core.ClosedException;
 import io.ipfs.utils.Link;
 
@@ -33,7 +34,7 @@ public class IpfsStreamTest {
         IPFS ipfs = TestEnv.getTestInstance(context);
 
         String text = "Hello Moin und Zehn Elf";
-        String hash = ipfs.storeText(text);
+        Cid hash = ipfs.storeText(text);
         assertNotNull(hash);
         List<Link> links = ipfs.getLinks(hash, () -> false);
         assertNotNull(links);
@@ -45,7 +46,7 @@ public class IpfsStreamTest {
         assertEquals(text, new String(result));
 
 
-        String hash2 = ipfs.storeText("TEST test");
+        Cid hash2 = ipfs.storeText("TEST test");
         assertNotNull(hash2);
         links = ipfs.getLinks(hash2, () -> false);
         assertNotNull(links);

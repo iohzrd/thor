@@ -13,10 +13,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.LogUtils;
+import io.ipfs.cid.Cid;
 import io.ipfs.core.TimeoutCloseable;
 import io.ipfs.utils.Link;
 
-import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.fail;
@@ -38,7 +38,7 @@ public class IpfsCatTest {
     public void cat_test() throws Exception {
 
         IPFS ipfs = TestEnv.getTestInstance(context);
-        String cid = "Qmaisz6NMhDB51cCvNWa1GMS7LU1pAxdF4Ld6Ft9kZEP2a";
+        Cid cid = Cid.Decode("Qmaisz6NMhDB51cCvNWa1GMS7LU1pAxdF4Ld6Ft9kZEP2a");
         long time = System.currentTimeMillis();
         List<String> provs = new ArrayList<>();
         ipfs.findProviders(() -> false, peerId -> provs.add(peerId.toBase58()), cid);
@@ -73,7 +73,7 @@ public class IpfsCatTest {
 
 
         IPFS ipfs = TestEnv.getTestInstance(context);
-        String cid = "QmUNLLsPACCz1vLxQVkXqqLX5R1X345qqfHbsf67hvA3Nt";
+        Cid cid = Cid.Decode("QmUNLLsPACCz1vLxQVkXqqLX5R1X345qqfHbsf67hvA3Nt");
         try {
             ipfs.loadData(cid, new TimeoutCloseable(10));
             fail();
@@ -89,9 +89,9 @@ public class IpfsCatTest {
 
         IPFS ipfs = TestEnv.getTestInstance(context);
         //noinspection SpellCheckingInspection
-        String cid = "Qme6rRsAb8YCfmQpvDsobZAiWNRefcJw8eFw3WV4pME82V";
+        Cid cid = Cid.Decode("Qme6rRsAb8YCfmQpvDsobZAiWNRefcJw8eFw3WV4pME82V");
 
-        String local = ipfs.storeText("Moin Moin Moin");
+        Cid local = ipfs.storeText("Moin Moin Moin");
         assertNotNull(local);
 
 
@@ -106,12 +106,11 @@ public class IpfsCatTest {
 
         IPFS ipfs = TestEnv.getTestInstance(context);
 
-        String data = ipfs.storeText("");
+        Cid data = ipfs.storeText("");
         assertNotNull(data);
-        assertFalse(data.isEmpty());
 
 
-        String cid = "QmUNLLsPACCz1vLxQVkXqqLX5R1X345qqfHbsf67hvA3Nn";
+        Cid cid = Cid.Decode("QmUNLLsPACCz1vLxQVkXqqLX5R1X345qqfHbsf67hvA3Nn");
         List<Link> res = ipfs.getLinks(cid, new TimeoutCloseable(10));
         assertNotNull(res);
 

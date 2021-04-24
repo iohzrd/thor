@@ -82,6 +82,7 @@ import io.ipfs.core.Closeable;
 import io.ipfs.core.TimeoutCloseable;
 import io.ipfs.IPFS;
 import io.ipfs.format.Node;
+import io.libp2p.core.PeerId;
 import threads.LogUtils;
 import threads.thor.core.Content;
 import threads.thor.core.DOCS;
@@ -1487,13 +1488,11 @@ public class MainActivity extends AppCompatActivity implements
             }
         }
         try {
-            if (true) {
-                IPFS ipfs = IPFS.getInstance(getApplicationContext());
-                String peerId = ipfs.getPeerID();
-                registerService(peerId, ipfs.getPort());
-            }
-        } catch (Throwable e) {
-            io.LogUtils.error(TAG, e);
+            IPFS ipfs = IPFS.getInstance(getApplicationContext());
+            PeerId peerId = ipfs.getPeerID();
+            registerService(peerId.toBase58(), ipfs.getPort());
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable);
         }
         LogUtils.info(InitApplication.TIME_TAG,
                 "MainActivity finish onCreate [" + (System.currentTimeMillis() - start) + "]...");

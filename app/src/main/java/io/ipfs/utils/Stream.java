@@ -66,13 +66,14 @@ public class Stream {
     }
 
 
-    public static void Rm(@NonNull Closeable closeable, @NonNull Storage storage, @NonNull String cid, boolean recursively) throws ClosedException {
+    public static void Rm(@NonNull Closeable closeable, @NonNull Storage storage,
+                          @NonNull Cid cid, boolean recursively) throws ClosedException {
 
         BlockStore bs = BlockStore.NewBlockstore(storage);
         Interface exchange = new Exchange(bs);
         BlockService blockservice = BlockService.New(bs, exchange);
         DagService dags = DagService.createDagService(blockservice);
-        io.ipfs.format.Node top = Resolver.ResolveNode(closeable, dags, Path.New(cid));
+        io.ipfs.format.Node top = Resolver.ResolveNode(closeable, dags, cid);
         Objects.requireNonNull(top);
         List<Cid> cids = new ArrayList<>();
         if (recursively) {
@@ -90,29 +91,29 @@ public class Stream {
     public static boolean IsDir(@NonNull Closeable closeable,
                                 @NonNull BlockStore blockstore,
                                 @NonNull Interface exchange,
-                                @NonNull String path) throws ClosedException {
+                                @NonNull Cid cid) throws ClosedException {
 
 
         BlockService blockservice = BlockService.New(blockstore, exchange);
         DagService dagService = DagService.createDagService(blockservice);
 
-        io.ipfs.format.Node node = Resolver.ResolveNode(closeable, dagService, Path.New(path));
+        io.ipfs.format.Node node = Resolver.ResolveNode(closeable, dagService, cid);
         Objects.requireNonNull(node);
         Directory dir = Directory.NewDirectoryFromNode(node);
         return dir != null;
     }
 
-    public static String CreateEmptyDir(@NonNull Storage storage) {
+    public static Cid CreateEmptyDir(@NonNull Storage storage) {
 
         Adder fileAdder = getFileAdder(storage);
 
         Node nd = fileAdder.CreateEmptyDir();
-        return nd.Cid().String();
+        return nd.Cid();
     }
 
 
-    public static String AddLinkToDir(@NonNull Storage storage, @NonNull Closeable closeable,
-                                      @NonNull String dir, @NonNull String name, @NonNull String link) throws ClosedException {
+    public static Cid AddLinkToDir(@NonNull Storage storage, @NonNull Closeable closeable,
+                                   @NonNull Cid dir, @NonNull String name, @NonNull Cid link) throws ClosedException {
 
         Adder fileAdder = getFileAdder(storage);
 
@@ -121,17 +122,17 @@ public class Stream {
         BlockService blockservice = BlockService.New(bs, exchange);
         DagService dagService = DagService.createDagService(blockservice);
 
-        io.ipfs.format.Node dirNode = Resolver.ResolveNode(closeable, dagService, Path.New(dir));
+        io.ipfs.format.Node dirNode = Resolver.ResolveNode(closeable, dagService, dir);
         Objects.requireNonNull(dirNode);
-        io.ipfs.format.Node linkNode = Resolver.ResolveNode(closeable, dagService, Path.New(link));
+        io.ipfs.format.Node linkNode = Resolver.ResolveNode(closeable, dagService, link);
         Objects.requireNonNull(linkNode);
         Node nd = fileAdder.AddLinkToDir(dirNode, name, linkNode);
-        return nd.Cid().String();
+        return nd.Cid();
 
     }
 
-    public static String RemoveLinkFromDir(@NonNull Storage storage, @NonNull Closeable closeable,
-                                           @NonNull String dir, @NonNull String name) throws ClosedException {
+    public static Cid RemoveLinkFromDir(@NonNull Storage storage, @NonNull Closeable closeable,
+                                        @NonNull Cid dir, @NonNull String name) throws ClosedException {
 
         Adder fileAdder = getFileAdder(storage);
 
@@ -140,22 +141,22 @@ public class Stream {
         BlockService blockservice = BlockService.New(bs, exchange);
         DagService dagService = DagService.createDagService(blockservice);
 
-        io.ipfs.format.Node dirNode = Resolver.ResolveNode(closeable, dagService, Path.New(dir));
+        io.ipfs.format.Node dirNode = Resolver.ResolveNode(closeable, dagService, dir);
         Objects.requireNonNull(dirNode);
         Node nd = fileAdder.RemoveChild(dirNode, name);
-        return nd.Cid().String();
+        return nd.Cid();
 
     }
 
     public static void Ls(@NonNull LinkCloseable closeable, @NonNull BlockStore blockstore,
                           @NonNull Interface exchange,
-                          @NonNull String path, boolean resolveChildren) throws ClosedException {
+                          @NonNull Cid cid, boolean resolveChildren) throws ClosedException {
 
         BlockService blockservice = BlockService.New(blockstore, exchange);
         DagService dagService = DagService.createDagService(blockservice);
 
 
-        io.ipfs.format.Node node = Resolver.ResolveNode(closeable, dagService, Path.New(path));
+        io.ipfs.format.Node node = Resolver.ResolveNode(closeable, dagService, cid);
         Objects.requireNonNull(node);
         Directory dir = Directory.NewDirectoryFromNode(node);
 
@@ -168,12 +169,13 @@ public class Stream {
     }
 
 
-    public static String Write(@NonNull Storage storage,
-                               @NonNull WriterStream writerStream) {
+    @NonNull
+    public static Cid Write(@NonNull Storage storage,
+                            @NonNull WriterStream writerStream) {
 
         Adder fileAdder = getFileAdder(storage);
         Node node = fileAdder.AddReader(writerStream);
-        return node.Cid().String();
+        return node.Cid();
     }
 
     private static void lsFromLinksAsync(@NonNull LinkCloseable closeable,

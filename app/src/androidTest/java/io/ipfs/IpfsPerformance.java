@@ -18,6 +18,7 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.LogUtils;
+import io.ipfs.cid.Cid;
 import io.ipfs.core.TimeoutCloseable;
 import io.ipfs.utils.Progress;
 
@@ -66,7 +67,7 @@ public class IpfsPerformance {
 
         LogUtils.debug(TAG, "Bytes : " + inputFile.length() / 1000 + "[kb]");
         long now = System.currentTimeMillis();
-        String cid = ipfs.storeFile(inputFile);
+        Cid cid = ipfs.storeFile(inputFile);
         assertNotNull(cid);
         LogUtils.debug(TAG, "Add : " + cid +
                 " Time : " + ((System.currentTimeMillis() - now) / 1000) + "[s]");
@@ -123,7 +124,7 @@ public class IpfsPerformance {
 
         LogUtils.debug(TAG, "Bytes : " + inputFile.length() / 1000 + "[kb]");
 
-        String cid = ipfs.storeFile(inputFile);
+        Cid cid = ipfs.storeFile(inputFile);
         assertNotNull(cid);
         File file = createCacheFile();
         ipfs.storeToFile(file, cid, () -> false);
@@ -164,7 +165,7 @@ public class IpfsPerformance {
 
 
         long now = System.currentTimeMillis();
-        String cid = ipfs.storeFile(inputFile);
+        Cid cid = ipfs.storeFile(inputFile);
         assertNotNull(cid);
         LogUtils.debug(TAG, "Add : " + cid +
                 " Time : " + ((System.currentTimeMillis() - now) / 1000) + "[s]");
@@ -222,7 +223,7 @@ public class IpfsPerformance {
 
 
         now = System.currentTimeMillis();
-        String hash58Base_2 = ipfs.storeFile(inputFile);
+        Cid hash58Base_2 = ipfs.storeFile(inputFile);
         assertNotNull(hash58Base_2);
         LogUtils.debug(TAG, "Add : " + hash58Base_2 +
                 " Time : " + ((System.currentTimeMillis() - now) / 1000) + "[s]");

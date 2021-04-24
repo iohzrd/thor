@@ -36,12 +36,6 @@ public class Resolver {
         return Resolver.ResolveNode(closeable, dags, Path.New(path));
     }
 
-    public static String resolve(@NonNull Closeable closeable, @NonNull Storage storage,
-                                 @NonNull Interface exchange, @NonNull String path) throws ClosedException {
-        Node resolved = resolveNode(closeable, storage, exchange, path);
-        Objects.requireNonNull(resolved);
-        return resolved.Cid().String();
-    }
 
     public static Cid ResolvePath(@NonNull Closeable ctx, @NonNull NodeGetter dag, @NonNull Path p) throws ClosedException {
         Path ipa = new Path(p.String());
@@ -59,11 +53,18 @@ public class Resolver {
     }
 
     @Nullable
-    public static io.ipfs.format.Node ResolveNode(@NonNull Closeable closeable,
-                                                  @NonNull NodeGetter nodeGetter,
-                                                  @NonNull Path path) throws ClosedException {
+    public static Node ResolveNode(@NonNull Closeable closeable,
+                                   @NonNull NodeGetter nodeGetter,
+                                   @NonNull Path path) throws ClosedException {
         Cid cid = ResolvePath(closeable, nodeGetter, path);
+        Objects.requireNonNull(cid);
+        return ResolveNode(closeable, nodeGetter, cid);
+    }
 
+    @Nullable
+    public static Node ResolveNode(@NonNull Closeable closeable,
+                                   @NonNull NodeGetter nodeGetter,
+                                   @NonNull Cid cid) throws ClosedException {
         return nodeGetter.Get(closeable, cid);
     }
 

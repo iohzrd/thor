@@ -15,6 +15,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.LogUtils;
+import io.ipfs.cid.Cid;
 import io.ipfs.core.ClosedException;
 import io.ipfs.core.TimeoutCloseable;
 import io.ipfs.format.Node;
@@ -57,7 +58,7 @@ public class IpfsRealTest {
                 if (num.incrementAndGet() == 5) {
                     atomicBoolean.set(true);
                 }
-            }, res.getHash());
+            }, Cid.Decode(res.getHash()));
             fail();
         } catch (ClosedException closedException) {
             assertTrue(atomicBoolean.get());
@@ -77,7 +78,7 @@ public class IpfsRealTest {
         assertFalse(link.isEmpty());
 
         Node node = ipfs.resolveNode(link.concat("/").concat(IPFS.INDEX_HTML), new TimeoutCloseable(30));
-        String text = ipfs.getText(node.Cid().String(), new TimeoutCloseable(30));
+        String text = ipfs.getText(node.Cid(), new TimeoutCloseable(30));
 
         assertNotNull(text);
         assertFalse(text.isEmpty());
@@ -96,7 +97,7 @@ public class IpfsRealTest {
                 new TimeoutCloseable(30));
         assertNotNull(node);
 
-        List<Link> links = ipfs.links(node.Cid().String(), new TimeoutCloseable(1));
+        List<Link> links = ipfs.links(node.Cid(), new TimeoutCloseable(1));
         assertNotNull(links);
         assertFalse(links.isEmpty());
 
@@ -113,7 +114,7 @@ public class IpfsRealTest {
                 new TimeoutCloseable(30));
         assertNotNull(node);
 
-        List<Link> links = ipfs.links(node.Cid().String(), new TimeoutCloseable(1));
+        List<Link> links = ipfs.links(node.Cid(), new TimeoutCloseable(1));
         assertNotNull(links);
         assertFalse(links.isEmpty());
 
@@ -140,7 +141,7 @@ public class IpfsRealTest {
                 if (num.incrementAndGet() == 5) {
                     atomicBoolean.set(true);
                 }
-            }, res.getHash());
+            }, Cid.Decode(res.getHash()));
             fail();
         } catch (ClosedException closedException) {
             assertTrue(atomicBoolean.get());

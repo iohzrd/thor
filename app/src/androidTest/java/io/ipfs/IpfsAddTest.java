@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.UUID;
 
 import io.LogUtils;
+import io.ipfs.cid.Cid;
 import io.ipfs.core.TimeoutCloseable;
 import io.ipfs.utils.Link;
 
@@ -54,11 +55,11 @@ public class IpfsAddTest {
     public void add_dir() throws Exception {
 
         IPFS ipfs = TestEnv.getTestInstance(context);
-        String dir = ipfs.createEmptyDir();
+        Cid dir = ipfs.createEmptyDir();
         assertNotNull(dir);
 
         String content = "Hallo";
-        String text = ipfs.storeText(content);
+        Cid text = ipfs.storeText(content);
         assertNotNull(text);
 
         byte[] data = ipfs.loadData(text, new TimeoutCloseable(1));
@@ -95,7 +96,7 @@ public class IpfsAddTest {
 
         LogUtils.debug(TAG, "Bytes : " + inputFile.length() / 1000 + "[kb]");
 
-        String hash58Base = ipfs.storeFile(inputFile);
+        Cid hash58Base = ipfs.storeFile(inputFile);
         assertNotNull(hash58Base);
 
         List<Link> links = ipfs.ls(hash58Base, () -> false, true);
@@ -123,7 +124,7 @@ public class IpfsAddTest {
             FileServer.insertRecord(inputFile, i, 1000, randomBytes);
         }
 
-        String hash58Base = ipfs.storeFile(inputFile);
+        Cid hash58Base = ipfs.storeFile(inputFile);
         assertNotNull(hash58Base);
 
         List<Link> links = ipfs.getLinks(hash58Base, () -> false);
@@ -150,7 +151,7 @@ public class IpfsAddTest {
 
         LogUtils.debug(TAG, "Bytes : " + inputFile.length() / 1000 + "[kb]");
 
-        String hash58Base = ipfs.storeFile(inputFile);
+        Cid hash58Base = ipfs.storeFile(inputFile);
         assertNotNull(hash58Base);
 
         List<Link> links = ipfs.ls(hash58Base, () -> false, true);
@@ -184,7 +185,7 @@ public class IpfsAddTest {
 
         LogUtils.debug(TAG, "Bytes : " + inputFile.length() / 1000 + "[kb]");
 
-        String hash58Base = ipfs.storeFile(inputFile);
+        Cid hash58Base = ipfs.storeFile(inputFile);
         assertNotNull(hash58Base);
 
         List<Link> links = ipfs.getLinks(hash58Base, () -> false);
@@ -217,7 +218,7 @@ public class IpfsAddTest {
 
         LogUtils.debug(TAG, "Bytes : " + inputFile.length() / 1000 + "[kb]");
 
-        String hash58Base = ipfs.storeFile(inputFile);
+        Cid hash58Base = ipfs.storeFile(inputFile);
         assertNotNull(hash58Base);
 
         List<Link> links = ipfs.getLinks(hash58Base, () -> false);

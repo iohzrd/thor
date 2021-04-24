@@ -6,6 +6,7 @@ import androidx.annotation.Nullable;
 import java.util.Objects;
 
 import io.ipfs.blockservice.BlockService;
+import io.ipfs.cid.Cid;
 import io.ipfs.core.Closeable;
 import io.ipfs.core.ClosedException;
 import io.ipfs.exchange.Interface;
@@ -24,10 +25,10 @@ public class Reader {
     }
 
     public static Reader getReader(@NonNull Closeable closeable, @NonNull BlockStore blockstore,
-                                   @NonNull Interface exchange, @NonNull String cid) throws ClosedException {
+                                   @NonNull Interface exchange, @NonNull Cid cid) throws ClosedException {
         BlockService blockservice = BlockService.New(blockstore, exchange);
         DagService dags = DagService.createDagService(blockservice);
-        io.ipfs.format.Node top = Resolver.ResolveNode(closeable, dags, Path.New(cid));
+        io.ipfs.format.Node top = Resolver.ResolveNode(closeable, dags, cid);
         Objects.requireNonNull(top);
         DagReader dagReader = DagReader.create(top, dags);
 

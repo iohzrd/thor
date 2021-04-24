@@ -37,7 +37,7 @@ public class IpfsUtilsTest {
 
         IPFS ipfs = TestEnv.getTestInstance(context);
 
-        PeerId peerId = ipfs.getPID();
+        PeerId peerId = ipfs.getPeerID();
 
         ID a = Util.ConvertPeerID(peerId);
         ID b = Util.ConvertPeerID(peerId);

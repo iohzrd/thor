@@ -11,10 +11,10 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 
 import io.LogUtils;
+import io.ipfs.cid.Cid;
 import io.ipfs.core.ClosedException;
 import io.ipfs.core.TimeoutCloseable;
 import io.ipfs.host.DnsResolver;
@@ -23,7 +23,6 @@ import io.libp2p.core.multiformats.Multiaddr;
 
 import static junit.framework.TestCase.assertNotNull;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 
@@ -71,19 +70,20 @@ public class IpfsTest {
     }
 
     @Test
-    public void streamTest() throws Exception {
+    public void streamTest() {
         IPFS ipfs = TestEnv.getTestInstance(context);
 
         String test = "Moin";
-        String cid = ipfs.storeText(test);
+        Cid cid = ipfs.storeText(test);
         assertNotNull(cid);
         byte[] bytes = ipfs.getData(cid, () -> false);
         assertNotNull(bytes);
         assertEquals(test, new String(bytes));
 
-        String fault = ipfs.getPeerID();
+
 
         try {
+            Cid fault = Cid.Decode(ipfs.getPeerID().toBase58()); // maybe todo
             ipfs.loadData(fault, new TimeoutCloseable(10));
             fail();
         } catch (Exception ignore) {
@@ -96,7 +96,7 @@ public class IpfsTest {
     @Test
     public void test_timeout_cat() throws Exception {
 
-        String notValid = "QmaFuc7VmzwT5MAx3EANZiVXRtuWtTwALjgaPcSsZ2Jdip";
+        Cid notValid = Cid.Decode("QmaFuc7VmzwT5MAx3EANZiVXRtuWtTwALjgaPcSsZ2Jdip");
         IPFS ipfs = TestEnv.getTestInstance(context);
 
         try {
@@ -118,9 +118,9 @@ public class IpfsTest {
 
         byte[] content = getRandomBytes();
 
-        String hash58Base = ipfs.storeData(content);
+        Cid hash58Base = ipfs.storeData(content);
         assertNotNull(hash58Base);
-        LogUtils.debug(TAG, hash58Base);
+        LogUtils.debug(TAG, hash58Base.String());
 
         byte[] fileContents = ipfs.getData(hash58Base, () -> false);
         assertNotNull(fileContents);
@@ -139,7 +139,7 @@ public class IpfsTest {
 
         try {
             ipfs.getLinks(
-                    "QmXm3f7uKuFKK3QUL1V1oJZnpJSYX8c3vdhd94evSQUPCH",
+                    Cid.Decode("QmXm3f7uKuFKK3QUL1V1oJZnpJSYX8c3vdhd94evSQUPCH"),
                     new TimeoutCloseable(20));
             fail();
         } catch (ClosedException closedException) {
@@ -155,7 +155,7 @@ public class IpfsTest {
         IPFS ipfs = TestEnv.getTestInstance(context);
 
 
-        String cid = ipfs.storeText("hallo");
+        Cid cid = ipfs.storeText("hallo");
         assertNotNull(cid);
         List<Link> links = ipfs.getLinks(cid, () -> false);
         assertNotNull(links);

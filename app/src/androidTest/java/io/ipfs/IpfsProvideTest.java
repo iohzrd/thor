@@ -13,6 +13,7 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.LogUtils;
+import io.ipfs.cid.Cid;
 import io.ipfs.core.ClosedException;
 import io.ipfs.core.TimeoutCloseable;
 
@@ -34,9 +35,9 @@ public class IpfsProvideTest {
     public void test_resolve_provide() throws ClosedException {
         IPFS ipfs = TestEnv.getTestInstance(context);
 
-        LogUtils.debug(TAG, ipfs.getPeerID());
+        LogUtils.debug(TAG, ipfs.getPeerID().toBase58());
         String test = "Moin Wurdfasdfsadfasst jdöldöflas" + Math.random();
-        String cid = ipfs.storeText(test);
+        Cid cid = ipfs.storeText(test);
         assertNotNull(cid);
 
         long start = System.currentTimeMillis();

@@ -21,6 +21,7 @@ import java.util.Date;
 import java.util.Objects;
 
 import io.LogUtils;
+import io.ipfs.cid.Cid;
 import io.ipfs.core.ClosedException;
 import io.ipfs.core.TimeoutCloseable;
 import io.ipfs.multihash.Multihash;
@@ -46,7 +47,7 @@ public class IpfsResolveTest {
         IPFS ipfs = TestEnv.getTestInstance(context);
 
         String test = "Moin Wurst";
-        String cid = ipfs.storeText(test);
+        Cid cid = ipfs.storeText(test);
         assertNotNull(cid);
         int random = (int) Math.abs(Math.random());
 
@@ -63,7 +64,7 @@ public class IpfsResolveTest {
         IPFS.ResolvedName res = ipfs.resolveName(() -> false, key, random);
         assertNotNull(res);
 
-        assertEquals(res.getHash(), cid);
+        assertEquals(res.getHash(), cid.String());
 
     }
 
@@ -86,7 +87,7 @@ public class IpfsResolveTest {
     public void test_peer_id() throws IOException {
         IPFS ipfs = TestEnv.getTestInstance(context);
 
-        PeerId peerId = ipfs.getPID();
+        PeerId peerId = ipfs.getPeerID();
         assertNotNull(peerId);
 
         byte[] data = peerId.getBytes();

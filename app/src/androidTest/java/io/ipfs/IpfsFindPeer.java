@@ -13,8 +13,8 @@ import org.junit.runner.RunWith;
 import java.util.List;
 
 import io.LogUtils;
-import io.ipfs.core.TimeoutCloseable;
 import io.ipfs.core.PeerInfo;
+import io.ipfs.core.TimeoutCloseable;
 import io.libp2p.core.PeerId;
 import io.libp2p.core.multiformats.Multiaddr;
 
@@ -70,7 +70,7 @@ public class IpfsFindPeer {
     public void test_swarm_connect() {
         IPFS ipfs = TestEnv.getTestInstance(context);
 
-        String relay = "QmchgNzyUFyf2wpfDMmpGxMKHA3PkC1f3H2wUgbs21vXoz";
+        PeerId relay = ipfs.getPeerId("QmchgNzyUFyf2wpfDMmpGxMKHA3PkC1f3H2wUgbs21vXoz");
 
 
         boolean connected = ipfs.isConnected(relay);
@@ -88,7 +88,7 @@ public class IpfsFindPeer {
 
         LogUtils.debug(TAG, "Stage 3");
 
-        relay = DUMMY_PID;
+        relay = ipfs.getPeerId(DUMMY_PID);
         result = ipfs.swarmConnect(IPFS.P2P_PATH + relay, 10);
         assertFalse(result);
 
@@ -102,13 +102,12 @@ public class IpfsFindPeer {
         IPFS ipfs = TestEnv.getTestInstance(context);
 
 
-        List<String> peers = ipfs.swarmPeers();
+        List<PeerId> peers = ipfs.swarmPeers();
 
         assertNotNull(peers);
         LogUtils.debug(TAG, "Peers : " + peers.size());
-        for (String peer : peers) {
+        for (PeerId peerId : peers) {
 
-            PeerId peerId = ipfs.getPeerId(peer);
             PeerInfo peerInfo = ipfs.getPeerInfo(new TimeoutCloseable(10), peerId);
 
             if (peerInfo != null) {
@@ -125,8 +124,8 @@ public class IpfsFindPeer {
                 }
 
                 long time = System.currentTimeMillis();
-                LogUtils.debug(TAG, "isConnected : " + ipfs.isConnected(peer)
-                        + " " + (System.currentTimeMillis() - time));
+            LogUtils.debug(TAG, "isConnected : " + ipfs.isConnected(peerId)
+                    + " " + (System.currentTimeMillis() - time));
             }
 
         }

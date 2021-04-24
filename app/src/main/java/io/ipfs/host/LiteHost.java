@@ -273,7 +273,8 @@ public class LiteHost implements BitSwapNetwork {
 
 
     public void PublishName(@NonNull Closeable closable,
-                            @NonNull PrivKey privKey, @NonNull String path,
+                            @NonNull PrivKey privKey,
+                            @NonNull String path,
                             @NonNull PeerId id, int sequence) throws ClosedException {
 
 
