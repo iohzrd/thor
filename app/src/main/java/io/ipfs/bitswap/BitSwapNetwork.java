@@ -9,20 +9,20 @@ import io.core.ClosedException;
 import io.core.ConnectionIssue;
 import io.core.ProtocolIssue;
 import io.core.TimeoutIssue;
-import io.dht.Routing;
+import io.ipfs.dht.Routing;
 import io.ipfs.cid.Cid;
 import io.libp2p.core.PeerId;
 
 
 public interface BitSwapNetwork {
 
-    boolean ConnectTo(@NonNull Closeable closeable, @NonNull PeerId peerId) throws ClosedException, ConnectionIssue;
+    boolean connectTo(@NonNull Closeable closeable, @NonNull PeerId peerId) throws ClosedException, ConnectionIssue;
 
-    void WriteMessage(@NonNull Closeable closeable, @NonNull PeerId peer,
+    void writeMessage(@NonNull Closeable closeable, @NonNull PeerId peer,
                       @NonNull BitSwapMessage message)
             throws ClosedException, ProtocolIssue, TimeoutIssue, ConnectionIssue;
 
-    void FindProviders(@NonNull Closeable closeable, @NonNull Routing.Providers providers,
+    void findProviders(@NonNull Closeable closeable, @NonNull Routing.Providers providers,
                        @NonNull Cid cid) throws ClosedException;
 
     @NonNull

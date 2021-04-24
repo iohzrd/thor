@@ -92,7 +92,7 @@ public class ContentManager {
         new Thread(() -> {
             long begin = System.currentTimeMillis();
             try {
-                network.FindProviders(closeable, peer -> {
+                network.findProviders(closeable, peer -> {
 
                     if (closeable.isClosed()) {
                         return;
@@ -112,7 +112,7 @@ public class ContentManager {
                                         LogUtils.info(TAG, "Provider Peer " +
                                                 peer.toBase58() + " cid " + cid.String());
 
-                                        if (network.ConnectTo(closeable, peer)) {
+                                        if (network.connectTo(closeable, peer)) {
                                             if (matches.containsKey(cid)) { // check still valid
                                                 LogUtils.info(TAG, "Found New Provider " + peer.toBase58()
                                                         + " for " + cid.String());
@@ -361,7 +361,7 @@ public class ContentManager {
                     }
                     Closeable loadCloseable = new TimeoutCloseable(closeable, 15);
 
-                    network.FindProviders(loadCloseable, peer -> {
+                    network.findProviders(loadCloseable, peer -> {
 
                         try {
                             LogUtils.info(TAG, "Load Provider " + peer.toBase58() + " for " + cid.String());
@@ -371,7 +371,7 @@ public class ContentManager {
                                     return;
                                 }
                                 try {
-                                    if (network.ConnectTo(loadCloseable, peer)) {
+                                    if (network.connectTo(loadCloseable, peer)) {
                                         LogUtils.info(TAG, "Load Provider Found " + peer.toBase58()
                                                 + " for " + cid.String());
                                         peers.add(peer);

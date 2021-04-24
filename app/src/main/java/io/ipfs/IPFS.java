@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -42,8 +43,8 @@ import io.core.Closeable;
 import io.core.ClosedException;
 import io.core.ConnectionIssue;
 import io.core.TimeoutCloseable;
-import io.dht.DhtProtocol;
-import io.dht.Routing;
+import io.ipfs.dht.DhtProtocol;
+import io.ipfs.dht.Routing;
 import io.ipfs.bitswap.BitSwap;
 import io.ipfs.bitswap.BitSwapMessage;
 import io.ipfs.bitswap.BitSwapProtocol;
@@ -100,7 +101,7 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
     public static final int PRELOAD_DIST = 5;
     public static final String AGENT = "/go-ipfs/0.9.0/thor"; // todo rename
     public static final String PROTOCOL_VERSION = "ipfs/0.1.0";  // todo check again
-    public static final int TIMEOUT_BOOTSTRAP = 5;
+    public static final int TIMEOUT_BOOTSTRAP = 10;
     public static final long TIMEOUT_PUSH = 3;
     public static final int LOW_WATER = 50;
     public static final int HIGH_WATER = 300;
@@ -520,7 +521,7 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
         }
         try {
 
-            Connection conn = HostBuilder.connect(closeable, host, peerId);
+            Connection conn = liteHost.connect(closeable, peerId);
 
             return getPeerInfo(closeable, conn);
         } catch (Throwable ignore) {
@@ -531,7 +532,7 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
 
     @NonNull
     public List<Multiaddr> listenAddresses() {
-        return HostBuilder.listenAddresses(host);
+        return liteHost.listenAddresses();
     }
 
     public int getPort() {
@@ -810,12 +811,34 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
 
                 try {
 
+                    Set<String> addresses = DnsResolver.resolveDnsAddress(LIB2P_DNS);
+                    addresses.addAll(IPFS.IPFS_BOOTSTRAP_NODES);
 
-                    List<String> bootstrap = IPFS.IPFS_BOOTSTRAP_NODES;
+                    Set<PeerId> peers = new HashSet<>();
+                    for (String multiAddress : addresses) {
+                        try {
+                            Multiaddr multiaddr = new Multiaddr(multiAddress);
+                            String pid = multiaddr.getStringComponent(Protocol.P2P);
+                            Objects.requireNonNull(pid);
+                            PeerId peerId = decode(pid);
+                            Objects.requireNonNull(peerId);
+
+                            AddrInfo addrInfo = AddrInfo.create(peerId, multiaddr);
+                            if (addrInfo.hasAddresses()) {
+                                peers.add(peerId);
+                                connectionManager.protectPeer(peerId);
+                                liteHost.addAddrs(addrInfo);
+                            }
+                        } catch (Throwable throwable) {
+                            LogUtils.error(TAG, throwable);
+                        }
+                    }
+
+
                     List<Callable<Boolean>> tasks = new ArrayList<>();
-                    ExecutorService executor = Executors.newFixedThreadPool(bootstrap.size());
-                    for (String address : bootstrap) {
-                        tasks.add(() -> swarmConnect(address, TIMEOUT_BOOTSTRAP));
+                    ExecutorService executor = Executors.newFixedThreadPool(TIMEOUT_BOOTSTRAP);
+                    for (PeerId peerId : peers) {
+                        tasks.add(() -> liteHost.connectTo(new TimeoutCloseable(TIMEOUT_BOOTSTRAP), peerId));
                     }
 
                     List<Future<Boolean>> futures = executor.invokeAll(tasks, TIMEOUT_BOOTSTRAP, TimeUnit.SECONDS);
@@ -823,22 +846,7 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
                         LogUtils.info(TAG, "\nBootstrap done " + future.isDone());
                     }
 
-                    liteHost.getRouting().init();
-
-
-                    Set<String> second = DnsResolver.resolveDnsAddress(LIB2P_DNS);
-                    tasks.clear();
-                    if (!second.isEmpty()) {
-                        executor = Executors.newFixedThreadPool(second.size());
-                        for (String address : second) {
-                            tasks.add(() -> swarmConnect(address, TIMEOUT_BOOTSTRAP));
-                        }
-                        futures.clear();
-                        futures = executor.invokeAll(tasks, TIMEOUT_BOOTSTRAP, TimeUnit.SECONDS);
-                        for (Future<Boolean> future : futures) {
-                            LogUtils.info(TAG, "\nConnect done " + future.isDone());
-                        }
-                    }
+                    liteHost.getRouting().bootstrap();
 
                 } catch (Throwable throwable) {
                     LogUtils.error(TAG, throwable);
@@ -875,16 +883,16 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
 
             connectionManager.protectPeer(peerId);
             if (multiAddress.startsWith(IPFS.P2P_PATH)) {
-                Set<Multiaddr> addrInfo = HostBuilder.getAddresses(host, peerId);
+                Set<Multiaddr> addrInfo = liteHost.getAddresses(peerId);
                 if (addrInfo.isEmpty()) {
                     return liteHost.getRouting().FindPeer(closeable, peerId);
                 } else {
-                    return HostBuilder.connect(closeable, host, peerId) != null;
+                    return liteHost.connectTo(closeable, peerId);
                 }
             } else {
                 AddrInfo addrInfo = AddrInfo.create(peerId, multiaddr);
-                HostBuilder.addAddrs(host, addrInfo);
-                return HostBuilder.connect(closeable, host, peerId) != null;
+                liteHost.addAddrs(addrInfo);
+                return liteHost.connectTo(closeable, peerId);
             }
         } catch (ClosedException closedException) {
             throw closedException;
@@ -979,7 +987,7 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
         }
 
         try {
-            liteHost.FindProviders(closeable, providers, cid);
+            liteHost.findProviders(closeable, providers, cid);
         } catch (ClosedException closedException) {
             throw closedException;
         } catch (Throwable throwable) {
@@ -1298,7 +1306,7 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
     }
 
     public boolean isConnected(@NonNull String pid) {
-        return HostBuilder.isConnected(host, decode(pid));
+        return liteHost.isConnected(decode(pid));
     }
 
     @Nullable

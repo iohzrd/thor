@@ -46,7 +46,7 @@ public class MessageWriter {
             return;
         }
 
-        network.WriteMessage(closeable, peer, message);
+        network.writeMessage(closeable, peer, message);
 
 
     }
@@ -76,7 +76,7 @@ public class MessageWriter {
             return;
         }
 
-        network.WriteMessage(closeable, peer, message);
+        network.writeMessage(closeable, peer, message);
 
     }
 

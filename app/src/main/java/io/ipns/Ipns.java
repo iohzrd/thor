@@ -19,8 +19,6 @@ import java.util.Date;
 import java.util.Objects;
 
 import crypto.pb.Crypto;
-import io.core.InvalidRecord;
-import io.core.Validator;
 import io.ipfs.IPFS;
 import io.ipfs.cid.Cid;
 import io.ipfs.multihash.Multihash;

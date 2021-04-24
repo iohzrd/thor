@@ -1,4 +1,4 @@
-package io.core;
+package io.ipns;
 
 import androidx.annotation.NonNull;
 

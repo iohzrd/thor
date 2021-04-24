@@ -1,4 +1,4 @@
-package io.dht;
+package io.ipfs.dht;
 
 import android.annotation.SuppressLint;
 import android.util.Pair;
@@ -30,18 +30,17 @@ import io.LogUtils;
 import io.core.Closeable;
 import io.core.ClosedException;
 import io.core.ConnectionIssue;
-import io.core.InvalidRecord;
+import io.ipns.InvalidRecord;
 import io.core.ProtocolIssue;
 import io.core.TimeoutIssue;
-import io.core.Validator;
+import io.ipns.Validator;
 import io.ipfs.IPFS;
+import io.ipfs.LiteHost;
 import io.ipfs.cid.Cid;
 import io.libp2p.AddrInfo;
-import io.libp2p.HostBuilder;
 import io.libp2p.Metrics;
 import io.libp2p.core.Connection;
 import io.libp2p.core.ConnectionClosedException;
-import io.libp2p.core.Host;
 import io.libp2p.core.NoSuchRemoteProtocolException;
 import io.libp2p.core.PeerId;
 import io.libp2p.core.multiformats.Multiaddr;
@@ -54,7 +53,7 @@ import record.pb.RecordOuterClass;
 public class KadDHT implements Routing {
     public static final String Protocol = "/ipfs/kad/1.0.0";
     private static final String TAG = KadDHT.class.getSimpleName();
-    public final Host host;
+    public final LiteHost host;
     public final PeerId self;
     public final int beta;
     public final int bucketSize;
@@ -63,23 +62,23 @@ public class KadDHT implements Routing {
     private final Validator validator;
     private final Metrics metrics;
 
-    public KadDHT(@NonNull Host host, @NonNull Metrics metrics,
+    public KadDHT(@NonNull LiteHost host, @NonNull Metrics metrics,
                   @NonNull Validator validator, int alpha, int beta, int bucketSize) {
         this.host = host;
         this.metrics = metrics;
         this.validator = validator;
-        this.self = host.getPeerId();
-        ID selfKey = Util.ConvertPeerID(host.getPeerId());
+        this.self = host.Self();
         this.bucketSize = bucketSize;
-        this.routingTable = new RoutingTable(metrics, bucketSize, selfKey);
+        this.routingTable = new RoutingTable(metrics, bucketSize, Util.ConvertPeerID(self));
         this.beta = beta;
         this.alpha = alpha;
     }
 
-    public void init() {
+    @Override
+    public void bootstrap() {
         // Fill routing table with currently connected peers that are DHT servers
 
-        for (Connection conn : host.getNetwork().getConnections()) {
+        for (Connection conn : host.getConnections()) {
             PeerId peerId = conn.secureSession().getRemoteId();
             metrics.addLatency(peerId, 0L);
             boolean isReplaceable = !metrics.isProtected(peerId);
@@ -116,7 +115,7 @@ public class KadDHT implements Routing {
             AddrInfo addrInfo = AddrInfo.create(peerId, multiAddresses);
             if (addrInfo.hasAddresses()) {
                 peers.add(addrInfo);
-                HostBuilder.addAddrs(host, addrInfo);
+                host.addAddrs(addrInfo);
             }
         }
         return peers;
@@ -236,7 +235,7 @@ public class KadDHT implements Routing {
 
                 if (addrInfo.hasAddresses()) {
                     provs.add(addrInfo);
-                    HostBuilder.addAddrs(host, addrInfo);
+                    host.addAddrs(addrInfo);
                 }
             }
 
@@ -263,7 +262,7 @@ public class KadDHT implements Routing {
 
     private Dht.Message makeProvRecord(@NonNull byte[] key) {
 
-        List<Multiaddr> addresses = HostBuilder.listenAddresses(host);
+        List<Multiaddr> addresses = host.listenAddresses();
         if (addresses.isEmpty()) {
             throw new RuntimeException("no known addresses for self, cannot put provider");
         }
@@ -318,24 +317,25 @@ public class KadDHT implements Routing {
             throws ClosedException, ConnectionIssue {
 
 
-        Connection con = HostBuilder.connect(closeable, host, p);
+
         try {
             synchronized (p.toBase58().intern()) {
-                long start = System.currentTimeMillis();
+                Connection con = host.connect(closeable, p);
                 metrics.active(p);
-                Object object = HostBuilder.stream(closeable, host, KadDHT.Protocol, con);
+                long start = System.currentTimeMillis();
+                Object object = host.stream(closeable, KadDHT.Protocol, con);
 
                 DhtProtocol.DhtController dhtController = (DhtProtocol.DhtController) object;
                 dhtController.sendMessage(message);
 
                 metrics.addLatency(p, System.currentTimeMillis() - start);
             }
-        } catch (ClosedException exception) {
+        } catch (ClosedException | ConnectionIssue exception) {
+            metrics.done(p);
             throw exception;
         } catch (Throwable throwable) {
-            throw new RuntimeException(throwable);
-        } finally {
             metrics.done(p);
+            throw new RuntimeException(throwable);
         }
     }
 
@@ -344,12 +344,13 @@ public class KadDHT implements Routing {
             throws ClosedException, ProtocolIssue, TimeoutIssue, ConnectionIssue {
 
 
-        Connection con = HostBuilder.connect(closeable, host, p);
         try {
             synchronized (p.toBase58().intern()) {
+                Connection con = host.connect(closeable, p);
+                metrics.active(p);
                 long start = System.currentTimeMillis();
 
-                Object object = HostBuilder.stream(closeable, host, KadDHT.Protocol, con);
+                Object object = host.stream(closeable, KadDHT.Protocol, con);
 
                 DhtProtocol.DhtController dhtController = (DhtProtocol.DhtController) object;
                 CompletableFuture<Dht.Message> ctrl = dhtController.sendRequest(message);
@@ -370,9 +371,11 @@ public class KadDHT implements Routing {
 
                 return response;
             }
-        } catch (ClosedException exception) {
+        } catch (ClosedException | ConnectionIssue exception) {
+            metrics.done(p);
             throw exception;
         } catch (Throwable throwable) {
+            metrics.done(p);
             Throwable cause = throwable.getCause();
             if (cause != null) {
                 LogUtils.info(TAG, cause.getClass().getSimpleName());
@@ -394,8 +397,6 @@ public class KadDHT implements Routing {
             }
             LogUtils.error(TAG, throwable);
             throw new RuntimeException(throwable);
-        } finally {
-            metrics.done(p);
         }
     }
 
@@ -442,7 +443,7 @@ public class KadDHT implements Routing {
     @Override
     public boolean FindPeer(@NonNull Closeable closeable, @NonNull PeerId id) throws ClosedException {
 
-        boolean connected = HostBuilder.isConnected(host, id);
+        boolean connected = host.isConnected(id);
         if (connected) {
             return true;
         }
@@ -454,7 +455,7 @@ public class KadDHT implements Routing {
                     Dht.Message pms = findPeerSingle(ctx, p, id.getBytes());
 
                     return evalClosestPeers(pms);
-                }, () -> closeable.isClosed() || HostBuilder.isConnected(host, id));
+                }, () -> closeable.isClosed() || host.isConnected(id));
 
 
         if (closeable.isClosed()) {
@@ -474,7 +475,7 @@ public class KadDHT implements Routing {
 
         }
 
-        boolean connectedness = HostBuilder.isConnected(host, id);
+        boolean connectedness = host.isConnected(id);
         return dialedPeerDuringQuery || connectedness;
     }
 

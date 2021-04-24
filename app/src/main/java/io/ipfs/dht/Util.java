@@ -1,4 +1,4 @@
-package io.dht;
+package io.ipfs.dht;
 
 import androidx.annotation.NonNull;
 

@@ -1,4 +1,4 @@
-package io.dht;
+package io.ipfs.dht;
 
 public enum PeerState {
     // PeerHeard is applied to peers which have not been queried yet.

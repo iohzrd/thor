@@ -1,4 +1,4 @@
-package io.dht;
+package io.ipfs.dht;
 
 import androidx.annotation.NonNull;
 
@@ -25,7 +25,7 @@ public interface Routing {
     void Provide(@NonNull Closeable closeable, @NonNull Cid cid) throws ClosedException;
 
 
-    void init();
+    void bootstrap();
 
 
     interface Providers {

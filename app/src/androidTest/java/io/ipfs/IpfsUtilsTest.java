@@ -13,9 +13,9 @@ import org.junit.runner.RunWith;
 import java.math.BigInteger;
 import java.util.Collections;
 
-import io.dht.ID;
-import io.dht.PeerDistanceSorter;
-import io.dht.Util;
+import io.ipfs.dht.ID;
+import io.ipfs.dht.PeerDistanceSorter;
+import io.ipfs.dht.Util;
 import io.libp2p.core.PeerId;
 
 import static junit.framework.TestCase.assertEquals;

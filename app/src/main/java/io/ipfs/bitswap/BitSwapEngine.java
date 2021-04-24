@@ -175,7 +175,7 @@ public class BitSwapEngine {
                     BitSwapMessage msg = createMessage(task);
                     if (!msg.Empty()) {
                         try {
-                            network.WriteMessage(new TimeoutCloseable(5), peer, msg);
+                            network.writeMessage(new TimeoutCloseable(5), peer, msg);
                         } catch (Throwable throwable) {
                             LogUtils.error(TAG, throwable);
                         }
@@ -193,7 +193,7 @@ public class BitSwapEngine {
                 BitSwapMessage msg = createMessage(task);
                 if (!msg.Empty()) {
                     try {
-                        network.WriteMessage(new TimeoutCloseable(10), peer, msg);
+                        network.writeMessage(new TimeoutCloseable(10), peer, msg);
                     } catch (Throwable throwable) {
                         LogUtils.error(TAG, throwable);
                     }
