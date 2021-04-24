@@ -74,6 +74,7 @@ public class DnsResolver {
         return txtRecords;
     }
 
+    @NonNull
     public static String resolveDns4Address(@NonNull String multiaddress) throws UnknownHostException {
         if (!multiaddress.startsWith(DNS4_PATH)) {
             throw new RuntimeException();
@@ -89,16 +90,33 @@ public class DnsResolver {
         return ip.concat(query.replaceFirst(host, hostAddress));
     }
 
+    @NonNull
+    public static String resolveDns6Address(@NonNull String multiaddress) throws UnknownHostException {
+        if (!multiaddress.startsWith(DNS6_PATH)) {
+            throw new RuntimeException();
+        }
+        String query = multiaddress.replaceFirst(DNS6_PATH, "");
+        String host = query.split("/")[0];
+        InetAddress address = InetAddress.getByName(host);
+        String ip = IPv4;
+        if (address instanceof Inet6Address) {
+            ip = IPv6;
+        }
+        String hostAddress = address.getHostAddress();
+        return ip.concat(query.replaceFirst(host, hostAddress));
+    }
 
+    @NonNull
     public static Multiaddr resolveDns6(@NonNull Multiaddr multiaddr) throws UnknownHostException {
         return new Multiaddr(resolveDns6Address(multiaddr.toString()));
     }
 
+    @NonNull
     public static Multiaddr resolveDns4(@NonNull Multiaddr multiaddr) throws UnknownHostException {
         return new Multiaddr(resolveDns4Address(multiaddr.toString()));
     }
 
-
+    @NonNull
     public static List<Multiaddr> resolveDnsAddress(@NonNull Multiaddr multiaddr) {
         List<Multiaddr> mAddrs = new ArrayList<>();
         String host = multiaddr.getStringComponent(Protocol.DNSADDR);
@@ -120,20 +138,6 @@ public class DnsResolver {
         return mAddrs;
     }
 
-    public static String resolveDns6Address(@NonNull String multiaddress) throws UnknownHostException {
-        if (!multiaddress.startsWith(DNS6_PATH)) {
-            throw new RuntimeException();
-        }
-        String query = multiaddress.replaceFirst(DNS6_PATH, "");
-        String host = query.split("/")[0];
-        InetAddress address = InetAddress.getByName(host);
-        String ip = IPv4;
-        if (address instanceof Inet6Address) {
-            ip = IPv6;
-        }
-        String hostAddress = address.getHostAddress();
-        return ip.concat(query.replaceFirst(host, hostAddress));
-    }
 
     @NonNull
     public static Set<String> resolveDnsAddress(@NonNull String host) {

@@ -194,6 +194,7 @@ public class LiteHost implements BitSwapNetwork {
         }
     }
 
+    @NonNull
     public Set<Multiaddr> getAddresses(@NonNull PeerId peerId) {
         Set<Multiaddr> all = new HashSet<>();
         try {
@@ -207,6 +208,7 @@ public class LiteHost implements BitSwapNetwork {
         return all;
     }
 
+    @NonNull
     private List<Multiaddr> prepareAddresses(@NonNull PeerId peerId) {
         List<Multiaddr> all = new ArrayList<>();
         for (Multiaddr ma : getAddresses(peerId)) {
