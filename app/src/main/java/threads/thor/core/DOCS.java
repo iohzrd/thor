@@ -217,10 +217,10 @@ public class DOCS {
                 mimeType = info.getMimeType();
             }
 
+        } catch(ClosedException closedException){
+            throw closedException;
         } catch (Throwable throwable) {
-            if (closeable.isClosed()) {
-                throw new ClosedException();
-            }
+            LogUtils.error(TAG, throwable);
         }
 
         return mimeType;

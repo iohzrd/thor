@@ -53,16 +53,6 @@ public class IpfsTest {
     }
 
 
-    @Test
-    public void test_versionAndPID() {
-        IPFS ipfs = TestEnv.getTestInstance(context);
-
-
-        String pid = IPFS.getPeerID(context);
-        LogUtils.debug(TAG, Objects.requireNonNull(pid));
-
-        assertEquals(ipfs.getPeerID(), pid);
-    }
 
     @Test
     public void test_dns_addr() {
@@ -91,7 +81,7 @@ public class IpfsTest {
         assertNotNull(bytes);
         assertEquals(test, new String(bytes));
 
-        String fault = Objects.requireNonNull(IPFS.getPeerID(context));
+        String fault = ipfs.getPeerID();
 
         try {
             ipfs.loadData(fault, new TimeoutCloseable(10));

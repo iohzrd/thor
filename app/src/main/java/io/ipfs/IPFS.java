@@ -249,8 +249,6 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
         host.start().get();
         running = true;
 
-        setPeerID(context, getPeerID());
-
 
         if (IPFS.CONNECTION_SERVICE_ENABLED) {
             host.addConnectionHandler(conn -> connected(conn.secureSession().getRemoteId()));
@@ -356,21 +354,6 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
                 PREF_KEY, Context.MODE_PRIVATE);
         return Objects.requireNonNull(sharedPref.getString(PRIVATE_KEY, ""));
 
-    }
-
-    private static void setPeerID(@NonNull Context context, @NonNull String peerID) {
-        SharedPreferences sharedPref = context.getSharedPreferences(
-                PREF_KEY, Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPref.edit();
-        editor.putString(PID_KEY, peerID);
-        editor.apply();
-    }
-
-    @Nullable
-    public static String getPeerID(@NonNull Context context) {
-        SharedPreferences sharedPref = context.getSharedPreferences(
-                PREF_KEY, Context.MODE_PRIVATE);
-        return sharedPref.getString(PID_KEY, null);
     }
 
     @NonNull
@@ -765,8 +748,8 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
     public String addLinkToDir(@NonNull String dir, @NonNull String name, @NonNull String link) {
         try {
             return Stream.AddLinkToDir(blocks, () -> false, dir, name, link);
-        } catch (Throwable e) {
-            LogUtils.error(TAG, e);
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable);
         }
         return null;
     }
@@ -780,8 +763,8 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
     public String createEmptyDir() {
         try {
             return Stream.CreateEmptyDir(blocks);
-        } catch (Throwable e) {
-            LogUtils.error(TAG, e);
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable);
         }
         return null;
     }
@@ -1299,9 +1282,7 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
 
     public void load(@NonNull Closeable closeable, @NonNull String cid) {
         try {
-            if (exchange != null) {
-                exchange.load(closeable, Cid.Decode(cid));
-            }
+            exchange.load(closeable, Cid.Decode(cid));
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         }

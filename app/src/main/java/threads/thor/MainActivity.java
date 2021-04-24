@@ -1489,7 +1489,8 @@ public class MainActivity extends AppCompatActivity implements
         try {
             if (true) {
                 IPFS ipfs = IPFS.getInstance(getApplicationContext());
-                registerService(ipfs.getPort());
+                String peerId = ipfs.getPeerID();
+                registerService(peerId, ipfs.getPort());
             }
         } catch (Throwable e) {
             io.LogUtils.error(TAG, e);
@@ -1861,10 +1862,8 @@ public class MainActivity extends AppCompatActivity implements
         }
     }
 
-    private void registerService(int port) {
+    private void registerService(@NonNull String peerID, int port) {
         try {
-            String peerID = IPFS.getPeerID(getApplicationContext());
-            Objects.requireNonNull(peerID);
             String serviceType = "_ipfs-discovery._udp";
             NsdServiceInfo serviceInfo = new NsdServiceInfo();
             serviceInfo.setServiceName(peerID);
