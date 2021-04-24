@@ -4,10 +4,10 @@ import androidx.annotation.NonNull;
 
 import java.util.concurrent.CompletableFuture;
 
-import io.core.Closeable;
-import io.core.ClosedException;
-import io.core.ConnectionIssue;
-import io.ipfs.LiteHost;
+import io.ipfs.core.Closeable;
+import io.ipfs.core.ClosedException;
+import io.ipfs.core.ConnectionIssue;
+import io.ipfs.host.LiteHost;
 import io.libp2p.core.Connection;
 import io.libp2p.core.PeerId;
 

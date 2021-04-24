@@ -78,8 +78,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import io.core.Closeable;
-import io.core.TimeoutCloseable;
+import io.ipfs.core.Closeable;
+import io.ipfs.core.TimeoutCloseable;
 import io.ipfs.IPFS;
 import io.ipfs.format.Node;
 import threads.LogUtils;

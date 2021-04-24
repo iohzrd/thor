@@ -13,8 +13,8 @@ import org.junit.runner.RunWith;
 import java.util.List;
 
 import io.LogUtils;
-import io.core.TimeoutCloseable;
-import io.libp2p.PeerInfo;
+import io.ipfs.core.TimeoutCloseable;
+import io.ipfs.core.PeerInfo;
 import io.libp2p.core.PeerId;
 import io.libp2p.core.multiformats.Multiaddr;
 

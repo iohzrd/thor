@@ -10,7 +10,7 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 import io.LogUtils;
-import io.libp2p.Metrics;
+import io.ipfs.host.Metrics;
 import io.libp2p.core.PeerId;
 
 public class RoutingTable {

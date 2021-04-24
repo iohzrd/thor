@@ -1,4 +1,4 @@
-package io.core;
+package io.ipfs.core;
 
 
 public interface Closeable {

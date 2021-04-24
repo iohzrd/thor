@@ -18,7 +18,7 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.LogUtils;
-import io.core.TimeoutCloseable;
+import io.ipfs.core.TimeoutCloseable;
 import io.ipfs.utils.Progress;
 
 import static junit.framework.TestCase.assertEquals;

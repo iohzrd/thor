@@ -15,9 +15,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.LogUtils;
-import io.core.ClosedException;
-import io.core.TimeoutCloseable;
+import io.ipfs.core.ClosedException;
+import io.ipfs.core.TimeoutCloseable;
 import io.ipfs.format.Node;
+import io.ipfs.host.DnsResolver;
 import io.ipfs.utils.Link;
 
 import static junit.framework.TestCase.assertFalse;

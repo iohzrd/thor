@@ -27,18 +27,18 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import dht.pb.Dht;
 import io.LogUtils;
-import io.core.Closeable;
-import io.core.ClosedException;
-import io.core.ConnectionIssue;
-import io.ipns.InvalidRecord;
-import io.core.ProtocolIssue;
-import io.core.TimeoutIssue;
-import io.ipns.Validator;
 import io.ipfs.IPFS;
-import io.ipfs.LiteHost;
 import io.ipfs.cid.Cid;
-import io.libp2p.AddrInfo;
-import io.libp2p.Metrics;
+import io.ipfs.core.AddrInfo;
+import io.ipfs.core.Closeable;
+import io.ipfs.core.ClosedException;
+import io.ipfs.core.ConnectionIssue;
+import io.ipfs.core.ProtocolIssue;
+import io.ipfs.core.TimeoutIssue;
+import io.ipfs.host.LiteHost;
+import io.ipfs.host.Metrics;
+import io.ipns.InvalidRecord;
+import io.ipns.Validator;
 import io.libp2p.core.Connection;
 import io.libp2p.core.ConnectionClosedException;
 import io.libp2p.core.NoSuchRemoteProtocolException;
@@ -62,10 +62,10 @@ public class KadDHT implements Routing {
     private final Validator validator;
     private final Metrics metrics;
 
-    public KadDHT(@NonNull LiteHost host, @NonNull Metrics metrics,
-                  @NonNull Validator validator, int alpha, int beta, int bucketSize) {
+    public KadDHT(@NonNull LiteHost host, @NonNull Validator validator,
+                  int alpha, int beta, int bucketSize) {
         this.host = host;
-        this.metrics = metrics;
+        this.metrics = host.getMetrics();
         this.validator = validator;
         this.self = host.Self();
         this.bucketSize = bucketSize;

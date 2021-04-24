@@ -4,12 +4,12 @@ import androidx.annotation.NonNull;
 
 import java.util.List;
 
-import io.core.Closeable;
-import io.core.ClosedException;
-import io.core.ConnectionIssue;
-import io.core.ProtocolIssue;
-import io.core.TimeoutIssue;
 import io.ipfs.cid.Cid;
+import io.ipfs.core.Closeable;
+import io.ipfs.core.ClosedException;
+import io.ipfs.core.ConnectionIssue;
+import io.ipfs.core.ProtocolIssue;
+import io.ipfs.core.TimeoutIssue;
 import io.libp2p.core.PeerId;
 import io.protos.bitswap.BitswapProtos;
 

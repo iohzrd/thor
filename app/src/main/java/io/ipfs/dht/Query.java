@@ -15,12 +15,12 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
 import io.LogUtils;
-import io.core.Closeable;
-import io.core.ClosedException;
-import io.core.ConnectionIssue;
-import io.core.ProtocolIssue;
-import io.core.TimeoutIssue;
-import io.libp2p.AddrInfo;
+import io.ipfs.core.AddrInfo;
+import io.ipfs.core.Closeable;
+import io.ipfs.core.ClosedException;
+import io.ipfs.core.ConnectionIssue;
+import io.ipfs.core.ProtocolIssue;
+import io.ipfs.core.TimeoutIssue;
 import io.libp2p.core.PeerId;
 
 public class Query {

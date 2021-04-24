@@ -1,4 +1,4 @@
-package io.ipfs;
+package io.ipfs.host;
 
 import androidx.annotation.NonNull;
 
@@ -17,21 +17,21 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 import io.LogUtils;
-import io.core.Closeable;
-import io.core.ClosedException;
-import io.core.ConnectionIssue;
-import io.core.ProtocolIssue;
-import io.core.TimeoutIssue;
-import io.ipfs.dht.KadDHT;
-import io.ipfs.dht.Routing;
+import io.ipfs.IPFS;
 import io.ipfs.bitswap.BitSwapMessage;
 import io.ipfs.bitswap.BitSwapNetwork;
 import io.ipfs.bitswap.BitSwapProtocol;
 import io.ipfs.cid.Cid;
+import io.ipfs.core.AddrInfo;
+import io.ipfs.core.Closeable;
+import io.ipfs.core.ClosedException;
+import io.ipfs.core.ConnectionIssue;
+import io.ipfs.core.ProtocolIssue;
+import io.ipfs.core.TimeoutIssue;
+import io.ipfs.dht.KadDHT;
+import io.ipfs.dht.Routing;
 import io.ipfs.relay.Relay;
 import io.ipns.Ipns;
-import io.libp2p.AddrInfo;
-import io.libp2p.Metrics;
 import io.libp2p.core.Connection;
 import io.libp2p.core.ConnectionClosedException;
 import io.libp2p.core.Host;
@@ -61,11 +61,11 @@ public class LiteHost implements BitSwapNetwork {
     @NonNull
     private final Relay relay;
 
-    LiteHost(@NonNull Host host, @NonNull Metrics metrics, int alpha) {
+    public LiteHost(@NonNull Host host, @NonNull Metrics metrics, int alpha) {
         this.host = host;
         this.metrics = metrics;
 
-        this.routing = new KadDHT(this, metrics,
+        this.routing = new KadDHT(this,
                 new Ipns(), alpha, IPFS.KAD_DHT_BETA,
                 IPFS.KAD_DHT_BUCKET_SIZE);
 
@@ -194,7 +194,7 @@ public class LiteHost implements BitSwapNetwork {
         }
     }
 
-    Set<Multiaddr> getAddresses(@NonNull PeerId peerId) {
+    public Set<Multiaddr> getAddresses(@NonNull PeerId peerId) {
         Set<Multiaddr> all = new HashSet<>();
         try {
             Collection<Multiaddr> addrInfo = host.getAddressBook().get(peerId).get();
@@ -339,5 +339,9 @@ public class LiteHost implements BitSwapNetwork {
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         }
+    }
+
+    public Metrics getMetrics() {
+        return metrics;
     }
 }

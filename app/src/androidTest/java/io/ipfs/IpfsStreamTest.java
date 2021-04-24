@@ -11,7 +11,7 @@ import org.junit.runner.RunWith;
 
 import java.util.List;
 
-import io.core.ClosedException;
+import io.ipfs.core.ClosedException;
 import io.ipfs.utils.Link;
 
 import static junit.framework.TestCase.assertEquals;

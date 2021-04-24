@@ -21,8 +21,8 @@ import java.util.Date;
 import java.util.Objects;
 
 import io.LogUtils;
-import io.core.ClosedException;
-import io.core.TimeoutCloseable;
+import io.ipfs.core.ClosedException;
+import io.ipfs.core.TimeoutCloseable;
 import io.ipfs.multihash.Multihash;
 import io.ipns.Ipns;
 import io.libp2p.core.PeerId;

@@ -2,9 +2,9 @@ package io.ipfs.dht;
 
 import androidx.annotation.NonNull;
 
-import io.core.Closeable;
-import io.core.ClosedException;
 import io.ipfs.cid.Cid;
+import io.ipfs.core.Closeable;
+import io.ipfs.core.ClosedException;
 import io.libp2p.core.PeerId;
 
 public interface Routing {

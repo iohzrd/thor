@@ -12,9 +12,9 @@ import java.util.Map;
 import java.util.Set;
 
 import io.LogUtils;
-import io.core.TimeoutCloseable;
 import io.ipfs.IPFS;
 import io.ipfs.cid.Cid;
+import io.ipfs.core.TimeoutCloseable;
 import io.ipfs.format.Block;
 import io.ipfs.format.BlockStore;
 import io.libp2p.core.PeerId;

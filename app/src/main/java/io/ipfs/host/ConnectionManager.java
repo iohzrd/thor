@@ -1,4 +1,4 @@
-package io.libp2p;
+package io.ipfs.host;
 
 import androidx.annotation.NonNull;
 

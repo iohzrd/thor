@@ -15,8 +15,9 @@ import java.util.Objects;
 import java.util.Set;
 
 import io.LogUtils;
-import io.core.ClosedException;
-import io.core.TimeoutCloseable;
+import io.ipfs.core.ClosedException;
+import io.ipfs.core.TimeoutCloseable;
+import io.ipfs.host.DnsResolver;
 import io.ipfs.utils.Link;
 import io.libp2p.core.multiformats.Multiaddr;
 
