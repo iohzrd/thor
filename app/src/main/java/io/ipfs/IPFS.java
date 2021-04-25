@@ -182,7 +182,6 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
     private final LiteHost liteHost;
     private final Set<PeerId> swarm = ConcurrentHashMap.newKeySet();
     private Pusher pusher;
-    private boolean running;
     private Connector connector;
     @NonNull
     private Reachable reachable = Reachable.UNKNOWN;
@@ -248,7 +247,6 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
 
         this.exchange = BitSwap.create(liteHost, blockstore);
         host.start().get();
-        running = true;
 
 
         if (IPFS.CONNECTION_SERVICE_ENABLED) {
@@ -501,14 +499,10 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
         return decode(name);
     }
 
-    @Nullable
+    @NonNull
     public PeerInfo getPeerInfo(@NonNull PeerId peerId, @NonNull Closeable closeable) {
-
-        if (!isDaemonRunning()) {
-            return null;
-        }
         try {
-
+            // TODO maybe expose exceptions
             Connection conn = liteHost.connect(closeable, peerId);
 
             return getPeerInfo(conn, closeable);
@@ -546,9 +540,6 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
 
     @NonNull
     public List<PeerId> swarmPeers() {
-        if (!isDaemonRunning()) {
-            return Collections.emptyList();
-        }
         return swarm_peers();
     }
 
@@ -556,23 +547,20 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
     private List<PeerId> swarm_peers() {
 
         List<PeerId> peers = new ArrayList<>();
-        if (isDaemonRunning()) {
-            try {
+
+        try {
                 for (Connection connection : host.getNetwork().getConnections()) {
                     peers.add(connection.secureSession().getRemoteId());
                 }
             } catch (Throwable e) {
                 LogUtils.error(TAG, e);
             }
-        }
+
         return peers;
     }
 
     public void provide(@NonNull Cid cid, @NonNull Closeable closable) throws ClosedException {
 
-        if (!isDaemonRunning()) {
-            return;
-        }
         try {
             liteHost.getRouting().Provide(closable, cid);
         } catch (ClosedException closedException) {
@@ -700,22 +688,18 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
         }
     }
 
-    @Nullable
+    @NonNull
     public byte[] getData(@NonNull Cid cid, @NonNull Progress progress) throws IOException, ClosedException {
-        if (!isDaemonRunning()) {
-            return null;
-        }
+
         try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
             storeToOutputStream(outputStream, cid, progress);
             return outputStream.toByteArray();
         }
     }
 
-    @Nullable
+    @NonNull
     public byte[] getData(@NonNull Cid cid, @NonNull Closeable closeable) throws IOException, ClosedException {
-        if (!isDaemonRunning()) {
-            return null;
-        }
+
         try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
             storeToOutputStream(outputStream, cid, closeable);
             return outputStream.toByteArray();
@@ -774,8 +758,8 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
     }
 
     public void bootstrap() {
-        if (isDaemonRunning()) {
-            if (numSwarmPeers() < MIN_PEERS) {
+
+        if (numSwarmPeers() < MIN_PEERS) {
 
                 try {
 
@@ -822,7 +806,7 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
                     LogUtils.info(TAG, "NumPeers " + numSwarmPeers());
                 }
             }
-        }
+
     }
 
     public void shutdown() {
@@ -830,16 +814,12 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
             host.stop().get();
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
-        } finally {
-            running = false;
         }
     }
 
     public boolean swarmConnect(@NonNull String multiAddress,
                                 @NonNull Closeable closeable) throws ClosedException {
-        if (!isDaemonRunning()) {
-            return false;
-        }
+
 
         Multiaddr multiaddr = new Multiaddr(multiAddress);
         String name = multiaddr.getStringComponent(Protocol.P2P);
@@ -924,9 +904,7 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
 
     public void publishName(@NonNull Cid cid, int sequence, @NonNull Closeable closeable)
             throws ClosedException {
-        if (!isDaemonRunning()) {
-            return;
-        }
+
         try {
             liteHost.PublishName(closeable, privateKey, IPFS_PATH + cid.String(), getPeerID(), sequence);
         } catch (ClosedException closedException) {
@@ -944,9 +922,7 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
     public void findProviders(@NonNull Routing.Providers providers,
                               @NonNull Cid cid,
                               @NonNull Closeable closeable) throws ClosedException {
-        if (!isDaemonRunning()) {
-            return;
-        }
+
 
         try {
             liteHost.findProviders(closeable, providers, cid);
@@ -959,9 +935,7 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
 
     @Nullable
     public Multiaddr swarmPeer(@NonNull PeerId peerId) {
-        if (!isDaemonRunning()) {
-            return null;
-        }
+        // todo maybe expose exceptions
         try {
             return host.getNetwork().connect(peerId).get().remoteAddress();
         } catch (Throwable e) {
@@ -985,9 +959,6 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
 
     @Nullable
     public Cid resolve(@NonNull String path, @NonNull Closeable closeable) throws ClosedException {
-        if (!isDaemonRunning()) {
-            return null;
-        }
 
         try {
             Node node = Resolver.resolveNode(closeable, blocks, exchange, path);
@@ -1010,9 +981,6 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
 
     public boolean isDir(@NonNull Cid cid, @NonNull Closeable closeable) throws ClosedException {
 
-        if (!isDaemonRunning()) {
-            return false;
-        }
         boolean result;
         try {
             BlockStore blockstore = BlockStore.NewBlockstore(blocks);
@@ -1076,9 +1044,7 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
     @Nullable
     public List<Link> ls(@NonNull Cid cid, boolean resolveChildren,
                          @NonNull Closeable closeable) throws ClosedException {
-        if (!isDaemonRunning()) {
-            return Collections.emptyList();
-        }
+
         List<Link> infoList = new ArrayList<>();
         try {
             BlockStore blockstore = BlockStore.NewBlockstore(blocks);
@@ -1133,9 +1099,6 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
     @Nullable
     public ResolvedName resolveName(@NonNull String name, long last,
                                     @NonNull Closeable closeable) throws ClosedException {
-        if (!isDaemonRunning()) {
-            return null;
-        }
 
         LogUtils.info(TAG, "resolveName " + name);
         long time = System.currentTimeMillis();
@@ -1209,10 +1172,6 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
         return new ReaderStream(reader);
     }
 
-    public boolean isDaemonRunning() {
-        return running;
-    }
-
     public boolean isValidCID(@NonNull String cid) {
         try {
             return !Cid.Decode(cid).String().isEmpty();
@@ -1222,9 +1181,6 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
     }
 
     public long numSwarmPeers() {
-        if (!isDaemonRunning()) {
-            return 0;
-        }
         return connectionManager.numConnections();
     }
 
@@ -1254,9 +1210,7 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
 
 
     public boolean notify(@NonNull PeerId peerId, @NonNull String content) {
-        if (!isDaemonRunning()) {
-            return false;
-        }
+
         try {
             synchronized (peerId.toBase58().intern()) {
 
