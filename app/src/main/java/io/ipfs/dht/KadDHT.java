@@ -317,7 +317,6 @@ public class KadDHT implements Routing {
             throws ClosedException, ConnectionIssue {
 
 
-
         try {
             synchronized (p.toBase58().intern()) {
                 Connection con = host.connect(closeable, p);

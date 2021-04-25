@@ -5,7 +5,6 @@ import io.ipfs.format.Node;
 import io.ipfs.format.ProtoNode;
 
 
-
 public class Unixfs {
 
     public static byte[] FolderPBData() {

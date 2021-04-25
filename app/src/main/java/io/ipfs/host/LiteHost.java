@@ -47,7 +47,6 @@ import io.libp2p.etc.types.NothingToCompleteException;
 import io.netty.handler.timeout.ReadTimeoutException;
 
 
-
 public class LiteHost implements BitSwapNetwork {
     private static final String TAG = LiteHost.class.getSimpleName();
     private static final Duration DefaultRecordEOL = Duration.ofHours(24);

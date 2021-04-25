@@ -27,7 +27,7 @@ public class QueryPeerSet {
     }
 
     private BigInteger distanceToKey(@NonNull PeerId p) {
-        return Util.Distance(Util.ConvertKey(p.getBytes()),key);
+        return Util.Distance(Util.ConvertKey(p.getBytes()), key);
     }
 
     // TryAdd adds the peer p to the peer set.

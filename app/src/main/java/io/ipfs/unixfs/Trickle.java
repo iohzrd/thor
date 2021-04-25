@@ -8,7 +8,6 @@ import io.ipfs.format.Node;
 import io.ipfs.merkledag.DagBuilderHelper;
 
 
-
 public class Trickle {
 
     public static final int depthRepeat = 4;

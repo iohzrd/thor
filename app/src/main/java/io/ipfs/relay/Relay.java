@@ -14,7 +14,7 @@ import io.libp2p.core.PeerId;
 public class Relay {
     private final LiteHost host;
 
-    public Relay(@NonNull LiteHost host){
+    public Relay(@NonNull LiteHost host) {
         this.host = host;
     }
 
@@ -30,7 +30,7 @@ public class Relay {
         try {
             synchronized (peerId.toBase58().intern()) {
 
-                Object object =  host.stream(closeable, RelayProtocol.Protocol, conn);
+                Object object = host.stream(closeable, RelayProtocol.Protocol, conn);
 
                 RelayProtocol.RelayController controller = (RelayProtocol.RelayController) object;
                 CompletableFuture<relay.pb.Relay.CircuitRelay> ctrl = controller.canHop(message);

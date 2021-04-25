@@ -42,8 +42,6 @@ public class Stream {
     }
 
 
-
-
     public static Adder getFileAdder(@NonNull Storage storage) {
 
         BlockStore bs = BlockStore.NewBlockstore(storage);

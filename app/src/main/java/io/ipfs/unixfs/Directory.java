@@ -8,7 +8,6 @@ import io.ipfs.format.Node;
 import io.ipfs.format.ProtoNode;
 
 
-
 public interface Directory {
 
 

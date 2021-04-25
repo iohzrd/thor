@@ -67,8 +67,6 @@ public class HostBuilder {
     }
 
 
-
-
     private static void removeMultiaddress(@NonNull Host host, @NonNull PeerId peerId, @NonNull Multiaddr addr) {
         try {
             host.getAddressBook().get(peerId).get().remove(addr);

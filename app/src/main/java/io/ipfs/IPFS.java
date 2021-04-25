@@ -1253,7 +1253,6 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
     }
 
 
-
     public boolean notify(@NonNull PeerId peerId, @NonNull String content) {
         if (!isDaemonRunning()) {
             return false;
