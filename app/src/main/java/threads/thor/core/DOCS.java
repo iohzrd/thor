@@ -782,7 +782,7 @@ public class DOCS {
         try {
             ipfs.bootstrap();
 
-            if (ipfs.numSwarmPeers() < IPFS.MIN_PEERS) {
+            if (ipfs.numConnections() < IPFS.MIN_PEERS) {
                 List<Page> bootstraps = pages.getBootstraps(5);
                 List<String> addresses = new ArrayList<>();
                 for (Page bootstrap : bootstraps) {

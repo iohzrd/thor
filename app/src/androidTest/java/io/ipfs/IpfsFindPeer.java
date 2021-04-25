@@ -11,6 +11,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.List;
+import java.util.Set;
 
 import io.LogUtils;
 import io.ipfs.core.PeerInfo;
@@ -102,7 +103,7 @@ public class IpfsFindPeer {
         IPFS ipfs = TestEnv.getTestInstance(context);
 
 
-        List<PeerId> peers = ipfs.swarmPeers();
+        Set<PeerId> peers = ipfs.connectedPeers();
 
         assertNotNull(peers);
         LogUtils.debug(TAG, "Peers : " + peers.size());

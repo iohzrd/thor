@@ -203,7 +203,7 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
         node.setPushing(false);
         node.setEnableReachService(false);*/
 
-        int checkPort = getSwarmPort(context);
+        int checkPort = getPort(context);
         if (isLocalPortFree(checkPort)) {
             port = checkPort;
         } else {
@@ -301,7 +301,7 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
         editor.apply();
     }
 
-    public static int getSwarmPort(@NonNull Context context) {
+    public static int getPort(@NonNull Context context) {
 
         SharedPreferences sharedPref = context.getSharedPreferences(PREF_KEY, Context.MODE_PRIVATE);
         return sharedPref.getInt(SWARM_PORT_KEY, 5001);
@@ -535,23 +535,17 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
     }
 
     @NonNull
-    public List<PeerId> swarmPeers() {
-        return swarm_peers();
-    }
+    public Set<PeerId> connectedPeers() {
 
-    @NonNull
-    private List<PeerId> swarm_peers() {
-
-        List<PeerId> peers = new ArrayList<>();
+        Set<PeerId> peers = new HashSet<>();
 
         try {
             for (Connection connection : host.getNetwork().getConnections()) {
                 peers.add(connection.secureSession().getRemoteId());
             }
-        } catch (Throwable e) {
-            LogUtils.error(TAG, e);
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable);
         }
-
         return peers;
     }
 
@@ -755,7 +749,7 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
 
     public void bootstrap() {
 
-        if (numSwarmPeers() < MIN_PEERS) {
+        if (numConnections() < MIN_PEERS) {
 
             try {
 
@@ -799,7 +793,7 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
             } catch (Throwable throwable) {
                 LogUtils.error(TAG, throwable);
             } finally {
-                LogUtils.info(TAG, "NumPeers " + numSwarmPeers());
+                LogUtils.info(TAG, "NumPeers " + numConnections());
             }
         }
 
@@ -1157,7 +1151,7 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
 
     @NonNull
     public InputStream getInputStream(@NonNull Cid cid, @NonNull Closeable closeable) throws ClosedException {
-        io.ipfs.utils.Reader reader = getReader(cid, closeable);
+        Reader reader = getReader(cid, closeable);
         return new ReaderStream(reader);
     }
 
@@ -1169,7 +1163,7 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
         }
     }
 
-    public long numSwarmPeers() {
+    public long numConnections() {
         return connectionManager.numConnections();
     }
 

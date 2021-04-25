@@ -78,7 +78,7 @@ public class IpfsRelayTest {
                 throw new ClosedException();
             }, Cid.nsToCid(AutoRelay.RelayRendezvous), new TimeoutCloseable(120));
 
-            LogUtils.info(TAG, "NumSwarmPeers " + ipfs.numSwarmPeers());
+            LogUtils.info(TAG, "NumSwarmPeers " + ipfs.numConnections());
 
             assertTrue(find.get());
         } catch (Throwable throwable) {
