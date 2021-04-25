@@ -43,7 +43,7 @@ public class IpfsResolveTest {
     }
 
     @Test
-    public void test_resolve_publish() throws ClosedException {
+    public void test_resolve_publish() throws ClosedException, IOException {
         IPFS ipfs = TestEnv.getTestInstance(context);
 
         String test = "Moin Wurst";
@@ -53,7 +53,7 @@ public class IpfsResolveTest {
 
         long start = System.currentTimeMillis();
         try {
-            ipfs.publishName(new TimeoutCloseable(30), cid, random);
+            ipfs.publishName(cid, random, new TimeoutCloseable(30));
         } catch (ClosedException ignore) {
             // ignore
         }
@@ -61,7 +61,7 @@ public class IpfsResolveTest {
 
         String key = ipfs.getHost();
 
-        IPFS.ResolvedName res = ipfs.resolveName(() -> false, key, random);
+        IPFS.ResolvedName res = ipfs.resolveName(key, random, () -> false);
         assertNotNull(res);
 
         assertEquals(res.getHash(), cid.String());

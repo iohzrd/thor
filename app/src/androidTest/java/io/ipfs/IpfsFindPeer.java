@@ -108,7 +108,7 @@ public class IpfsFindPeer {
         LogUtils.debug(TAG, "Peers : " + peers.size());
         for (PeerId peerId : peers) {
 
-            PeerInfo peerInfo = ipfs.getPeerInfo(new TimeoutCloseable(10), peerId);
+            PeerInfo peerInfo = ipfs.getPeerInfo(peerId, new TimeoutCloseable(10));
 
             if (peerInfo != null) {
 

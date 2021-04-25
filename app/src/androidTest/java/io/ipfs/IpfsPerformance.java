@@ -48,7 +48,7 @@ public class IpfsPerformance {
         return File.createTempFile("temp", ".io.ipfs.cid", context.getCacheDir());
     }
 
-    //@Test
+    @Test
     public void test_add_cat_small() throws Exception {
 
         int packetSize = 1000;
@@ -99,13 +99,11 @@ public class IpfsPerformance {
         ipfs.rm(cid, true);
 
 
-        data = ipfs.loadData(cid, new TimeoutCloseable(10));
-        assertNull(data);
 
     }
 
 
-    //@Test
+    @Test
     public void test_cmp_files() throws Exception {
 
         int packetSize = 10000;

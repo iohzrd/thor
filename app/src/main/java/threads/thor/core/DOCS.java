@@ -84,7 +84,7 @@ public class DOCS {
     }
 
     private void pageProvider(@NonNull Cid cid, @NonNull Closeable closeable) {
-        ipfs.load(closeable, cid);
+        ipfs.load(cid, closeable);
     }
 
     private void pageConnect(@NonNull PeerId peerId, @NonNull Closeable closeable) {
@@ -275,7 +275,7 @@ public class DOCS {
         }
 
 
-        IPFS.ResolvedName resolvedName = ipfs.resolveName(closeable, name, sequence);
+        IPFS.ResolvedName resolvedName = ipfs.resolveName(name, sequence, closeable);
         if (resolvedName == null) {
 
             if (cid != null) {

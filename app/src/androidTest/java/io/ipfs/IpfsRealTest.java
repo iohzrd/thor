@@ -10,6 +10,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -47,18 +48,18 @@ public class IpfsRealTest {
 
         String key = "k2k4r8jllj4k33jxoa4vaeleqkrwu8b7tqz7tgczhptbfkhqr2i280fm";
 
-        IPFS.ResolvedName res = ipfs.resolveName(() -> false, key, 0);
+        IPFS.ResolvedName res = ipfs.resolveName(key, 0, () -> false);
         assertNotNull(res);
 
         AtomicBoolean atomicBoolean = new AtomicBoolean(false);
         AtomicInteger num = new AtomicInteger(0);
         try {
-            ipfs.findProviders(atomicBoolean::get, addrInfo -> {
+            ipfs.findProviders(addrInfo -> {
                 LogUtils.debug(TAG, addrInfo.toString());
                 if (num.incrementAndGet() == 5) {
                     atomicBoolean.set(true);
                 }
-            }, Cid.Decode(res.getHash()));
+            }, Cid.Decode(res.getHash()), atomicBoolean::get);
             fail();
         } catch (ClosedException closedException) {
             assertTrue(atomicBoolean.get());
@@ -67,7 +68,7 @@ public class IpfsRealTest {
     }
 
     @Test
-    public void test_2() throws ClosedException {
+    public void test_2() throws ClosedException, IOException {
 
         IPFS ipfs = TestEnv.getTestInstance(context);
         ipfs.reset();
@@ -77,7 +78,10 @@ public class IpfsRealTest {
         assertNotNull(link);
         assertFalse(link.isEmpty());
 
-        Node node = ipfs.resolveNode(link.concat("/").concat(IPFS.INDEX_HTML), new TimeoutCloseable(30));
+        Node node = ipfs.resolveNode(link.concat("/").concat(IPFS.INDEX_HTML),
+                new TimeoutCloseable(30));
+        assertNotNull(node);
+
         String text = ipfs.getText(node.Cid(), new TimeoutCloseable(30));
 
         assertNotNull(text);
@@ -130,18 +134,18 @@ public class IpfsRealTest {
 
         String key = "k2k4r8n098cwalcc7rdntd19nsjyzh6rku1hvgsmkjzvnw582mncc4b4";
 
-        IPFS.ResolvedName res = ipfs.resolveName(() -> false, key, 0);
+        IPFS.ResolvedName res = ipfs.resolveName(key, 0, () -> false);
         assertNotNull(res);
 
         AtomicBoolean atomicBoolean = new AtomicBoolean(false);
         AtomicInteger num = new AtomicInteger(0);
         try {
-            ipfs.findProviders(atomicBoolean::get, addrInfo -> {
+            ipfs.findProviders(addrInfo -> {
                 LogUtils.debug(TAG, addrInfo.toString());
                 if (num.incrementAndGet() == 5) {
                     atomicBoolean.set(true);
                 }
-            }, Cid.Decode(res.getHash()));
+            }, Cid.Decode(res.getHash()), atomicBoolean::get);
             fail();
         } catch (ClosedException closedException) {
             assertTrue(atomicBoolean.get());

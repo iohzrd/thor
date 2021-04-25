@@ -46,7 +46,6 @@ public class Stream {
 
     public static Adder getFileAdder(@NonNull Storage storage) {
 
-
         BlockStore bs = BlockStore.NewBlockstore(storage);
         Interface exchange = new Exchange(bs);
         BlockService blockservice = BlockService.New(bs, exchange);
@@ -170,8 +169,7 @@ public class Stream {
 
 
     @NonNull
-    public static Cid Write(@NonNull Storage storage,
-                            @NonNull WriterStream writerStream) {
+    public static Cid Write(@NonNull Storage storage, @NonNull WriterStream writerStream) {
 
         Adder fileAdder = getFileAdder(storage);
         Node node = fileAdder.AddReader(writerStream);

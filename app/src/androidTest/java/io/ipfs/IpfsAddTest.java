@@ -22,6 +22,7 @@ import java.util.UUID;
 
 import io.LogUtils;
 import io.ipfs.cid.Cid;
+import io.ipfs.core.ClosedException;
 import io.ipfs.core.TimeoutCloseable;
 import io.ipfs.utils.Link;
 
@@ -51,6 +52,22 @@ public class IpfsAddTest {
         return File.createTempFile("temp", ".io.ipfs.cid", context.getCacheDir());
     }
 
+    @Test(expected = ClosedException.class)
+    public void add_and_remove() throws Exception {
+
+        IPFS ipfs = TestEnv.getTestInstance(context);
+        String content = "Hallo dfsadf";
+        Cid text = ipfs.storeText(content);
+        assertNotNull(text);
+
+        ipfs.rm(text, true);
+
+
+        ipfs.getText(text, new TimeoutCloseable(10)); // closed exception expected
+
+
+    }
+
     @Test
     public void add_dir() throws Exception {
 
@@ -62,7 +79,7 @@ public class IpfsAddTest {
         Cid text = ipfs.storeText(content);
         assertNotNull(text);
 
-        byte[] data = ipfs.loadData(text, new TimeoutCloseable(1));
+        byte[] data = ipfs.getData(text, new TimeoutCloseable(1));
         assertEquals(content, new String(data));
 
         dir = ipfs.addLinkToDir(dir,"text.txt", text);
@@ -99,7 +116,7 @@ public class IpfsAddTest {
         Cid hash58Base = ipfs.storeFile(inputFile);
         assertNotNull(hash58Base);
 
-        List<Link> links = ipfs.ls(hash58Base, () -> false, true);
+        List<Link> links = ipfs.ls(hash58Base, true, () -> false);
         assertNotNull(links);
         assertEquals(links.size(), 4);
 
@@ -154,7 +171,7 @@ public class IpfsAddTest {
         Cid hash58Base = ipfs.storeFile(inputFile);
         assertNotNull(hash58Base);
 
-        List<Link> links = ipfs.ls(hash58Base, () -> false, true);
+        List<Link> links = ipfs.ls(hash58Base, true, () -> false);
         assertNotNull(links);
         assertEquals(links.size(), 4);
         assertNotEquals(links.get(0).getContent(), hash58Base);

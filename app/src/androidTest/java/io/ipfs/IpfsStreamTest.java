@@ -9,6 +9,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
 import java.util.List;
 
 import io.ipfs.cid.Cid;
@@ -30,7 +31,7 @@ public class IpfsStreamTest {
 
 
     @Test
-    public void test_string() throws ClosedException {
+    public void test_string() throws ClosedException, IOException {
         IPFS ipfs = TestEnv.getTestInstance(context);
 
         String text = "Hello Moin und Zehn Elf";

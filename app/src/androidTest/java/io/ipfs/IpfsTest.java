@@ -10,6 +10,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 
@@ -70,7 +71,7 @@ public class IpfsTest {
     }
 
     @Test
-    public void streamTest() {
+    public void streamTest() throws IOException, ClosedException {
         IPFS ipfs = TestEnv.getTestInstance(context);
 
         String test = "Moin";
@@ -81,10 +82,9 @@ public class IpfsTest {
         assertEquals(test, new String(bytes));
 
 
-
         try {
             Cid fault = Cid.Decode(ipfs.getPeerID().toBase58()); // maybe todo
-            ipfs.loadData(fault, new TimeoutCloseable(10));
+            ipfs.getData(fault, new TimeoutCloseable(10));
             fail();
         } catch (Exception ignore) {
             // ok
@@ -94,13 +94,14 @@ public class IpfsTest {
     }
 
     @Test
-    public void test_timeout_cat() throws Exception {
+    public void test_timeout_cat() {
 
         Cid notValid = Cid.Decode("QmaFuc7VmzwT5MAx3EANZiVXRtuWtTwALjgaPcSsZ2Jdip");
         IPFS ipfs = TestEnv.getTestInstance(context);
 
         try {
-            ipfs.loadData(notValid, new TimeoutCloseable(10));
+            ipfs.getData(notValid, new TimeoutCloseable(10));
+            fail();
         } catch (Exception ignore) {
             // ok
         }
@@ -113,7 +114,7 @@ public class IpfsTest {
     }
 
     @Test
-    public void test_add_cat() {
+    public void test_add_cat() throws IOException, ClosedException {
         IPFS ipfs = TestEnv.getTestInstance(context);
 
         byte[] content = getRandomBytes();
@@ -150,10 +151,9 @@ public class IpfsTest {
     }
 
     @Test
-    public void test_ls_small() throws ClosedException {
+    public void test_ls_small() throws ClosedException, IOException {
 
         IPFS ipfs = TestEnv.getTestInstance(context);
-
 
         Cid cid = ipfs.storeText("hallo");
         assertNotNull(cid);

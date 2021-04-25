@@ -9,12 +9,15 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import io.LogUtils;
 import io.ipfs.cid.Cid;
+import io.ipfs.core.ClosedException;
 import io.ipfs.core.TimeoutCloseable;
+import io.ipfs.core.TimeoutProgress;
 import io.ipfs.utils.Link;
 
 import static junit.framework.TestCase.assertNotNull;
@@ -41,7 +44,7 @@ public class IpfsCatTest {
         Cid cid = Cid.Decode("Qmaisz6NMhDB51cCvNWa1GMS7LU1pAxdF4Ld6Ft9kZEP2a");
         long time = System.currentTimeMillis();
         List<String> provs = new ArrayList<>();
-        ipfs.findProviders(() -> false, peerId -> provs.add(peerId.toBase58()), cid);
+        ipfs.findProviders(peerId -> provs.add(peerId.toBase58()), cid, () -> false);
         for (String prov : provs) {
             LogUtils.debug(TAG, "Provider " + prov);
         }
@@ -54,7 +57,17 @@ public class IpfsCatTest {
         assertTrue(res.isEmpty());
 
         time = System.currentTimeMillis();
-        byte[] content = ipfs.loadData(cid, new TimeoutCloseable(10));
+        byte[] content = ipfs.getData(cid, new TimeoutProgress(10) {
+            @Override
+            public void setProgress(int progress) {
+                LogUtils.debug(TAG, "" + progress);
+            }
+
+            @Override
+            public boolean doProgress() {
+                return true;
+            }
+        });
 
         LogUtils.debug(TAG, "Time : " + (System.currentTimeMillis() - time) + " [ms]");
 
@@ -75,7 +88,7 @@ public class IpfsCatTest {
         IPFS ipfs = TestEnv.getTestInstance(context);
         Cid cid = Cid.Decode("QmUNLLsPACCz1vLxQVkXqqLX5R1X345qqfHbsf67hvA3Nt");
         try {
-            ipfs.loadData(cid, new TimeoutCloseable(10));
+            ipfs.getData(cid, new TimeoutCloseable(10));
             fail();
         } catch (Exception ignore) {
             //
@@ -83,19 +96,17 @@ public class IpfsCatTest {
     }
 
 
-    //@Test
-    public void cat_test_local() {
+    @Test
+    public void cat_test_local() throws IOException, ClosedException {
 
 
         IPFS ipfs = TestEnv.getTestInstance(context);
-        //noinspection SpellCheckingInspection
-        Cid cid = Cid.Decode("Qme6rRsAb8YCfmQpvDsobZAiWNRefcJw8eFw3WV4pME82V");
 
         Cid local = ipfs.storeText("Moin Moin Moin");
         assertNotNull(local);
 
 
-        byte[] content = ipfs.getData(cid, () -> false);
+        byte[] content = ipfs.getData(local, () -> false);
 
         assertNotNull(content);
 
@@ -116,7 +127,7 @@ public class IpfsCatTest {
 
         assertTrue(res.isEmpty());
         try {
-            ipfs.loadData(cid, new TimeoutCloseable(10));
+            ipfs.getData(cid, new TimeoutCloseable(10));
             fail();
         } catch (Exception ignore) {
             //

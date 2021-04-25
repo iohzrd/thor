@@ -10,6 +10,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.LogUtils;
@@ -32,7 +33,7 @@ public class IpfsProvideTest {
     }
 
     @Test
-    public void test_resolve_provide() throws ClosedException {
+    public void test_resolve_provide() throws IOException {
         IPFS ipfs = TestEnv.getTestInstance(context);
 
         LogUtils.debug(TAG, ipfs.getPeerID().toBase58());
@@ -42,7 +43,7 @@ public class IpfsProvideTest {
 
         long start = System.currentTimeMillis();
         try {
-            ipfs.provide(new TimeoutCloseable(30), cid);
+            ipfs.provide(cid, new TimeoutCloseable(30));
         } catch (ClosedException ignore) {
         }
         LogUtils.debug(TAG, "Time provide " + (System.currentTimeMillis() - start));
@@ -50,7 +51,7 @@ public class IpfsProvideTest {
         long time = System.currentTimeMillis();
         AtomicBoolean finished = new AtomicBoolean(false);
         try {
-            ipfs.findProviders(finished::get, peerId -> finished.set(true), cid);
+            ipfs.findProviders(peerId -> finished.set(true), cid, finished::get);
         } catch (ClosedException ignore) {
         }
         LogUtils.debug(TAG, "Time Providers : " + (System.currentTimeMillis() - time) + " [ms]");

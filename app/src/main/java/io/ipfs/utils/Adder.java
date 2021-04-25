@@ -59,6 +59,7 @@ public class Adder {
     }
 
 
+    @NonNull
     public Node AddReader(@NonNull final WriterStream reader) {
 
         Splitter splitter = new Splitter() {
