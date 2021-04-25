@@ -45,4 +45,10 @@ public class LogUtils {
             Log.e(tag, "" + throwable.getLocalizedMessage(), throwable);
         }
     }
+
+    public static void debug(@NonNull String tag, @NonNull String message) {
+        if (isDebug()) {
+            Log.d(tag, message);
+        }
+    }
 }

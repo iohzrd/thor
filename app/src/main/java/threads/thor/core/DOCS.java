@@ -47,7 +47,6 @@ import threads.thor.utils.MimeType;
 
 public class DOCS {
 
-
     private static final String TAG = DOCS.class.getSimpleName();
     private static final HashSet<Long> threads = new HashSet<>();
     private static final HashSet<Uri> uris = new HashSet<>();
@@ -105,26 +104,17 @@ public class DOCS {
                 }
 
                 if (page != null && connected) {
-                    Multiaddr info = ipfs.swarmPeer(peerId);
-                    if (info != null) {
-                        String address = info.toString();
-                        if (!address.isEmpty() && !address.contains(Content.CIRCUIT)) {
-                            if (!Objects.equals(address, page.getAddress())) {
-                                pages.setPageAddress(pid, address);
-                                pages.resetBootstrap(pid);
-                            } else {
-                                pages.incrementRating(pid);
-                                // success here, same address
-                                if (!page.isBootstrap()) {
-                                    pages.setBootstrap(pid);
-                                }
-                            }
+                    Multiaddr info = ipfs.remoteAddress(peerId, closeable);
+                    String address = info.toString();
+                    if (!address.isEmpty() && !address.contains(Content.CIRCUIT)) {
+                        if (!Objects.equals(address, page.getAddress())) {
+                            pages.setPageAddress(pid, address);
+                            pages.resetBootstrap(pid);
                         } else {
-                            if (!page.getAddress().isEmpty()) {
-                                pages.setPageAddress(pid, "");
-                            }
-                            if (page.isBootstrap()) {
-                                pages.resetBootstrap(pid);
+                            pages.incrementRating(pid);
+                            // success here, same address
+                            if (!page.isBootstrap()) {
+                                pages.setBootstrap(pid);
                             }
                         }
                     } else {
@@ -135,10 +125,9 @@ public class DOCS {
                             pages.resetBootstrap(pid);
                         }
                     }
-
                 }
+                LogUtils.debug(TAG, "Connect " + pid + " " + connected);
 
-                LogUtils.error(TAG, "Connect " + pid + " " + connected);
             } catch (ClosedException ignore) {
             } catch (Throwable throwable) {
                 LogUtils.error(TAG, throwable.getMessage());
@@ -493,7 +482,7 @@ public class DOCS {
 
     }
 
-    @NonNull
+    @Nullable
     public Cid getContent(@NonNull Uri uri, @NonNull Closeable closeable)
             throws InvalidNameException, ResolveNameException, ClosedException {
 

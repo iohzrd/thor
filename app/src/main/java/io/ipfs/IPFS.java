@@ -500,16 +500,12 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
     }
 
     @NonNull
-    public PeerInfo getPeerInfo(@NonNull PeerId peerId, @NonNull Closeable closeable) {
-        try {
-            // TODO maybe expose exceptions
-            Connection conn = liteHost.connect(closeable, peerId);
+    public PeerInfo getPeerInfo(@NonNull PeerId peerId, @NonNull Closeable closeable)
+            throws ClosedException, ConnectionIssue {
 
-            return getPeerInfo(conn, closeable);
-        } catch (Throwable ignore) {
-            // ignore
-        }
-        return null;
+        Connection conn = liteHost.connect(closeable, peerId);
+
+        return getPeerInfo(conn, closeable);
     }
 
     @NonNull
@@ -922,8 +918,6 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
     public void findProviders(@NonNull Routing.Providers providers,
                               @NonNull Cid cid,
                               @NonNull Closeable closeable) throws ClosedException {
-
-
         try {
             liteHost.findProviders(closeable, providers, cid);
         } catch (ClosedException closedException) {
@@ -933,15 +927,10 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
         }
     }
 
-    @Nullable
-    public Multiaddr swarmPeer(@NonNull PeerId peerId) {
-        // todo maybe expose exceptions
-        try {
-            return host.getNetwork().connect(peerId).get().remoteAddress();
-        } catch (Throwable e) {
-            LogUtils.error(TAG, e);
-        }
-        return null;
+    @NonNull
+    public Multiaddr remoteAddress(@NonNull PeerId peerId, @NonNull Closeable closeable)
+            throws ClosedException, ConnectionIssue {
+        return liteHost.connect(closeable, peerId).remoteAddress();
     }
 
     @Nullable

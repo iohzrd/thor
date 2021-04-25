@@ -108,9 +108,9 @@ public class IpfsFindPeer {
         LogUtils.debug(TAG, "Peers : " + peers.size());
         for (PeerId peerId : peers) {
 
-            PeerInfo peerInfo = ipfs.getPeerInfo(peerId, new TimeoutCloseable(10));
+            try {
+                PeerInfo peerInfo = ipfs.getPeerInfo(peerId, new TimeoutCloseable(10));
 
-            if (peerInfo != null) {
 
                 LogUtils.debug(TAG, peerInfo.toString());
                 assertNotNull(peerInfo.getAddress());
@@ -119,16 +119,19 @@ public class IpfsFindPeer {
 
                 Multiaddr observed = peerInfo.getObserved();
                 if (observed != null) {
-                        LogUtils.debug(TAG, observed.toString());
-                    }
+                    LogUtils.debug(TAG, observed.toString());
                 }
 
-                long time = System.currentTimeMillis();
-            LogUtils.debug(TAG, "isConnected : " + ipfs.isConnected(peerId)
-                    + " " + (System.currentTimeMillis() - time));
+            } catch (Throwable throwable) {
+                LogUtils.debug(TAG, "" + throwable.getClass().getName());
             }
 
+            long time = System.currentTimeMillis();
+            LogUtils.debug(TAG, "isConnected : " + ipfs.isConnected(peerId)
+                    + " " + (System.currentTimeMillis() - time));
         }
+
+    }
 
 
 }
