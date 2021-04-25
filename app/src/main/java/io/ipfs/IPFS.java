@@ -545,12 +545,12 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
         List<PeerId> peers = new ArrayList<>();
 
         try {
-                for (Connection connection : host.getNetwork().getConnections()) {
-                    peers.add(connection.secureSession().getRemoteId());
-                }
-            } catch (Throwable e) {
-                LogUtils.error(TAG, e);
+            for (Connection connection : host.getNetwork().getConnections()) {
+                peers.add(connection.secureSession().getRemoteId());
             }
+        } catch (Throwable e) {
+            LogUtils.error(TAG, e);
+        }
 
         return peers;
     }
@@ -757,51 +757,51 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
 
         if (numSwarmPeers() < MIN_PEERS) {
 
-                try {
+            try {
 
-                    Set<String> addresses = DnsResolver.resolveDnsAddress(LIB2P_DNS);
-                    addresses.addAll(IPFS.IPFS_BOOTSTRAP_NODES);
+                Set<String> addresses = DnsResolver.resolveDnsAddress(LIB2P_DNS);
+                addresses.addAll(IPFS.IPFS_BOOTSTRAP_NODES);
 
-                    Set<PeerId> peers = new HashSet<>();
-                    for (String multiAddress : addresses) {
-                        try {
-                            Multiaddr multiaddr = new Multiaddr(multiAddress);
-                            String name = multiaddr.getStringComponent(Protocol.P2P);
-                            Objects.requireNonNull(name);
-                            PeerId peerId = decode(name);
-                            Objects.requireNonNull(peerId);
+                Set<PeerId> peers = new HashSet<>();
+                for (String multiAddress : addresses) {
+                    try {
+                        Multiaddr multiaddr = new Multiaddr(multiAddress);
+                        String name = multiaddr.getStringComponent(Protocol.P2P);
+                        Objects.requireNonNull(name);
+                        PeerId peerId = decode(name);
+                        Objects.requireNonNull(peerId);
 
-                            AddrInfo addrInfo = AddrInfo.create(peerId, multiaddr);
-                            if (addrInfo.hasAddresses()) {
-                                peers.add(peerId);
-                                connectionManager.protectPeer(peerId);
-                                liteHost.addAddrs(addrInfo);
-                            }
-                        } catch (Throwable throwable) {
-                            LogUtils.error(TAG, throwable);
+                        AddrInfo addrInfo = AddrInfo.create(peerId, multiaddr);
+                        if (addrInfo.hasAddresses()) {
+                            peers.add(peerId);
+                            connectionManager.protectPeer(peerId);
+                            liteHost.addAddrs(addrInfo);
                         }
+                    } catch (Throwable throwable) {
+                        LogUtils.error(TAG, throwable);
                     }
-
-
-                    List<Callable<Boolean>> tasks = new ArrayList<>();
-                    ExecutorService executor = Executors.newFixedThreadPool(TIMEOUT_BOOTSTRAP);
-                    for (PeerId peerId : peers) {
-                        tasks.add(() -> liteHost.connectTo(new TimeoutCloseable(TIMEOUT_BOOTSTRAP), peerId));
-                    }
-
-                    List<Future<Boolean>> futures = executor.invokeAll(tasks, TIMEOUT_BOOTSTRAP, TimeUnit.SECONDS);
-                    for (Future<Boolean> future : futures) {
-                        LogUtils.info(TAG, "\nBootstrap done " + future.isDone());
-                    }
-
-                    liteHost.getRouting().bootstrap();
-
-                } catch (Throwable throwable) {
-                    LogUtils.error(TAG, throwable);
-                } finally {
-                    LogUtils.info(TAG, "NumPeers " + numSwarmPeers());
                 }
+
+
+                List<Callable<Boolean>> tasks = new ArrayList<>();
+                ExecutorService executor = Executors.newFixedThreadPool(TIMEOUT_BOOTSTRAP);
+                for (PeerId peerId : peers) {
+                    tasks.add(() -> liteHost.connectTo(new TimeoutCloseable(TIMEOUT_BOOTSTRAP), peerId));
+                }
+
+                List<Future<Boolean>> futures = executor.invokeAll(tasks, TIMEOUT_BOOTSTRAP, TimeUnit.SECONDS);
+                for (Future<Boolean> future : futures) {
+                    LogUtils.info(TAG, "\nBootstrap done " + future.isDone());
+                }
+
+                liteHost.getRouting().bootstrap();
+
+            } catch (Throwable throwable) {
+                LogUtils.error(TAG, throwable);
+            } finally {
+                LogUtils.info(TAG, "NumPeers " + numSwarmPeers());
             }
+        }
 
     }
 
