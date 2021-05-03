@@ -144,6 +144,7 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
     public static final int KAD_DHT_BUCKET_SIZE = 20;
     // The number of peers closest to a target that must have responded for a query path to terminate
     public static final int KAD_DHT_BETA = 20;
+    public static final String NA = "na";
     // rough estimates on expected sizes
     private static final int roughLinkBlockSize = 1 << 13; // 8KB
     private static final int roughLinkSize = 34 + 8 + 5;// sha256 multihash + size + no name + protobuf framing

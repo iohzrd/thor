@@ -51,7 +51,6 @@ import io.ipns.Ipns;
 import io.libp2p.core.Connection;
 import io.libp2p.core.ConnectionClosedException;
 import io.libp2p.core.ConnectionHandler;
-import io.libp2p.core.NoSuchRemoteProtocolException;
 import io.libp2p.core.PeerId;
 import io.libp2p.core.crypto.PrivKey;
 import io.libp2p.core.crypto.PubKey;
@@ -168,7 +167,7 @@ public class LiteHost implements BitSwapNetwork {
             metrics.done(peer);
             Throwable cause = throwable.getCause();
             if (cause != null) {
-                if (cause instanceof NoSuchRemoteProtocolException) {
+                if (cause instanceof ProtocolIssue) {
                     throw new ProtocolIssue();
                 }
                 if (cause instanceof NothingToCompleteException) {
@@ -492,7 +491,9 @@ public class LiteHost implements BitSwapNetwork {
                             if (msg instanceof String) {
                                 String received = (String) msg;
                                 LogUtils.error(TAG, received);
-                                if (Objects.equals(received, protocol)) {
+                                if (Objects.equals(received, IPFS.NA)){
+                                    throw new ProtocolIssue();
+                                } else if (Objects.equals(received, protocol)) {
 
                                     // clean negotiation stuff
                                     ctx.pipeline().remove(StringSuffixCodec.class.getSimpleName());
@@ -545,7 +546,7 @@ public class LiteHost implements BitSwapNetwork {
 
     public CompletableFuture<MessageLite> request(@NonNull QuicChannel quicChannel,
                                                   @NonNull String protocol,
-                                                  @Nullable MessageLite message) {
+                                                  @Nullable MessageLite message){
 
 
         CompletableFuture<MessageLite> ret = new CompletableFuture<>();
@@ -560,6 +561,7 @@ public class LiteHost implements BitSwapNetwork {
                             LogUtils.error(TAG, cause);
                             ctx.fireExceptionCaught(cause);
                             ret.completeExceptionally(cause);
+                            ctx.close();
                         }
 
                         @Override
@@ -572,7 +574,10 @@ public class LiteHost implements BitSwapNetwork {
                             } else if (msg instanceof String) {
                                 String received = (String) msg;
                                 LogUtils.error(TAG, received);
-                                if (Objects.equals(received, protocol)) {
+
+                                if (Objects.equals(received, IPFS.NA)){
+                                    throw new ProtocolIssue();
+                                } else if (Objects.equals(received, protocol)) {
 
                                     ctx.pipeline().remove(ProtobufVarint32FrameDecoder.class.getSimpleName());
 
@@ -811,8 +816,9 @@ public class LiteHost implements BitSwapNetwork {
                                         LogUtils.error(TAG, throwable);
                                     }
                                 } else {
+                                    ctx.writeAndFlush(IPFS.NA);
                                     LogUtils.error(TAG, msg);
-                                    ctx.close();
+                                    //ctx.close();
                                 }
                             }
                         });

@@ -41,7 +41,6 @@ import io.ipns.InvalidRecord;
 import io.ipns.Validator;
 import io.libp2p.core.Connection;
 import io.libp2p.core.ConnectionClosedException;
-import io.libp2p.core.NoSuchRemoteProtocolException;
 import io.libp2p.core.PeerId;
 import io.libp2p.core.multiformats.Multiaddr;
 import io.libp2p.etc.types.NonCompleteException;
@@ -367,7 +366,7 @@ public class KadDHT implements Routing {
             Throwable cause = throwable.getCause();
             if (cause != null) {
                 LogUtils.info(TAG, cause.getClass().getSimpleName());
-                if (cause instanceof NoSuchRemoteProtocolException) {
+                if (cause instanceof ProtocolIssue) {
                     throw new ProtocolIssue();
                 }
                 if (cause instanceof NothingToCompleteException) {
