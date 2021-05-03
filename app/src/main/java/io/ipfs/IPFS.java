@@ -91,9 +91,9 @@ public class IPFS implements PushReceiver {
     // RFC3339Nano = "2006-01-02T15:04:05.999999999Z07:00"
     public static final String TimeFormatIpfs = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSS'Z'";
 
-
+    public static final String KAD_DHT_PROTOCOL = "/ipfs/kad/1.0.0";
     public static final String PUSH_PROTOCOL = "/ipfs/push/1.0.0";
-    public static final String MULTISTREAM_PROTOCOL = "/multistream/1.0.0";
+    public static final String STREAM_PROTOCOL = "/multistream/1.0.0";
     public static final String IDENTITY_PROTOCOL = "/ipfs/id/1.0.0";
     public static final String INDEX_HTML = "index.html";
     public static final int PRELOAD = 25;

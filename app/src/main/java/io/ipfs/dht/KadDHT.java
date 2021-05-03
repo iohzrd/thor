@@ -50,7 +50,7 @@ import record.pb.RecordOuterClass;
 
 
 public class KadDHT implements Routing {
-    public static final String Protocol = "/ipfs/kad/1.0.0";
+
     private static final String TAG = KadDHT.class.getSimpleName();
     public final LiteHost host;
     public final PeerId self;
@@ -325,7 +325,7 @@ public class KadDHT implements Routing {
                 metrics.active(p);
                 long start = System.currentTimeMillis();
 
-                host.send(closeable, KadDHT.Protocol, con, message);
+                host.send(closeable, IPFS.KAD_DHT_PROTOCOL, con, message);
 
                 metrics.addLatency(p, System.currentTimeMillis() - start);
             }
@@ -349,7 +349,7 @@ public class KadDHT implements Routing {
                 metrics.active(p);
                 long start = System.currentTimeMillis();
 
-                MessageLite messageLite = host.request(closeable, KadDHT.Protocol, con, message);
+                MessageLite messageLite = host.request(closeable, IPFS.KAD_DHT_PROTOCOL, con, message);
                 Objects.requireNonNull(messageLite);
                 Dht.Message response = (Dht.Message) messageLite;
                 Objects.requireNonNull(response);

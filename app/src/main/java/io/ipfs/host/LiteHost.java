@@ -31,6 +31,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import bitswap.pb.MessageOuterClass;
+import dht.pb.Dht;
 import identify.pb.IdentifyOuterClass;
 import io.LogUtils;
 import io.ipfs.IPFS;
@@ -179,6 +180,19 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork {
         return new ArrayList<>(connections.values()); // TODO maybe optimize
     }
 
+    private void forwardMessage(@NonNull PeerId peerId, @NonNull MessageLite msg){
+        if (msg instanceof MessageOuterClass.Message) {
+            new Thread(() -> {
+                try {
+                    BitSwapMessage message = BitSwapMessage.newMessageFromProto(
+                            (MessageOuterClass.Message) msg);
+                    ReceiveMessage(peerId, IPFS.BITSWAP_PROTOCOL, message);
+                } catch (Throwable throwable) {
+                    ReceiveError(peerId, IPFS.BITSWAP_PROTOCOL, "" + throwable.getMessage());
+                }
+            }).start();
+        }
+    }
 
     @Override
     public void writeMessage(@NonNull Closeable closeable, @NonNull PeerId peer,
@@ -190,7 +204,9 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork {
             synchronized (peer.toBase58().intern()) {
                 Connection con = connect(closeable, peer);
                 metrics.active(peer);
-                send(closeable, IPFS.BITSWAP_PROTOCOL, con, message.ToProtoV1());
+                MessageLite msg = request(closeable, IPFS.BITSWAP_PROTOCOL, con, message.ToProtoV1());
+                Objects.requireNonNull(msg);
+                forwardMessage(peer, msg);
             }
         } catch (ClosedException | ConnectionIssue exception) {
             metrics.done(peer);
@@ -501,6 +517,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork {
                                         @NonNull MessageLite message) {
 
 
+        LogUtils.error(TAG, protocol);
         CompletableFuture<Void> ret = new CompletableFuture<>();
 
         try {
@@ -522,24 +539,20 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork {
 
                             if (msg instanceof String) {
                                 String received = (String) msg;
-                                LogUtils.error(TAG, received);
+                                LogUtils.error(TAG, "send " + received );
                                 if (Objects.equals(received, IPFS.NA)){
                                     throw new ProtocolIssue();
                                 } else if (Objects.equals(received, protocol)) {
 
                                     // clean negotiation stuff
-                                    ctx.pipeline().remove(StringSuffixCodec.class.getSimpleName());
-                                    ctx.pipeline().remove(StringEncoder.class.getSimpleName());
-                                    ctx.pipeline().remove(StringDecoder.class.getSimpleName());
-                                    ctx.pipeline().remove(ProtobufVarint32LengthFieldPrepender.class.getSimpleName());
-                                    ctx.pipeline().remove(ProtobufVarint32FrameDecoder.class.getSimpleName());
+                                    cleanNeoPipeline(ctx);
+
 
 
                                     ctx.pipeline().addFirst(ProtobufVarint32LengthFieldPrepender.class.getSimpleName(),
                                             new ProtobufVarint32LengthFieldPrepender());
                                     ctx.pipeline().addFirst(ProtobufEncoder.class.getSimpleName(),
                                             new ProtobufEncoder());
-
 
                                     LogUtils.error(TAG, ctx.pipeline().names().toString());
 
@@ -552,20 +565,10 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork {
                     }).sync().get();
 
 
-            streamChannel.pipeline().addFirst(StringSuffixCodec.class.getSimpleName(),
-                    new StringSuffixCodec('\n'));
-            streamChannel.pipeline().addFirst(StringEncoder.class.getSimpleName(),
-                    new StringEncoder(Charsets.UTF_8));
-            streamChannel.pipeline().addFirst(StringDecoder.class.getSimpleName(),
-                    new StringDecoder(Charsets.UTF_8));
-            streamChannel.pipeline().addFirst(ProtobufVarint32LengthFieldPrepender.class.getSimpleName(),
-                    new ProtobufVarint32LengthFieldPrepender());
-            streamChannel.pipeline().addFirst(ProtobufVarint32FrameDecoder.class.getSimpleName(),
-                    new ProtobufVarint32FrameDecoder());
-
+            initNeoPipeline(streamChannel);
 
             LogUtils.error(TAG, streamChannel.pipeline().names().toString());
-            streamChannel.write(IPFS.MULTISTREAM_PROTOCOL);
+            streamChannel.write(IPFS.STREAM_PROTOCOL);
             streamChannel.write(protocol);
             ret.complete(streamChannel.writeAndFlush(message).addListener(QuicStreamChannel.SHUTDOWN_OUTPUT).get());
 
@@ -577,11 +580,32 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork {
         return ret;
     }
 
+    private void cleanNeoPipeline(@NonNull ChannelHandlerContext ctx){
+        ctx.pipeline().remove(StringSuffixCodec.class.getSimpleName());
+        ctx.pipeline().remove(StringEncoder.class.getSimpleName());
+        ctx.pipeline().remove(StringDecoder.class.getSimpleName());
+        ctx.pipeline().remove(ProtobufVarint32LengthFieldPrepender.class.getSimpleName());
+        ctx.pipeline().remove(ProtobufVarint32FrameDecoder.class.getSimpleName());
+    }
+
+    private void initNeoPipeline(@NonNull Channel channel){
+        channel.pipeline().addFirst(StringSuffixCodec.class.getSimpleName(),
+                new StringSuffixCodec('\n'));
+        channel.pipeline().addFirst(StringEncoder.class.getSimpleName(),
+                new StringEncoder(Charsets.UTF_8));
+        channel.pipeline().addFirst(StringDecoder.class.getSimpleName(),
+                new StringDecoder(Charsets.UTF_8));
+        channel.pipeline().addFirst(ProtobufVarint32LengthFieldPrepender.class.getSimpleName(),
+                new ProtobufVarint32LengthFieldPrepender());
+        channel.pipeline().addFirst(ProtobufVarint32FrameDecoder.class.getSimpleName(),
+                new ProtobufVarint32FrameDecoder());
+    }
+
     public CompletableFuture<MessageLite> request(@NonNull QuicChannel quicChannel,
                                                   @NonNull String protocol,
                                                   @Nullable MessageLite message){
 
-
+        LogUtils.error(TAG, protocol);
         CompletableFuture<MessageLite> ret = new CompletableFuture<>();
 
         try {
@@ -601,63 +625,78 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork {
                         protected void channelRead0(ChannelHandlerContext ctx, Object msg)
                                 throws Exception {
 
-                            if (msg instanceof MessageLite) {
-                                ret.complete((MessageLite) msg);
-                                ctx.close();
-                            } else if (msg instanceof String) {
+                             if (msg instanceof String) {
                                 String received = (String) msg;
-                                LogUtils.error(TAG, received);
+                                LogUtils.error(TAG, "request " + received + " " );
 
                                 if (Objects.equals(received, IPFS.NA)){
                                     throw new ProtocolIssue();
                                 } else if (Objects.equals(received, protocol)) {
 
-                                    ctx.pipeline().remove(ProtobufVarint32FrameDecoder.class.getSimpleName());
+
+                                    // clean neogation stuff
+                                    cleanNeoPipeline(ctx);
 
 
-                                    // add new ones to the top
-                                    ctx.pipeline().addFirst(ProtobufDecoder.class.getSimpleName(),
-                                            new ProtobufDecoder(
-                                                    IdentifyOuterClass.Identify.getDefaultInstance()));
+
+                                    ctx.pipeline().addFirst(ProtobufVarint32LengthFieldPrepender.class.getSimpleName(),
+                                            new ProtobufVarint32LengthFieldPrepender());
+                                    ctx.pipeline().addFirst(ProtobufEncoder.class.getSimpleName(),
+                                            new ProtobufEncoder());
+
+
+                                    // protocol decoder
                                     ctx.pipeline().addFirst(ProtobufVarint32FrameDecoder.class.getSimpleName(),
                                             new ProtobufVarint32FrameDecoder());
 
 
+                                    switch (protocol) {
+                                        case IPFS.IDENTITY_PROTOCOL:
+                                            ctx.pipeline().addFirst(ProtobufDecoder.class.getSimpleName(),
+                                                    new ProtobufDecoder(
+                                                            IdentifyOuterClass.Identify.getDefaultInstance()));
+                                            break;
+                                        case IPFS.BITSWAP_PROTOCOL:
+                                            ctx.pipeline().addFirst(ProtobufDecoder.class.getSimpleName(),
+                                                    new ProtobufDecoder(
+                                                            MessageOuterClass.Message.getDefaultInstance()));
+                                            break;
+                                        case IPFS.KAD_DHT_PROTOCOL:
+                                            ctx.pipeline().addFirst(ProtobufDecoder.class.getSimpleName(),
+                                                    new ProtobufDecoder(
+                                                            Dht.Message.getDefaultInstance()));
+                                            break;
+                                        default:
+                                            throw new RuntimeException("Decoder not defined");
+                                    }
+
+                                    if (message != null) {
+                                        ctx.write(message);
+                                        ctx.flush();
+                                    }
+
                                     LogUtils.error(TAG, ctx.pipeline().names().toString());
 
                                 }
-                            } else {
+                            } else if (msg instanceof MessageLite) {
+                                 LogUtils.error(TAG, "Found " + protocol);
+                                 ret.complete((MessageLite) msg);
+                                 ctx.close();
+                             } else {
                                 throw new Exception("not expected");
                             }
 
                         }
                     }).sync().get();
 
+            initNeoPipeline(streamChannel);
 
-            streamChannel.pipeline().addFirst(StringSuffixCodec.class.getSimpleName(),
-                    new StringSuffixCodec('\n'));
-            streamChannel.pipeline().addFirst(StringEncoder.class.getSimpleName(),
-                    new StringEncoder(Charsets.UTF_8));
-            streamChannel.pipeline().addFirst(StringDecoder.class.getSimpleName(),
-                    new StringDecoder(Charsets.UTF_8));
-            streamChannel.pipeline().addFirst(ProtobufVarint32LengthFieldPrepender.class.getSimpleName(),
-                    new ProtobufVarint32LengthFieldPrepender());
-            streamChannel.pipeline().addFirst(ProtobufVarint32FrameDecoder.class.getSimpleName(),
-                    new ProtobufVarint32FrameDecoder());
-
-            if (message != null) {
-                streamChannel.pipeline().addFirst(ProtobufEncoder.class.getSimpleName(),
-                        new ProtobufEncoder());
-            }
 
 
             LogUtils.error(TAG, streamChannel.pipeline().names().toString());
 
-            streamChannel.write(IPFS.MULTISTREAM_PROTOCOL);
+            streamChannel.write(IPFS.STREAM_PROTOCOL);
             streamChannel.write(protocol);
-            if (message != null) {
-                streamChannel.write(message);
-            }
             streamChannel.flush();
 
         } catch (Throwable throwable) {
@@ -788,15 +827,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork {
                     @Override
                     protected void initChannel(QuicStreamChannel ch) {
 
-                        ch.pipeline().addFirst(
-                                new ProtobufVarint32FrameDecoder(),
-                                new ProtobufVarint32LengthFieldPrepender(),
-                                new ProtobufEncoder(),
-                                new ProtobufDecoder(MessageOuterClass.Message.getDefaultInstance()),
-                                new StringDecoder(Charsets.UTF_8),
-                                new StringEncoder(Charsets.UTF_8),
-                                new StringSuffixCodec('\n'));
-
+                        initNeoPipeline(ch);
 
                         ch.pipeline().addLast(new SimpleChannelInboundHandler<Object>() {
 
@@ -816,17 +847,23 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork {
                                     String msg = (String) data;
                                     LogUtils.error(TAG, "Handle " + msg);
                                     switch (msg) {
-                                        case IPFS.MULTISTREAM_PROTOCOL:
-                                            ctx.writeAndFlush(IPFS.MULTISTREAM_PROTOCOL);
+                                        case IPFS.STREAM_PROTOCOL:
+                                            ctx.writeAndFlush(IPFS.STREAM_PROTOCOL);
                                             break;
                                         case IPFS.IDENTITY_PROTOCOL:
+
                                             ctx.writeAndFlush(IPFS.IDENTITY_PROTOCOL);
 
+                                            // clean negotiation stuff
+                                            cleanNeoPipeline(ctx);
+
+
+                                            ctx.pipeline().addFirst(ProtobufVarint32LengthFieldPrepender.class.getSimpleName(),
+                                                    new ProtobufVarint32LengthFieldPrepender());
+                                            ctx.pipeline().addFirst(ProtobufEncoder.class.getSimpleName(),
+                                                    new ProtobufEncoder());
+
                                             try {
-                                        /*
-                                        QuicStreamAddress inetSocketAddress = (QuicStreamAddress)
-                                                ctx.channel().remoteAddress();*/
-                                                // TODO
                                                 Multiaddr multiaddr = new Multiaddr("/ip4/127.0.0.1/udp/5001/quic");
 
 
@@ -838,55 +875,29 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork {
                                                                 .setObservedAddr(ByteString.copyFrom(multiaddr.getBytes()))
                                                                 .build();
                                                 ctx.writeAndFlush(response).addListener(QuicStreamChannel.SHUTDOWN_OUTPUT);
-                                        /*
-                                        channel.get().createStream(QuicStreamType.BIDIRECTIONAL, new ChannelHandler() {
-                                            @Override
-                                            public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
-                                                LogUtils.error(TAG, "handlerAdded");
-                                            }
 
-                                            @Override
-                                            public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
-                                                LogUtils.error(TAG, "handlerRemoved");
-                                            }
-
-                                            @Override
-                                            public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-                                                LogUtils.error(TAG, cause);
-                                            }
-                                        }).get().writeAndFlush(response).addListener(QuicStreamChannel.SHUTDOWN_OUTPUT);*/
                                             } catch (Throwable throwable) {
                                                 LogUtils.error(TAG, throwable);
                                             }
                                             break;
                                         case IPFS.BITSWAP_PROTOCOL:
+
                                             ctx.writeAndFlush(IPFS.BITSWAP_PROTOCOL);
 
                                             break;
                                         default:
-                                            ctx.writeAndFlush(IPFS.NA);
+                                            ctx.writeAndFlush(IPFS.NA).addListener(QuicStreamChannel.SHUTDOWN_OUTPUT);
                                             LogUtils.error(TAG, msg);
                                             //ctx.close(); // TODO rethink
                                             break;
                                     }
                                 } else if (data instanceof MessageLite) {
+                                    // TODO not working yet
                                     MessageLite messageLite = (MessageLite) data;
+                                    PeerId peerId = null; // BIG TODO
+                                    // TODO also GatePeer (error)
                                     if (messageLite instanceof MessageOuterClass.Message) {
-
-                                        // TODO also GatePeer (error)
-                                        PeerId peerId = null; // BIG TODO
-                                        new Thread(() -> {
-                                            try {
-                                                BitSwapMessage message = BitSwapMessage.newMessageFromProto(
-                                                        (MessageOuterClass.Message) messageLite);
-
-                                                // TODO also GatePeer (error)
-
-                                                ReceiveMessage(peerId, IPFS.BITSWAP_PROTOCOL, message);
-                                            } catch (Throwable throwable) {
-                                                ReceiveError(peerId, IPFS.BITSWAP_PROTOCOL, "" + throwable.getMessage());
-                                            }
-                                        }).start();
+                                        forwardMessage(peerId, messageLite);
                                     } else {
                                         throw new Exception("illegal state");
                                     }

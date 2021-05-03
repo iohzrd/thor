@@ -13,6 +13,7 @@ import java.util.concurrent.CompletableFuture;
 
 import dht.pb.Dht;
 import io.LogUtils;
+import io.ipfs.IPFS;
 import io.ipfs.multihash.Multihash;
 import io.libp2p.core.ConnectionClosedException;
 import io.libp2p.core.P2PChannel;
@@ -33,7 +34,7 @@ public class DhtProtocol implements ProtocolBinding<DhtProtocol.DhtController> {
     @NotNull
     @Override
     public ProtocolDescriptor getProtocolDescriptor() {
-        return new ProtocolDescriptor(KadDHT.Protocol);
+        return new ProtocolDescriptor(IPFS.KAD_DHT_PROTOCOL);
     }
 
     @NotNull
