@@ -108,7 +108,7 @@ import threads.thor.utils.PermissionAction;
 import threads.thor.work.ClearBrowserDataWorker;
 import threads.thor.work.DownloadContentWorker;
 import threads.thor.work.DownloadFileWorker;
-import threads.thor.work.LocalConnectWorker;
+import threads.thor.services.LocalConnectService;
 
 
 public class MainActivity extends AppCompatActivity implements
@@ -1887,12 +1887,11 @@ public class MainActivity extends AppCompatActivity implements
                 public void onServiceResolved(NsdServiceInfo serviceInfo) {
 
                     try {
-
                         String serviceName = serviceInfo.getServiceName();
                         boolean connect = !Objects.equals(peerID, serviceName);
                         if (connect) {
                             InetAddress inetAddress = serviceInfo.getHost();
-                            LocalConnectWorker.connect(getApplicationContext(),
+                            LocalConnectService.connect(getApplicationContext(),
                                     serviceName, serviceInfo.getHost().toString(),
                                     serviceInfo.getPort(), inetAddress instanceof Inet6Address);
                         }
