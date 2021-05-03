@@ -28,6 +28,7 @@ public interface BitSwapMessage {
                 .setType(MessageOuterClass.Message.BlockPresenceType.Have).build().getSerializedSize();
     }
 
+    MessageOuterClass.Message ToProtoV1();
 
     static BitSwapMessage New(boolean full) {
         return new BitSwapMessageImpl(full);
@@ -367,7 +368,7 @@ public interface BitSwapMessage {
         }
 
 
-        private MessageOuterClass.Message ToProtoV1() {
+        public MessageOuterClass.Message ToProtoV1() {
 
             MessageOuterClass.Message.Builder builder = MessageOuterClass.Message.newBuilder();
 

@@ -7,6 +7,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.google.protobuf.ByteString;
+import com.google.protobuf.MessageLite;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -17,7 +18,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -77,12 +77,15 @@ public class KadDHT implements Routing {
     @Override
     public void bootstrap() {
         // Fill routing table with currently connected peers that are DHT servers
-
-        for (Connection conn : host.getConnections()) {
-            PeerId peerId = conn.secureSession().getRemoteId();
-            metrics.addLatency(peerId, 0L);
-            boolean isReplaceable = !metrics.isProtected(peerId);
-            peerFound(peerId, isReplaceable);
+        try {
+            for (Connection conn : host.getConnections()) {
+                PeerId peerId = conn.remoteId();
+                metrics.addLatency(peerId, 0L);
+                boolean isReplaceable = !metrics.isProtected(peerId);
+                peerFound(peerId, isReplaceable);
+            }
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable);
         }
     }
 
@@ -322,10 +325,8 @@ public class KadDHT implements Routing {
                 Connection con = host.connect(closeable, p);
                 metrics.active(p);
                 long start = System.currentTimeMillis();
-                Object object = host.stream(closeable, KadDHT.Protocol, con);
 
-                DhtProtocol.DhtController dhtController = (DhtProtocol.DhtController) object;
-                dhtController.sendMessage(message);
+                host.send(closeable, KadDHT.Protocol, con, message);
 
                 metrics.addLatency(p, System.currentTimeMillis() - start);
             }
@@ -349,22 +350,10 @@ public class KadDHT implements Routing {
                 metrics.active(p);
                 long start = System.currentTimeMillis();
 
-                Object object = host.stream(closeable, KadDHT.Protocol, con);
-
-                DhtProtocol.DhtController dhtController = (DhtProtocol.DhtController) object;
-                CompletableFuture<Dht.Message> ctrl = dhtController.sendRequest(message);
-
-
-                while (!ctrl.isDone()) {
-                    if (closeable.isClosed()) {
-                        ctrl.cancel(true);
-                    }
-                }
-
-                if (closeable.isClosed()) {
-                    throw new ClosedException();
-                }
-                Dht.Message response = ctrl.get();
+                MessageLite messageLite = host.request(closeable, KadDHT.Protocol, con, message);
+                Objects.requireNonNull(messageLite);
+                Dht.Message response = (Dht.Message) messageLite;
+                Objects.requireNonNull(response);
 
                 metrics.addLatency(p, System.currentTimeMillis() - start);
 

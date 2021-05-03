@@ -8,7 +8,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Objects;
 import java.util.Set;
 
 import io.LogUtils;
@@ -60,6 +59,10 @@ public class AddrInfo {
         return Iterables.toArray(addresses, Multiaddr.class);
     }
 
+    public Set<Multiaddr> asSet() {
+        return addresses;
+    }
+
 
     private void addAddress(@NonNull Multiaddr address) {
         if (address.has(Protocol.WS)) {
@@ -82,10 +85,11 @@ public class AddrInfo {
             LogUtils.info(TAG, "P2PCIRCUIT " + address.toString());
             return;
         }
-        if (address.has(Protocol.QUIC)) { // TODO SUPPORT THIS
+        if (address.has(Protocol.QUIC) && address.has(Protocol.IP4)) { // TODO SUPPORT THIS
             LogUtils.info(TAG, "QUIC " + address.toString());
-            return;
+            this.addresses.add(address); // TODO
         }
+        /*
         if (address.has(Protocol.IP4)) {
             if (Objects.equals(address.getStringComponent(Protocol.IP4), "127.0.0.1")) { // TODO
                 return;
@@ -96,7 +100,7 @@ public class AddrInfo {
                 return;
             }
         }
-        this.addresses.add(address);
+        this.addresses.add(address);*/
     }
 
     public boolean hasAddresses() {

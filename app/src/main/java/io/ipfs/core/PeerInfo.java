@@ -26,6 +26,7 @@ public class PeerInfo {
         this.observed = observed;
     }
 
+    // TODO this is probably not useful
     @Nullable
     public Multiaddr getObserved() {
         return observed;
@@ -36,6 +37,7 @@ public class PeerInfo {
         return address;
     }
 
+    @NotNull
     @Override
     public String toString() {
         return "PeerInfo{" +

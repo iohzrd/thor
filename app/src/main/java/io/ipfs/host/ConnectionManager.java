@@ -7,13 +7,12 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import io.LogUtils;
 import io.libp2p.core.Connection;
-import io.libp2p.core.Host;
 import io.libp2p.core.PeerId;
 
 public class ConnectionManager implements Metrics {
     private static final String TAG = ConnectionManager.class.getSimpleName();
     @NonNull
-    private final Host host;
+    private final LiteHost host;
     private final ConcurrentHashMap<PeerId, Long> metrics = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<PeerId, Long> actives = new ConcurrentHashMap<>();
     private final Set<PeerId> tags = ConcurrentHashMap.newKeySet();
@@ -22,7 +21,7 @@ public class ConnectionManager implements Metrics {
     private final int gracePeriod;
 
 
-    public ConnectionManager(@NonNull Host host, int lowWater, int highWater, int gracePeriod) {
+    public ConnectionManager(@NonNull LiteHost host, int lowWater, int highWater, int gracePeriod) {
         this.host = host;
         this.lowWater = lowWater;
         this.highWater = highWater;
@@ -74,7 +73,7 @@ public class ConnectionManager implements Metrics {
 
 
     public int numConnections() {
-        return host.getNetwork().getConnections().size();
+        return host.getConnections().size();
     }
 
     public void trimConnections() {
@@ -88,10 +87,10 @@ public class ConnectionManager implements Metrics {
 
             // TODO maybe sort connections how fast they are (the fastest will not be closed)
 
-            for (Connection connection : host.getNetwork().getConnections()) {
+            for (Connection connection : host.getConnections()) {
                 if (hasToBeClosed > 0) {
                     try {
-                        PeerId peerId = connection.secureSession().getRemoteId();
+                        PeerId peerId = connection.remoteId();
                         if (!isProtected(peerId) && !isActive(peerId)) {
                             connection.close().get();
                             hasToBeClosed--;

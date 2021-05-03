@@ -4,6 +4,8 @@ import io.libp2p.core.multiformats.Multiaddr
 import io.libp2p.core.mux.StreamMuxer
 import io.libp2p.core.security.SecureChannel
 import io.libp2p.core.transport.Transport
+import io.netty.channel.Channel
+
 
 interface Connection : P2PChannel {
     /**
@@ -32,4 +34,8 @@ interface Connection : P2PChannel {
      * Returns the remote [Multiaddr] of this [Connection]
      */
     fun remoteAddress(): Multiaddr
+
+    fun remoteId(): PeerId
+
+    fun channel(): Channel
 }

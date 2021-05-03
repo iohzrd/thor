@@ -5,6 +5,7 @@ import io.libp2p.core.multistream.MultistreamProtocol
 import io.libp2p.core.multistream.ProtocolBinding
 import io.libp2p.core.mux.StreamMuxer
 import io.libp2p.core.security.SecureChannel
+import java.util.*
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -29,7 +30,7 @@ open class ConnectionUpgrader(
         return establish(
                 muxerMultistream,
                 connection,
-                muxers
+                Collections.emptyList()
         )
     } // establishMuxer
 

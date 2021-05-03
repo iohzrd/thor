@@ -23,8 +23,8 @@ class TcpTransport(
 
     override fun handles(addr: Multiaddr) =
             handlesHost(addr) &&
-                    addr.has(TCP) &&
-                    !addr.has(WS)
+                    addr.has(UDP) &&
+                    addr.has(QUIC)
 
     override fun serverTransportBuilder(
             connectionBuilder: ConnectionBuilder,
@@ -45,7 +45,7 @@ class TcpTransport(
         return Multiaddr(
                 listOf(
                         proto to proto.addressToBytes(addr.address.hostAddress),
-                        TCP to TCP.addressToBytes(addr.port.toString())
+                        UDP to UDP.addressToBytes(addr.port.toString())
                 )
         )
     } // toMultiaddr

@@ -2,7 +2,9 @@ package io.ipfs.relay;
 
 import androidx.annotation.NonNull;
 
-import java.util.concurrent.CompletableFuture;
+import com.google.protobuf.MessageLite;
+
+import java.util.Objects;
 
 import io.ipfs.core.Closeable;
 import io.ipfs.core.ClosedException;
@@ -30,25 +32,11 @@ public class Relay {
         try {
             synchronized (peerId.toBase58().intern()) {
 
-                Object object = host.stream(closeable, RelayProtocol.Protocol, conn);
-
-                RelayProtocol.RelayController controller = (RelayProtocol.RelayController) object;
-                CompletableFuture<relay.pb.Relay.CircuitRelay> ctrl = controller.canHop(message);
-
-
-                while (!ctrl.isDone()) {
-                    if (closeable.isClosed()) {
-                        ctrl.cancel(true);
-                    }
-                }
-
-                if (closeable.isClosed()) {
-                    throw new ClosedException();
-                }
-                relay.pb.Relay.CircuitRelay msg = ctrl.get();
+                MessageLite messageLite = host.request(closeable, RelayProtocol.Protocol, conn, message);
+                Objects.requireNonNull(messageLite);
+                relay.pb.Relay.CircuitRelay msg = (relay.pb.Relay.CircuitRelay) messageLite;
+                Objects.requireNonNull(msg);
                 return msg.getType() == relay.pb.Relay.CircuitRelay.Type.STATUS;
-
-
             }
         } catch (ClosedException exception) {
             throw exception;

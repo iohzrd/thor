@@ -23,6 +23,16 @@ android {
         buildConfigField "String",
                 "DOCUMENTS_AUTHORITY",
                 "\"${documentsAuthorityValue}\""
+        // 'x86_64',
+        ndk {
+            abiFilters 'x86_64','arm64-v8a'
+        }
+
+        externalNativeBuild {
+            cmake {
+                cFlags "-std=c99 -fno-omit-frame-pointer -frtti -fvisibility=hidden -Wunused -Wno-unused-value -O3 "
+            }
+        }
     }
 
     buildTypes {
@@ -41,6 +51,18 @@ android {
         }
     }
 
+    // Encapsulates your external native build configurations.
+    externalNativeBuild {
+
+        // Encapsulates your CMake build configurations.
+        cmake {
+
+            // Provides a relative path to your CMake build script.
+            path "src/main/cpp/CMakeLists.txt"
+            version "3.10.2"
+        }
+    }
+
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
@@ -54,6 +76,10 @@ android {
     kotlinOptions {
         jvmTarget = '1.8'
         freeCompilerArgs += "-Xjvm-default=enable"
+    }
+
+    android {
+        ndkVersion '21.3.6528147'
     }
 
     buildToolsVersion '30.0.3'
@@ -113,7 +139,7 @@ dependencies {
     // UI Graphics (LICENSE done)
     implementation 'com.github.bumptech.glide:glide:4.12.0'
 
-    implementation 'io.netty:netty-all:4.1.36.Final'
+    implementation 'io.netty:netty-all:4.1.63.Final'
     implementation 'tech.pegasys:noise-java:1.0.0'
 
 

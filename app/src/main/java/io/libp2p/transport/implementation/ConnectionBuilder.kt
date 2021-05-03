@@ -1,5 +1,6 @@
 package io.libp2p.transport.implementation
 
+import io.LogUtils
 import io.libp2p.core.Connection
 import io.libp2p.core.ConnectionHandler
 import io.libp2p.core.PeerId
@@ -24,6 +25,7 @@ class ConnectionBuilder(
         val connection = ConnectionOverNetty(ch, transport, initiator)
         remotePeerId?.also { ch.attr(REMOTE_PEER_ID).set(it) }
 
+        /*
         upgrader.establishSecureChannel(connection)
                 .thenCompose {
                     connection.setSecureSession(it)
@@ -33,6 +35,20 @@ class ConnectionBuilder(
                     connHandler.handleConnection(connection)
                     connection
                 }
-                .forward(connectionEstablished)
+                .forward(connectionEstablished)*/
+
+        LogUtils.error("ConnectionBuilder", "QUIC channel 0")
+        upgrader.establishMuxer(connection).thenApply {
+            LogUtils.error("ConnectionBuilder", "QUIC channel 1")
+            connection.setMuxerSession(it)
+            LogUtils.error("ConnectionBuilder", "QUIC channel 1")
+            connHandler.handleConnection(connection)
+            connection
+        }.forward(connectionEstablished)
+
+
+        // connHandler.handleConnection(connection)
+        //connectionEstablished.complete(connection)
+
     } // initChannel
 } // ConnectionBuilder

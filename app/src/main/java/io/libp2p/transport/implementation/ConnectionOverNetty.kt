@@ -2,8 +2,11 @@ package io.libp2p.transport.implementation
 
 import io.libp2p.core.Connection
 import io.libp2p.core.InternalErrorException
+import io.libp2p.core.PeerId
+import io.libp2p.core.StreamPromise
 import io.libp2p.core.multiformats.Multiaddr
 import io.libp2p.core.multiformats.Protocol
+import io.libp2p.core.multistream.ProtocolBinding
 import io.libp2p.core.mux.StreamMuxer
 import io.libp2p.core.security.SecureChannel
 import io.libp2p.core.transport.Transport
@@ -19,10 +22,10 @@ import java.net.InetSocketAddress
  * It exposes libp2p components and semantics via methods and properties.
  */
 class ConnectionOverNetty(
-        ch: Channel,
+        var ch: Channel,
         private val transport: Transport,
         initiator: Boolean
-) : Connection, P2PChannelOverNetty(ch, initiator) {
+) : Connection, StreamMuxer.Session, P2PChannelOverNetty(ch, initiator) {
     private lateinit var muxerSession: StreamMuxer.Session
     private lateinit var secureSession: SecureChannel.Session
 
@@ -48,6 +51,14 @@ class ConnectionOverNetty(
     override fun remoteAddress(): Multiaddr =
             toMultiaddr(nettyChannel.remoteAddress() as InetSocketAddress)
 
+    override fun remoteId(): PeerId {
+        return secureSession.remoteId
+    }
+
+    override fun channel(): Channel {
+        return ch
+    }
+
     private fun toMultiaddr(addr: InetSocketAddress): Multiaddr {
         if (transport is NettyTransport)
             return transport.toMultiaddr(addr)
@@ -64,8 +75,12 @@ class ConnectionOverNetty(
         return Multiaddr(
                 listOf(
                         proto to proto.addressToBytes(addr.address.hostAddress),
-                        Protocol.TCP to Protocol.TCP.addressToBytes(addr.port.toString())
+                        Protocol.UDP to Protocol.UDP.addressToBytes(addr.port.toString())
                 )
         )
     } // toMultiaddr
+
+    override fun <T> createStream(protocols: List<ProtocolBinding<T>>): StreamPromise<T> {
+        TODO("Not yet implemented")
+    }
 }

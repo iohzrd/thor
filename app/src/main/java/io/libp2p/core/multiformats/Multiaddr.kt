@@ -1,5 +1,6 @@
 package io.libp2p.core.multiformats
 
+import io.libp2p.core.Libp2pException
 import io.libp2p.core.PeerId
 import io.libp2p.etc.types.readUvarint
 import io.libp2p.etc.types.toByteArray
@@ -58,6 +59,11 @@ class Multiaddr(val components: List<Pair<Protocol, ByteArray>>) {
      */
     fun has(proto: Protocol): Boolean = getComponent(proto) != null
     fun hasAny(vararg protos: Protocol) = protos.any { has(it) }
+
+
+    fun udpPortFromMultiaddr() =
+            filterStringComponents().find { p -> p.first == Protocol.UDP }
+                    ?.second?.toInt() ?: throw Libp2pException("Missing UDP in multiaddress $this")
 
     /**
      * Returns [components] in a human readable form where each protocol value

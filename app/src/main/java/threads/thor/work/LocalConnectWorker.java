@@ -15,6 +15,9 @@ import java.util.concurrent.TimeUnit;
 
 import io.LogUtils;
 import io.ipfs.IPFS;
+import io.ipfs.core.PeerInfo;
+import io.ipfs.core.TimeoutCloseable;
+import io.libp2p.core.PeerId;
 import threads.thor.core.Content;
 
 public class LocalConnectWorker extends Worker {
@@ -51,8 +54,28 @@ public class LocalConnectWorker extends Worker {
     public static void connect(@NonNull Context context, @NonNull String pid,
                                @NonNull String host, int port, boolean inet6) {
 
+        try {
+            IPFS ipfs = IPFS.getInstance(context);
+
+            String pre = "/ip4";
+            if (inet6) {
+                pre = "/ip6";
+            }
+            String multiAddress = pre + host + "/udp/" + port + "/quic/p2p/" + pid;
+
+
+            ipfs.swarmConnect(multiAddress, 100);
+
+
+            PeerInfo peerInfo = ipfs.getPeerInfo(PeerId.fromBase58(pid), new TimeoutCloseable(100));
+            LogUtils.error(TAG, peerInfo.toString());
+
+        } catch (Throwable throwable){
+            LogUtils.error(TAG, throwable);
+        }
+        /*
         WorkManager.getInstance(context).enqueueUniqueWork(
-                getUniqueId(pid), ExistingWorkPolicy.KEEP, getWork(pid, host, port, inet6));
+                getUniqueId(pid), ExistingWorkPolicy.KEEP, getWork(pid, host, port, inet6));*/
     }
 
 
@@ -76,10 +99,10 @@ public class LocalConnectWorker extends Worker {
             if (inet6) {
                 pre = "/ip6";
             }
-            String multiAddress = pre + host + "/tcp/" + port + "/p2p/" + pid;
+            String multiAddress = pre + host + "/udp/" + port + "/quic/p2p/" + pid;
 
 
-            ipfs.swarmConnect(multiAddress, 10);
+            ipfs.swarmConnect(multiAddress, 100);
 
         } catch (Throwable e) {
             LogUtils.error(TAG, e);

@@ -11,6 +11,7 @@ import java.util.concurrent.CompletableFuture
  * it should use some kind of dependency injection to wire itself.
  */
 interface Host {
+
     /**
      * Our private key which can be used by different protocols to sign messages
      */

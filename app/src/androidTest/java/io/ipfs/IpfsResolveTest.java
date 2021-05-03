@@ -59,7 +59,7 @@ public class IpfsResolveTest {
         }
         LogUtils.debug(TAG, "Time publish name " + (System.currentTimeMillis() - start));
 
-        String key = ipfs.getHost();
+        String key = ipfs.getBase32PeerId();
 
         IPFS.ResolvedName res = ipfs.resolveName(key, random, () -> false);
         assertNotNull(res);
