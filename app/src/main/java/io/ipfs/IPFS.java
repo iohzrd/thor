@@ -43,9 +43,6 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
 import io.LogUtils;
-import io.ipfs.bitswap.BitSwap;
-import io.ipfs.bitswap.BitSwapMessage;
-import io.ipfs.bitswap.BitSwapReceiver;
 import io.ipfs.cid.Cid;
 import io.ipfs.core.AddrInfo;
 import io.ipfs.core.Closeable;
@@ -54,7 +51,6 @@ import io.ipfs.core.ConnectionIssue;
 import io.ipfs.core.PeerInfo;
 import io.ipfs.core.TimeoutCloseable;
 import io.ipfs.dht.Routing;
-import io.ipfs.exchange.Interface;
 import io.ipfs.format.BlockStore;
 import io.ipfs.format.Node;
 import io.ipfs.host.DnsResolver;
@@ -90,7 +86,7 @@ import io.netty.util.internal.EmptyArrays;
 import ipns.pb.Ipns;
 import threads.thor.core.blocks.BLOCKS;
 
-public class IPFS implements BitSwapReceiver, PushReceiver {
+public class IPFS implements PushReceiver {
     // TimeFormatIpfs is the format ipfs uses to represent time in string form
     // RFC3339Nano = "2006-01-02T15:04:05.999999999Z07:00"
     public static final String TimeFormatIpfs = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSS'Z'";
@@ -114,7 +110,7 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
     public static final int RESOLVE_TIMEOUT = 1000; // 1 sec
     public static final long WANTS_WAIT_TIMEOUT = 2000; // 2 sec
     public static final int CHUNK_SIZE = 262144;
-    public static final String ProtocolBitswap = "/ipfs/bitswap/1.2.0";
+    public static final String BITSWAP_PROTOCOL = "/ipfs/bitswap/1.2.0";
 
     // BlockSizeLimit specifies the maximum size an imported block can have.
     public static final int BLOCK_SIZE_LIMIT = 1048576; // 1 MB
@@ -174,7 +170,7 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
     private static IPFS INSTANCE = null;
 
     private final BLOCKS blocks;
-    private final Interface exchange;
+
     public static final ConcurrentHashMap<PeerId, PubKey> remotes = new ConcurrentHashMap<>();
     private final int port;
 
@@ -229,7 +225,6 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
     public static QuicSslContext CLIENT_SSL_INSTANCE;
     //private final Host host;
     private final PrivKey privateKey;
-    private final LiteSignedCertificate selfSignedCertificate;
 
     // todo invoke this function not very often, try to work with PeerId
     @NonNull
@@ -407,7 +402,7 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
 
         privateKey = new RsaPrivateKey(keypair.getPrivate(), keypair.getPublic());
         //privateKey = Ed25519Kt.unmarshalEd25519PrivateKey(data);
-        selfSignedCertificate = new LiteSignedCertificate(privateKey, keypair);
+        LiteSignedCertificate selfSignedCertificate = new LiteSignedCertificate(privateKey, keypair);
 
         CLIENT_SSL_INSTANCE = QuicSslContextBuilder.forClient(
                 selfSignedCertificate.privateKey(), null, selfSignedCertificate.certificate()).
@@ -453,13 +448,9 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
         int alpha = getConcurrencyValue(context);
 
 
-        this.liteHost = new LiteHost(privateKey, alpha);
-        this.liteHost.start(port);
-
-
         BlockStore blockstore = BlockStore.NewBlockstore(blocks);
-
-        this.exchange = BitSwap.create(liteHost, blockstore);
+        this.liteHost = new LiteHost(privateKey, blockstore, alpha);
+        this.liteHost.start(port);
 
 
         if (IPFS.CONNECTION_SERVICE_ENABLED) {
@@ -488,9 +479,6 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
         return decode(name);
     }
 
-    public LiteSignedCertificate getSelfSignedCertificate() {
-        return selfSignedCertificate;
-    }
 
     @NonNull
     public List<Multiaddr> listenAddresses() {
@@ -501,15 +489,6 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
         return port;
     }
 
-    @Override
-    public void ReceiveMessage(@NonNull PeerId peer, @NonNull String protocol, @NonNull BitSwapMessage incoming) {
-        exchange.ReceiveMessage(peer, protocol, incoming);
-    }
-
-    @Override
-    public void ReceiveError(@NonNull PeerId peer, @NonNull String protocol, @NonNull String error) {
-        exchange.ReceiveError(peer, protocol, error);
-    }
 
     @NonNull
     public Cid storeFile(@NonNull File target) throws Exception {
@@ -734,11 +713,6 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
         return null;
     }
 
-    @Override
-    public boolean GatePeer(PeerId peerID) {
-        return exchange.GatePeer(peerID);
-    }
-
     @Nullable
     public Cid createEmptyDir() {
         try {
@@ -824,7 +798,7 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
     public Node resolveNode(@NonNull String path, @NonNull Closeable closeable) throws ClosedException {
 
         try {
-            return Resolver.resolveNode(closeable, blocks, exchange, path);
+            return Resolver.resolveNode(closeable, blocks, liteHost.getExchange(), path);
         } catch (ClosedException closedException) {
             throw closedException;
         } catch (Throwable ignore) {
@@ -954,7 +928,7 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
     public Cid resolve(@NonNull String path, @NonNull Closeable closeable) throws ClosedException {
 
         try {
-            Node node = Resolver.resolveNode(closeable, blocks, exchange, path);
+            Node node = Resolver.resolveNode(closeable, blocks, liteHost.getExchange(), path);
             if (node != null) {
                 return node.Cid();
             }
@@ -977,7 +951,7 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
         boolean result;
         try {
             BlockStore blockstore = BlockStore.NewBlockstore(blocks);
-            result = Stream.IsDir(closeable, blockstore, exchange, cid);
+            result = Stream.IsDir(closeable, blockstore, liteHost.getExchange(), cid);
         } catch (ClosedException closedException) {
             throw closedException;
         } catch (Throwable e) {
@@ -1052,7 +1026,7 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
                 public void info(@NonNull Link link) {
                     infoList.add(link);
                 }
-            }, blockstore, exchange, cid, resolveChildren);
+            }, blockstore, liteHost.getExchange(), cid, resolveChildren);
 
         } catch (ClosedException closedException) {
             throw closedException;
@@ -1065,7 +1039,7 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
     @NonNull
     public Reader getReader(@NonNull Cid cid, @NonNull Closeable closeable) throws ClosedException {
         BlockStore blockstore = BlockStore.NewBlockstore(blocks);
-        return Reader.getReader(closeable, blockstore, exchange, cid);
+        return Reader.getReader(closeable, blockstore, liteHost.getExchange(), cid);
     }
 
     private void getToOutputStream(@NonNull OutputStream outputStream, @NonNull Cid cid,
@@ -1180,7 +1154,7 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
     public void reset() {
         try {
 
-            exchange.reset();
+            liteHost.getExchange().reset();
 
             liteHost.trimConnections();
 
@@ -1191,7 +1165,7 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
 
     public void load(@NonNull Cid cid, @NonNull Closeable closeable) {
         try {
-            exchange.load(closeable, cid);
+            liteHost.getExchange().load(closeable, cid);
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         }
@@ -1289,8 +1263,6 @@ public class IPFS implements BitSwapReceiver, PushReceiver {
         Objects.requireNonNull(peerId);
 
         try {
-
-
             liteHost.protectPeer(peerId);
             if (multiAddress.startsWith(IPFS.P2P_PATH)) {
                 Set<Multiaddr> addrInfo = liteHost.getAddresses(peerId);

@@ -30,11 +30,14 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import bitswap.pb.MessageOuterClass;
 import identify.pb.IdentifyOuterClass;
 import io.LogUtils;
 import io.ipfs.IPFS;
+import io.ipfs.bitswap.BitSwap;
 import io.ipfs.bitswap.BitSwapMessage;
 import io.ipfs.bitswap.BitSwapNetwork;
+import io.ipfs.bitswap.BitSwapReceiver;
 import io.ipfs.cid.Cid;
 import io.ipfs.core.AddrInfo;
 import io.ipfs.core.Closeable;
@@ -45,6 +48,8 @@ import io.ipfs.core.ProtocolIssue;
 import io.ipfs.core.TimeoutIssue;
 import io.ipfs.dht.KadDHT;
 import io.ipfs.dht.Routing;
+import io.ipfs.exchange.Interface;
+import io.ipfs.format.BlockStore;
 import io.ipfs.multibase.Charsets;
 import io.ipfs.relay.Relay;
 import io.ipns.Ipns;
@@ -87,7 +92,7 @@ import io.netty.incubator.codec.quic.QuicStreamType;
 import kotlin.Unit;
 
 
-public class LiteHost implements BitSwapNetwork {
+public class LiteHost implements BitSwapReceiver, BitSwapNetwork {
     private static final String TAG = LiteHost.class.getSimpleName();
     private static final Duration DefaultRecordEOL = Duration.ofHours(24);
 
@@ -103,16 +108,11 @@ public class LiteHost implements BitSwapNetwork {
     private final PrivKey privKey;
     @NonNull
     private final Relay relay;
-    private final NioEventLoopGroup group = new NioEventLoopGroup(1);
 
     @NonNull
-    public Routing getRouting() {
-        return routing;
-    }
-    public List<ConnectionHandler> handlers = new ArrayList<>();
-    private Channel server;
+    private final Interface exchange;
 
-    public LiteHost(@NonNull PrivKey privKey, int alpha) {
+    public LiteHost(@NonNull PrivKey privKey, @NonNull BlockStore blockstore, int alpha) {
 
         this.privKey = privKey;
         this.metrics = new ConnectionManager(this, IPFS.LOW_WATER, IPFS.HIGH_WATER, IPFS.GRACE_PERIOD);
@@ -121,8 +121,40 @@ public class LiteHost implements BitSwapNetwork {
                 new Ipns(), alpha, IPFS.KAD_DHT_BETA,
                 IPFS.KAD_DHT_BUCKET_SIZE);
 
+        this.exchange = BitSwap.create(this, blockstore);
         this.relay = new Relay(this);
     }
+
+    private final NioEventLoopGroup group = new NioEventLoopGroup(1);
+
+    @NonNull
+    public Routing getRouting() {
+        return routing;
+    }
+
+    public List<ConnectionHandler> handlers = new ArrayList<>();
+    private Channel server;
+
+    @NonNull
+    public Interface getExchange() {
+        return exchange;
+    }
+
+    @Override
+    public void ReceiveMessage(@NonNull PeerId peer, @NonNull String protocol, @NonNull BitSwapMessage incoming) {
+        exchange.ReceiveMessage(peer, protocol, incoming);
+    }
+
+    @Override
+    public void ReceiveError(@NonNull PeerId peer, @NonNull String protocol, @NonNull String error) {
+        exchange.ReceiveError(peer, protocol, error);
+    }
+
+    @Override
+    public boolean GatePeer(PeerId peerID) {
+        return exchange.GatePeer(peerID);
+    }
+
 
     @Override
     public boolean connectTo(@NonNull Closeable closeable, @NonNull PeerId peerId)
@@ -158,7 +190,7 @@ public class LiteHost implements BitSwapNetwork {
             synchronized (peer.toBase58().intern()) {
                 Connection con = connect(closeable, peer);
                 metrics.active(peer);
-                send(closeable, IPFS.ProtocolBitswap, con, message.ToProtoV1());
+                send(closeable, IPFS.BITSWAP_PROTOCOL, con, message.ToProtoV1());
             }
         } catch (ClosedException | ConnectionIssue exception) {
             metrics.done(peer);
@@ -757,44 +789,52 @@ public class LiteHost implements BitSwapNetwork {
                                 new ProtobufVarint32FrameDecoder(),
                                 new ProtobufVarint32LengthFieldPrepender(),
                                 new ProtobufEncoder(),
+                                new ProtobufDecoder(MessageOuterClass.Message.getDefaultInstance()),
                                 new StringDecoder(Charsets.UTF_8),
                                 new StringEncoder(Charsets.UTF_8),
                                 new StringSuffixCodec('\n'));
 
 
-                        ch.pipeline().addLast(new SimpleChannelInboundHandler<String>() {
+                        ch.pipeline().addLast(new SimpleChannelInboundHandler<Object>() {
 
                             @Override
-                            public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+                            public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+                                // TODO rehtink
                                 LogUtils.error(TAG, cause);
                                 ctx.close();
+                                super.exceptionCaught(ctx, cause);
                             }
 
                             @Override
-                            protected void channelRead0(ChannelHandlerContext ctx, String msg) throws Exception {
+                            protected void channelRead0(ChannelHandlerContext ctx, Object data) throws Exception {
 
-                                LogUtils.error(TAG, "Handle " + msg);
-                                if (Objects.equals(msg, IPFS.MULTISTREAM_PROTOCOL)) {
-                                    ctx.writeAndFlush(IPFS.MULTISTREAM_PROTOCOL);
-                                } else if (Objects.equals(msg, IPFS.IDENTITY_PROTOCOL)) {
-                                    ctx.writeAndFlush(IPFS.IDENTITY_PROTOCOL);
+                                if (data instanceof String) {
 
-                                    try {
+                                    String msg = (String) data;
+                                    LogUtils.error(TAG, "Handle " + msg);
+                                    switch (msg) {
+                                        case IPFS.MULTISTREAM_PROTOCOL:
+                                            ctx.writeAndFlush(IPFS.MULTISTREAM_PROTOCOL);
+                                            break;
+                                        case IPFS.IDENTITY_PROTOCOL:
+                                            ctx.writeAndFlush(IPFS.IDENTITY_PROTOCOL);
+
+                                            try {
                                         /*
                                         QuicStreamAddress inetSocketAddress = (QuicStreamAddress)
                                                 ctx.channel().remoteAddress();*/
+                                                // TODO
+                                                Multiaddr multiaddr = new Multiaddr("/ip4/127.0.0.1/udp/5001/quic");
 
-                                        Multiaddr multiaddr = new Multiaddr("/ip4/127.0.0.1/udp/5001/quic");
 
-
-                                        IdentifyOuterClass.Identify response =
-                                                IdentifyOuterClass.Identify.newBuilder()
-                                                        .setAgentVersion(IPFS.AGENT)
-                                                        // TODO  .setPublicKey()
-                                                        .setProtocolVersion(IPFS.PROTOCOL_VERSION)
-                                                        .setObservedAddr(ByteString.copyFrom(multiaddr.getBytes()))
-                                                        .build();
-                                        ctx.writeAndFlush(response).addListener(QuicStreamChannel.SHUTDOWN_OUTPUT);
+                                                IdentifyOuterClass.Identify response =
+                                                        IdentifyOuterClass.Identify.newBuilder()
+                                                                .setAgentVersion(IPFS.AGENT)
+                                                                // TODO  .setPublicKey()
+                                                                .setProtocolVersion(IPFS.PROTOCOL_VERSION)
+                                                                .setObservedAddr(ByteString.copyFrom(multiaddr.getBytes()))
+                                                                .build();
+                                                ctx.writeAndFlush(response).addListener(QuicStreamChannel.SHUTDOWN_OUTPUT);
                                         /*
                                         channel.get().createStream(QuicStreamType.BIDIRECTIONAL, new ChannelHandler() {
                                             @Override
@@ -812,13 +852,44 @@ public class LiteHost implements BitSwapNetwork {
                                                 LogUtils.error(TAG, cause);
                                             }
                                         }).get().writeAndFlush(response).addListener(QuicStreamChannel.SHUTDOWN_OUTPUT);*/
-                                    } catch (Throwable throwable) {
-                                        LogUtils.error(TAG, throwable);
+                                            } catch (Throwable throwable) {
+                                                LogUtils.error(TAG, throwable);
+                                            }
+                                            break;
+                                        case IPFS.BITSWAP_PROTOCOL:
+                                            ctx.writeAndFlush(IPFS.BITSWAP_PROTOCOL);
+
+                                            break;
+                                        default:
+                                            ctx.writeAndFlush(IPFS.NA);
+                                            LogUtils.error(TAG, msg);
+                                            //ctx.close(); // TODO rethink
+                                            break;
                                     }
+                                } else if (data instanceof MessageLite) {
+                                    MessageLite messageLite = (MessageLite) data;
+                                    if (messageLite instanceof MessageOuterClass.Message) {
+
+                                        // TODO also GatePeer (error)
+                                        PeerId peerId = null; // BIG TODO
+                                        new Thread(() -> {
+                                            try {
+                                                BitSwapMessage message = BitSwapMessage.newMessageFromProto(
+                                                        (MessageOuterClass.Message) messageLite);
+
+                                                // TODO also GatePeer (error)
+
+                                                ReceiveMessage(peerId, IPFS.BITSWAP_PROTOCOL, message);
+                                            } catch (Throwable throwable) {
+                                                ReceiveError(peerId, IPFS.BITSWAP_PROTOCOL, "" + throwable.getMessage());
+                                            }
+                                        }).start();
+                                    } else {
+                                        throw new Exception("illegal state");
+                                    }
+
                                 } else {
-                                    ctx.writeAndFlush(IPFS.NA);
-                                    LogUtils.error(TAG, msg);
-                                    //ctx.close();
+                                    throw new Exception("illegal state");
                                 }
                             }
                         });
