@@ -567,9 +567,10 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork {
             LogUtils.error(TAG, streamChannel.pipeline().names().toString());
             streamChannel.write(IPFS.MULTISTREAM_PROTOCOL);
             streamChannel.write(protocol);
-            ret.complete(streamChannel.write(message).addListener(QuicStreamChannel.SHUTDOWN_OUTPUT).get());
+            ret.complete(streamChannel.writeAndFlush(message).addListener(QuicStreamChannel.SHUTDOWN_OUTPUT).get());
 
         } catch (Throwable throwable) {
+            // TODO rethink
             ret.completeExceptionally(throwable);
         }
 
@@ -657,8 +658,10 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork {
             if (message != null) {
                 streamChannel.write(message);
             }
+            streamChannel.flush();
 
         } catch (Throwable throwable) {
+            // TODO rethink
             ret.completeExceptionally(throwable);
         }
 
@@ -708,7 +711,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork {
                 .initialMaxStreamDataBidirectionalRemote(1000000)
                 .initialMaxStreamsBidirectional(100)
                 .initialMaxStreamsUnidirectional(100)
-                .datagram(100000, 100000)
+                //.datagram(100000, 100000)
                 .build();
 
         Bootstrap bs = new Bootstrap();
