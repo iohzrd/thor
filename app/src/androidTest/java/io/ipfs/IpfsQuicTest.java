@@ -64,7 +64,7 @@ public class IpfsQuicTest {
         context = ApplicationProvider.getApplicationContext();
     }
 
-    @Test
+    //@Test
     public void test_1() throws Exception {
 
         IPFS ipfs = TestEnv.getTestInstance(context);
@@ -91,7 +91,7 @@ public class IpfsQuicTest {
 
     }
 
-   // @Test
+    @Test
     public void test_3() throws Exception {
 
         IPFS ipfs = TestEnv.getTestInstance(context);

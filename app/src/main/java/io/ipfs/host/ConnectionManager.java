@@ -6,7 +6,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import io.LogUtils;
-import io.libp2p.core.Connection;
 import io.libp2p.core.PeerId;
 
 public class ConnectionManager implements Metrics {

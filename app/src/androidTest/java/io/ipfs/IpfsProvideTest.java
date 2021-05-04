@@ -51,7 +51,7 @@ public class IpfsProvideTest {
         long time = System.currentTimeMillis();
         AtomicBoolean finished = new AtomicBoolean(false);
         try {
-            ipfs.findProviders(peerId -> finished.set(true), cid, finished::get);
+            ipfs.findProviders(peerId -> finished.set(true), cid, new TimeoutCloseable(30));
         } catch (ClosedException ignore) {
         }
         LogUtils.debug(TAG, "Time Providers : " + (System.currentTimeMillis() - time) + " [ms]");

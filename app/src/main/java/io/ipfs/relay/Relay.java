@@ -9,8 +9,8 @@ import java.util.Objects;
 import io.ipfs.core.Closeable;
 import io.ipfs.core.ClosedException;
 import io.ipfs.core.ConnectionIssue;
+import io.ipfs.host.Connection;
 import io.ipfs.host.LiteHost;
-import io.libp2p.core.Connection;
 import io.libp2p.core.PeerId;
 
 public class Relay {

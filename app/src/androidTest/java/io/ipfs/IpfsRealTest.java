@@ -134,7 +134,7 @@ public class IpfsRealTest {
 
         String key = "k2k4r8n098cwalcc7rdntd19nsjyzh6rku1hvgsmkjzvnw582mncc4b4";
 
-        IPFS.ResolvedName res = ipfs.resolveName(key, 0, () -> false);
+        IPFS.ResolvedName res = ipfs.resolveName(key, 0, new TimeoutCloseable(30));
         assertNotNull(res);
 
         AtomicBoolean atomicBoolean = new AtomicBoolean(false);

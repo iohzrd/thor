@@ -233,7 +233,7 @@ public class ContentManager {
                         try {
                             peers.add(peer);
                             MessageWriter.sendHaveMessage(
-                                    new TimeoutCloseable(closeable, 1), network, peer,
+                                    new TimeoutCloseable(closeable, 10), network, peer,
                                     Collections.singletonList(cid));
                             handled.add(peer);
                         } catch (ClosedException closedException) {

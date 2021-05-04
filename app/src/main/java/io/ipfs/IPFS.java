@@ -53,6 +53,7 @@ import io.ipfs.core.TimeoutCloseable;
 import io.ipfs.dht.Routing;
 import io.ipfs.format.BlockStore;
 import io.ipfs.format.Node;
+import io.ipfs.host.Connection;
 import io.ipfs.host.DnsResolver;
 import io.ipfs.host.LiteHost;
 import io.ipfs.host.LiteSignedCertificate;
@@ -71,7 +72,6 @@ import io.ipfs.utils.ReaderStream;
 import io.ipfs.utils.Resolver;
 import io.ipfs.utils.Stream;
 import io.ipfs.utils.WriterStream;
-import io.libp2p.core.Connection;
 import io.libp2p.core.PeerId;
 import io.libp2p.core.crypto.PrivKey;
 import io.libp2p.core.crypto.PubKey;
@@ -452,8 +452,8 @@ public class IPFS implements PushReceiver {
 
 
         BlockStore blockstore = BlockStore.NewBlockstore(blocks);
-        this.liteHost = new LiteHost(privateKey, blockstore, alpha);
-        this.liteHost.start(port);
+        this.liteHost = new LiteHost(privateKey, blockstore, port, alpha);
+        //this.liteHost.start(port); // TODO
 
 
         if (IPFS.CONNECTION_SERVICE_ENABLED) {
