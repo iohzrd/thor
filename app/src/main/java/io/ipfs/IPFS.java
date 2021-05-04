@@ -1182,14 +1182,10 @@ public class IPFS implements PushReceiver {
     public boolean notify(@NonNull PeerId peerId, @NonNull String content) {
 
         try {
-            synchronized (peerId.toBase58().intern()) {
-
-                // TODO create a push message from content
-
-                Connection conn = liteHost.connect(new TimeoutCloseable(TIMEOUT_PUSH), peerId);
-                liteHost.send(new TimeoutCloseable(TIMEOUT_PUSH), PUSH_PROTOCOL, conn,
-                        null /* TODO protocol message */);
-            }
+            // TODO create a push message from content
+            Connection conn = liteHost.connect(new TimeoutCloseable(TIMEOUT_PUSH), peerId);
+            liteHost.send(new TimeoutCloseable(TIMEOUT_PUSH), PUSH_PROTOCOL, conn,
+                    null /* TODO protocol message */);
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         }

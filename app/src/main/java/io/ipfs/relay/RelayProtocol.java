@@ -12,8 +12,8 @@ import java.io.OutputStream;
 import java.util.concurrent.CompletableFuture;
 
 import io.LogUtils;
+import io.ipfs.core.ConnectionIssue;
 import io.ipfs.multihash.Multihash;
-import io.libp2p.core.ConnectionClosedException;
 import io.libp2p.core.P2PChannel;
 import io.libp2p.core.Stream;
 import io.libp2p.core.multistream.ProtocolBinding;
@@ -103,8 +103,8 @@ public class RelayProtocol implements ProtocolBinding<RelayProtocol.RelayControl
 
         @Override
         public void channelUnregistered(ChannelHandlerContext ctx) {
-            activationFut.completeExceptionally(new ConnectionClosedException());
-            resFuture.completeExceptionally(new ConnectionClosedException());
+            activationFut.completeExceptionally(new ConnectionIssue());
+            resFuture.completeExceptionally(new ConnectionIssue());
         }
 
         @Override

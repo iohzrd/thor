@@ -12,8 +12,8 @@ import java.io.OutputStream;
 import java.util.concurrent.CompletableFuture;
 
 import io.LogUtils;
+import io.ipfs.core.ConnectionIssue;
 import io.ipfs.multihash.Multihash;
-import io.libp2p.core.ConnectionClosedException;
 import io.libp2p.core.P2PChannel;
 import io.libp2p.core.Stream;
 import io.libp2p.core.multistream.ProtocolBinding;
@@ -151,7 +151,7 @@ public class PushProtocol implements ProtocolBinding<PushProtocol.PushController
 
         @Override
         public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
-            activationFut.completeExceptionally(new ConnectionClosedException());
+            activationFut.completeExceptionally(new ConnectionIssue());
         }
 
         @Override

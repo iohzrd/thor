@@ -40,7 +40,6 @@ import io.ipfs.host.LiteHost;
 import io.ipfs.host.Metrics;
 import io.ipns.InvalidRecord;
 import io.ipns.Validator;
-import io.libp2p.core.ConnectionClosedException;
 import io.libp2p.core.PeerId;
 import io.libp2p.core.multiformats.Multiaddr;
 import io.libp2p.etc.types.NonCompleteException;
@@ -320,15 +319,15 @@ public class KadDHT implements Routing {
 
 
         try {
-            synchronized (p.toBase58().intern()) {
-                Connection con = host.connect(closeable, p);
+
+            Connection con = host.connect(closeable, p);
                 metrics.active(p);
                 long start = System.currentTimeMillis();
 
                 host.send(closeable, IPFS.KAD_DHT_PROTOCOL, con, message);
 
                 metrics.addLatency(p, System.currentTimeMillis() - start);
-            }
+
         } catch (ClosedException | ConnectionIssue exception) {
             metrics.done(p);
             throw exception;
@@ -344,8 +343,8 @@ public class KadDHT implements Routing {
 
 
         try {
-            synchronized (p.toBase58().intern()) {
-                Connection con = host.connect(closeable, p);
+
+            Connection con = host.connect(closeable, p);
                 metrics.active(p);
                 long start = System.currentTimeMillis();
 
@@ -357,9 +356,8 @@ public class KadDHT implements Routing {
                 metrics.addLatency(p, System.currentTimeMillis() - start);
 
                 return response;
-            }
+
         } catch (ClosedException | ConnectionIssue exception) {
-            LogUtils.error(TAG, exception);
             metrics.done(p);
             throw exception;
         } catch (Throwable throwable) {
@@ -376,7 +374,7 @@ public class KadDHT implements Routing {
                 if (cause instanceof NonCompleteException) {
                     throw new ConnectionIssue();
                 }
-                if (cause instanceof ConnectionClosedException) {
+                if (cause instanceof ConnectionIssue) {
                     throw new ConnectionIssue();
                 }
                 if (cause instanceof ReadTimeoutException) {

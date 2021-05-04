@@ -28,17 +28,16 @@ public class Relay {
         relay.pb.Relay.CircuitRelay message = relay.pb.Relay.CircuitRelay.newBuilder()
                 .setType(relay.pb.Relay.CircuitRelay.Type.CAN_HOP)
                 .build();
-        Connection conn = host.connect(closeable, peerId);
-        try {
-            synchronized (peerId.toBase58().intern()) {
 
-                MessageLite messageLite = host.request(closeable, RelayProtocol.Protocol, conn, message);
-                Objects.requireNonNull(messageLite);
-                relay.pb.Relay.CircuitRelay msg = (relay.pb.Relay.CircuitRelay) messageLite;
-                Objects.requireNonNull(msg);
-                return msg.getType() == relay.pb.Relay.CircuitRelay.Type.STATUS;
-            }
-        } catch (ClosedException exception) {
+        try {
+            Connection conn = host.connect(closeable, peerId);
+            MessageLite messageLite = host.request(closeable, RelayProtocol.Protocol, conn, message);
+            Objects.requireNonNull(messageLite);
+            relay.pb.Relay.CircuitRelay msg = (relay.pb.Relay.CircuitRelay) messageLite;
+            Objects.requireNonNull(msg);
+            return msg.getType() == relay.pb.Relay.CircuitRelay.Type.STATUS;
+
+        } catch (ClosedException | ConnectionIssue exception) {
             throw exception;
         } catch (Throwable throwable) {
             throw new RuntimeException(throwable);
