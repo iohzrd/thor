@@ -583,7 +583,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork {
                             }
 
                         }
-                    }).sync().get();
+                    }).sync().get( IPFS.TIMEOUT_SEND, TimeUnit.SECONDS);
 
 
             initNeoPipeline(streamChannel);
@@ -786,7 +786,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork {
                              }
 
                         }
-                    }).sync().get();
+                    }).sync().get(IPFS.TIMEOUT_REQUEST, TimeUnit.SECONDS);
 
             initNeoPipeline(streamChannel);
 

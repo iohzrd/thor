@@ -105,6 +105,8 @@ public class IPFS implements PushReceiver {
     public static final int LOW_WATER = 50;
     public static final int HIGH_WATER = 300;
     public static final int GRACE_PERIOD = 10;
+    public static final int TIMEOUT_SEND = 5;
+    public static final int TIMEOUT_REQUEST = 30;
     public static final int MIN_PEERS = 10;
     public static final long RESOLVE_MAX_TIME = 30000; // 30 sec
     public static final int RESOLVE_TIMEOUT = 1000; // 1 sec
@@ -141,6 +143,7 @@ public class IPFS implements PushReceiver {
     // The number of peers closest to a target that must have responded for a query path to terminate
     public static final int KAD_DHT_BETA = 20;
     public static final String NA = "na";
+
     // rough estimates on expected sizes
     private static final int roughLinkBlockSize = 1 << 13; // 8KB
     private static final int roughLinkSize = 34 + 8 + 5;// sha256 multihash + size + no name + protobuf framing

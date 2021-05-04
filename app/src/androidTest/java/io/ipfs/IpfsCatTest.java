@@ -44,7 +44,7 @@ public class IpfsCatTest {
         Cid cid = Cid.Decode("Qmaisz6NMhDB51cCvNWa1GMS7LU1pAxdF4Ld6Ft9kZEP2a");
         long time = System.currentTimeMillis();
         List<String> provs = new ArrayList<>();
-        ipfs.findProviders(peerId -> provs.add(peerId.toBase58()), cid, () -> false);
+        ipfs.findProviders(peerId -> provs.add(peerId.toBase58()), cid, new TimeoutCloseable(45));
         for (String prov : provs) {
             LogUtils.debug(TAG, "Provider " + prov);
         }
