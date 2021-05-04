@@ -7,12 +7,14 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 import com.google.protobuf.MessageLite;
 
+import org.apache.commons.text.RandomStringGenerator;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import identify.pb.IdentifyOuterClass;
 import io.LogUtils;
+import io.libp2p.core.PeerId;
 import io.libp2p.core.multiformats.Multiaddr;
 
 import static junit.framework.TestCase.assertEquals;
@@ -42,8 +44,11 @@ import io.netty.util.CharsetUtil;
 import io.netty.util.NetUtil;
 
 import java.net.InetSocketAddress;
+import java.nio.charset.Charset;
+import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 @SuppressWarnings("SpellCheckingInspection")
@@ -59,14 +64,14 @@ public class IpfsQuicTest {
         context = ApplicationProvider.getApplicationContext();
     }
 
-    //@Test
+    @Test
     public void test_1() throws Exception {
 
         IPFS ipfs = TestEnv.getTestInstance(context);
 
         Multiaddr multiaddr = new Multiaddr("/ip4/147.75.109.213/udp/4001/quic/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN");
 
-        Future<QuicChannel> conn = ipfs.getHost().dial(multiaddr);
+        Future<QuicChannel> conn = ipfs.getHost().dial(multiaddr, PeerId.fromBase58("QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN"));
         assertNotNull(conn);
         QuicChannel channel = conn.get();
         assertNotNull(channel);
@@ -86,7 +91,7 @@ public class IpfsQuicTest {
 
     }
 
-    @Test
+   // @Test
     public void test_3() throws Exception {
 
         IPFS ipfs = TestEnv.getTestInstance(context);
@@ -94,12 +99,19 @@ public class IpfsQuicTest {
 
         Multiaddr multiaddr = new Multiaddr("/ip4/0.0.0.0/udp/" + port+ "/quic");
 
-        Future<QuicChannel> future = ipfs.getHost().dial(multiaddr);
+        Future<QuicChannel> future = ipfs.getHost().dial(multiaddr, null);// TODO test
 
         QuicChannel quicChannel = future.get();
 
+        int size = 100000;
+        byte[] array = new byte[size]; // length is bounded by 7
+        for (int i = 0; i < size; i++) {
+            array[i] = 96;
+        }
+        String generatedString = new String(array, Charset.forName("UTF-8"));
         CompletableFuture<MessageLite> ret = ipfs.getHost().request(
-                quicChannel, IPFS.IDENTITY_PROTOCOL, null);
+                quicChannel, IPFS.IDENTITY_PROTOCOL,
+                IdentifyOuterClass.Identify.newBuilder().setAgentVersion(generatedString).build());
 
         MessageLite message = ret.get();
         assertNotNull(message);
@@ -163,8 +175,7 @@ public class IpfsQuicTest {
                         @Override
                         protected void initChannel(QuicStreamChannel ch)  {
                             // Add a LineBasedFrameDecoder here as we just want to do some simple HTTP 0.9 handling.
-                            ch.pipeline().addLast(new LineBasedFrameDecoder(1024))
-                                    .addLast(new ChannelInboundHandlerAdapter() {
+                            ch.pipeline().addLast(new ChannelInboundHandlerAdapter() {
                                         @Override
                                         public void channelRead(ChannelHandlerContext ctx, Object obj) {
                                             ByteBuf byteBuf = (ByteBuf) obj;

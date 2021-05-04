@@ -359,6 +359,7 @@ public class KadDHT implements Routing {
                 return response;
             }
         } catch (ClosedException | ConnectionIssue exception) {
+            LogUtils.error(TAG, exception);
             metrics.done(p);
             throw exception;
         } catch (Throwable throwable) {
