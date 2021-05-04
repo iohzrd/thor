@@ -98,10 +98,10 @@ public class AddrInfo {
             }
         }
         if (address.has(Protocol.QUIC) && address.has(Protocol.IP4)) { // TODO SUPPORT THIS
-            //LogUtils.info(TAG, "QUIC " + address.toString());
+            //LogUtils.error(TAG, "QUIC " + address.toString());
             this.addresses.add(address); // TODO
         } else {
-            LogUtils.info(TAG, "QUIC " + address.toString());
+            LogUtils.info(TAG,  address.toString());
         }
 
         /*this.addresses.add(address);*/

@@ -58,16 +58,14 @@ public class KadDHT implements Routing {
     public final int alpha;
     public final RoutingTable routingTable;
     private final Validator validator;
-    private final Metrics metrics;
 
     public KadDHT(@NonNull LiteHost host, @NonNull Validator validator,
                   int alpha, int beta, int bucketSize) {
         this.host = host;
-        this.metrics = host.getMetrics();
         this.validator = validator;
         this.self = host.Self();
         this.bucketSize = bucketSize;
-        this.routingTable = new RoutingTable(metrics, bucketSize, Util.ConvertPeerID(self));
+        this.routingTable = new RoutingTable(host, bucketSize, Util.ConvertPeerID(self));
         this.beta = beta;
         this.alpha = alpha;
     }
@@ -78,8 +76,8 @@ public class KadDHT implements Routing {
         try {
             for (Connection conn : host.getConnections()) {
                 PeerId peerId = conn.remoteId();
-                metrics.addLatency(peerId, 0L);
-                boolean isReplaceable = !metrics.isProtected(peerId);
+                host.addLatency(peerId, 0L);
+                boolean isReplaceable = !host.isProtected(peerId);
                 peerFound(peerId, isReplaceable);
             }
         } catch (Throwable throwable) {
@@ -321,18 +319,18 @@ public class KadDHT implements Routing {
         try {
 
             Connection con = host.connect(closeable, p);
-                metrics.active(p);
+                host.active(p);
                 long start = System.currentTimeMillis();
 
                 host.send(closeable, IPFS.KAD_DHT_PROTOCOL, con, message);
 
-                metrics.addLatency(p, System.currentTimeMillis() - start);
+                host.addLatency(p, System.currentTimeMillis() - start);
 
         } catch (ClosedException | ConnectionIssue exception) {
-            metrics.done(p);
+            host.done(p);
             throw exception;
         } catch (Throwable throwable) {
-            metrics.done(p);
+            host.done(p);
             throw new RuntimeException(throwable);
         }
     }
@@ -345,7 +343,7 @@ public class KadDHT implements Routing {
         try {
 
             Connection con = host.connect(closeable, p);
-                metrics.active(p);
+                host.active(p);
                 long start = System.currentTimeMillis();
 
                 MessageLite messageLite = host.request(closeable, IPFS.KAD_DHT_PROTOCOL, con, message);
@@ -353,15 +351,15 @@ public class KadDHT implements Routing {
                 Dht.Message response = (Dht.Message) messageLite;
                 Objects.requireNonNull(response);
 
-                metrics.addLatency(p, System.currentTimeMillis() - start);
+                host.addLatency(p, System.currentTimeMillis() - start);
 
                 return response;
 
         } catch (ClosedException | ConnectionIssue exception) {
-            metrics.done(p);
+            host.done(p);
             throw exception;
         } catch (Throwable throwable) {
-            metrics.done(p);
+            host.done(p);
             Throwable cause = throwable.getCause();
             if (cause != null) {
                 LogUtils.info(TAG, cause.getClass().getSimpleName());
