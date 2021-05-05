@@ -9,7 +9,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import io.ipfs.IPFS;
 import io.ipfs.core.ProtocolIssue;
@@ -18,7 +20,7 @@ import io.ipfs.multihash.Multihash;
 
 public class DataReader {
     private final ByteArrayOutputStream temp = new ByteArrayOutputStream();
-    private final List<String> tokens = new ArrayList<>();
+    private final Set<String> tokens = new HashSet<>();
     private final int maxLength;
     private boolean isDone = false;
     private byte[] message = null;
@@ -70,7 +72,7 @@ public class DataReader {
         isDone = done;
     }
 
-    public List<String> getTokens() {
+    public Set<String> getTokens() {
         return tokens;
     }
 

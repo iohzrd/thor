@@ -105,7 +105,7 @@ public class IPFS implements PushReceiver {
     public static final int LOW_WATER = 50;
     public static final int HIGH_WATER = 300;
     public static final int GRACE_PERIOD = 10;
-    public static final int TIMEOUT_SEND = 5;
+    public static final int TIMEOUT_SEND = 1;
     public static final int TIMEOUT_REQUEST = 30;
     public static final int MIN_PEERS = 10;
     public static final long RESOLVE_MAX_TIME = 30000; // 30 sec

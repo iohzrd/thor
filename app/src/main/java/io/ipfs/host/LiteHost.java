@@ -226,8 +226,8 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
 
             Connection con = connect(closeable, peerId);
             active(peerId);
-            MessageLite msg = request(closeable, IPFS.BITSWAP_PROTOCOL, con, message.ToProtoV1());
-            forwardMessage(peerId, msg);// TODO why has it no success
+            send(closeable, IPFS.BITSWAP_PROTOCOL, con, message.ToProtoV1());
+            //forwardMessage(peerId, msg);// TODO why has it no success
 
         } catch (ClosedException | ConnectionIssue exception) {
             done(peerId);
@@ -568,11 +568,11 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
         try {
             QuicStreamChannel streamChannel = quicChannel.createStream(QuicStreamType.BIDIRECTIONAL,
                     new SimpleChannelInboundHandler<Object>() {
-                        private final DataReader reader = new DataReader(IPFS.BLOCK_SIZE_LIMIT);
+                        private DataReader reader = new DataReader(IPFS.BLOCK_SIZE_LIMIT);
                         @Override
                         public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
                                 throws Exception {
-                            LogUtils.error(TAG, cause.getClass().getSimpleName());
+                            LogUtils.error(TAG+"SEND", cause.getClass().getSimpleName());
                             ret.completeExceptionally(cause);
                             ctx.close().get();
                         }
@@ -597,7 +597,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
 
                             if (reader.isDone()) {
                                 for (String received : reader.getTokens()) {
-                                    LogUtils.error(TAG, "send " + received);
+                                    LogUtils.error(TAG+"SEND", "send " + received);
                                     if (Objects.equals(received, IPFS.NA)) {
                                         throw new ProtocolIssue();
                                     } else if (Objects.equals(received, IPFS.STREAM_PROTOCOL)) {
@@ -609,8 +609,9 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
                                         throw new ProtocolIssue();
                                     }
                                 }
+                                reader = new DataReader(IPFS.BLOCK_SIZE_LIMIT);
                             } else {
-                                LogUtils.error(TAG, "iteration " + data.length + " "
+                                LogUtils.error(TAG+"SEND", "iteration " + data.length + " "
                                         + reader.expectedBytes() + " " + protocol + " " + ctx.name() + " "
                                         + ctx.channel().remoteAddress());
                             }
@@ -618,7 +619,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
                     }).sync().get(IPFS.TIMEOUT_SEND, TimeUnit.SECONDS);
 
 
-            streamChannel.pipeline().addFirst(new ReadTimeoutHandler(10, TimeUnit.SECONDS));
+            streamChannel.pipeline().addFirst(new ReadTimeoutHandler(IPFS.TIMEOUT_SEND, TimeUnit.SECONDS));
 
 
             LogUtils.error(TAG, streamChannel.pipeline().names().toString());
@@ -627,7 +628,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
 
 
         } catch (Throwable throwable) {
-            // TODO rethink
+            LogUtils.error(TAG+"SEND", throwable);
             ret.completeExceptionally(throwable);
         }
 
@@ -692,7 +693,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
                                 if (reader.isDone()) {
 
                                     for (String received : reader.getTokens()) {
-                                        LogUtils.error(TAG, "request " + received);
+                                        LogUtils.error(TAG+"REQUEST", "request " + received);
                                         if (Objects.equals(received, IPFS.NA)) {
                                             throw new ProtocolIssue();
                                         } else if (Objects.equals(received, IPFS.STREAM_PROTOCOL)) {
@@ -715,15 +716,15 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
                                     if (message != null) {
                                         switch (protocol) {
                                             case IPFS.IDENTITY_PROTOCOL:
-                                                LogUtils.error(TAG + "FFFF", "Found " + protocol);
+                                                LogUtils.error(TAG +"REQUEST", "Found " + protocol);
                                                 ret.complete(IdentifyOuterClass.Identify.parseFrom(message));
                                                 break;
                                             case IPFS.BITSWAP_PROTOCOL:
-                                                LogUtils.error(TAG + "FFFF", "Found " + protocol);
+                                                LogUtils.error(TAG +"REQUEST", "Found " + protocol);
                                                 ret.complete(MessageOuterClass.Message.parseFrom(message));
                                                 break;
                                             case IPFS.KAD_DHT_PROTOCOL:
-                                                LogUtils.error(TAG + "FFFF", "Found " + protocol);
+                                                LogUtils.error(TAG +"REQUEST", "Found " + protocol);
                                                 ret.complete(Dht.Message.parseFrom(message));
                                                 break;
                                             default:
@@ -745,15 +746,15 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
 
                                     switch (protocol) {
                                         case IPFS.IDENTITY_PROTOCOL:
-                                            LogUtils.error(TAG + "FFFF", "Found " + protocol);
+                                            LogUtils.error(TAG +"REQUEST", "Found " + protocol);
                                             ret.complete(IdentifyOuterClass.Identify.parseFrom(message));
                                             break;
                                         case IPFS.BITSWAP_PROTOCOL:
-                                            LogUtils.error(TAG + "FFFF", "Found " + protocol);
+                                            LogUtils.error(TAG +"REQUEST", "Found " + protocol);
                                             ret.complete(MessageOuterClass.Message.parseFrom(message));
                                             break;
                                         case IPFS.KAD_DHT_PROTOCOL:
-                                            LogUtils.error(TAG + "FFFF", "Found " + protocol);
+                                            LogUtils.error(TAG +"REQUEST", "Found " + protocol);
                                             ret.complete(Dht.Message.parseFrom(message));
                                             break;
                                         default:
