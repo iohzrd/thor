@@ -16,6 +16,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -102,10 +103,12 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
     private final Interface exchange;
     @Nullable
     private Channel client;
+    private final int port;
 
     public LiteHost(@NonNull PrivKey privKey, @NonNull BlockStore blockstore, int port, int alpha) {
 
         this.privKey = privKey;
+        this.port = port;
 
 
         this.routing = new KadDHT(this,
@@ -122,9 +125,8 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
                 .initialMaxData(IPFS.BLOCK_SIZE_LIMIT)
                 .initialMaxStreamDataBidirectionalLocal(IPFS.BLOCK_SIZE_LIMIT)
                 .initialMaxStreamDataBidirectionalRemote(IPFS.BLOCK_SIZE_LIMIT)
-                .initialMaxStreamsBidirectional(200)
-                .initialMaxStreamsUnidirectional(100)
-                //.datagram(10000000, 10000000)
+                .initialMaxStreamsBidirectional(IPFS.HIGH_WATER * 5) // TODO rethink
+                .initialMaxStreamsUnidirectional(IPFS.HIGH_WATER * 5) // TODO rethink
                 .build();
 
         try {
@@ -378,6 +380,8 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
             // TODO the listen address does not contain real IP address
 
             List<Multiaddr> list = new ArrayList<>();
+            list.add(new Multiaddr("/ip4/127.0.0.1/udp/" + port + "/quic")); // TODO default values
+            list.add(new Multiaddr("/ip4/127.0.0.1/udp/" + port + "/quic")); // TODO default values
 
             return list;
         } catch (Throwable throwable) {
@@ -527,7 +531,6 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
 
         while (!ctrl.isDone()) {
             if (closeable.isClosed()) {
-                LogUtils.error(TAG, "Abort " + protocol);
                 ctrl.cancel(true);
             }
         }
@@ -682,6 +685,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
                             msg.readBytes(out, msg.readableBytes());
                             byte[] data = out.toByteArray();
                             reader.load(data);
+                            LogUtils.error(TAG, "Data length " + data.length);
 
 
                             if (negotiation) {
@@ -729,14 +733,16 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
                                     }
                                     reader = new DataReader(evalMaxResponseLength(protocol));
                                 } else {
-                                    LogUtils.error(TAG, "iteration " + data.length + " "
+                                    LogUtils.error(TAG, "iteration " + reader.hasRead() + " "
                                             + reader.expectedBytes() + " " + protocol + " " + ctx.name() + " "
                                             + ctx.channel().remoteAddress());
                                 }
 
                             } else {
                                 if (reader.isDone()) {
+                                    LogUtils.error(TAG, "Reader is done");
                                     byte[] message = reader.getMessage();
+
                                     switch (protocol) {
                                         case IPFS.IDENTITY_PROTOCOL:
                                             LogUtils.error(TAG + "FFFF", "Found " + protocol);
@@ -756,7 +762,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
                                     ctx.close();
 
                                 } else {
-                                    LogUtils.error(TAG, "iteration " + data.length + " "
+                                    LogUtils.error(TAG, "iteration " + reader.hasRead() + " "
                                             + reader.expectedBytes() + " " + protocol + " " + ctx.name() + " "
                                             + ctx.channel().remoteAddress());
                                 }
@@ -845,32 +851,32 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
                                             } else if (token.endsWith(IPFS.BITSWAP_PROTOCOL)) {
                                                 lastProtocol = IPFS.BITSWAP_PROTOCOL;
                                                 ctx.writeAndFlush(writeToken(IPFS.BITSWAP_PROTOCOL)).get();
+
+                                                // TODO
                                             } else if (token.endsWith(IPFS.IDENTITY_PROTOCOL)) {
                                                 //lastProtocol = IPFS.IDENTITY_PROTOCOL;
                                                 ctx.write(writeToken(IPFS.IDENTITY_PROTOCOL));
 
                                                 try {
                                                     // TODO this is not correct
-                                                    Multiaddr multiaddr = new Multiaddr("/ip4/127.0.0.1/udp/5001/quic");
+                                                    Multiaddr multiaddr = new Multiaddr(
+                                                            "/ip4/127.0.0.1/udp/5001/quic");
 
                                                     IdentifyOuterClass.Identify response =
-                                                            IdentifyOuterClass.Identify.newBuilder()
-                                                                    .setAgentVersion(IPFS.AGENT)
-                                                                    .setPublicKey(ByteString.copyFrom(privKey.publicKey().bytes()))
-                                                                    .setProtocolVersion(IPFS.PROTOCOL_VERSION)
+                                                            createIdentity(multiaddr);
+                                                    ctx.writeAndFlush(encode(response))
+                                                            .addListener(QuicStreamChannel.SHUTDOWN_OUTPUT).get();
 
-                                                                    .setObservedAddr(ByteString.copyFrom(multiaddr.getBytes()))
-                                                                    .build();
-                                                    ctx.writeAndFlush(encode(response)).get();
-                                                    ctx.close();
+                                                    LogUtils.error(TAG, "WRITE IDENTITY");
                                                 } catch (Throwable throwable) {
                                                     LogUtils.error(TAG, throwable);
                                                 }
                                             }
                                         }
+
                                         reader = new DataReader(IPFS.BLOCK_SIZE_LIMIT); // TODO
                                     } else {
-                                        LogUtils.error(TAG, "iteration " + data.length + " "
+                                        LogUtils.error(TAG, "iteration listener " + data.length + " "
                                                 + reader.expectedBytes() + " " + ctx.name() + " "
                                                 + ctx.channel().remoteAddress());
                                     }
@@ -883,6 +889,32 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
                 .connect();
 
 
+    }
+
+
+    private IdentifyOuterClass.Identify createIdentity(@NonNull Multiaddr observed) {
+
+        IdentifyOuterClass.Identify.Builder builder = IdentifyOuterClass.Identify.newBuilder()
+                .setAgentVersion(IPFS.AGENT)
+                .setPublicKey(ByteString.copyFrom(privKey.publicKey().bytes()))
+                .setProtocolVersion(IPFS.PROTOCOL_VERSION);
+
+        List<Multiaddr> multiaddrs = listenAddresses();
+        for (Multiaddr addr : multiaddrs) {
+            builder.addListenAddrs(ByteString.copyFrom(addr.getBytes()));
+        }
+
+        List<String> protocols = getProtocols();
+        for (String protocol : protocols) {
+            builder.addProtocols(protocol);
+        }
+        builder.setObservedAddr(ByteString.copyFrom(observed.getBytes()));
+        return builder.build();
+    }
+
+
+    private List<String> getProtocols() {
+        return Arrays.asList(IPFS.STREAM_PROTOCOL, IPFS.IDENTITY_PROTOCOL, IPFS.BITSWAP_PROTOCOL);
     }
 
     private ByteBuf writeToken(String token) {

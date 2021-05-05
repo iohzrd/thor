@@ -17,6 +17,7 @@ import io.ipfs.multibase.Charsets;
 import io.ipfs.multihash.Multihash;
 
 public class DataReader {
+    private final ByteArrayOutputStream temp = new ByteArrayOutputStream();
     private final List<String> tokens = new ArrayList<>();
     private final int maxLength;
     private boolean isDone = false;
@@ -26,6 +27,10 @@ public class DataReader {
     public DataReader(int maxLength) {
         this.expectedLength = 0;
         this.maxLength = maxLength;
+    }
+
+    public int hasRead() {
+        return temp.size();
     }
 
     private static int copy(InputStream source, OutputStream sink, int length) throws IOException {
@@ -82,15 +87,17 @@ public class DataReader {
                 return;
             }
         }
+        temp.write(data);
+
 
         // shorcut
-        if (data.length < expectedLength) {
+        if (temp.size() < expectedLength) {
             // no reading required
             return;
         }
 
 
-        try (InputStream inputStream = new ByteArrayInputStream(data)) {
+        try (InputStream inputStream = new ByteArrayInputStream(temp.toByteArray())) {
             expectedLength = (int) Multihash.readVarint(inputStream);
 
             if (expectedLength > maxLength) {
