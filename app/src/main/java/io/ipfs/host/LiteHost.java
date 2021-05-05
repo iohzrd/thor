@@ -816,6 +816,9 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
 
 
                         QuicStreamChannel quicChannel = (QuicStreamChannel) ctx.channel();
+
+
+
                         LogUtils.error(TAG + "CLIENT", "Sreaming ID " + quicChannel.remoteAddress().streamId());
 
 
