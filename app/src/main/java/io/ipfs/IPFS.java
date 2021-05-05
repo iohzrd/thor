@@ -44,19 +44,19 @@ import javax.net.ssl.X509TrustManager;
 
 import io.LogUtils;
 import io.ipfs.cid.Cid;
-import io.ipfs.core.AddrInfo;
 import io.ipfs.core.Closeable;
 import io.ipfs.core.ClosedException;
 import io.ipfs.core.ConnectionIssue;
-import io.ipfs.core.PeerInfo;
 import io.ipfs.core.TimeoutCloseable;
 import io.ipfs.dht.Routing;
 import io.ipfs.format.BlockStore;
 import io.ipfs.format.Node;
+import io.ipfs.host.AddrInfo;
 import io.ipfs.host.Connection;
 import io.ipfs.host.DnsResolver;
 import io.ipfs.host.LiteHost;
 import io.ipfs.host.LiteSignedCertificate;
+import io.ipfs.host.PeerInfo;
 import io.ipfs.multibase.Base58;
 import io.ipfs.multibase.Multibase;
 import io.ipfs.multihash.Multihash;
@@ -186,14 +186,15 @@ public class IPFS implements PushReceiver {
         public void checkClientTrusted(X509Certificate[] chain, String s) {
             try {
                 // TODO activate again
-                /*
-                for (X509Certificate cert : chain) {
-                    PubKey pubKey = LiteSignedCertificate.extractPublicKey(cert);
-                    Objects.requireNonNull(pubKey);
-                    PeerId peerId = PeerId.fromPubKey(pubKey);
-                    Objects.requireNonNull(peerId);
-                    remotes.put(peerId, pubKey);
-                }*/
+                if (false) {
+                    for (X509Certificate cert : chain) {
+                        PubKey pubKey = LiteSignedCertificate.extractPublicKey(cert);
+                        Objects.requireNonNull(pubKey);
+                        PeerId peerId = PeerId.fromPubKey(pubKey);
+                        Objects.requireNonNull(peerId);
+                        remotes.put(peerId, pubKey);
+                    }
+                }
             } catch (Throwable throwable) {
                 throw new RuntimeException(throwable);
             }
@@ -204,14 +205,15 @@ public class IPFS implements PushReceiver {
 
             try {
                 // TODO activate again
-                /*
-                for (X509Certificate cert : chain) {
-                    PubKey pubKey = LiteSignedCertificate.extractPublicKey(cert);
-                    Objects.requireNonNull(pubKey);
-                    PeerId peerId = PeerId.fromPubKey(pubKey);
-                    Objects.requireNonNull(peerId);
-                    remotes.put(peerId, pubKey);
-                }*/
+                if (false) {
+                    for (X509Certificate cert : chain) {
+                        PubKey pubKey = LiteSignedCertificate.extractPublicKey(cert);
+                        Objects.requireNonNull(pubKey);
+                        PeerId peerId = PeerId.fromPubKey(pubKey);
+                        Objects.requireNonNull(peerId);
+                        remotes.put(peerId, pubKey);
+                    }
+                }
             } catch (Throwable throwable) {
                 throw new RuntimeException(throwable);
             }
@@ -511,11 +513,11 @@ public class IPFS implements PushReceiver {
 
             List<Connection> connections = liteHost.getConnections();
             for (Connection conn : connections) {
-
                 try {
                     PeerInfo peerInfo = liteHost.getPeerInfo(new TimeoutCloseable(5), conn);
                     Multiaddr observed = peerInfo.getObserved();
                     if (observed != null) {
+                        LogUtils.error(TAG, "ObservedAddress " + observed.toString());
                         if (Objects.equals(result.get(), observed.toString())) {
                             int value = success.incrementAndGet();
                             if (value >= 3) {
@@ -824,7 +826,6 @@ public class IPFS implements PushReceiver {
         if (numConnections() < MIN_PEERS) {
 
             try {
-
                 Set<String> addresses = DnsResolver.resolveDnsAddress(LIB2P_DNS);
                 addresses.addAll(IPFS.IPFS_BOOTSTRAP_NODES);
 
@@ -861,7 +862,6 @@ public class IPFS implements PushReceiver {
                 }
 
                 liteHost.getRouting().bootstrap();
-
             } catch (Throwable throwable) {
                 LogUtils.error(TAG, throwable);
             } finally {

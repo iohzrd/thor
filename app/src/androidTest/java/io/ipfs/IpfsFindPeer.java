@@ -10,11 +10,10 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.util.List;
 import java.util.Set;
 
 import io.LogUtils;
-import io.ipfs.core.PeerInfo;
+import io.ipfs.host.PeerInfo;
 import io.ipfs.core.TimeoutCloseable;
 import io.libp2p.core.PeerId;
 import io.libp2p.core.multiformats.Multiaddr;

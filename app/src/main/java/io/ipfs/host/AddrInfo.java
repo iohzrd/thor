@@ -1,4 +1,4 @@
-package io.ipfs.core;
+package io.ipfs.host;
 
 import androidx.annotation.NonNull;
 

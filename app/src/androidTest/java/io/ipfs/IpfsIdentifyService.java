@@ -34,6 +34,7 @@ public class IpfsIdentifyService {
     public void identify_test() {
 
         IPFS ipfs = TestEnv.getTestInstance(context);
+
         ipfs.setReachable(Reachable.UNKNOWN);
         Reachable res = ipfs.getReachable();
         assertSame(res, Reachable.UNKNOWN);

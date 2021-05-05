@@ -15,6 +15,14 @@
  */
 package io.netty.incubator.codec.quic;
 
+import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
+import java.util.ArrayDeque;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Queue;
+
 import io.LogUtils;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelDuplexHandler;
@@ -24,14 +32,6 @@ import io.netty.channel.MessageSizeEstimator;
 import io.netty.channel.socket.DatagramPacket;
 import io.netty.util.internal.logging.InternalLogger;
 import io.netty.util.internal.logging.InternalLoggerFactory;
-
-import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
-import java.util.ArrayDeque;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Queue;
 
 /**
  * Abstract base class for QUIC codecs.
@@ -72,6 +72,10 @@ abstract class QuicheQuicCodec extends ChannelDuplexHandler {
     public void handlerAdded(ChannelHandlerContext ctx) {
         headerParser = new QuicHeaderParser(maxTokenLength, localConnIdLength);
         parserCallback = (sender, recipient, buffer, type, version, scid, dcid, token) -> {
+
+            // TODO
+            // LogUtils.error(getClass().getSimpleName(),  "sender " + sender + " receiver " + recipient);
+
             QuicheQuicChannel channel = quicPacketRead(ctx, sender, recipient,
                     type, version, scid,
                     dcid, token);

@@ -7305,7 +7305,7 @@
 
 0	string	ITOLITLS		Microsoft Reader eBook Data
 >8	lelong	x			\b, version %u
-!:mime					application/x-ms-reader
+!:mime					application/x-ms-dataReader
 
 
 0	string	HWB\000\377\001\000\000\000	Microsoft Visual C .APS file

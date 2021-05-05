@@ -15,6 +15,23 @@
  */
 package io.netty.incubator.codec.quic;
 
+import java.io.File;
+import java.net.ConnectException;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.nio.ByteBuffer;
+import java.nio.channels.AlreadyConnectedException;
+import java.nio.channels.ClosedChannelException;
+import java.nio.channels.ConnectionPendingException;
+import java.util.ArrayDeque;
+import java.util.Map;
+import java.util.Queue;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLongFieldUpdater;
+import java.util.function.Function;
+
+import io.LogUtils;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.AbstractChannel;
@@ -41,22 +58,6 @@ import io.netty.util.concurrent.Promise;
 import io.netty.util.internal.StringUtil;
 import io.netty.util.internal.logging.InternalLogger;
 import io.netty.util.internal.logging.InternalLoggerFactory;
-
-import java.io.File;
-import java.net.ConnectException;
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
-import java.nio.ByteBuffer;
-import java.nio.channels.AlreadyConnectedException;
-import java.nio.channels.ClosedChannelException;
-import java.nio.channels.ConnectionPendingException;
-import java.util.ArrayDeque;
-import java.util.Map;
-import java.util.Queue;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLongFieldUpdater;
-import java.util.function.Function;
 
 /**
  * {@link QuicChannel} implementation that uses <a href="https://github.com/cloudflare/quiche">quiche</a>.
@@ -733,6 +734,7 @@ final class QuicheQuicChannel extends AbstractChannel implements QuicChannel {
 
     void connectionSendAndFlush() {
         if (inFireChannelReadCompleteQueue || inHandleWritableStreams) {
+            LogUtils.error(getClass().getSimpleName(), "connectionSendAndFlush");
             return;
         }
         if (connectionSend()) {

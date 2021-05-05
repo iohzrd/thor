@@ -9,11 +9,7 @@ import com.google.protobuf.MessageLite;
 
 import org.jetbrains.annotations.NotNull;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -30,6 +26,8 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import bitswap.pb.MessageOuterClass;
@@ -42,11 +40,9 @@ import io.ipfs.bitswap.BitSwapMessage;
 import io.ipfs.bitswap.BitSwapNetwork;
 import io.ipfs.bitswap.BitSwapReceiver;
 import io.ipfs.cid.Cid;
-import io.ipfs.core.AddrInfo;
 import io.ipfs.core.Closeable;
 import io.ipfs.core.ClosedException;
 import io.ipfs.core.ConnectionIssue;
-import io.ipfs.core.PeerInfo;
 import io.ipfs.core.ProtocolIssue;
 import io.ipfs.core.TimeoutIssue;
 import io.ipfs.dht.KadDHT;
@@ -57,7 +53,6 @@ import io.ipfs.multibase.Charsets;
 import io.ipfs.multihash.Multihash;
 import io.ipfs.relay.Relay;
 import io.ipns.Ipns;
-import io.libp2p.core.ConnectionHandler;
 import io.libp2p.core.PeerId;
 import io.libp2p.core.crypto.PrivKey;
 import io.libp2p.core.crypto.PubKey;
@@ -92,9 +87,6 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
     private final ConcurrentHashMap<PeerId, Long> metrics = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<PeerId, Long> actives = new ConcurrentHashMap<>();
     private final Set<PeerId> tags = ConcurrentHashMap.newKeySet();
-    private final int lowWater = IPFS.LOW_WATER;
-    private final int highWater = IPFS.HIGH_WATER;
-    private final int gracePeriod = IPFS.GRACE_PERIOD;
     private final NioEventLoopGroup group = new NioEventLoopGroup(1);
     @NonNull
     private final ConcurrentHashMap<PeerId, Set<Multiaddr>> addressBook = new ConcurrentHashMap<>();
@@ -327,17 +319,6 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
                 LogUtils.verbose(TAG, throwable.getClass().getSimpleName());
             }
         }
-
-        /*  todo seperate them by protocol QUIC when supported and rest
-        all.sort((o1, o2) -> {
-
-            // TODO better sorting
-            int result = Boolean.compare(o1.has(Protocol.QUIC), o2.has(Protocol.QUIC));
-            if (result == 0) {
-                result = Boolean.compare(o1.has(Protocol.TCP), o2.has(Protocol.TCP));
-            }
-            return result;
-        });*/
         return all;
     }
 
@@ -426,6 +407,23 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
     }
 
 
+    private void addConnection(@NonNull Connection connection) {
+        connections.put(connection.remoteId(), connection);
+
+        ExecutorService executors = Executors.newFixedThreadPool(2);
+        executors.execute(() -> {
+            for (ConnectionHandler handle : handlers) {
+                try {
+                    handle.handleConnection(connection);
+                } catch (Throwable throwable) {
+                    LogUtils.error(TAG, throwable);
+                }
+            }
+        });
+
+
+    }
+
     @NonNull
     public Connection connect(@NonNull Closeable closeable, @NonNull PeerId peerId)
             throws ConnectionIssue, ClosedException {
@@ -463,15 +461,11 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
 
 
                     QuicChannel quic = future.get();
-
-
                     Objects.requireNonNull(quic);
+
                     connection = new LiteConnection(peerId, quic);
-
-                    connections.put(peerId, connection);
-                    // TODO invoke the listener (later when it is required)
-                    // also todo the closing of a connection
-
+                    quic.closeFuture().addListener(future1 -> connections.remove(peerId));
+                    addConnection(connection);
 
                     return connection;
                 } catch (ClosedException closedException) {
@@ -571,7 +565,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
         try {
             QuicStreamChannel streamChannel = quicChannel.createStream(QuicStreamType.BIDIRECTIONAL,
                     new SimpleChannelInboundHandler<Object>() {
-
+                        private final DataReader reader = new DataReader(IPFS.BLOCK_SIZE_LIMIT);
                         @Override
                         public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
                                 throws Exception {
@@ -589,31 +583,34 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
                         protected void channelRead0(ChannelHandlerContext ctx, Object value)
                                 throws Exception {
 
+
                             ByteBuf msg = (ByteBuf) value;
                             Objects.requireNonNull(msg);
 
-                            byte[] data = new byte[msg.readableBytes()];
-                            int readerIndex = msg.readerIndex();
-                            msg.getBytes(readerIndex, data);
-                            List<String> tokens = tokens(data);
-                            for (String received : tokens) {
-                                LogUtils.error(TAG, "send " + received);
-                                if (Objects.equals(received, IPFS.NA)) {
-                                    throw new ProtocolIssue();
-                                } else if (Objects.equals(received, IPFS.STREAM_PROTOCOL)) {
-                                    // ignore
-                                } else if (Objects.equals(received, protocol)) {
-                                    LogUtils.error(TAG, ctx.pipeline().names().toString());
+                            ByteArrayOutputStream out = new ByteArrayOutputStream();
+                            msg.readBytes(out, msg.readableBytes());
+                            byte[] data = out.toByteArray();
+                            reader.load(data);
 
-                                    ret.complete(ctx.writeAndFlush(
-                                            encode(message)).addListener(
-                                            (ChannelFutureListener) future -> ctx.close()).get());
-                                } else {
-                                    throw new ProtocolIssue();
+                            if (reader.isDone()) {
+                                for (String received : reader.getTokens()) {
+                                    LogUtils.error(TAG, "send " + received);
+                                    if (Objects.equals(received, IPFS.NA)) {
+                                        throw new ProtocolIssue();
+                                    } else if (Objects.equals(received, IPFS.STREAM_PROTOCOL)) {
+                                    } else if (Objects.equals(received, protocol)) {
+                                        ret.complete(ctx.writeAndFlush(
+                                                encode(message)).addListener(
+                                                (ChannelFutureListener) future -> ctx.close()).get());
+                                    } else {
+                                        throw new ProtocolIssue();
+                                    }
                                 }
+                            } else {
+                                LogUtils.error(TAG, "iteration " + data.length + " "
+                                        + reader.expectedBytes() + " " + protocol + " " + ctx.name() + " "
+                                        + ctx.channel().remoteAddress());
                             }
-
-
                         }
                     }).sync().get(IPFS.TIMEOUT_SEND, TimeUnit.SECONDS);
 
@@ -655,8 +652,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
             QuicStreamChannel streamChannel = quicChannel.createStream(QuicStreamType.BIDIRECTIONAL,
                     new SimpleChannelInboundHandler<Object>() {
 
-                        private final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-                        private long expectedLength;
+                        private DataReader reader = new DataReader(IPFS.BLOCK_SIZE_LIMIT);
                         private boolean negotiation = true;
 
 
@@ -682,75 +678,86 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
                             ByteBuf msg = (ByteBuf) value;
                             Objects.requireNonNull(msg);
 
+                            ByteArrayOutputStream out = new ByteArrayOutputStream();
+                            msg.readBytes(out, msg.readableBytes());
+                            byte[] data = out.toByteArray();
+                            reader.load(data);
+
+
                             if (negotiation) {
-                                byte[] data = new byte[msg.readableBytes()];
-                                int readerIndex = msg.readerIndex();
-                                msg.getBytes(readerIndex, data);
-                                List<String> tokens = tokens(data);
-                                for (String received : tokens) {
-                                    LogUtils.error(TAG, "request " + received);
-                                    if (Objects.equals(received, IPFS.NA)) {
-                                        throw new ProtocolIssue();
-                                    } else if (Objects.equals(received, IPFS.STREAM_PROTOCOL)) {
-                                        // ignore
-                                    } else if (Objects.equals(received, protocol)) {
-                                        negotiation = false;
-                                        LogUtils.error(TAG, ctx.pipeline().names().toString());
-                                        if (message != null) {
-                                            activation.complete(
-                                                    ctx.writeAndFlush(encode(message))
-                                                            .addListener(QuicStreamChannel.SHUTDOWN_OUTPUT).get());
+                                if (reader.isDone()) {
+
+                                    for (String received : reader.getTokens()) {
+                                        LogUtils.error(TAG, "request " + received);
+                                        if (Objects.equals(received, IPFS.NA)) {
+                                            throw new ProtocolIssue();
+                                        } else if (Objects.equals(received, IPFS.STREAM_PROTOCOL)) {
+                                        } else if (Objects.equals(received, protocol)) {
+                                            negotiation = false;
+                                            if (message != null) {
+                                                activation.complete(
+                                                        ctx.writeAndFlush(encode(message))
+                                                                .addListener(QuicStreamChannel.SHUTDOWN_OUTPUT).get());
+                                            } else {
+                                                activation.complete(null);
+                                            }
                                         } else {
-                                            activation.complete(null);
-                                        }
-                                    } else {
-                                        throw new ProtocolIssue();
-                                    }
-                                }
-                            } else {
-
-                                if (buffer.size() > 0) {
-                                    msg.readBytes(buffer, msg.readableBytes());
-                                } else {
-                                    byte[] data = new byte[msg.readableBytes()];
-                                    int readerIndex = msg.readerIndex();
-                                    msg.getBytes(readerIndex, data);
-                                    try (InputStream inputStream = new ByteArrayInputStream(data)) {
-                                        expectedLength = Multihash.readVarint(inputStream);
-
-                                        if( expectedLength > evalMaxResponseLength(protocol)){
                                             throw new ProtocolIssue();
                                         }
-
-                                        copy(inputStream, buffer);
                                     }
+
+                                    byte[] message = reader.getMessage();
+
+                                    if (message != null) {
+                                        switch (protocol) {
+                                            case IPFS.IDENTITY_PROTOCOL:
+                                                LogUtils.error(TAG + "FFFF", "Found " + protocol);
+                                                ret.complete(IdentifyOuterClass.Identify.parseFrom(message));
+                                                break;
+                                            case IPFS.BITSWAP_PROTOCOL:
+                                                LogUtils.error(TAG + "FFFF", "Found " + protocol);
+                                                ret.complete(MessageOuterClass.Message.parseFrom(message));
+                                                break;
+                                            case IPFS.KAD_DHT_PROTOCOL:
+                                                LogUtils.error(TAG + "FFFF", "Found " + protocol);
+                                                ret.complete(Dht.Message.parseFrom(message));
+                                                break;
+                                            default:
+                                                throw new Exception("unknown protocol");
+                                        }
+                                        ctx.close();
+                                    }
+                                    reader = new DataReader(evalMaxResponseLength(protocol));
+                                } else {
+                                    LogUtils.error(TAG, "iteration " + data.length + " "
+                                            + reader.expectedBytes() + " " + protocol + " " + ctx.name() + " "
+                                            + ctx.channel().remoteAddress());
                                 }
 
-                                if (buffer.size() >= expectedLength) {
-
+                            } else {
+                                if (reader.isDone()) {
+                                    byte[] message = reader.getMessage();
                                     switch (protocol) {
                                         case IPFS.IDENTITY_PROTOCOL:
                                             LogUtils.error(TAG + "FFFF", "Found " + protocol);
-                                            ret.complete(IdentifyOuterClass.Identify.parseFrom(buffer.toByteArray()));
+                                            ret.complete(IdentifyOuterClass.Identify.parseFrom(message));
                                             break;
                                         case IPFS.BITSWAP_PROTOCOL:
                                             LogUtils.error(TAG + "FFFF", "Found " + protocol);
-                                            ret.complete(MessageOuterClass.Message.parseFrom(buffer.toByteArray()));
+                                            ret.complete(MessageOuterClass.Message.parseFrom(message));
                                             break;
                                         case IPFS.KAD_DHT_PROTOCOL:
                                             LogUtils.error(TAG + "FFFF", "Found " + protocol);
-                                            ret.complete(Dht.Message.parseFrom(buffer.toByteArray()));
+                                            ret.complete(Dht.Message.parseFrom(message));
                                             break;
                                         default:
                                             throw new Exception("unknown protocol");
                                     }
-
-                                    buffer.reset();
                                     ctx.close();
 
                                 } else {
-                                    LogUtils.error(TAG, "iteration " + buffer.size() + " " +
-                                            expectedLength + " " + protocol + " " + ctx.name() + " "
+                                    LogUtils.error(TAG, "iteration " + data.length + " "
+                                            + reader.expectedBytes() + " " + protocol + " " + ctx.name() + " "
                                             + ctx.channel().remoteAddress());
                                 }
                             }
@@ -770,13 +777,12 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
             ret.completeExceptionally(throwable);
         }
 
-        // TODO close stream
-
-        return activation.thenCompose(s->ret);
+        return activation.thenCompose(s -> ret);
     }
 
 
-    public Promise<QuicChannel> dial(@NonNull Multiaddr multiaddr, @Nullable PeerId peerId) throws Exception {
+    public Promise<QuicChannel> dial(@NonNull Multiaddr multiaddr,
+                                     @Nullable PeerId peerId) throws Exception {
 
         InetAddress inetAddress;
         if (multiaddr.has(Protocol.IP4)) {
@@ -801,19 +807,14 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
 
                         LogUtils.error(TAG, "Channel active " + ctx.name());
 
+
                         QuicStreamChannel quicChannel = (QuicStreamChannel) ctx.channel();
                         LogUtils.error(TAG + "CLIENT", "Sreaming ID " + quicChannel.remoteAddress().streamId());
 
 
-                        if (quicChannel.remoteAddress().streamId() > -1000) {
-
-                            //initNeoPipeline(quicChannel);
-
-
                             quicChannel.pipeline().addLast(new SimpleChannelInboundHandler<Object>() {
 
-                                private final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-                                private long expectedLength;
+                                private DataReader reader = new DataReader(IPFS.BLOCK_SIZE_LIMIT);
                                 private String lastProtocol;
 
 
@@ -831,28 +832,13 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
                                     ByteBuf msg = (ByteBuf) value;
                                     Objects.requireNonNull(msg);
 
-                                    boolean firstRun = true;
-                                    if (buffer.size() > 0) {
-                                        firstRun = false;
-                                        msg.readBytes(buffer, msg.readableBytes());
-                                    } else {
-                                        byte[] data = new byte[msg.readableBytes()];
-                                        int readerIndex = msg.readerIndex();
-                                        msg.getBytes(readerIndex, data);
-                                        try (InputStream inputStream = new ByteArrayInputStream(data)) {
-                                            expectedLength = Multihash.readVarint(inputStream);
+                                    ByteArrayOutputStream out = new ByteArrayOutputStream();
+                                    msg.readBytes(out, msg.readableBytes());
+                                    byte[] data = out.toByteArray();
+                                    reader.load(data);
 
-                                            // TODO check if data is not to long
-                                            copy(inputStream, buffer);
-                                        }
-                                    }
-
-                                    LogUtils.error(TAG + "CLIENT", ctx.pipeline().names().toString());
-                                    LogUtils.error(TAG + "CLIENT", "Buffer Size " + buffer.size() + " ex " + expectedLength);
-                                    int bufferSize = buffer.size();
-                                    if ((bufferSize > expectedLength || bufferSize == expectedLength) && firstRun) {
-                                        List<String> tokens = tokens(buffer);
-                                        for (String token : tokens) {
+                                    if (reader.isDone()) {
+                                        for (String token : reader.getTokens()) {
                                             LogUtils.error(TAG + "CLIENT", "TOKEN " + token);
                                             if (token.endsWith(IPFS.STREAM_PROTOCOL)) {
                                                 ctx.writeAndFlush(writeToken(IPFS.STREAM_PROTOCOL));
@@ -861,66 +847,36 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
                                                 ctx.writeAndFlush(writeToken(IPFS.BITSWAP_PROTOCOL)).get();
                                             } else if (token.endsWith(IPFS.IDENTITY_PROTOCOL)) {
                                                 //lastProtocol = IPFS.IDENTITY_PROTOCOL;
-                                                ctx.writeAndFlush(writeToken(IPFS.IDENTITY_PROTOCOL)).get();
+                                                ctx.write(writeToken(IPFS.IDENTITY_PROTOCOL));
 
                                                 try {
+                                                    // TODO this is not correct
                                                     Multiaddr multiaddr = new Multiaddr("/ip4/127.0.0.1/udp/5001/quic");
 
                                                     IdentifyOuterClass.Identify response =
                                                             IdentifyOuterClass.Identify.newBuilder()
                                                                     .setAgentVersion(IPFS.AGENT)
-                                                                    // TODO  .setPublicKey()
+                                                                    .setPublicKey(ByteString.copyFrom(privKey.publicKey().bytes()))
                                                                     .setProtocolVersion(IPFS.PROTOCOL_VERSION)
+
                                                                     .setObservedAddr(ByteString.copyFrom(multiaddr.getBytes()))
                                                                     .build();
-                                                    ctx.writeAndFlush(encode(response)).addListener(QuicStreamChannel.SHUTDOWN_OUTPUT);
+                                                    ctx.writeAndFlush(encode(response)).get();
+                                                    ctx.close();
                                                 } catch (Throwable throwable) {
                                                     LogUtils.error(TAG, throwable);
                                                 }
-
-
                                             }
                                         }
-                                    } else if (buffer.size() >= expectedLength) {
-
-                                        try {
-                                            //PeerId peerId = null; // BIG TODO
-                                            switch (lastProtocol) {
-                                                case IPFS.IDENTITY_PROTOCOL:
-                                                    IdentifyOuterClass.Identify messsage = IdentifyOuterClass.Identify.parseFrom(buffer.toByteArray());
-                                                    LogUtils.error(TAG + "CLIENT", "Success Server " + messsage.getAgentVersion());
-                                                    break;
-                                                case IPFS.KAD_DHT_PROTOCOL:
-                                                    Dht.Message message = Dht.Message.parseFrom(buffer.toByteArray());
-                                                    LogUtils.error(TAG + "CLIENT", IPFS.KAD_DHT_PROTOCOL);
-                                                    forwardMessage(peerId, message);
-                                                    break;
-                                                default:
-                                                    LogUtils.error(TAG + "CLIENT", new String(buffer.toByteArray()));
-                                                    // throw an exception here
-                                            }
-
-                                        } catch (Throwable throwable) {
-                                            LogUtils.error(TAG + "CLIENT", new String(buffer.toByteArray()));
-                                            LogUtils.error(TAG + "CLIENT", throwable);
-                                        }
-                                        buffer.close();
-                                        buffer.reset();
-
-                                        ctx.close(); // TODO rethink
-
+                                        reader = new DataReader(IPFS.BLOCK_SIZE_LIMIT); // TODO
                                     } else {
-                                        LogUtils.error(TAG, "iteration upload " + buffer.size() + " " +
-                                                expectedLength + " " + lastProtocol + " " + ctx.name() + " " +
-                                                quicChannel.remoteAddress().streamId());
+                                        LogUtils.error(TAG, "iteration " + data.length + " "
+                                                + reader.expectedBytes() + " " + ctx.name() + " "
+                                                + ctx.channel().remoteAddress());
                                     }
-
                                 }
                             });
 
-
-                            // ctx.close();
-                        }
                     }
                 })
                 .remoteAddress(new InetSocketAddress(inetAddress, port))
@@ -943,45 +899,6 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
         }
     }
 
-    public List<String> tokens(@NonNull ByteArrayOutputStream buffer) {
-        return tokens(buffer.toByteArray());
-    }
-
-    public List<String> tokens(@NonNull byte[] data) {
-        String tags = new String(data, Charsets.UTF_8);
-        List<String> list = new ArrayList<>();
-        String[] result = tags.split("\n");
-        for (String item : result) {
-            if (item.startsWith("/") || item.equals(IPFS.NA)) {
-                list.add(item);
-            } else {
-                try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-                    try (ByteArrayInputStream in = new ByteArrayInputStream(item.getBytes(Charsets.UTF_8))) {
-                        Multihash.readVarint(in);
-                        copy(in, out);
-                        list.add(new String(out.toByteArray(), Charsets.UTF_8));
-                    } catch (Throwable throwable) {
-                        throw new RuntimeException(throwable);
-                    }
-                } catch (Throwable throwable) {
-                    throw new RuntimeException(throwable);
-                }
-            }
-        }
-        return list;
-    }
-
-    public long copy(InputStream source, OutputStream sink) throws IOException {
-        long nread = 0L;
-        byte[] buf = new byte[4096];
-        int n;
-        while ((n = source.read(buf)) > 0) {
-            sink.write(buf, 0, n);
-            nread += n;
-        }
-        return nread;
-    }
-
     public void shutdown() {
         try {
             if (client != null) {
@@ -995,42 +912,13 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
         }
     }
 
-
-
-    public static class LiteConnection implements Connection {
-        private final QuicChannel channel;
-        private final PeerId peerId;
-
-        public LiteConnection(@NonNull PeerId peerId, @NonNull QuicChannel channel) {
-            this.peerId = peerId;
-            this.channel = channel;
+    private boolean isActive(@NonNull PeerId peerId) {
+        Long time = actives.get(peerId);
+        if (time != null) {
+            int gracePeriod = IPFS.GRACE_PERIOD;
+            return (System.currentTimeMillis() - time) < (gracePeriod * 1000);
         }
-
-        // BIG TODO
-        @NotNull
-        @Override
-        public Multiaddr remoteAddress() {
-            throw new RuntimeException("TODO");
-            // return null;
-        }
-
-        @Override
-        public QuicChannel channel() {
-            return channel;
-        }
-
-        @NotNull
-        @Override
-        public PeerId remoteId() {
-            return peerId;
-        }
-
-        @Override
-        public ChannelFuture close() {
-            return channel.close();
-        }
-
-
+        return false;
     }
 
     public long getLatency(@NonNull PeerId peerId) {
@@ -1068,26 +956,15 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
         actives.remove(peerId);
     }
 
-    private boolean isActive(@NonNull PeerId peerId) {
-        Long time = actives.get(peerId);
-        if (time != null) {
-            return (System.currentTimeMillis() - time) < (gracePeriod * 1000);
-        }
-        return false;
-    }
-
-
-    public int numConnections() {
-        return getConnections().size();
-    }
-
     public void trimConnections() {
 
         int numConns = numConnections();
         LogUtils.verbose(TAG, "numConnections (before) " + numConns);
 
+        int highWater = IPFS.HIGH_WATER;
         if (numConns > highWater) {
 
+            int lowWater = IPFS.LOW_WATER;
             int hasToBeClosed = numConns - lowWater;
 
             // TODO maybe sort connections how fast they are (the fastest will not be closed)
@@ -1109,5 +986,46 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
             }
         }
         LogUtils.verbose(TAG, "numConnections (after) " + numConnections());
+    }
+
+
+    public int numConnections() {
+        return getConnections().size();
+    }
+
+    public static class LiteConnection implements Connection {
+        private final QuicChannel channel;
+        private final PeerId peerId;
+
+        public LiteConnection(@NonNull PeerId peerId, @NonNull QuicChannel channel) {
+            this.peerId = peerId;
+            this.channel = channel;
+        }
+
+        // BIG TODO
+        @NotNull
+        @Override
+        public Multiaddr remoteAddress() {
+            //throw new RuntimeException("TODO");
+            return null;
+        }
+
+        @Override
+        public QuicChannel channel() {
+            return channel;
+        }
+
+        @NotNull
+        @Override
+        public PeerId remoteId() {
+            return peerId;
+        }
+
+        @Override
+        public ChannelFuture close() {
+            return channel.close();
+        }
+
+
     }
 }

@@ -7,21 +7,20 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 import com.google.protobuf.MessageLite;
 
-import org.apache.commons.text.RandomStringGenerator;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import java.net.InetSocketAddress;
+import java.nio.charset.Charset;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import identify.pb.IdentifyOuterClass;
 import io.LogUtils;
 import io.libp2p.core.PeerId;
 import io.libp2p.core.multiformats.Multiaddr;
-
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertNotNull;
-import static junit.framework.TestCase.assertNull;
-import static junit.framework.TestCase.assertTrue;
-
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -33,7 +32,6 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.ChannelInputShutdownReadComplete;
 import io.netty.channel.socket.nio.NioDatagramChannel;
-import io.netty.handler.codec.LineBasedFrameDecoder;
 import io.netty.incubator.codec.quic.InsecureQuicTokenHandler;
 import io.netty.incubator.codec.quic.QuicChannel;
 import io.netty.incubator.codec.quic.QuicClientCodecBuilder;
@@ -43,13 +41,8 @@ import io.netty.incubator.codec.quic.QuicStreamType;
 import io.netty.util.CharsetUtil;
 import io.netty.util.NetUtil;
 
-import java.net.InetSocketAddress;
-import java.nio.charset.Charset;
-import java.util.Random;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.TimeUnit;
+import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertNotNull;
 
 @SuppressWarnings("SpellCheckingInspection")
 @RunWith(AndroidJUnit4.class)
@@ -138,14 +131,13 @@ public class IpfsQuicTest {
 
 
             ChannelHandler codec = new QuicServerCodecBuilder().sslContext(IPFS.SERVER_SSL_INSTANCE)
-                    .maxIdleTimeout(5000, TimeUnit.MILLISECONDS)
                     // Configure some limits for the maximal number of streams (and the data) that we want to handle.
                     .initialMaxData(10000000)
                     .initialMaxStreamDataBidirectionalLocal(1000000)
                     .initialMaxStreamDataBidirectionalRemote(1000000)
                     .initialMaxStreamsBidirectional(100)
                     .initialMaxStreamsUnidirectional(100)
-                    .datagram(10000, 10000)
+
 
                     // Setup a token handler. In a production system you would want to implement and provide your custom
                     // one.
