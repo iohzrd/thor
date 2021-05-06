@@ -30,6 +30,7 @@ import io.ipfs.core.ClosedException;
 import io.ipfs.host.DnsResolver;
 import io.ipfs.IPFS;
 import io.ipfs.format.Node;
+import io.ipfs.host.Pusher;
 import io.ipfs.utils.Link;
 import io.libp2p.core.PeerId;
 import io.libp2p.core.multiformats.Multiaddr;
@@ -63,6 +64,13 @@ public class DOCS {
     private DOCS(@NonNull Context context) {
         long start = System.currentTimeMillis();
         ipfs = IPFS.getInstance(context);
+        // TODO remove
+        ipfs.setPusher(new Pusher() {
+            @Override
+            public void push(@NonNull PeerId peerId, @NonNull String content) {
+                ipfs.notify(peerId, content);
+            }
+        });
         pages = PAGES.getInstance(context);
         books = BOOKS.getInstance(context);
         refreshRedirectOptions(context);

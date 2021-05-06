@@ -2,23 +2,25 @@ package io.ipfs.host;
 
 import androidx.annotation.NonNull;
 
+import com.google.protobuf.MessageLite;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import io.ipfs.IPFS;
 import io.ipfs.core.ProtocolIssue;
 import io.ipfs.multibase.Charsets;
 import io.ipfs.multihash.Multihash;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 
-public class DataReader {
+public class DataHandler {
     private final ByteArrayOutputStream temp = new ByteArrayOutputStream();
     private final Set<String> tokens = new HashSet<>();
     private final int maxLength;
@@ -26,7 +28,7 @@ public class DataReader {
     private byte[] message = null;
     private int expectedLength;
 
-    public DataReader(int maxLength) {
+    public DataHandler(int maxLength) {
         this.expectedLength = 0;
         this.maxLength = maxLength;
     }
@@ -76,6 +78,32 @@ public class DataReader {
         return tokens;
     }
 
+    public static ByteBuf encode(@NonNull MessageLite message) {
+        byte[] data = message.toByteArray();
+        return encode(data);
+    }
+
+    public static ByteBuf encode(@NonNull byte[] data) {
+        try (ByteArrayOutputStream buf = new ByteArrayOutputStream()) {
+            Multihash.putUvarint(buf, data.length);
+            buf.write(data);
+            return Unpooled.buffer().writeBytes(buf.toByteArray());
+        } catch (Throwable throwable) {
+            throw new RuntimeException(throwable);
+        }
+    }
+
+    public static ByteBuf writeToken(String token) {
+        byte[] data = token.getBytes(Charsets.UTF_8);
+        try (ByteArrayOutputStream buf = new ByteArrayOutputStream()) {
+            Multihash.putUvarint(buf, data.length + 1);
+            buf.write(token.getBytes(Charsets.UTF_8));
+            buf.write('\n');
+            return Unpooled.buffer().writeBytes(buf.toByteArray());
+        } catch (Throwable throwable) {
+            throw new RuntimeException(throwable);
+        }
+    }
 
     public void load(@NonNull byte[] data)
             throws IOException, ProtocolIssue {
@@ -85,6 +113,11 @@ public class DataReader {
         if (expectedLength == 0) {
             if (Arrays.equals(data, IPFS.NA.getBytes())) {
                 tokens.add(IPFS.NA);
+                isDone = true;
+                return;
+            }
+            if (Arrays.equals(data, IPFS.LS.getBytes())) {
+                tokens.add(IPFS.LS);
                 isDone = true;
                 return;
             }
@@ -112,7 +145,7 @@ public class DataReader {
                 byte[] tokenData = outputStream.toByteArray();
                 if (tokenData[read - 1] == '\n') { // expected to be for a token
 
-                    // TODO compare with expected tokens
+                    // TODO first letter is always / what we are supporting
                     try {
                         String token = new String(tokenData, Charsets.UTF_8);
                         token = token.substring(0, read - 1);
@@ -129,7 +162,7 @@ public class DataReader {
                 if (restRead == 0) {
                     isDone = true;
                 } else {
-                    DataReader sub = new DataReader(maxLength);
+                    DataHandler sub = new DataHandler(maxLength);
                     sub.load(rest.toByteArray());
                     this.merge(sub);
                 }
@@ -138,7 +171,7 @@ public class DataReader {
 
     }
 
-    private void merge(DataReader dataReader) {
+    private void merge(DataHandler dataReader) {
         this.expectedLength = dataReader.expectedLength;
         this.isDone = dataReader.isDone;
         this.tokens.addAll(dataReader.tokens);

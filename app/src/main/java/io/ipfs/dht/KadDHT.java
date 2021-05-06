@@ -316,14 +316,14 @@ public class KadDHT implements Routing {
 
 
         try {
-
             Connection con = host.connect(closeable, p);
-                host.active(p);
-                long start = System.currentTimeMillis();
+            host.active(p);
 
-                host.send(closeable, IPFS.KAD_DHT_PROTOCOL, con, message);
+            long start = System.currentTimeMillis();
 
-                host.addLatency(p, System.currentTimeMillis() - start);
+            host.send(closeable, IPFS.KAD_DHT_PROTOCOL, con, message.toByteArray());
+
+            host.addLatency(p, System.currentTimeMillis() - start);
 
         } catch (ClosedException | ConnectionIssue exception) {
             host.done(p);

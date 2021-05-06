@@ -57,6 +57,7 @@ import io.ipfs.host.DnsResolver;
 import io.ipfs.host.LiteHost;
 import io.ipfs.host.LiteSignedCertificate;
 import io.ipfs.host.PeerInfo;
+import io.ipfs.host.Pusher;
 import io.ipfs.multibase.Base58;
 import io.ipfs.multibase.Multibase;
 import io.ipfs.multihash.Multihash;
@@ -86,7 +87,7 @@ import io.netty.util.internal.EmptyArrays;
 import ipns.pb.Ipns;
 import threads.thor.core.blocks.BLOCKS;
 
-public class IPFS implements PushReceiver {
+public class IPFS  {
     // TimeFormatIpfs is the format ipfs uses to represent time in string form
     // RFC3339Nano = "2006-01-02T15:04:05.999999999Z07:00"
     public static final String TimeFormatIpfs = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSS'Z'";
@@ -143,6 +144,7 @@ public class IPFS implements PushReceiver {
     // The number of peers closest to a target that must have responded for a query path to terminate
     public static final int KAD_DHT_BETA = 20;
     public static final String NA = "na";
+    public static final String LS = "ls";
 
     // rough estimates on expected sizes
     private static final int roughLinkBlockSize = 1 << 13; // 8KB
@@ -179,7 +181,7 @@ public class IPFS implements PushReceiver {
 
     private final LiteHost liteHost;
     private final Set<PeerId> swarm = ConcurrentHashMap.newKeySet();
-    private Pusher pusher;
+
     private Connector connector;
     private static final TrustManager tm = new X509TrustManager() {
         @Override
@@ -1052,6 +1054,10 @@ public class IPFS implements PushReceiver {
         }
     }
 
+    public void setPusher(@Nullable Pusher pusher) {
+        this.liteHost.setPusher(pusher);
+    }
+
     @NonNull
     public InputStream getLoaderStream(@NonNull Cid cid, @NonNull Closeable closeable) throws ClosedException {
         Reader loader = getReader(cid, closeable);
@@ -1182,31 +1188,24 @@ public class IPFS implements PushReceiver {
     public boolean notify(@NonNull PeerId peerId, @NonNull String content) {
 
         try {
-            // TODO create a push message from content
             Connection conn = liteHost.connect(new TimeoutCloseable(TIMEOUT_PUSH), peerId);
             liteHost.send(new TimeoutCloseable(TIMEOUT_PUSH), PUSH_PROTOCOL, conn,
-                    null /* TODO protocol message */);
+                    content.getBytes());
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         }
         return false;
     }
 
-    public void setPusher(@Nullable Pusher pusher) {
-        this.pusher = pusher;
-    }
 
-    @Override
+
+
+    // TODO
+    //@Override
     public boolean acceptPusher(@NonNull PeerId peerId) {
         return swarm.contains(peerId);
     }
 
-    @Override
-    public void pushMessage(@NonNull PeerId remotePeerId, @NonNull byte[] toByteArray) {
-        if (pusher != null) {
-            push(remotePeerId, new String(toByteArray));
-        }
-    }
 
     public void swarmReduce(@NonNull PeerId peerId) {
         swarm.remove(peerId);
@@ -1216,20 +1215,7 @@ public class IPFS implements PushReceiver {
         swarm.add(peerId);
     }
 
-    public void push(@NonNull PeerId peerId, @NonNull String content) {
-        try {
-            Objects.requireNonNull(peerId);
-            Objects.requireNonNull(content);
 
-            if (pusher != null) {
-                ExecutorService executor = Executors.newSingleThreadExecutor();
-                executor.submit(() -> pusher.push(peerId, content));
-            }
-        } catch (Throwable throwable) {
-            LogUtils.error(TAG, throwable);
-        }
-
-    }
 
     public void swarmEnhance(@NonNull PeerId[] peerIds) {
         for (PeerId peerId : peerIds) {
@@ -1288,10 +1274,6 @@ public class IPFS implements PushReceiver {
 
     public interface Connector {
         void connected(@NonNull PeerId peerId);
-    }
-
-    public interface Pusher {
-        void push(@NonNull PeerId peerId, @NonNull String content);
     }
 
     public static class ResolvedName {

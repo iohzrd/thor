@@ -197,7 +197,7 @@ public final class QuicChannelBootstrap {
         }
         final QuicConnectionAddress address = connectionAddress;
         QuicChannel channel = QuicheQuicChannel.forClient(parent, (InetSocketAddress) remote,
-                true, streamHandler, Quic.toOptionsArray(streamOptions), Quic.toAttributesArray(streamAttrs));
+                false, streamHandler, Quic.toOptionsArray(streamOptions), Quic.toAttributesArray(streamAttrs));
 
         Quic.setupChannel(channel, Quic.toOptionsArray(options), Quic.toAttributesArray(attrs), handler, logger);
         EventLoop eventLoop = parent.eventLoop();
