@@ -50,7 +50,6 @@ import io.ipfs.dht.KadDHT;
 import io.ipfs.dht.Routing;
 import io.ipfs.exchange.Interface;
 import io.ipfs.format.BlockStore;
-import io.ipfs.push.PushReceiver;
 import io.ipfs.relay.Relay;
 import io.ipns.Ipns;
 import io.libp2p.core.PeerId;
@@ -68,16 +67,13 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.ChannelInitializer;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.handler.timeout.ReadTimeoutException;
 import io.netty.handler.timeout.ReadTimeoutHandler;
-import io.netty.incubator.codec.quic.InsecureQuicTokenHandler;
 import io.netty.incubator.codec.quic.QuicChannel;
 import io.netty.incubator.codec.quic.QuicClientCodecBuilder;
-import io.netty.incubator.codec.quic.QuicServerCodecBuilder;
 import io.netty.incubator.codec.quic.QuicStreamChannel;
 import io.netty.incubator.codec.quic.QuicStreamType;
 import io.netty.util.concurrent.Promise;
@@ -103,7 +99,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
     @NonNull
     private final Interface exchange;
 
-    private Channel server;
+    private Channel client;
 
     private final int port;
 
@@ -121,6 +117,29 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
         this.relay = new Relay(this);
 
 
+        ChannelHandler codec = new QuicClientCodecBuilder()
+                .sslContext(IPFS.CLIENT_SSL_INSTANCE)
+                .maxIdleTimeout(30, TimeUnit.SECONDS)
+                .initialMaxData(IPFS.BLOCK_SIZE_LIMIT)
+                .initialMaxStreamDataBidirectionalLocal(IPFS.BLOCK_SIZE_LIMIT)
+                .initialMaxStreamDataBidirectionalRemote(IPFS.BLOCK_SIZE_LIMIT)
+                .initialMaxStreamsBidirectional(IPFS.HIGH_WATER * 5) // TODO rethink
+                .initialMaxStreamsUnidirectional(IPFS.HIGH_WATER * 5) // TODO rethink
+                //.tokenHandler(InsecureQuicTokenHandler.INSTANCE)
+                .build();
+
+
+        Bootstrap bs = new Bootstrap();
+        try {
+            client = bs.group(group)
+                    .channel(NioDatagramChannel.class)
+                    .handler(codec)
+                    .bind(port).sync().channel();
+        } catch (Throwable throwable){
+            LogUtils.error(TAG, throwable);
+        }
+
+        /*
         ChannelHandler codec = new QuicServerCodecBuilder().sslContext(IPFS.SERVER_SSL_INSTANCE)
                 // Configure some limits for the maximal number of streams (and the data) that we want to handle.
                 .initialMaxData(10000000)
@@ -176,7 +195,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
 
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
-        }
+        }*/
 
     }
 
@@ -587,7 +606,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
 
     public CompletableFuture<Void> send(@NonNull QuicChannel quicChannel,
                                         @NonNull String protocol,
-                                        @NonNull byte[] data) {
+                                        @NonNull byte[] message) {
 
 
         LogUtils.error(TAG, protocol);
@@ -632,7 +651,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
                                     } else if (Objects.equals(received, IPFS.STREAM_PROTOCOL)) {
                                     } else if (Objects.equals(received, protocol)) {
                                         ret.complete(ctx.writeAndFlush(
-                                                DataHandler.encode(data)).addListener(
+                                                DataHandler.encode(message)).addListener(
                                                 (ChannelFutureListener) future -> ctx.close()).get());
                                     } else {
                                         throw new ProtocolIssue();
@@ -834,23 +853,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
         }
         int port = multiaddr.udpPortFromMultiaddr();
 
-        ChannelHandler codec = new QuicClientCodecBuilder()
-                .sslContext(IPFS.CLIENT_SSL_INSTANCE)
-                .maxIdleTimeout(30, TimeUnit.SECONDS)
-                .initialMaxData(IPFS.BLOCK_SIZE_LIMIT)
-                .initialMaxStreamDataBidirectionalLocal(IPFS.BLOCK_SIZE_LIMIT)
-                .initialMaxStreamDataBidirectionalRemote(IPFS.BLOCK_SIZE_LIMIT)
-                .initialMaxStreamsBidirectional(IPFS.HIGH_WATER * 5) // TODO rethink
-                .initialMaxStreamsUnidirectional(IPFS.HIGH_WATER * 5) // TODO rethink
-                //.tokenHandler(InsecureQuicTokenHandler.INSTANCE)
-                .build();
 
-
-        Bootstrap bs = new Bootstrap();
-        Channel client = bs.group(group)
-                .channel(NioDatagramChannel.class)
-                .handler(codec)
-                .bind(0).sync().channel();
 
         return (Promise<QuicChannel>) QuicChannel.newBootstrap(client)
 
@@ -906,14 +909,14 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
 
     public void shutdown() {
         try {
-            if (server != null) {
-                server.closeFuture().sync();
+            if (client != null) {
+                client.closeFuture().sync();
             }
             group.shutdownGracefully();
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         } finally {
-            server = null;
+            client = null;
         }
     }
 

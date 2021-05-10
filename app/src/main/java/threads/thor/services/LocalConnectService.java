@@ -27,16 +27,17 @@ public class LocalConnectService {
             String multiAddress = pre + host + "/udp/" + port + "/quic/p2p/" + pid;
 
 
-            /*
+
             boolean connect = ipfs.swarmConnect(multiAddress, 10);
 
             LogUtils.error(TAG, "Success ? " + connect + " for " + multiAddress);
 
             PeerInfo info = ipfs.getPeerInfo(PeerId.fromBase58(pid), new TimeoutCloseable(10));
 
-            LogUtils.error(TAG, info.toString());*/
+            LogUtils.error(TAG, info.toString());
 
 
+            ipfs.notify(PeerId.fromBase58(pid), "Moin");
 
         } catch (Throwable throwable){
             LogUtils.error(TAG, throwable);

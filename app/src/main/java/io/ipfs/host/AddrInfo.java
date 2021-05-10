@@ -89,6 +89,7 @@ public class AddrInfo {
             return;
         }
 
+        /*
         if (address.has(Protocol.IP4)) {
             if (Objects.equals(address.getStringComponent(Protocol.IP4), "127.0.0.1")) { // TODO
                 return;
@@ -98,7 +99,7 @@ public class AddrInfo {
             if (Objects.equals(address.getStringComponent(Protocol.IP6), "::1")) { // TODO
                 return;
             }
-        }
+        }*/
         if (address.has(Protocol.QUIC) && address.has(Protocol.IP4)) { // TODO SUPPORT THIS
             //LogUtils.error(TAG, "QUIC " + address.toString());
             this.addresses.add(address); // TODO

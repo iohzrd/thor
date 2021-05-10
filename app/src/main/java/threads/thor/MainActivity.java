@@ -1870,8 +1870,8 @@ public class MainActivity extends AppCompatActivity implements
             serviceInfo.setPort(port);
             mNsdManager = (NsdManager) getSystemService(Context.NSD_SERVICE);
             Objects.requireNonNull(mNsdManager);
-            mNsdManager.registerService(serviceInfo, NsdManager.PROTOCOL_DNS_SD,
-                    RegistrationService.getInstance());
+            //mNsdManager.registerService(serviceInfo, NsdManager.PROTOCOL_DNS_SD,
+            //        RegistrationService.getInstance());
 
 
             DiscoveryService discovery = DiscoveryService.getInstance();
