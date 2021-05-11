@@ -205,6 +205,7 @@ public class StreamHandler {
                         close(streamId);
                         return;
                     default:
+                        // LogUtils.error(TAG, "Ignore " + token);
                         streamSendFin(streamId);
                         close(streamId);
                         return;
@@ -233,10 +234,10 @@ public class StreamHandler {
                 close(streamId);
             }
             handlers.remove(streamId);
-        } else {
+        } /* else {
             LogUtils.error(TAG, "Iteration  " + reader.hasRead() + " "
                     + reader.expectedBytes() + " Connection " + connection + " StreamId " + streamId);
-        }
+        }*/
     }
 
 

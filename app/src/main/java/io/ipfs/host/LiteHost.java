@@ -67,7 +67,6 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioDatagramChannel;
@@ -875,22 +874,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
 
         return (Promise<QuicChannel>) QuicChannel.newBootstrap(client)
                 .attr(PEER_KEY, peerId)
-                .streamHandler(new ChannelInboundHandlerAdapter() {
-                    @Override
-                    public void channelActive(ChannelHandlerContext ctx) throws Exception {
-                        // As we did not allow any remote initiated streams we will never see this method called.
-                        // That said just let us keep it here to demonstrate that this handle would be called
-                        // for each remote initiated stream.
-
-                        LogUtils.error(TAG, "Channel active " + ctx.name());
-
-                        QuicStreamChannel quicChannel = (QuicStreamChannel) ctx.channel();
-
-                        LogUtils.error(TAG + "CLIENT", "Sreaming ID " + quicChannel.remoteAddress().streamId());
-
-                        quicChannel.pipeline().addLast(new DataStreamHandler(LiteHost.this, pusher));
-                    }
-                })
+                .streamHandler(new WelcomeHandler(LiteHost.this))
                 .remoteAddress(new InetSocketAddress(inetAddress, port))
                 .connect();
 
