@@ -1,22 +1,24 @@
-package io.ipfs.core;
+package io.core;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-public class TimeoutCloseable implements Closeable {
+import io.ipfs.utils.Progress;
+
+public abstract class TimeoutProgress implements Progress {
 
     private final long timeout;
     @Nullable
     private final Closeable closeable;
     private final long start;
 
-    public TimeoutCloseable(long timeout) {
+    public TimeoutProgress(long timeout) {
         this.closeable = null;
         this.timeout = timeout;
         this.start = System.currentTimeMillis();
     }
 
-    public TimeoutCloseable(@NonNull Closeable closeable, long timeout) {
+    public TimeoutProgress(@NonNull Closeable closeable, long timeout) {
         this.closeable = closeable;
         this.timeout = timeout;
         this.start = System.currentTimeMillis();
@@ -29,5 +31,6 @@ public class TimeoutCloseable implements Closeable {
         }
         return (System.currentTimeMillis() - start) > (timeout * 1000);
     }
+
 
 }

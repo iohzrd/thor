@@ -17,8 +17,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import io.LogUtils;
 import io.ipfs.cid.Cid;
-import io.ipfs.core.ClosedException;
-import io.ipfs.core.TimeoutCloseable;
+import io.core.ClosedException;
+import io.core.TimeoutCloseable;
 import io.ipfs.format.Node;
 import io.ipfs.host.DnsResolver;
 import io.ipfs.utils.Link;
@@ -48,7 +48,7 @@ public class IpfsRealTest {
 
         String key = "k2k4r8jllj4k33jxoa4vaeleqkrwu8b7tqz7tgczhptbfkhqr2i280fm";
 
-        IPFS.ResolvedName res = ipfs.resolveName(key, 0, () -> false);
+        IPFS.ResolvedName res = ipfs.resolveName(key, 0, new TimeoutCloseable(30));
         assertNotNull(res);
 
         AtomicBoolean atomicBoolean = new AtomicBoolean(false);
@@ -59,7 +59,7 @@ public class IpfsRealTest {
                 if (num.incrementAndGet() == 5) {
                     atomicBoolean.set(true);
                 }
-            }, Cid.Decode(res.getHash()), atomicBoolean::get);
+            }, Cid.Decode(res.getHash()), new TimeoutCloseable(30));
             fail();
         } catch (ClosedException closedException) {
             assertTrue(atomicBoolean.get());

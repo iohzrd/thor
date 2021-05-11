@@ -10,13 +10,12 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package io.libp2p.crypto.keys
+package io.crypto
 
 import crypto.pb.Crypto
-import io.libp2p.core.Libp2pException
-import io.libp2p.core.crypto.PrivKey
-import io.libp2p.core.crypto.PubKey
-import io.libp2p.crypto.*
+import io.crypto.PrivKey
+import io.crypto.PubKey
+import io.crypto.*
 import io.libp2p.etc.types.toBytes
 import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPrivateKey
 import org.bouncycastle.jce.ECNamedCurveTable
@@ -25,6 +24,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec
 import org.bouncycastle.jce.spec.ECNamedCurveSpec
 import org.bouncycastle.jce.spec.ECPublicKeySpec
+import java.lang.RuntimeException
 import java.security.*
 import java.security.spec.PKCS8EncodedKeySpec
 import java.security.spec.X509EncodedKeySpec
@@ -41,7 +41,7 @@ class EcdsaPrivateKey(val priv: JavaECPrivateKey) : PrivKey(Crypto.KeyType.ECDSA
     init {
         // Set up private key.
         if (priv.format != KEY_PKCS8) {
-            throw Libp2pException("Private key must be of '$KEY_PKCS8' format")
+            throw RuntimeException("Private key must be of '$KEY_PKCS8' format")
         }
     }
 

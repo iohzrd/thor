@@ -7,8 +7,8 @@ import java.util.Stack;
 
 import io.ipfs.IPFS;
 import io.ipfs.cid.Cid;
-import io.ipfs.core.Closeable;
-import io.ipfs.core.ClosedException;
+import io.core.Closeable;
+import io.core.ClosedException;
 import io.ipfs.unixfs.FSNode;
 
 public class Seeker {

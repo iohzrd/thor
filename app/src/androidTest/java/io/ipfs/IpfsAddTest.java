@@ -22,8 +22,8 @@ import java.util.UUID;
 
 import io.LogUtils;
 import io.ipfs.cid.Cid;
-import io.ipfs.core.ClosedException;
-import io.ipfs.core.TimeoutCloseable;
+import io.core.ClosedException;
+import io.core.TimeoutCloseable;
 import io.ipfs.utils.Link;
 
 import static junit.framework.TestCase.assertEquals;

@@ -1,12 +1,12 @@
-package io.libp2p.core.multiformats
+package io.ipfs.multiformats
 
-import io.libp2p.core.Libp2pException
-import io.libp2p.core.PeerId
+import io.ipfs.host.PeerId
 import io.libp2p.etc.types.readUvarint
 import io.libp2p.etc.types.toByteArray
 import io.libp2p.etc.types.toByteBuf
 import io.netty.buffer.ByteBuf
 import io.netty.buffer.Unpooled
+import java.lang.RuntimeException
 
 /**
  * Class implements Multiaddress concept: https://github.com/multiformats/multiaddr
@@ -63,7 +63,7 @@ class Multiaddr(val components: List<Pair<Protocol, ByteArray>>) {
 
     fun udpPortFromMultiaddr() =
             filterStringComponents().find { p -> p.first == Protocol.UDP }
-                    ?.second?.toInt() ?: throw Libp2pException("Missing UDP in multiaddress $this")
+                    ?.second?.toInt() ?: throw RuntimeException("Missing UDP in multiaddress $this")
 
     /**
      * Returns [components] in a human readable form where each protocol value

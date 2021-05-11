@@ -11,7 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import io.LogUtils;
 import io.ipfs.host.Metrics;
-import io.libp2p.core.PeerId;
+import io.ipfs.host.PeerId;
 
 public class RoutingTable {
 

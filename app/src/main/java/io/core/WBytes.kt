@@ -1,6 +1,6 @@
-package io.libp2p.etc.types
+package io.core
 
-import com.google.protobuf.ByteString
+import io.libp2p.etc.types.toHex
 
 /**
  * `ByteArray` wrapper with  `equals()`, `hashCode()` and `toString()`
@@ -29,6 +29,4 @@ class WBytes(val array: ByteArray) {
 }
 
 fun ByteArray.toWBytes() = WBytes(this)
-fun String.toWBytes() = this.fromHex().toWBytes()
-fun WBytes.toProtobuf() = this.array.toProtobuf()
-fun ByteString.toWBytes() = this.toByteArray().toWBytes()
+

@@ -19,8 +19,8 @@ import java.util.List;
 import java.util.Set;
 
 import io.LogUtils;
-import io.libp2p.core.multiformats.Multiaddr;
-import io.libp2p.core.multiformats.Protocol;
+import io.ipfs.multiformats.Multiaddr;
+import io.ipfs.multiformats.Protocol;
 
 
 public class DnsResolver {

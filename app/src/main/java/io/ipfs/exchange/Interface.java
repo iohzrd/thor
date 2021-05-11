@@ -4,7 +4,7 @@ import androidx.annotation.NonNull;
 
 import io.ipfs.bitswap.BitSwapReceiver;
 import io.ipfs.cid.Cid;
-import io.ipfs.core.Closeable;
+import io.core.Closeable;
 
 public interface Interface extends Fetcher, BitSwapReceiver {
     void reset();

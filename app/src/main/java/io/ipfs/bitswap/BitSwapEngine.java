@@ -15,10 +15,10 @@ import bitswap.pb.MessageOuterClass;
 import io.LogUtils;
 import io.ipfs.IPFS;
 import io.ipfs.cid.Cid;
-import io.ipfs.core.TimeoutCloseable;
+import io.core.TimeoutCloseable;
 import io.ipfs.format.Block;
 import io.ipfs.format.BlockStore;
-import io.libp2p.core.PeerId;
+import io.ipfs.host.PeerId;
 
 
 public class BitSwapEngine {

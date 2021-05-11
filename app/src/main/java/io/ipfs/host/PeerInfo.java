@@ -5,8 +5,7 @@ import androidx.annotation.Nullable;
 
 import org.jetbrains.annotations.NotNull;
 
-import io.libp2p.core.PeerId;
-import io.libp2p.core.multiformats.Multiaddr;
+import io.ipfs.multiformats.Multiaddr;
 
 public class PeerInfo {
     @NonNull

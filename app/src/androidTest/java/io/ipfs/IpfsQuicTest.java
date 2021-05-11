@@ -5,22 +5,17 @@ import android.content.Context;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 
-import com.google.protobuf.MessageLite;
-
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.net.InetSocketAddress;
-import java.nio.charset.Charset;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import identify.pb.IdentifyOuterClass;
 import io.LogUtils;
-import io.libp2p.core.PeerId;
-import io.libp2p.core.multiformats.Multiaddr;
+import io.ipfs.host.PeerId;
+import io.ipfs.multiformats.Multiaddr;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;

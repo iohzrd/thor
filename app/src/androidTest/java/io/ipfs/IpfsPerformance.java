@@ -19,7 +19,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.LogUtils;
 import io.ipfs.cid.Cid;
-import io.ipfs.core.TimeoutCloseable;
 import io.ipfs.utils.Progress;
 
 import static junit.framework.TestCase.assertEquals;

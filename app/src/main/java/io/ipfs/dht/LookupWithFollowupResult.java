@@ -2,7 +2,7 @@ package io.ipfs.dht;
 
 import java.util.concurrent.ConcurrentHashMap;
 
-import io.libp2p.core.PeerId;
+import io.ipfs.host.PeerId;
 
 public class LookupWithFollowupResult {
     ConcurrentHashMap<PeerId, PeerState> peers = new ConcurrentHashMap<>();

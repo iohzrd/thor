@@ -1,4 +1,4 @@
-package io.libp2p.core.multiformats
+package io.ipfs.multiformats
 
 import io.libp2p.etc.types.readUvarint
 import io.libp2p.etc.types.toByteArray

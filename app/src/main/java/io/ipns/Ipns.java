@@ -22,13 +22,13 @@ import crypto.pb.Crypto;
 import io.ipfs.IPFS;
 import io.ipfs.cid.Cid;
 import io.ipfs.multihash.Multihash;
-import io.libp2p.core.PeerId;
-import io.libp2p.core.crypto.PrivKey;
-import io.libp2p.core.crypto.PubKey;
-import io.libp2p.crypto.keys.EcdsaKt;
-import io.libp2p.crypto.keys.Ed25519Kt;
-import io.libp2p.crypto.keys.RsaKt;
-import io.libp2p.crypto.keys.Secp256k1Kt;
+import io.ipfs.host.PeerId;
+import io.crypto.PrivKey;
+import io.crypto.PubKey;
+import io.crypto.EcdsaKt;
+import io.crypto.Ed25519Kt;
+import io.crypto.RsaKt;
+import io.crypto.Secp256k1Kt;
 import ipns.pb.Ipns.IpnsEntry;
 
 

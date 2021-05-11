@@ -5,7 +5,7 @@ import androidx.annotation.NonNull;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 
-import io.libp2p.core.PeerId;
+import io.ipfs.host.PeerId;
 
 public class Util {
 

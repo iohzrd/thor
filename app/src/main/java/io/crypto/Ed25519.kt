@@ -10,11 +10,11 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package io.libp2p.crypto.keys
+package io.crypto
 
 import crypto.pb.Crypto
-import io.libp2p.core.crypto.PrivKey
-import io.libp2p.core.crypto.PubKey
+import io.crypto.PrivKey
+import io.crypto.PubKey
 import org.bouncycastle.crypto.generators.Ed25519KeyPairGenerator
 import org.bouncycastle.crypto.params.Ed25519KeyGenerationParameters
 import org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters

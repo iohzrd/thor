@@ -13,9 +13,8 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-import io.LogUtils;
 import io.ipfs.IPFS;
-import io.ipfs.core.ProtocolIssue;
+import io.core.ProtocolIssue;
 import io.ipfs.multibase.Charsets;
 import io.ipfs.multihash.Multihash;
 import io.netty.buffer.ByteBuf;

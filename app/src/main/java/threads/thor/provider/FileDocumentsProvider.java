@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.LogUtils;
 import io.ipfs.cid.Cid;
-import io.ipfs.core.Closeable;
+import io.core.Closeable;
 import io.ipfs.IPFS;
 import io.ipfs.format.Node;
 import io.ipfs.utils.Reader;

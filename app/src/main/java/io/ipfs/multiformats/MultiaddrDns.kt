@@ -1,4 +1,4 @@
-package io.libp2p.core.multiformats
+package io.ipfs.multiformats
 
 import java.net.Inet4Address
 import java.net.Inet6Address

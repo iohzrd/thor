@@ -16,7 +16,7 @@ import java.util.Collections;
 import io.ipfs.dht.ID;
 import io.ipfs.dht.PeerDistanceSorter;
 import io.ipfs.dht.Util;
-import io.libp2p.core.PeerId;
+import io.ipfs.host.PeerId;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;

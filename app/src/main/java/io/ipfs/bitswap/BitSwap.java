@@ -8,12 +8,12 @@ import java.util.List;
 import io.LogUtils;
 import io.ipfs.IPFS;
 import io.ipfs.cid.Cid;
-import io.ipfs.core.Closeable;
-import io.ipfs.core.ClosedException;
+import io.core.Closeable;
+import io.core.ClosedException;
 import io.ipfs.exchange.Interface;
 import io.ipfs.format.Block;
 import io.ipfs.format.BlockStore;
-import io.libp2p.core.PeerId;
+import io.ipfs.host.PeerId;
 
 
 public class BitSwap implements Interface {

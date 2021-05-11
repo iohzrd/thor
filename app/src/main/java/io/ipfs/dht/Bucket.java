@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import io.LogUtils;
-import io.libp2p.core.PeerId;
+import io.ipfs.host.PeerId;
 
 public class Bucket {
 

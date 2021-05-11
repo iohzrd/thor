@@ -8,13 +8,11 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Objects;
 import java.util.Set;
 
 import io.LogUtils;
-import io.libp2p.core.PeerId;
-import io.libp2p.core.multiformats.Multiaddr;
-import io.libp2p.core.multiformats.Protocol;
+import io.ipfs.multiformats.Multiaddr;
+import io.ipfs.multiformats.Protocol;
 
 
 public class AddrInfo {

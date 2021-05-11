@@ -1,4 +1,4 @@
-package io.libp2p.etc.encode
+package io.ipfs.multiformats
 
 import java.util.*
 

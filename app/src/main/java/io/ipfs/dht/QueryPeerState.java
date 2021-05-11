@@ -6,7 +6,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.math.BigInteger;
 
-import io.libp2p.core.PeerId;
+import io.ipfs.host.PeerId;
 
 public class QueryPeerState implements Comparable<QueryPeerState> {
 

@@ -22,11 +22,11 @@ import java.util.Objects;
 
 import io.LogUtils;
 import io.ipfs.cid.Cid;
-import io.ipfs.core.ClosedException;
-import io.ipfs.core.TimeoutCloseable;
+import io.core.ClosedException;
+import io.core.TimeoutCloseable;
 import io.ipfs.multihash.Multihash;
 import io.ipns.Ipns;
-import io.libp2p.core.PeerId;
+import io.ipfs.host.PeerId;
 
 import static junit.framework.TestCase.assertNotNull;
 import static org.junit.Assert.assertEquals;

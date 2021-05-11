@@ -1,4 +1,4 @@
-package io.libp2p.core.crypto
+package io.crypto
 
 import org.bouncycastle.jcajce.provider.digest.SHA1
 import org.bouncycastle.jcajce.provider.digest.SHA256

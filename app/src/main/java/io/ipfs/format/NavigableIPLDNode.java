@@ -7,8 +7,8 @@ import java.util.List;
 import java.util.Objects;
 
 import io.ipfs.cid.Cid;
-import io.ipfs.core.Closeable;
-import io.ipfs.core.ClosedException;
+import io.core.Closeable;
+import io.core.ClosedException;
 
 public class NavigableIPLDNode implements NavigableNode {
     private static final String TAG = NavigableIPLDNode.class.getSimpleName();

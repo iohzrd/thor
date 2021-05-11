@@ -14,7 +14,7 @@ import java.util.List;
 
 import io.LogUtils;
 import io.ipfs.utils.Reachable;
-import io.libp2p.core.multiformats.Multiaddr;
+import io.ipfs.multiformats.Multiaddr;
 
 import static org.junit.Assert.assertSame;
 

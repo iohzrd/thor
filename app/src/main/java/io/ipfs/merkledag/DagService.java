@@ -7,8 +7,8 @@ import java.util.List;
 
 import io.ipfs.blockservice.BlockService;
 import io.ipfs.cid.Cid;
-import io.ipfs.core.Closeable;
-import io.ipfs.core.ClosedException;
+import io.core.Closeable;
+import io.core.ClosedException;
 import io.ipfs.format.Block;
 import io.ipfs.format.Decoder;
 import io.ipfs.format.Node;

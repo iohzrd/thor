@@ -43,12 +43,12 @@ import java.util.Objects;
 import java.util.Random;
 
 import crypto.pb.Crypto;
-import io.libp2p.core.crypto.PrivKey;
-import io.libp2p.core.crypto.PubKey;
-import io.libp2p.crypto.keys.EcdsaKt;
-import io.libp2p.crypto.keys.Ed25519Kt;
-import io.libp2p.crypto.keys.RsaKt;
-import io.libp2p.crypto.keys.Secp256k1Kt;
+import io.crypto.PrivKey;
+import io.crypto.PubKey;
+import io.crypto.EcdsaKt;
+import io.crypto.Ed25519Kt;
+import io.crypto.RsaKt;
+import io.crypto.Secp256k1Kt;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.base64.Base64;

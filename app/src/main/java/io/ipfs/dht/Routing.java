@@ -3,9 +3,9 @@ package io.ipfs.dht;
 import androidx.annotation.NonNull;
 
 import io.ipfs.cid.Cid;
-import io.ipfs.core.Closeable;
-import io.ipfs.core.ClosedException;
-import io.libp2p.core.PeerId;
+import io.core.Closeable;
+import io.core.ClosedException;
+import io.ipfs.host.PeerId;
 
 public interface Routing {
     void PutValue(@NonNull Closeable closable, @NonNull byte[] key,

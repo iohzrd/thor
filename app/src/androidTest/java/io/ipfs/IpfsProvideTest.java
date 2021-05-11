@@ -15,8 +15,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.LogUtils;
 import io.ipfs.cid.Cid;
-import io.ipfs.core.ClosedException;
-import io.ipfs.core.TimeoutCloseable;
+import io.core.ClosedException;
+import io.core.TimeoutCloseable;
 
 import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertTrue;

@@ -15,9 +15,9 @@ import java.util.List;
 
 import io.LogUtils;
 import io.ipfs.cid.Cid;
-import io.ipfs.core.ClosedException;
-import io.ipfs.core.TimeoutCloseable;
-import io.ipfs.core.TimeoutProgress;
+import io.core.ClosedException;
+import io.core.TimeoutCloseable;
+import io.core.TimeoutProgress;
 import io.ipfs.utils.Link;
 
 import static junit.framework.TestCase.assertNotNull;

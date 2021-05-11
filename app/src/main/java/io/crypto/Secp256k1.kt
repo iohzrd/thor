@@ -10,14 +10,13 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package io.libp2p.crypto.keys
+package io.crypto
 
 import crypto.pb.Crypto
-import io.libp2p.core.Libp2pException
-import io.libp2p.core.crypto.PrivKey
-import io.libp2p.core.crypto.PubKey
-import io.libp2p.core.crypto.sha256
-import io.libp2p.crypto.SECP_256K1_ALGORITHM
+import io.crypto.PrivKey
+import io.crypto.PubKey
+import io.crypto.sha256
+import io.crypto.SECP_256K1_ALGORITHM
 import org.bouncycastle.asn1.*
 import org.bouncycastle.asn1.sec.SECNamedCurves
 import org.bouncycastle.crypto.ec.CustomNamedCurves
@@ -28,6 +27,7 @@ import org.bouncycastle.math.ec.FixedPointCombMultiplier
 import org.bouncycastle.math.ec.FixedPointUtil
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
+import java.lang.RuntimeException
 import java.math.BigInteger
 import java.security.SecureRandom
 
@@ -103,7 +103,7 @@ class Secp256k1PublicKey(private val pub: ECPublicKeyParameters) : PubKey(Crypto
 
         val asn1Encodables = (asn1 as ASN1Sequence).toArray().also {
             if (it.size != 2) {
-                throw Libp2pException("Invalid signature: expected 2 values for 'r' and 's' but got ${it.size}")
+                throw RuntimeException("Invalid signature: expected 2 values for 'r' and 's' but got ${it.size}")
             }
         }
 

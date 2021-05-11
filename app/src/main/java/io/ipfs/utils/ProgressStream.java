@@ -5,7 +5,7 @@ import androidx.annotation.NonNull;
 import java.io.IOException;
 import java.io.InputStream;
 
-import io.ipfs.core.ClosedException;
+import io.core.ClosedException;
 
 public class ProgressStream extends InputStream {
     private static final String TAG = ProgressStream.class.getSimpleName();

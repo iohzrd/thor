@@ -14,9 +14,9 @@ import java.util.Set;
 
 import io.LogUtils;
 import io.ipfs.host.PeerInfo;
-import io.ipfs.core.TimeoutCloseable;
-import io.libp2p.core.PeerId;
-import io.libp2p.core.multiformats.Multiaddr;
+import io.core.TimeoutCloseable;
+import io.ipfs.host.PeerId;
+import io.ipfs.multiformats.Multiaddr;
 
 import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertTrue;

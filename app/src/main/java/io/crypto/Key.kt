@@ -10,12 +10,12 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package io.libp2p.core.crypto
+package io.crypto
 
 import com.google.protobuf.ByteString
 import crypto.pb.Crypto
-import io.libp2p.core.BadKeyTypeException
-import io.libp2p.crypto.keys.*
+import io.crypto.*
+import java.lang.RuntimeException
 import java.security.SecureRandom
 import crypto.pb.Crypto.PrivateKey as PbPrivateKey
 import crypto.pb.Crypto.PublicKey as PbPublicKey
@@ -129,7 +129,7 @@ fun unmarshalPublicKey(data: ByteArray): PubKey {
         Crypto.KeyType.Ed25519 -> unmarshalEd25519PublicKey(pmesd)
         Crypto.KeyType.Secp256k1 -> unmarshalSecp256k1PublicKey(pmesd)
         Crypto.KeyType.ECDSA -> unmarshalEcdsaPublicKey(pmesd)
-        else -> throw BadKeyTypeException()
+        else -> throw RuntimeException()
     }
 }
 
@@ -160,7 +160,7 @@ fun unmarshalPrivateKey(data: ByteArray): PrivKey {
         Crypto.KeyType.Ed25519 -> unmarshalEd25519PrivateKey(pmesd)
         Crypto.KeyType.Secp256k1 -> unmarshalSecp256k1PrivateKey(pmesd)
         Crypto.KeyType.ECDSA -> unmarshalEcdsaPrivateKey(pmesd)
-        else -> throw BadKeyTypeException()
+        else -> throw RuntimeException()
     }
 }
 

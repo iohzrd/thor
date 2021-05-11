@@ -5,7 +5,7 @@ import androidx.annotation.NonNull;
 import io.LogUtils;
 import io.ipfs.IPFS;
 import io.ipfs.cid.Cid;
-import io.ipfs.core.Closeable;
+import io.core.Closeable;
 
 public class Blocker {
     private static final String TAG = Blocker.class.getSimpleName();

@@ -78,11 +78,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import io.ipfs.core.Closeable;
-import io.ipfs.core.TimeoutCloseable;
+import io.core.Closeable;
+import io.core.TimeoutCloseable;
 import io.ipfs.IPFS;
 import io.ipfs.format.Node;
-import io.libp2p.core.PeerId;
+import io.ipfs.host.PeerId;
 import threads.LogUtils;
 import threads.thor.core.Content;
 import threads.thor.core.DOCS;
@@ -1870,8 +1870,8 @@ public class MainActivity extends AppCompatActivity implements
             serviceInfo.setPort(port);
             mNsdManager = (NsdManager) getSystemService(Context.NSD_SERVICE);
             Objects.requireNonNull(mNsdManager);
-            //mNsdManager.registerService(serviceInfo, NsdManager.PROTOCOL_DNS_SD,
-            //        RegistrationService.getInstance());
+            mNsdManager.registerService(serviceInfo, NsdManager.PROTOCOL_DNS_SD,
+                   RegistrationService.getInstance());
 
 
             DiscoveryService discovery = DiscoveryService.getInstance();

@@ -10,7 +10,7 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package io.libp2p.crypto
+package io.crypto
 
 import io.libp2p.etc.types.toHex
 import org.bouncycastle.crypto.digests.SHA256Digest

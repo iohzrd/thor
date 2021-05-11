@@ -2,7 +2,7 @@ package io.ipfs.bitswap;
 
 import androidx.annotation.NonNull;
 
-import io.libp2p.core.PeerId;
+import io.ipfs.host.PeerId;
 
 
 public interface BitSwapReceiver {

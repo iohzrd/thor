@@ -3,8 +3,8 @@ package io.ipfs.format;
 import androidx.annotation.NonNull;
 
 import io.ipfs.cid.Cid;
-import io.ipfs.core.Closeable;
-import io.ipfs.core.ClosedException;
+import io.core.Closeable;
+import io.core.ClosedException;
 
 public interface NavigableNode {
 

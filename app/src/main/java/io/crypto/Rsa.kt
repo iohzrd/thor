@@ -10,18 +10,18 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package io.libp2p.crypto.keys
+package io.crypto
 
 import crypto.pb.Crypto
-import io.libp2p.core.Libp2pException
-import io.libp2p.core.crypto.PrivKey
-import io.libp2p.core.crypto.PubKey
-import io.libp2p.crypto.*
+import io.crypto.PrivKey
+import io.crypto.PubKey
+import io.crypto.*
 import org.bouncycastle.asn1.ASN1Primitive
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo
 import org.bouncycastle.asn1.pkcs.RSAPrivateKey
 import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters
 import org.bouncycastle.crypto.util.PrivateKeyInfoFactory
+import java.lang.RuntimeException
 import java.security.*
 import java.security.spec.PKCS8EncodedKeySpec
 import java.security.spec.RSAPublicKeySpec
@@ -42,7 +42,7 @@ class RsaPrivateKey(private val sk: JavaPrivateKey, private val pk: JavaPublicKe
         // Set up private key.
         val isKeyOfFormat: Boolean = sk.format?.equals(KEY_PKCS8) ?: false
         if (!isKeyOfFormat) {
-            throw Libp2pException("Private key must be of '$KEY_PKCS8' format")
+            throw RuntimeException("Private key must be of '$KEY_PKCS8' format")
         }
 
         val bcPrivateKeyInfo = PrivateKeyInfo.getInstance(sk.encoded)
@@ -88,7 +88,7 @@ class RsaPublicKey(private val k: JavaPublicKey) : PubKey(Crypto.KeyType.RSA) {
 @JvmOverloads
 fun generateRsaKeyPair(bits: Int, random: SecureRandom = SecureRandom()): Pair<PrivKey, PubKey> {
     if (bits < 2048) {
-        throw Libp2pException(ErrRsaKeyTooSmall)
+        throw RuntimeException(ErrRsaKeyTooSmall)
     }
 
     val kp: KeyPair = with(

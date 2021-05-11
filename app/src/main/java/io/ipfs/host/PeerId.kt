@@ -1,9 +1,9 @@
-package io.libp2p.core
+package io.ipfs.host
 
-import io.libp2p.core.crypto.PubKey
-import io.libp2p.core.crypto.marshalPublicKey
-import io.libp2p.core.multiformats.Multihash
-import io.libp2p.etc.encode.Base58
+import io.crypto.PubKey
+import io.crypto.marshalPublicKey
+import io.ipfs.multiformats.Multihash
+import io.ipfs.multiformats.Base58
 import io.libp2p.etc.types.fromHex
 import io.libp2p.etc.types.toByteArray
 import io.libp2p.etc.types.toByteBuf
