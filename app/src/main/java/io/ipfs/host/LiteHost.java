@@ -51,8 +51,7 @@ import io.ipfs.dht.KadDHT;
 import io.ipfs.dht.Routing;
 import io.ipfs.exchange.Interface;
 import io.ipfs.format.BlockStore;
-import io.ipfs.quic.QuicheWrapper;
-import io.ipfs.relay.Relay;
+import io.quic.QuicheWrapper;
 import io.ipns.Ipns;
 import io.libp2p.core.PeerId;
 import io.libp2p.core.crypto.PrivKey;
@@ -97,8 +96,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
     private final Routing routing;
     @NonNull
     private final PrivKey privKey;
-    @NonNull
-    private final Relay relay;
+
     @NonNull
     private final Interface exchange;
 
@@ -117,7 +115,6 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
                 IPFS.KAD_DHT_BUCKET_SIZE);
 
         this.exchange = BitSwap.create(this, blockstore);
-        this.relay = new Relay(this);
 
 
         ChannelHandler codec = new QuicClientCodecBuilder()
@@ -397,10 +394,30 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
         return peerIds;
     }
 
+
     public boolean canHop(@NonNull Closeable closeable, @NonNull PeerId peerId)
-            throws ClosedException, ConnectionIssue {
-        return relay.canHop(closeable, peerId);
+            throws ConnectionIssue, ClosedException {
+
+
+        relay.pb.Relay.CircuitRelay message = relay.pb.Relay.CircuitRelay.newBuilder()
+                .setType(relay.pb.Relay.CircuitRelay.Type.CAN_HOP)
+                .build();
+
+        try {
+            Connection conn = connect(closeable, peerId);
+            MessageLite messageLite = request(closeable, IPFS.RELAY_PROTOCOL, conn, message);
+            Objects.requireNonNull(messageLite);
+            relay.pb.Relay.CircuitRelay msg = (relay.pb.Relay.CircuitRelay) messageLite;
+            Objects.requireNonNull(msg);
+            return msg.getType() == relay.pb.Relay.CircuitRelay.Type.STATUS;
+
+        } catch (ClosedException | ConnectionIssue exception) {
+            throw exception;
+        } catch (Throwable throwable) {
+            throw new RuntimeException(throwable);
+        }
     }
+
 
 
     public void PublishName(@NonNull Closeable closable,
@@ -783,6 +800,10 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
 
                                     if (message != null) {
                                         switch (protocol) {
+                                            case IPFS.RELAY_PROTOCOL:
+                                                LogUtils.error(TAG +"REQUEST", "Found " + protocol);
+                                                ret.complete( relay.pb.Relay.CircuitRelay.parseFrom(message));
+                                                break;
                                             case IPFS.IDENTITY_PROTOCOL:
                                                 LogUtils.error(TAG +"REQUEST", "Found " + protocol);
                                                 ret.complete(IdentifyOuterClass.Identify.parseFrom(message));

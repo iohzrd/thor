@@ -61,7 +61,6 @@ import io.ipfs.host.Pusher;
 import io.ipfs.multibase.Base58;
 import io.ipfs.multibase.Multibase;
 import io.ipfs.multihash.Multihash;
-import io.ipfs.push.PushReceiver;
 import io.ipfs.utils.Link;
 import io.ipfs.utils.LinkCloseable;
 import io.ipfs.utils.Progress;
@@ -90,8 +89,9 @@ import threads.thor.core.blocks.BLOCKS;
 public class IPFS  {
     // TimeFormatIpfs is the format ipfs uses to represent time in string form
     // RFC3339Nano = "2006-01-02T15:04:05.999999999Z07:00"
+    public static final String RelayRendezvous = "/libp2p/relay";
     public static final String TimeFormatIpfs = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSS'Z'";
-
+    public static final String RELAY_PROTOCOL = "/libp2p/circuit/relay/0.1.0";
     public static final String KAD_DHT_PROTOCOL = "/ipfs/kad/1.0.0";
     public static final String PUSH_PROTOCOL = "/ipfs/push/1.0.0";
     public static final String STREAM_PROTOCOL = "/multistream/1.0.0";

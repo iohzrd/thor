@@ -16,7 +16,6 @@ import io.LogUtils;
 import io.ipfs.cid.Cid;
 import io.ipfs.core.ClosedException;
 import io.ipfs.core.TimeoutCloseable;
-import io.ipfs.relay.AutoRelay;
 import io.libp2p.core.PeerId;
 
 import static junit.framework.TestCase.assertTrue;
@@ -76,7 +75,7 @@ public class IpfsRelayTest {
             ipfs.findProviders(peerId -> {
                 find.set(true);
                 throw new ClosedException();
-            }, Cid.nsToCid(AutoRelay.RelayRendezvous), new TimeoutCloseable(120));
+            }, Cid.nsToCid(IPFS.RelayRendezvous), new TimeoutCloseable(120));
 
             LogUtils.info(TAG, "NumSwarmPeers " + ipfs.numConnections());
 

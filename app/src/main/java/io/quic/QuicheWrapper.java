@@ -1,4 +1,4 @@
-package io.ipfs.quic;
+package io.quic;
 
 import androidx.annotation.NonNull;
 
@@ -8,7 +8,6 @@ import io.LogUtils;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelPromise;
 import io.netty.incubator.codec.quic.DirectIoByteBufAllocator;
 import io.netty.incubator.codec.quic.QuicStreamPriority;
 import io.netty.incubator.codec.quic.Quiche;
