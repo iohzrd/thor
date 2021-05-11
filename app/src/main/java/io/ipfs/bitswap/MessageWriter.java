@@ -5,12 +5,12 @@ import androidx.annotation.NonNull;
 import java.util.List;
 
 import bitswap.pb.MessageOuterClass;
-import io.ipfs.cid.Cid;
 import io.core.Closeable;
 import io.core.ClosedException;
 import io.core.ConnectionIssue;
 import io.core.ProtocolIssue;
 import io.core.TimeoutIssue;
+import io.ipfs.cid.Cid;
 import io.ipfs.host.PeerId;
 
 

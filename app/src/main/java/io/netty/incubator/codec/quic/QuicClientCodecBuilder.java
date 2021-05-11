@@ -15,9 +15,9 @@
  */
 package io.netty.incubator.codec.quic;
 
-import io.netty.channel.ChannelHandler;
-
 import java.util.function.Function;
+
+import io.netty.channel.ChannelHandler;
 
 /**
  * {@link QuicCodecBuilder} that configures and builds a {@link ChannelHandler} that should be added to the

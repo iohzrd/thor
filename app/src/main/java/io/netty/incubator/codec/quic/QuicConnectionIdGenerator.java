@@ -22,10 +22,19 @@ import java.nio.ByteBuffer;
  */
 public interface QuicConnectionIdGenerator {
     /**
+     * Return a {@link QuicConnectionIdGenerator} which randomly generates new connection ids.
+     *
+     * @return a {@link QuicConnectionIdGenerator} which randomly generated ids.
+     */
+    static QuicConnectionIdGenerator randomGenerator() {
+        return SecureRandomQuicConnectionIdGenerator.INSTANCE;
+    }
+
+    /**
      * Creates a new {@link QuicConnectionAddress} with the given length.
      *
-     * @param length    the length of the id.
-     * @return          the id.
+     * @param length the length of the id.
+     * @return the id.
      */
     ByteBuffer newId(int length);
 
@@ -33,9 +42,9 @@ public interface QuicConnectionIdGenerator {
      * Creates a new connection id with the given length. The given input may be used to sign or
      * seed the id, or may be ignored (depending on the implementation).
      *
-     * @param input     the input which may be used to generate the id.
-     * @param length    the length of the id.
-     * @return          the id.
+     * @param input  the input which may be used to generate the id.
+     * @param length the length of the id.
+     * @return the id.
      */
     ByteBuffer newId(ByteBuffer input, int length);
 
@@ -45,13 +54,4 @@ public interface QuicConnectionIdGenerator {
      * @return the maximum length of a connection id that is supported.
      */
     int maxConnectionIdLength();
-
-    /**
-     * Return a {@link QuicConnectionIdGenerator} which randomly generates new connection ids.
-     *
-     * @return a {@link QuicConnectionIdGenerator} which randomly generated ids.
-     */
-    static QuicConnectionIdGenerator randomGenerator() {
-        return SecureRandomQuicConnectionIdGenerator.INSTANCE;
-    }
 }

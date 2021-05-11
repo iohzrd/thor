@@ -16,12 +16,6 @@
 package io.netty.incubator.codec.quic;
 
 
-import io.netty.util.CharsetUtil;
-
-import javax.net.ssl.SSLException;
-import javax.net.ssl.SSLHandshakeException;
-import javax.net.ssl.X509ExtendedKeyManager;
-import javax.security.auth.x500.X500Principal;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.security.PrivateKey;
@@ -36,22 +30,14 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
+import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLHandshakeException;
+import javax.net.ssl.X509ExtendedKeyManager;
+import javax.security.auth.x500.X500Principal;
+
+import io.netty.util.CharsetUtil;
+
 final class BoringSSLCertificateCallback {
-    private static final byte[] BEGIN_PRIVATE_KEY = "-----BEGIN PRIVATE KEY-----\n".getBytes(CharsetUtil.US_ASCII);
-    private static final byte[] END_PRIVATE_KEY = "\n-----END PRIVATE KEY-----\n".getBytes(CharsetUtil.US_ASCII);
-
-    /**
-     * The types contained in the {@code keyTypeBytes} array.
-     */
-    // Extracted from https://github.com/openssl/openssl/blob/master/include/openssl/tls1.h
-    private static final byte TLS_CT_RSA_SIGN = 1;
-    private static final byte TLS_CT_DSS_SIGN = 2;
-    private static final byte TLS_CT_RSA_FIXED_DH = 3;
-    private static final byte TLS_CT_DSS_FIXED_DH = 4;
-    private static final byte TLS_CT_ECDSA_SIGN = 64;
-    private static final byte TLS_CT_RSA_FIXED_ECDH = 65;
-    private static final byte TLS_CT_ECDSA_FIXED_ECDH = 66;
-
     // Code in this class is inspired by code of conscrypts:
     // - https://android.googlesource.com/platform/external/
     //   conscrypt/+/master/src/main/java/org/conscrypt/OpenSSLEngineImpl.java
@@ -63,9 +49,28 @@ final class BoringSSLCertificateCallback {
     static final String KEY_TYPE_EC = "EC";
     static final String KEY_TYPE_EC_EC = "EC_EC";
     static final String KEY_TYPE_EC_RSA = "EC_RSA";
-
+    private static final byte[] BEGIN_PRIVATE_KEY = "-----BEGIN PRIVATE KEY-----\n".getBytes(CharsetUtil.US_ASCII);
+    private static final byte[] END_PRIVATE_KEY = "\n-----END PRIVATE KEY-----\n".getBytes(CharsetUtil.US_ASCII);
+    /**
+     * The types contained in the {@code keyTypeBytes} array.
+     */
+    // Extracted from https://github.com/openssl/openssl/blob/master/include/openssl/tls1.h
+    private static final byte TLS_CT_RSA_SIGN = 1;
+    private static final byte TLS_CT_DSS_SIGN = 2;
+    private static final byte TLS_CT_RSA_FIXED_DH = 3;
+    private static final byte TLS_CT_DSS_FIXED_DH = 4;
+    private static final byte TLS_CT_ECDSA_SIGN = 64;
+    private static final byte TLS_CT_RSA_FIXED_ECDH = 65;
+    private static final byte TLS_CT_ECDSA_FIXED_ECDH = 66;
     // key type mappings for types.
     private static final Map<String, String> KEY_TYPES = new HashMap<String, String>();
+    private static final Set<String> SUPPORTED_KEY_TYPES = Collections.unmodifiableSet(new LinkedHashSet<String>(
+            Arrays.asList(KEY_TYPE_RSA,
+                    KEY_TYPE_DH_RSA,
+                    KEY_TYPE_EC,
+                    KEY_TYPE_EC_RSA,
+                    KEY_TYPE_EC_EC)));
+
     static {
         KEY_TYPES.put("RSA", KEY_TYPE_RSA);
         KEY_TYPES.put("DHE_RSA", KEY_TYPE_RSA);
@@ -76,13 +81,6 @@ final class BoringSSLCertificateCallback {
         KEY_TYPES.put("DH_RSA", KEY_TYPE_DH_RSA);
     }
 
-    private static final Set<String> SUPPORTED_KEY_TYPES = Collections.unmodifiableSet(new LinkedHashSet<String>(
-            Arrays.asList(KEY_TYPE_RSA,
-                    KEY_TYPE_DH_RSA,
-                    KEY_TYPE_EC,
-                    KEY_TYPE_EC_RSA,
-                    KEY_TYPE_EC_EC)));
-
     private final QuicheQuicSslEngineMap engineMap;
     private final X509ExtendedKeyManager keyManager;
     private final String password;
@@ -91,6 +89,60 @@ final class BoringSSLCertificateCallback {
         this.engineMap = engineMap;
         this.keyManager = keyManager;
         this.password = password;
+    }
+
+    private static byte[] toPemEncoded(PrivateKey key) {
+        try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            out.write(BEGIN_PRIVATE_KEY);
+            out.write(Base64.getEncoder().encode(key.getEncoded()));
+            out.write(END_PRIVATE_KEY);
+            return out.toByteArray();
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    /**
+     * Gets the supported key types for client certificates.
+     *
+     * @param clientCertificateTypes {@code ClientCertificateType} values provided by the server.
+     *                               See https://www.ietf.org/assignments/tls-parameters/tls-parameters.xml.
+     * @return supported key types that can be used in {@code X509KeyManager.chooseClientAlias} and
+     * {@code X509ExtendedKeyManager.chooseEngineClientAlias}.
+     */
+    private static Set<String> supportedClientKeyTypes(byte[] clientCertificateTypes) {
+        if (clientCertificateTypes == null) {
+            // Try all of the supported key types.
+            return SUPPORTED_KEY_TYPES;
+        }
+        Set<String> result = new HashSet<String>(clientCertificateTypes.length);
+        for (byte keyTypeCode : clientCertificateTypes) {
+            String keyType = clientKeyType(keyTypeCode);
+            if (keyType == null) {
+                // Unsupported client key type -- ignore
+                continue;
+            }
+            result.add(keyType);
+        }
+        return result;
+    }
+
+    private static String clientKeyType(byte clientCertificateType) {
+        // See also https://www.ietf.org/assignments/tls-parameters/tls-parameters.xml
+        switch (clientCertificateType) {
+            case TLS_CT_RSA_SIGN:
+                return KEY_TYPE_RSA; // RFC rsa_sign
+            case TLS_CT_RSA_FIXED_DH:
+                return KEY_TYPE_DH_RSA; // RFC rsa_fixed_dh
+            case TLS_CT_ECDSA_SIGN:
+                return KEY_TYPE_EC; // RFC ecdsa_sign
+            case TLS_CT_RSA_FIXED_ECDH:
+                return KEY_TYPE_EC_RSA; // RFC rsa_fixed_ecdh
+            case TLS_CT_ECDSA_FIXED_ECDH:
+                return KEY_TYPE_EC_EC; // RFC ecdsa_fixed_ecdh
+            default:
+                return null;
+        }
     }
 
     @SuppressWarnings("unused")
@@ -154,7 +206,7 @@ final class BoringSSLCertificateCallback {
             if (type != null && typeSet.add(type)) {
                 String alias = chooseServerAlias(engine, type);
                 if (alias != null) {
-                    return selectMaterial(ssl, engine, alias) ;
+                    return selectMaterial(ssl, engine, alias);
                 }
             }
         }
@@ -169,12 +221,12 @@ final class BoringSSLCertificateCallback {
         // https://hg.openjdk.java.net/jdk/jdk11/file/76072a077ee1/
         // src/java.base/share/classes/sun/security/ssl/CertificateRequest.java#l362
         if (alias != null) {
-            return selectMaterial(ssl, engine, alias) ;
+            return selectMaterial(ssl, engine, alias);
         }
         return null;
     }
 
-    private long[] selectMaterial(long ssl, QuicheQuicSslEngine engine, String alias)  {
+    private long[] selectMaterial(long ssl, QuicheQuicSslEngine engine, String alias) {
         X509Certificate[] certificates = keyManager.getCertificateChain(alias);
         if (certificates == null || certificates.length == 0) {
             return null;
@@ -199,19 +251,9 @@ final class BoringSSLCertificateCallback {
         engine.setLocalCertificateChain(certificates);
 
         // Return and signal that the key and chain should be released as well.
-        return new long[] { key,  chain , 1 };
+        return new long[]{key, chain, 1};
     }
 
-    private static byte[] toPemEncoded(PrivateKey key) {
-        try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-            out.write(BEGIN_PRIVATE_KEY);
-            out.write(Base64.getEncoder().encode(key.getEncoded()));
-            out.write(END_PRIVATE_KEY);
-            return out.toByteArray();
-        } catch (IOException e) {
-            return null;
-        }
-    }
     private String chooseClientAlias(QuicheQuicSslEngine engine,
                                      String[] keyTypes, X500Principal[] issuer) {
         return keyManager.chooseEngineClientAlias(keyTypes, issuer, engine);
@@ -219,48 +261,5 @@ final class BoringSSLCertificateCallback {
 
     private String chooseServerAlias(QuicheQuicSslEngine engine, String type) {
         return keyManager.chooseEngineServerAlias(type, null, engine);
-    }
-
-    /**
-     * Gets the supported key types for client certificates.
-     *
-     * @param clientCertificateTypes {@code ClientCertificateType} values provided by the server.
-     *        See https://www.ietf.org/assignments/tls-parameters/tls-parameters.xml.
-     * @return supported key types that can be used in {@code X509KeyManager.chooseClientAlias} and
-     *         {@code X509ExtendedKeyManager.chooseEngineClientAlias}.
-     */
-    private static Set<String> supportedClientKeyTypes(byte[] clientCertificateTypes) {
-        if (clientCertificateTypes == null) {
-            // Try all of the supported key types.
-            return SUPPORTED_KEY_TYPES;
-        }
-        Set<String> result = new HashSet<String>(clientCertificateTypes.length);
-        for (byte keyTypeCode : clientCertificateTypes) {
-            String keyType = clientKeyType(keyTypeCode);
-            if (keyType == null) {
-                // Unsupported client key type -- ignore
-                continue;
-            }
-            result.add(keyType);
-        }
-        return result;
-    }
-
-    private static String clientKeyType(byte clientCertificateType) {
-        // See also https://www.ietf.org/assignments/tls-parameters/tls-parameters.xml
-        switch (clientCertificateType) {
-            case TLS_CT_RSA_SIGN:
-                return KEY_TYPE_RSA; // RFC rsa_sign
-            case TLS_CT_RSA_FIXED_DH:
-                return KEY_TYPE_DH_RSA; // RFC rsa_fixed_dh
-            case TLS_CT_ECDSA_SIGN:
-                return KEY_TYPE_EC; // RFC ecdsa_sign
-            case TLS_CT_RSA_FIXED_ECDH:
-                return KEY_TYPE_EC_RSA; // RFC rsa_fixed_ecdh
-            case TLS_CT_ECDSA_FIXED_ECDH:
-                return KEY_TYPE_EC_EC; // RFC ecdsa_fixed_ecdh
-            default:
-                return null;
-        }
     }
 }

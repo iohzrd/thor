@@ -14,8 +14,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 import io.LogUtils;
-import io.ipfs.IPFS;
 import io.core.ProtocolIssue;
+import io.ipfs.IPFS;
 import io.ipfs.multibase.Charsets;
 import io.ipfs.multihash.Multihash;
 import io.netty.buffer.ByteBuf;
@@ -23,9 +23,9 @@ import io.netty.buffer.Unpooled;
 
 public class DataHandler {
     private static final String TAG = DataHandler.class.getSimpleName();
-    private ByteArrayOutputStream temp = new ByteArrayOutputStream();
     private final Set<String> tokens = new HashSet<>();
     private final int maxLength;
+    private ByteArrayOutputStream temp = new ByteArrayOutputStream();
     private boolean isDone = false;
     private byte[] message = null;
     private int expectedLength;
@@ -33,10 +33,6 @@ public class DataHandler {
     public DataHandler(int maxLength) {
         this.expectedLength = 0;
         this.maxLength = maxLength;
-    }
-
-    public int hasRead() {
-        return temp.size();
     }
 
     private static int copy(InputStream source, OutputStream sink, int length) throws IOException {
@@ -64,22 +60,6 @@ public class DataHandler {
         return nread;
     }
 
-    public byte[] getMessage() {
-        return message;
-    }
-
-    public boolean isDone() {
-        return isDone;
-    }
-
-    public void setDone(boolean done) {
-        isDone = done;
-    }
-
-    public Set<String> getTokens() {
-        return tokens;
-    }
-
     public static ByteBuf encode(@NonNull MessageLite message) {
         byte[] data = message.toByteArray();
         return encode(data);
@@ -105,6 +85,26 @@ public class DataHandler {
         } catch (Throwable throwable) {
             throw new RuntimeException(throwable);
         }
+    }
+
+    public int hasRead() {
+        return temp.size();
+    }
+
+    public byte[] getMessage() {
+        return message;
+    }
+
+    public boolean isDone() {
+        return isDone;
+    }
+
+    public void setDone(boolean done) {
+        isDone = done;
+    }
+
+    public Set<String> getTokens() {
+        return tokens;
     }
 
     public void load(@NonNull byte[] data)
@@ -151,7 +151,7 @@ public class DataHandler {
                 if (tokenData[0] == '/' && tokenData[read - 1] == '\n') {
 
                     String token = new String(tokenData, Charsets.UTF_8);
-                        token = token.substring(0, read - 1);
+                    token = token.substring(0, read - 1);
                     tokens.add(token);
                     //LogUtils.error(TAG, "token  " + token);
                 } else {

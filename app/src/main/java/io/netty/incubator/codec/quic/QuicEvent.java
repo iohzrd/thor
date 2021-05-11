@@ -20,4 +20,5 @@ package io.netty.incubator.codec.quic;
  * {@link io.netty.channel.ChannelPipeline#fireUserEventTriggered(Object)} to notify the user about {@code QUIC}
  * specific events.
  */
-public interface QuicEvent { }
+public interface QuicEvent {
+}

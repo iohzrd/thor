@@ -2,9 +2,9 @@ package io.ipfs.exchange;
 
 import androidx.annotation.NonNull;
 
+import io.core.Closeable;
 import io.ipfs.bitswap.BitSwapReceiver;
 import io.ipfs.cid.Cid;
-import io.core.Closeable;
 
 public interface Interface extends Fetcher, BitSwapReceiver {
     void reset();

@@ -15,6 +15,10 @@
  */
 package io.netty.incubator.codec.quic;
 
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
@@ -24,10 +28,6 @@ import io.netty.util.concurrent.Promise;
 import io.netty.util.internal.ObjectUtil;
 import io.netty.util.internal.logging.InternalLogger;
 import io.netty.util.internal.logging.InternalLoggerFactory;
-
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 /**
  * Allows to bootstrap outgoing {@link QuicStreamChannel}s.
@@ -44,8 +44,7 @@ public final class QuicStreamChannelBootstrap {
     /**
      * Creates a new instance which uses the given {@link QuicChannel} to bootstrap {@link QuicStreamChannel}s.
      *
-     * @param parent    the {@link QuicChannel} that is used.
-
+     * @param parent the {@link QuicChannel} that is used.
      */
     QuicStreamChannelBootstrap(QuicChannel parent) {
         this.parent = ObjectUtil.checkNotNull(parent, "parent");
@@ -55,10 +54,10 @@ public final class QuicStreamChannelBootstrap {
      * Allow to specify a {@link ChannelOption} which is used for the {@link QuicStreamChannel} instances once they got
      * created. Use a value of {@code null} to remove a previous set {@link ChannelOption}.
      *
-     * @param option    the {@link ChannelOption} to apply to the {@link QuicStreamChannel}.
-     * @param value     the value of the option.
-     * @param <T>       the type of the value.
-     * @return          this instance.
+     * @param option the {@link ChannelOption} to apply to the {@link QuicStreamChannel}.
+     * @param value  the value of the option.
+     * @param <T>    the type of the value.
+     * @return this instance.
      */
     public <T> QuicStreamChannelBootstrap option(ChannelOption<T> option, T value) {
         Quic.updateOptions(options, option, value);
@@ -69,10 +68,10 @@ public final class QuicStreamChannelBootstrap {
      * Allow to specify an initial attribute of the newly created {@link QuicStreamChannel}. If the {@code value} is
      * {@code null}, the attribute of the specified {@code key} is removed.
      *
-     * @param key       the {@link AttributeKey} to apply to the {@link QuicChannel}.
-     * @param value     the value of the attribute.
-     * @param <T>       the type of the value.
-     * @return          this instance.
+     * @param key   the {@link AttributeKey} to apply to the {@link QuicChannel}.
+     * @param value the value of the attribute.
+     * @param <T>   the type of the value.
+     * @return this instance.
      */
     public <T> QuicStreamChannelBootstrap attr(AttributeKey<T> key, T value) {
         Quic.updateAttributes(attrs, key, value);
@@ -83,9 +82,9 @@ public final class QuicStreamChannelBootstrap {
      * Set the {@link ChannelHandler} that is added to the {@link io.netty.channel.ChannelPipeline} of the
      * {@link QuicStreamChannel} once created.
      *
-     * @param streamHandler     the {@link ChannelHandler} that is added to the {@link QuicStreamChannel}s
-     *                          {@link io.netty.channel.ChannelPipeline}.
-     * @return                  this instance.
+     * @param streamHandler the {@link ChannelHandler} that is added to the {@link QuicStreamChannel}s
+     *                      {@link io.netty.channel.ChannelPipeline}.
+     * @return this instance.
      */
     public QuicStreamChannelBootstrap handler(ChannelHandler streamHandler) {
         this.handler = ObjectUtil.checkNotNull(streamHandler, "streamHandler");
@@ -96,8 +95,8 @@ public final class QuicStreamChannelBootstrap {
      * Set the {@link QuicStreamType} to use for the {@link QuicStreamChannel}, default is
      * {@link QuicStreamType#BIDIRECTIONAL}.
      *
-     * @param type     the {@link QuicStreamType} of the  {@link QuicStreamChannel}.
-     * @return         this instance.
+     * @param type the {@link QuicStreamType} of the  {@link QuicStreamChannel}.
+     * @return this instance.
      */
     public QuicStreamChannelBootstrap type(QuicStreamType type) {
         this.type = ObjectUtil.checkNotNull(type, "type");
@@ -107,7 +106,7 @@ public final class QuicStreamChannelBootstrap {
     /**
      * Creates a new {@link QuicStreamChannel} and notifies the {@link Future}.
      *
-     * @return  the {@link Future} that is notified once the operation completes.
+     * @return the {@link Future} that is notified once the operation completes.
      */
     public Future<QuicStreamChannel> create() {
         return create(parent.eventLoop().newPromise());
@@ -116,8 +115,8 @@ public final class QuicStreamChannelBootstrap {
     /**
      * Creates a new {@link QuicStreamChannel} and notifies the {@link Future}.
      *
-     * @param promise   the {@link Promise} that is notified once the operation completes.
-     * @return          the {@link Future} that is notified once the operation completes.
+     * @param promise the {@link Promise} that is notified once the operation completes.
+     * @return the {@link Future} that is notified once the operation completes.
      */
     public Future<QuicStreamChannel> create(Promise<QuicStreamChannel> promise) {
         if (handler == null) {
@@ -140,6 +139,7 @@ public final class QuicStreamChannelBootstrap {
             this.streamOptions = streamOptions;
             this.streamAttrs = streamAttrs;
         }
+
         @Override
         protected void initChannel(QuicStreamChannel ch) {
             Quic.setupChannel(ch, streamOptions, streamAttrs, streamHandler, logger);

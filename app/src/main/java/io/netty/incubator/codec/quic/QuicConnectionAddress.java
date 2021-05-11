@@ -60,6 +60,27 @@ public final class QuicConnectionAddress extends SocketAddress {
         this.connId = connId;
     }
 
+    /**
+     * Return a random generated {@link QuicConnectionAddress} of a given length
+     * that can be used to connect a {@link QuicChannel}
+     *
+     * @param length the length of the {@link QuicConnectionAddress} to generate.
+     * @return the generated address.
+     */
+    public static QuicConnectionAddress random(int length) {
+        return new QuicConnectionAddress(QuicConnectionIdGenerator.randomGenerator().newId(length));
+    }
+
+    /**
+     * Return a random generated {@link QuicConnectionAddress} of maximum size
+     * that can be used to connect a {@link QuicChannel}
+     *
+     * @return the generated address.
+     */
+    public static QuicConnectionAddress random() {
+        return random(Quiche.QUICHE_MAX_CONN_ID_LEN);
+    }
+
     @Override
     public String toString() {
         if (this == EPHEMERAL) {
@@ -90,27 +111,6 @@ public final class QuicConnectionAddress extends SocketAddress {
             return false;
         }
         return connId.equals(address.connId);
-    }
-
-    /**
-     * Return a random generated {@link QuicConnectionAddress} of a given length
-     * that can be used to connect a {@link QuicChannel}
-     *
-     * @param length    the length of the {@link QuicConnectionAddress} to generate.
-     * @return          the generated address.
-     */
-    public static QuicConnectionAddress random(int length) {
-        return new QuicConnectionAddress(QuicConnectionIdGenerator.randomGenerator().newId(length));
-    }
-
-    /**
-     * Return a random generated {@link QuicConnectionAddress} of maximum size
-     * that can be used to connect a {@link QuicChannel}
-     *
-     * @return the generated address.
-     */
-    public static QuicConnectionAddress random() {
-        return random(Quiche.QUICHE_MAX_CONN_ID_LEN);
     }
 
 }

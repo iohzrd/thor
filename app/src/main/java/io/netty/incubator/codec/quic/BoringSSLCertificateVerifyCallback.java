@@ -15,19 +15,21 @@
  */
 package io.netty.incubator.codec.quic;
 
-import io.netty.handler.ssl.OpenSslCertificateException;
-
-import javax.net.ssl.X509ExtendedTrustManager;
-import javax.net.ssl.X509TrustManager;
 import java.security.cert.CertPathValidatorException;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.CertificateRevokedException;
 import java.security.cert.X509Certificate;
 
+import javax.net.ssl.X509ExtendedTrustManager;
+import javax.net.ssl.X509TrustManager;
+
+import io.netty.handler.ssl.OpenSslCertificateException;
+
 final class BoringSSLCertificateVerifyCallback {
 
     private static final boolean TRY_USING_EXTENDED_TRUST_MANAGER;
+
     static {
         boolean tryUsingExtendedTrustManager;
         try {
@@ -45,6 +47,34 @@ final class BoringSSLCertificateVerifyCallback {
     BoringSSLCertificateVerifyCallback(QuicheQuicSslEngineMap engineMap, X509TrustManager manager) {
         this.engineMap = engineMap;
         this.manager = manager;
+    }
+
+    private static int translateToError(Throwable cause) {
+        if (cause instanceof CertificateRevokedException) {
+            return BoringSSL.X509_V_ERR_CERT_REVOKED;
+        }
+
+        // The X509TrustManagerImpl uses a Validator which wraps a CertPathValidatorException into
+        // an CertificateException. So we need to handle the wrapped CertPathValidatorException to be
+        // able to send the correct alert.
+        Throwable wrapped = cause.getCause();
+        while (wrapped != null) {
+            if (wrapped instanceof CertPathValidatorException) {
+                CertPathValidatorException ex = (CertPathValidatorException) wrapped;
+                CertPathValidatorException.Reason reason = ex.getReason();
+                if (reason == CertPathValidatorException.BasicReason.EXPIRED) {
+                    return BoringSSL.X509_V_ERR_CERT_HAS_EXPIRED;
+                }
+                if (reason == CertPathValidatorException.BasicReason.NOT_YET_VALID) {
+                    return BoringSSL.X509_V_ERR_CERT_NOT_YET_VALID;
+                }
+                if (reason == CertPathValidatorException.BasicReason.REVOKED) {
+                    return BoringSSL.X509_V_ERR_CERT_REVOKED;
+                }
+            }
+            wrapped = wrapped.getCause();
+        }
+        return BoringSSL.X509_V_ERR_UNSPECIFIED;
     }
 
     @SuppressWarnings("unused")
@@ -92,33 +122,5 @@ final class BoringSSLCertificateVerifyCallback {
             }
             return translateToError(cause);
         }
-    }
-
-    private static int translateToError(Throwable cause) {
-        if (cause instanceof CertificateRevokedException) {
-            return BoringSSL.X509_V_ERR_CERT_REVOKED;
-        }
-
-        // The X509TrustManagerImpl uses a Validator which wraps a CertPathValidatorException into
-        // an CertificateException. So we need to handle the wrapped CertPathValidatorException to be
-        // able to send the correct alert.
-        Throwable wrapped = cause.getCause();
-        while (wrapped != null) {
-            if (wrapped instanceof CertPathValidatorException) {
-                CertPathValidatorException ex = (CertPathValidatorException) wrapped;
-                CertPathValidatorException.Reason reason = ex.getReason();
-                if (reason == CertPathValidatorException.BasicReason.EXPIRED) {
-                    return BoringSSL.X509_V_ERR_CERT_HAS_EXPIRED;
-                }
-                if (reason == CertPathValidatorException.BasicReason.NOT_YET_VALID) {
-                    return BoringSSL.X509_V_ERR_CERT_NOT_YET_VALID;
-                }
-                if (reason == CertPathValidatorException.BasicReason.REVOKED) {
-                    return BoringSSL.X509_V_ERR_CERT_REVOKED;
-                }
-            }
-            wrapped = wrapped.getCause();
-        }
-        return BoringSSL.X509_V_ERR_UNSPECIFIED;
     }
 }

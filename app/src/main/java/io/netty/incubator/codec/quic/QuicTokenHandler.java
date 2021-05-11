@@ -15,9 +15,9 @@
  */
 package io.netty.incubator.codec.quic;
 
-import io.netty.buffer.ByteBuf;
-
 import java.net.InetSocketAddress;
+
+import io.netty.buffer.ByteBuf;
 
 /**
  * Handle token related operations.
@@ -29,19 +29,19 @@ public interface QuicTokenHandler {
      * If no token should be generated and so no token validation should take place at all this method should return
      * {@code false}.
      *
-     * @param out       {@link ByteBuf} into which the token will be written.
-     * @param dcid      the destination connection id.
-     * @param address   the {@link InetSocketAddress} of the sender.
-     * @return          {@code true} if a token was written and so validation should happen, {@code false} otherwise.
+     * @param out     {@link ByteBuf} into which the token will be written.
+     * @param dcid    the destination connection id.
+     * @param address the {@link InetSocketAddress} of the sender.
+     * @return {@code true} if a token was written and so validation should happen, {@code false} otherwise.
      */
     boolean writeToken(ByteBuf out, ByteBuf dcid, InetSocketAddress address);
 
     /**
      * Validate the token and return the offset, {@code -1} is returned if the token is not valid.
      *
-     * @param token     the {@link ByteBuf} that contains the token. The ownership is not transferred.
-     * @param address   the {@link InetSocketAddress} of the sender.
-     * @return          the start index after the token or {@code -1} if the token was not valid.
+     * @param token   the {@link ByteBuf} that contains the token. The ownership is not transferred.
+     * @param address the {@link InetSocketAddress} of the sender.
+     * @return the start index after the token or {@code -1} if the token was not valid.
      */
     int validateToken(ByteBuf token, InetSocketAddress address);
 

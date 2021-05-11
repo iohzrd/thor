@@ -15,9 +15,9 @@
  */
 package io.netty.incubator.codec.quic;
 
-import io.netty.util.internal.ObjectUtil;
-
 import java.util.Objects;
+
+import io.netty.util.internal.ObjectUtil;
 
 /**
  * The priority of a {@link QuicStreamChannel}.
@@ -30,8 +30,8 @@ public final class QuicStreamPriority {
     /**
      * Create a new instance
      *
-     * @param urgency       the urgency of the stream.
-     * @param incremental   {@code true} if incremental.
+     * @param urgency     the urgency of the stream.
+     * @param incremental {@code true} if incremental.
      */
     public QuicStreamPriority(int urgency, boolean incremental) {
         this.urgency = ObjectUtil.checkInRange(urgency, 0, Byte.MAX_VALUE, "urgency");
@@ -41,7 +41,7 @@ public final class QuicStreamPriority {
     /**
      * The urgency of the stream. Smaller number means more urgent and so data will be send earlier.
      *
-     * @return  the urgency.
+     * @return the urgency.
      */
     public int urgency() {
         return urgency;
@@ -50,7 +50,7 @@ public final class QuicStreamPriority {
     /**
      * {@code true} if incremental, {@code false} otherwise.
      *
-     * @return  if incremental.
+     * @return if incremental.
      */
     public boolean isIncremental() {
         return incremental;

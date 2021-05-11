@@ -16,18 +16,19 @@
 
 package io.netty.incubator.codec.quic;
 
-import io.netty.handler.ssl.ClientAuth;
-import io.netty.handler.ssl.util.KeyManagerFactoryWrapper;
-import io.netty.handler.ssl.util.TrustManagerFactoryWrapper;
+import java.io.File;
+import java.security.KeyStore;
+import java.security.PrivateKey;
+import java.security.cert.X509Certificate;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
-import java.io.File;
-import java.security.KeyStore;
-import java.security.PrivateKey;
-import java.security.cert.X509Certificate;
+
+import io.netty.handler.ssl.ClientAuth;
+import io.netty.handler.ssl.util.KeyManagerFactoryWrapper;
+import io.netty.handler.ssl.util.TrustManagerFactoryWrapper;
 
 import static io.netty.util.internal.ObjectUtil.checkNotNull;
 
@@ -35,6 +36,19 @@ import static io.netty.util.internal.ObjectUtil.checkNotNull;
  * Builder for configuring a new SslContext for creation.
  */
 public final class QuicSslContextBuilder {
+
+    private final boolean forServer;
+    private TrustManagerFactory trustManagerFactory;
+    private String keyPassword;
+    private KeyManagerFactory keyManagerFactory;
+    private long sessionCacheSize = 20480;
+    private long sessionTimeout = 300;
+    private ClientAuth clientAuth = ClientAuth.NONE;
+    private String[] applicationProtocols;
+    private Boolean earlyData;
+    private QuicSslContextBuilder(boolean forServer) {
+        this.forServer = forServer;
+    }
 
     /**
      * Creates a builder for new client-side {@link QuicSslContext} that can be used for {@code QUIC}.
@@ -54,9 +68,9 @@ public final class QuicSslContextBuilder {
     /**
      * Creates a builder for new server-side {@link QuicSslContext} that can be used for {@code QUIC}.
      *
-     * @param keyFile a PKCS#8 private key file in PEM format
-     * @param keyPassword the password of the {@code keyFile}, or {@code null} if it's not
-     *     password-protected
+     * @param keyFile       a PKCS#8 private key file in PEM format
+     * @param keyPassword   the password of the {@code keyFile}, or {@code null} if it's not
+     *                      password-protected
      * @param certChainFile an X.509 certificate chain file in PEM format
      * @see #keyManager(File, String, File)
      */
@@ -68,10 +82,10 @@ public final class QuicSslContextBuilder {
     /**
      * Creates a builder for new server-side {@link QuicSslContext} that can be used for {@code QUIC}.
      *
-     * @param key a PKCS#8 private key
+     * @param key         a PKCS#8 private key
      * @param keyPassword the password of the {@code keyFile}, or {@code null} if it's not
-     *     password-protected
-     * @param certChain the X.509 certificate chain
+     *                    password-protected
+     * @param certChain   the X.509 certificate chain
      * @see #keyManager(File, String, File)
      */
     public static QuicSslContextBuilder forServer(
@@ -93,26 +107,12 @@ public final class QuicSslContextBuilder {
      * Creates a builder for new server-side {@link QuicSslContext} with {@link KeyManager} that can be used for
      * {@code QUIC}.
      *
-     * @param keyManager non-{@code null} KeyManager for server's private key
+     * @param keyManager  non-{@code null} KeyManager for server's private key
      * @param keyPassword the password of the {@code keyFile}, or {@code null} if it's not
-     *     password-protected
+     *                    password-protected
      */
     public static QuicSslContextBuilder forServer(KeyManager keyManager, String keyPassword) {
         return new QuicSslContextBuilder(true).keyManager(keyManager, keyPassword);
-    }
-
-    private final boolean forServer;
-    private TrustManagerFactory trustManagerFactory;
-    private String keyPassword;
-    private KeyManagerFactory keyManagerFactory;
-    private long sessionCacheSize = 20480;
-    private long sessionTimeout = 300;
-    private ClientAuth clientAuth = ClientAuth.NONE;
-    private String[] applicationProtocols;
-    private Boolean earlyData;
-
-    private QuicSslContextBuilder(boolean forServer) {
-        this.forServer = forServer;
     }
 
     /**
@@ -170,9 +170,9 @@ public final class QuicSslContextBuilder {
      * Identifying certificate for this host. {@code keyCertChainFile} and {@code keyFile} may
      * be {@code null} for client contexts, which disables mutual authentication.
      *
-     * @param keyFile a PKCS#8 private key file in PEM format
-     * @param keyPassword the password of the {@code keyFile}, or {@code null} if it's not
-     *     password-protected
+     * @param keyFile          a PKCS#8 private key file in PEM format
+     * @param keyPassword      the password of the {@code keyFile}, or {@code null} if it's not
+     *                         password-protected
      * @param keyCertChainFile an X.509 certificate chain file in PEM format
      */
     public QuicSslContextBuilder keyManager(File keyFile, String keyPassword, File keyCertChainFile) {
@@ -195,16 +195,16 @@ public final class QuicSslContextBuilder {
      * Identifying certificate for this host. {@code keyCertChain} and {@code key} may
      * be {@code null} for client contexts, which disables mutual authentication.
      *
-     * @param key a PKCS#8 private key file
+     * @param key         a PKCS#8 private key file
      * @param keyPassword the password of the {@code key}, or {@code null} if it's not
-     *     password-protected
-     * @param certChain an X.509 certificate chain
+     *                    password-protected
+     * @param certChain   an X.509 certificate chain
      */
     public QuicSslContextBuilder keyManager(PrivateKey key, String keyPassword, X509Certificate... certChain) {
         try {
             java.security.KeyStore ks = java.security.KeyStore.getInstance(KeyStore.getDefaultType());
             ks.load(null);
-            char[] pass = keyPassword == null ? new char[0]: keyPassword.toCharArray();
+            char[] pass = keyPassword == null ? new char[0] : keyPassword.toCharArray();
             ks.setKeyEntry("alias", key, pass, certChain);
             KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(
                     KeyManagerFactory.getDefaultAlgorithm());
@@ -272,7 +272,6 @@ public final class QuicSslContextBuilder {
 
     /**
      * Create new {@link QuicSslContext} instance with configured settings that can be used for {@code QUIC}.
-     *
      */
     public QuicSslContext build() {
         if (forServer) {

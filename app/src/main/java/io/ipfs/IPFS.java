@@ -43,11 +43,14 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
 import io.LogUtils;
-import io.ipfs.cid.Cid;
 import io.core.Closeable;
 import io.core.ClosedException;
 import io.core.ConnectionIssue;
 import io.core.TimeoutCloseable;
+import io.crypto.PrivKey;
+import io.crypto.PubKey;
+import io.crypto.RsaPrivateKey;
+import io.ipfs.cid.Cid;
 import io.ipfs.dht.Routing;
 import io.ipfs.format.BlockStore;
 import io.ipfs.format.Node;
@@ -56,10 +59,13 @@ import io.ipfs.host.Connection;
 import io.ipfs.host.DnsResolver;
 import io.ipfs.host.LiteHost;
 import io.ipfs.host.LiteSignedCertificate;
+import io.ipfs.host.PeerId;
 import io.ipfs.host.PeerInfo;
 import io.ipfs.host.Pusher;
 import io.ipfs.multibase.Base58;
 import io.ipfs.multibase.Multibase;
+import io.ipfs.multiformats.Multiaddr;
+import io.ipfs.multiformats.Protocol;
 import io.ipfs.multihash.Multihash;
 import io.ipfs.utils.Link;
 import io.ipfs.utils.LinkCloseable;
@@ -72,12 +78,6 @@ import io.ipfs.utils.ReaderStream;
 import io.ipfs.utils.Resolver;
 import io.ipfs.utils.Stream;
 import io.ipfs.utils.WriterStream;
-import io.ipfs.host.PeerId;
-import io.crypto.PrivKey;
-import io.crypto.PubKey;
-import io.ipfs.multiformats.Multiaddr;
-import io.ipfs.multiformats.Protocol;
-import io.crypto.RsaPrivateKey;
 import io.netty.handler.ssl.ClientAuth;
 import io.netty.handler.ssl.util.SimpleTrustManagerFactory;
 import io.netty.incubator.codec.quic.QuicSslContext;
@@ -86,7 +86,7 @@ import io.netty.util.internal.EmptyArrays;
 import ipns.pb.Ipns;
 import threads.thor.core.blocks.BLOCKS;
 
-public class IPFS  {
+public class IPFS {
     // TimeFormatIpfs is the format ipfs uses to represent time in string form
     // RFC3339Nano = "2006-01-02T15:04:05.999999999Z07:00"
     public static final String RelayRendezvous = "/libp2p/relay";
@@ -145,8 +145,7 @@ public class IPFS  {
     public static final int KAD_DHT_BETA = 20;
     public static final String NA = "na";
     public static final String LS = "ls";
-    public static LiteHost HOST;
-
+    public static final ConcurrentHashMap<PeerId, PubKey> remotes = new ConcurrentHashMap<>();
     // rough estimates on expected sizes
     private static final int roughLinkBlockSize = 1 << 13; // 8KB
     private static final int roughLinkSize = 34 + 8 + 5;// sha256 multihash + size + no name + protobuf framing
@@ -172,18 +171,6 @@ public class IPFS  {
     private static final String CONCURRENCY_KEY = "concurrencyKey";
     private static final String TAG = IPFS.class.getSimpleName();
     private static final boolean CONNECTION_SERVICE_ENABLED = false;
-
-    private static IPFS INSTANCE = null;
-
-    private final BLOCKS blocks;
-
-    public static final ConcurrentHashMap<PeerId, PubKey> remotes = new ConcurrentHashMap<>();
-    private final int port;
-
-    private final LiteHost liteHost;
-    private final Set<PeerId> swarm = ConcurrentHashMap.newKeySet();
-
-    private Connector connector;
     private static final TrustManager tm = new X509TrustManager() {
         @Override
         public void checkClientTrusted(X509Certificate[] chain, String s) {
@@ -227,12 +214,117 @@ public class IPFS  {
             return EmptyArrays.EMPTY_X509_CERTIFICATES;
         }
     };
-    @NonNull
-    private Reachable reachable = Reachable.UNKNOWN;
+    public static LiteHost HOST;
     public static QuicSslContext SERVER_SSL_INSTANCE;
     public static QuicSslContext CLIENT_SSL_INSTANCE;
+    private static IPFS INSTANCE = null;
+    private final BLOCKS blocks;
+    private final int port;
+    private final LiteHost liteHost;
+    private final Set<PeerId> swarm = ConcurrentHashMap.newKeySet();
     //private final Host host;
     private final PrivKey privateKey;
+    private Connector connector;
+    @NonNull
+    private Reachable reachable = Reachable.UNKNOWN;
+
+    private IPFS(@NonNull Context context) throws Exception {
+
+
+        blocks = BLOCKS.getInstance(context);
+
+
+        String algorithm = "RSA";
+        final KeyPair keypair;
+
+        KeyPairGenerator keyGen = KeyPairGenerator.getInstance(algorithm);
+        keyGen.initialize(2048, LiteSignedCertificate.ThreadLocalInsecureRandom.current());
+        keypair = keyGen.generateKeyPair();
+
+
+
+        /*
+        if (getPrivateKey(context).isEmpty()) {
+            kotlin.Pair<PrivKey, PubKey> keys = KeyKt.generateKeyPair(KEY_TYPE.ED25519);
+            Base64.Encoder encoder = Base64.getEncoder();
+            setPrivateKey(context, encoder.encodeToString(keys.getFirst().bytes()));
+        }*/
+
+
+        /* TODO
+
+        node.setAgent(AGENT);
+        node.setPushing(false);
+        node.setEnableReachService(false);*/
+
+        int checkPort = getPort(context);
+        if (isLocalPortFree(checkPort)) {
+            port = checkPort;
+        } else {
+            port = nextFreePort();
+        }
+        // byte[] data = Base64.getDecoder().decode(getPrivateKey(context));
+
+        privateKey = new RsaPrivateKey(keypair.getPrivate(), keypair.getPublic());
+        //privateKey = Ed25519Kt.unmarshalEd25519PrivateKey(data);
+        LiteSignedCertificate selfSignedCertificate = new LiteSignedCertificate(privateKey, keypair);
+
+        CLIENT_SSL_INSTANCE = QuicSslContextBuilder.forClient(
+                selfSignedCertificate.privateKey(), null, selfSignedCertificate.certificate()).
+                trustManager(new SimpleTrustManagerFactory() {
+                    @Override
+                    protected void engineInit(KeyStore keyStore) throws Exception {
+
+                    }
+
+                    @Override
+                    protected void engineInit(ManagerFactoryParameters managerFactoryParameters) throws Exception {
+
+                    }
+
+                    @Override
+                    protected TrustManager[] engineGetTrustManagers() {
+                        return new TrustManager[]{tm};
+                    }
+                }).
+                applicationProtocols("libp2p").build();
+
+        SERVER_SSL_INSTANCE = QuicSslContextBuilder.forServer(
+                selfSignedCertificate.privateKey(), null, selfSignedCertificate.certificate())
+                .applicationProtocols("libp2p").clientAuth(ClientAuth.REQUIRE).
+                        trustManager(new SimpleTrustManagerFactory() {
+                            @Override
+                            protected void engineInit(KeyStore keyStore) throws Exception {
+
+                            }
+
+                            @Override
+                            protected void engineInit(ManagerFactoryParameters managerFactoryParameters) throws Exception {
+
+                            }
+
+                            @Override
+                            protected TrustManager[] engineGetTrustManagers() {
+                                return new TrustManager[]{tm};
+                            }
+                        }).build();
+
+
+        int alpha = getConcurrencyValue(context);
+
+
+        BlockStore blockstore = BlockStore.NewBlockstore(blocks);
+        this.liteHost = new LiteHost(privateKey, blockstore, port, alpha);
+
+        HOST = liteHost; // shitty hack
+        //this.liteHost.start(port); // TODO
+
+
+        if (IPFS.CONNECTION_SERVICE_ENABLED) {
+            liteHost.addConnectionHandler(conn -> connected(conn.remoteId()));
+        }
+
+    }
 
     // todo invoke this function not very often, try to work with PeerId
     @NonNull
@@ -369,104 +461,6 @@ public class IPFS  {
         } catch (IOException e) {
             return false;
         }
-    }
-
-    private IPFS(@NonNull Context context) throws Exception {
-
-
-        blocks = BLOCKS.getInstance(context);
-
-
-        String algorithm = "RSA";
-        final KeyPair keypair;
-
-        KeyPairGenerator keyGen = KeyPairGenerator.getInstance(algorithm);
-        keyGen.initialize(2048, LiteSignedCertificate.ThreadLocalInsecureRandom.current());
-        keypair = keyGen.generateKeyPair();
-
-
-
-        /*
-        if (getPrivateKey(context).isEmpty()) {
-            kotlin.Pair<PrivKey, PubKey> keys = KeyKt.generateKeyPair(KEY_TYPE.ED25519);
-            Base64.Encoder encoder = Base64.getEncoder();
-            setPrivateKey(context, encoder.encodeToString(keys.getFirst().bytes()));
-        }*/
-
-
-        /* TODO
-
-        node.setAgent(AGENT);
-        node.setPushing(false);
-        node.setEnableReachService(false);*/
-
-        int checkPort = getPort(context);
-        if (isLocalPortFree(checkPort)) {
-            port = checkPort;
-        } else {
-            port = nextFreePort();
-        }
-        // byte[] data = Base64.getDecoder().decode(getPrivateKey(context));
-
-        privateKey = new RsaPrivateKey(keypair.getPrivate(), keypair.getPublic());
-        //privateKey = Ed25519Kt.unmarshalEd25519PrivateKey(data);
-        LiteSignedCertificate selfSignedCertificate = new LiteSignedCertificate(privateKey, keypair);
-
-        CLIENT_SSL_INSTANCE = QuicSslContextBuilder.forClient(
-                selfSignedCertificate.privateKey(), null, selfSignedCertificate.certificate()).
-                trustManager(new SimpleTrustManagerFactory() {
-                    @Override
-                    protected void engineInit(KeyStore keyStore) throws Exception {
-
-                    }
-
-                    @Override
-                    protected void engineInit(ManagerFactoryParameters managerFactoryParameters) throws Exception {
-
-                    }
-
-                    @Override
-                    protected TrustManager[] engineGetTrustManagers() {
-                        return new TrustManager[]{tm};
-                    }
-                }).
-                applicationProtocols("libp2p").build();
-
-        SERVER_SSL_INSTANCE = QuicSslContextBuilder.forServer(
-                selfSignedCertificate.privateKey(), null, selfSignedCertificate.certificate())
-                .applicationProtocols("libp2p").clientAuth(ClientAuth.REQUIRE).
-                        trustManager(new SimpleTrustManagerFactory() {
-                            @Override
-                            protected void engineInit(KeyStore keyStore) throws Exception {
-
-                            }
-
-                            @Override
-                            protected void engineInit(ManagerFactoryParameters managerFactoryParameters) throws Exception {
-
-                            }
-
-                            @Override
-                            protected TrustManager[] engineGetTrustManagers() {
-                                return new TrustManager[]{tm};
-                            }
-                        }).build();
-
-
-        int alpha = getConcurrencyValue(context);
-
-
-        BlockStore blockstore = BlockStore.NewBlockstore(blocks);
-        this.liteHost = new LiteHost(privateKey, blockstore, port, alpha);
-
-        HOST = liteHost; // shitty hack
-        //this.liteHost.start(port); // TODO
-
-
-        if (IPFS.CONNECTION_SERVICE_ENABLED) {
-            liteHost.addConnectionHandler(conn -> connected(conn.remoteId()));
-        }
-
     }
 
     public boolean canHop(@NonNull PeerId peerId, @NonNull Closeable closeable)
@@ -1201,8 +1195,6 @@ public class IPFS  {
     }
 
 
-
-
     // TODO
     //@Override
     public boolean acceptPusher(@NonNull PeerId peerId) {
@@ -1217,7 +1209,6 @@ public class IPFS  {
     public void swarmEnhance(@NonNull PeerId peerId) {
         swarm.add(peerId);
     }
-
 
 
     public void swarmEnhance(@NonNull PeerId[] peerIds) {
@@ -1275,6 +1266,15 @@ public class IPFS  {
         return false;
     }
 
+    @NonNull
+    public LiteHost getHost() {
+        return liteHost;
+    }
+
+    public PrivKey getPrivKey() {
+        return privateKey;
+    }
+
     public interface Connector {
         void connected(@NonNull PeerId peerId);
     }
@@ -1297,15 +1297,6 @@ public class IPFS  {
         public String getHash() {
             return hash;
         }
-    }
-
-    @NonNull
-    public LiteHost getHost() {
-        return liteHost;
-    }
-
-    public PrivKey getPrivKey() {
-        return privateKey;
     }
 
 }

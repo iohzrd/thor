@@ -15,16 +15,16 @@
  */
 package io.netty.incubator.codec.quic;
 
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelOption;
 import io.netty.util.AttributeKey;
 import io.netty.util.internal.ObjectUtil;
 import io.netty.util.internal.logging.InternalLogger;
-
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 public final class Quic {
     @SuppressWarnings("unchecked")
@@ -49,11 +49,14 @@ public final class Quic {
         UNAVAILABILITY_CAUSE = cause;
     }
 
+    private Quic() {
+    }
+
     /**
      * Return if the given QUIC version is supported.
      *
-     * @param version   the version.
-     * @return          {@code true} if supported, {@code false} otherwise.
+     * @param version the version.
+     * @return {@code true} if supported, {@code false} otherwise.
      */
     public static boolean isVersionSupported(int version) {
         return isAvailable() && Quiche.quiche_version_is_supported(version);
@@ -98,7 +101,7 @@ public final class Quic {
     }
 
     private static void setAttributes(Channel channel, Map.Entry<AttributeKey<?>, Object>[] attrs) {
-        for (Map.Entry<AttributeKey<?>, Object> e: attrs) {
+        for (Map.Entry<AttributeKey<?>, Object> e : attrs) {
             @SuppressWarnings("unchecked")
             AttributeKey<Object> key = (AttributeKey<Object>) e.getKey();
             channel.attr(key).set(e.getValue());
@@ -107,7 +110,7 @@ public final class Quic {
 
     private static void setChannelOptions(
             Channel channel, Map.Entry<ChannelOption<?>, Object>[] options, InternalLogger logger) {
-        for (Map.Entry<ChannelOption<?>, Object> e: options) {
+        for (Map.Entry<ChannelOption<?>, Object> e : options) {
             setChannelOption(channel, e.getKey(), e.getValue(), logger);
         }
     }
@@ -160,6 +163,4 @@ public final class Quic {
             ch.pipeline().addLast(handler);
         }
     }
-
-    private Quic() { }
 }

@@ -54,6 +54,14 @@ public enum QuicError {
         this.message = message;
     }
 
+    static QuicError valueOf(int code) {
+        final QuicError errorCode = ERROR_MAP.get(code);
+        if (errorCode == null) {
+            throw new IllegalArgumentException("unknown " + QuicError.class.getSimpleName() + " code: " + code);
+        }
+        return errorCode;
+    }
+
     final int code() {
         return code;
     }
@@ -65,13 +73,5 @@ public enum QuicError {
     @Override
     public final String toString() {
         return String.format("QuicError{code=%d, message=%s}", code, message);
-    }
-
-    static QuicError valueOf(int code) {
-        final QuicError errorCode = ERROR_MAP.get(code);
-        if (errorCode == null) {
-            throw new IllegalArgumentException("unknown " + QuicError.class.getSimpleName() + " code: " + code);
-        }
-        return errorCode;
     }
 }

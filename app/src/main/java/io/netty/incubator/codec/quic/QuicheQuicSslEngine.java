@@ -15,12 +15,14 @@
  */
 package io.netty.incubator.codec.quic;
 
-import io.netty.handler.ssl.ClientAuth;
-import io.netty.handler.ssl.util.LazyJavaxX509Certificate;
-import io.netty.handler.ssl.util.LazyX509Certificate;
-import io.netty.util.NetUtil;
-import io.netty.util.internal.EmptyArrays;
-import io.netty.util.internal.ObjectUtil;
+import java.nio.ByteBuffer;
+import java.security.Principal;
+import java.security.cert.Certificate;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.LongFunction;
 
 import javax.net.ssl.SNIHostName;
 import javax.net.ssl.SNIServerName;
@@ -32,16 +34,16 @@ import javax.net.ssl.SSLSessionBindingEvent;
 import javax.net.ssl.SSLSessionBindingListener;
 import javax.net.ssl.SSLSessionContext;
 import javax.security.cert.X509Certificate;
-import java.nio.ByteBuffer;
-import java.security.Principal;
-import java.security.cert.Certificate;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.function.LongFunction;
+
+import io.netty.handler.ssl.ClientAuth;
+import io.netty.handler.ssl.util.LazyJavaxX509Certificate;
+import io.netty.handler.ssl.util.LazyX509Certificate;
+import io.netty.util.NetUtil;
+import io.netty.util.internal.EmptyArrays;
+import io.netty.util.internal.ObjectUtil;
 
 final class QuicheQuicSslEngine extends QuicSslEngine {
+    final String tlsHostName;
     private final QuicheQuicSslContext ctx;
     private final String peerHost;
     private final int peerPort;
@@ -50,7 +52,6 @@ final class QuicheQuicSslEngine extends QuicSslEngine {
     private List<SNIServerName> sniHostNames;
     private boolean handshakeFinished;
     private String applicationProtocol;
-    final String tlsHostName;
 
     QuicheQuicSslEngine(QuicheQuicSslContext ctx, String peerHost, int peerPort) {
         this.ctx = ctx;
@@ -66,14 +67,6 @@ final class QuicheQuicSslEngine extends QuicSslEngine {
         }
     }
 
-    QuicheQuicConnection createConnection(LongFunction<Long> connectionCreator) {
-        return ctx.createConnection(connectionCreator, this);
-    }
-
-    void setLocalCertificateChain(Certificate[] localCertificateChain) {
-        this.localCertificateChain = localCertificateChain;
-    }
-
     /**
      * Validate that the given hostname can be used in SNI extension.
      */
@@ -83,6 +76,14 @@ final class QuicheQuicSslEngine extends QuicSslEngine {
                 !hostname.endsWith(".") &&
                 !NetUtil.isValidIpV4Address(hostname) &&
                 !NetUtil.isValidIpV6Address(hostname);
+    }
+
+    QuicheQuicConnection createConnection(LongFunction<Long> connectionCreator) {
+        return ctx.createConnection(connectionCreator, this);
+    }
+
+    void setLocalCertificateChain(Certificate[] localCertificateChain) {
+        this.localCertificateChain = localCertificateChain;
     }
 
     @Override
@@ -157,7 +158,7 @@ final class QuicheQuicSslEngine extends QuicSslEngine {
     @Override
     public String[] getSupportedProtocols() {
         // QUIC only supports TLSv1.3
-        return new String[] { "TLSv1.3" };
+        return new String[]{"TLSv1.3"};
     }
 
     @Override
@@ -197,20 +198,15 @@ final class QuicheQuicSslEngine extends QuicSslEngine {
     }
 
     @Override
-    public void setUseClientMode(boolean clientMode) {
-        if (clientMode != ctx.isClient()) {
-            throw new UnsupportedOperationException();
-        }
-    }
-
-    @Override
     public boolean getUseClientMode() {
         return ctx.isClient();
     }
 
     @Override
-    public void setNeedClientAuth(boolean b) {
-        throw new UnsupportedOperationException();
+    public void setUseClientMode(boolean clientMode) {
+        if (clientMode != ctx.isClient()) {
+            throw new UnsupportedOperationException();
+        }
     }
 
     @Override
@@ -219,7 +215,7 @@ final class QuicheQuicSslEngine extends QuicSslEngine {
     }
 
     @Override
-    public void setWantClientAuth(boolean b) {
+    public void setNeedClientAuth(boolean b) {
         throw new UnsupportedOperationException();
     }
 
@@ -229,13 +225,18 @@ final class QuicheQuicSslEngine extends QuicSslEngine {
     }
 
     @Override
-    public void setEnableSessionCreation(boolean flag) {
+    public void setWantClientAuth(boolean b) {
         throw new UnsupportedOperationException();
     }
 
     @Override
     public boolean getEnableSessionCreation() {
         return false;
+    }
+
+    @Override
+    public void setEnableSessionCreation(boolean flag) {
+        throw new UnsupportedOperationException();
     }
 
     synchronized void handshakeFinished(byte[] id, String cipher, String protocol, byte[] peerCertificate,
@@ -266,6 +267,7 @@ final class QuicheQuicSslEngine extends QuicSslEngine {
         private boolean isEmpty(Object[] arr) {
             return arr == null || arr.length == 0;
         }
+
         private boolean isEmpty(byte[] arr) {
             return arr == null || arr.length == 0;
         }
@@ -308,8 +310,8 @@ final class QuicheQuicSslEngine extends QuicSslEngine {
                     x509PeerCerts = EmptyArrays.EMPTY_JAVAX_X509_CERTIFICATES;
                 } else {
                     if (isEmpty(chain)) {
-                        peerCerts = new Certificate[] {new LazyX509Certificate(clientCert)};
-                        x509PeerCerts = new X509Certificate[] {new LazyJavaxX509Certificate(clientCert)};
+                        peerCerts = new Certificate[]{new LazyX509Certificate(clientCert)};
+                        x509PeerCerts = new X509Certificate[]{new LazyJavaxX509Certificate(clientCert)};
                     } else {
                         peerCerts = new Certificate[chain.length + 1];
                         x509PeerCerts = new X509Certificate[chain.length + 1];

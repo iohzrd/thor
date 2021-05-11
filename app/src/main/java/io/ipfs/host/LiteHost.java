@@ -36,27 +36,26 @@ import bitswap.pb.MessageOuterClass;
 import dht.pb.Dht;
 import identify.pb.IdentifyOuterClass;
 import io.LogUtils;
+import io.core.Closeable;
+import io.core.ClosedException;
+import io.core.ConnectionIssue;
+import io.core.ProtocolIssue;
+import io.core.TimeoutIssue;
+import io.crypto.PrivKey;
+import io.crypto.PubKey;
 import io.ipfs.IPFS;
 import io.ipfs.bitswap.BitSwap;
 import io.ipfs.bitswap.BitSwapMessage;
 import io.ipfs.bitswap.BitSwapNetwork;
 import io.ipfs.bitswap.BitSwapReceiver;
 import io.ipfs.cid.Cid;
-import io.core.Closeable;
-import io.core.ClosedException;
-import io.core.ConnectionIssue;
-import io.core.ProtocolIssue;
-import io.core.TimeoutIssue;
 import io.ipfs.dht.KadDHT;
 import io.ipfs.dht.Routing;
 import io.ipfs.exchange.Interface;
 import io.ipfs.format.BlockStore;
-import io.quic.QuicheWrapper;
-import io.ipns.Ipns;
-import io.crypto.PrivKey;
-import io.crypto.PubKey;
 import io.ipfs.multiformats.Multiaddr;
 import io.ipfs.multiformats.Protocol;
+import io.ipns.Ipns;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
@@ -75,14 +74,15 @@ import io.netty.incubator.codec.quic.QuicStreamChannel;
 import io.netty.incubator.codec.quic.QuicStreamType;
 import io.netty.util.AttributeKey;
 import io.netty.util.concurrent.Promise;
+import io.quic.QuicheWrapper;
 
 
 public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
+    public static final AttributeKey<PeerId> PEER_KEY = AttributeKey.newInstance("PEER_KEY");
     private static final String TAG = LiteHost.class.getSimpleName();
     private static final Duration DefaultRecordEOL = Duration.ofHours(24);
     private final ConcurrentHashMap<PeerId, Long> metrics = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<PeerId, Long> actives = new ConcurrentHashMap<>();
-    public static final AttributeKey<PeerId> PEER_KEY = AttributeKey.newInstance("PEER_KEY");
     private final Set<PeerId> tags = ConcurrentHashMap.newKeySet();
     private final NioEventLoopGroup group = new NioEventLoopGroup(1);
     @NonNull
@@ -96,10 +96,10 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
 
     @NonNull
     private final Interface exchange;
-
-    private Channel client;
-
     private final int port;
+    public List<ConnectionHandler> handlers = new ArrayList<>();
+    private Channel client;
+    private Pusher pusher;
 
     public LiteHost(@NonNull PrivKey privKey, @NonNull BlockStore blockstore, int port, int alpha) {
 
@@ -132,7 +132,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
                     .channel(NioDatagramChannel.class)
                     .handler(codec)
                     .bind(port).sync().channel();
-        } catch (Throwable throwable){
+        } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         }
 
@@ -196,14 +196,10 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
 
     }
 
-
     @NonNull
     public Routing getRouting() {
         return routing;
     }
-
-    public List<ConnectionHandler> handlers = new ArrayList<>();
-
 
     @NonNull
     public Interface getExchange() {
@@ -224,7 +220,6 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
     public boolean GatePeer(PeerId peerID) {
         return exchange.GatePeer(peerID);
     }
-
 
     @Override
     public boolean connectTo(@NonNull Closeable closeable, @NonNull PeerId peerId)
@@ -249,8 +244,8 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
 
         // first simple solution (testi is conn is open
         List<Connection> conns = new ArrayList<>();
-        for (Connection conn: connections.values()) {
-            if(conn.channel().isOpen()) {
+        for (Connection conn : connections.values()) {
+            if (conn.channel().isOpen()) {
                 conns.add(conn);
             }
         }
@@ -258,7 +253,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
         return conns;
     }
 
-    public void forwardMessage(@NonNull PeerId peerId, @NonNull MessageLite msg){
+    public void forwardMessage(@NonNull PeerId peerId, @NonNull MessageLite msg) {
         if (msg instanceof MessageOuterClass.Message) {
             new Thread(() -> {
                 try {
@@ -268,7 +263,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
                 } catch (Throwable throwable) {
                     ReceiveError(peerId, IPFS.BITSWAP_PROTOCOL, "" + throwable.getMessage());
                 }
-           }).start();
+            }).start();
         }
     }
 
@@ -306,7 +301,6 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
         }
 
     }
-
 
     @Override
     public void findProviders(@NonNull Closeable closeable, @NonNull Routing.Providers providers,
@@ -385,7 +379,6 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
         return peerIds;
     }
 
-
     public boolean canHop(@NonNull Closeable closeable, @NonNull PeerId peerId)
             throws ConnectionIssue, ClosedException {
 
@@ -408,8 +401,6 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
             throw new RuntimeException(throwable);
         }
     }
-
-
 
     public void PublishName(@NonNull Closeable closable,
                             @NonNull PrivKey privKey,
@@ -461,7 +452,6 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
 
     }
 
-
     public void addAddrs(@NonNull AddrInfo addrInfo) {
 
         try {
@@ -479,7 +469,6 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
             LogUtils.error(TAG, throwable);
         }
     }
-
 
     private void addConnection(@NonNull Connection connection) {
         connections.put(connection.remoteId(), connection);
@@ -525,7 +514,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
                             future.cancel(true);
                             break;
                         }
-                        if(future.isSuccess()){
+                        if (future.isSuccess()) {
                             break;
                         }
                     }
@@ -536,7 +525,6 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
 
                     QuicChannel quic = future.get();
                     Objects.requireNonNull(quic);
-
 
 
                     connection = new LiteConnection(quic);
@@ -557,7 +545,6 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
         throw new RuntimeException("No address available");
 
     }
-
 
     public void send(@NonNull Closeable closeable, @NonNull String protocol,
                      @NonNull Connection conn, @NonNull byte[] data,
@@ -616,7 +603,6 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
         LogUtils.verbose(TAG, "success request  " + res.getClass().getSimpleName());
         return res;
     }
-
 
     public CompletableFuture<Void> send(@NonNull QuicChannel quicChannel,
                                         @NonNull String protocol,
@@ -680,13 +666,12 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
                         }
                     }).sync().get(IPFS.TIMEOUT_SEND, TimeUnit.SECONDS);
 
-            if(urgentPriority) {
+            if (urgentPriority) {
                 streamChannel.updatePriority(QuicheWrapper.URGENT);
             }
 
             streamChannel.write(DataHandler.writeToken(IPFS.STREAM_PROTOCOL));
             streamChannel.writeAndFlush(DataHandler.writeToken(protocol));
-
 
 
         } catch (Throwable throwable) {
@@ -696,7 +681,6 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
 
         return ret;
     }
-
 
     public void push(@NonNull PeerId peerId, @NonNull byte[] content) {
         try {
@@ -712,10 +696,11 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
         }
 
     }
+
     // TODO evaluate if it makes sens
-    public int evalMaxResponseLength(@NonNull String protocol){
-        if( protocol.equals(IPFS.IDENTITY_PROTOCOL) ||
-           protocol.equals(IPFS.KAD_DHT_PROTOCOL) ){
+    public int evalMaxResponseLength(@NonNull String protocol) {
+        if (protocol.equals(IPFS.IDENTITY_PROTOCOL) ||
+                protocol.equals(IPFS.KAD_DHT_PROTOCOL)) {
             return 25000;
         }
         return IPFS.BLOCK_SIZE_LIMIT;
@@ -723,7 +708,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
 
     public CompletableFuture<MessageLite> request(@NonNull QuicChannel quicChannel,
                                                   @NonNull String protocol,
-                                                  @Nullable MessageLite message){
+                                                  @Nullable MessageLite message) {
 
         CompletableFuture<MessageLite> ret = new CompletableFuture<>();
         CompletableFuture<Void> activation = new CompletableFuture<>();
@@ -767,7 +752,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
                                 if (reader.isDone()) {
 
                                     for (String received : reader.getTokens()) {
-                                        LogUtils.debug(TAG , "request " + received);
+                                        LogUtils.debug(TAG, "request " + received);
                                         if (Objects.equals(received, IPFS.NA)) {
                                             throw new ProtocolIssue();
                                         } else if (Objects.equals(received, IPFS.STREAM_PROTOCOL)) {
@@ -791,7 +776,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
                                         switch (protocol) {
                                             case IPFS.RELAY_PROTOCOL:
                                                 LogUtils.debug(TAG, "Found " + protocol);
-                                                ret.complete( relay.pb.Relay.CircuitRelay.parseFrom(message));
+                                                ret.complete(relay.pb.Relay.CircuitRelay.parseFrom(message));
                                                 break;
                                             case IPFS.IDENTITY_PROTOCOL:
                                                 LogUtils.debug(TAG, "Found " + protocol);
@@ -802,7 +787,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
                                                 ret.complete(MessageOuterClass.Message.parseFrom(message));
                                                 break;
                                             case IPFS.KAD_DHT_PROTOCOL:
-                                                LogUtils.debug(TAG , "Found " + protocol);
+                                                LogUtils.debug(TAG, "Found " + protocol);
                                                 ret.complete(Dht.Message.parseFrom(message));
                                                 break;
                                             default:
@@ -825,14 +810,14 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
                                     switch (protocol) {
                                         case IPFS.RELAY_PROTOCOL:
                                             LogUtils.debug(TAG, "Found " + protocol);
-                                            ret.complete( relay.pb.Relay.CircuitRelay.parseFrom(message));
+                                            ret.complete(relay.pb.Relay.CircuitRelay.parseFrom(message));
                                             break;
                                         case IPFS.IDENTITY_PROTOCOL:
-                                            LogUtils.debug(TAG , "Found " + protocol);
+                                            LogUtils.debug(TAG, "Found " + protocol);
                                             ret.complete(IdentifyOuterClass.Identify.parseFrom(message));
                                             break;
                                         case IPFS.BITSWAP_PROTOCOL:
-                                            LogUtils.debug(TAG , "Found " + protocol);
+                                            LogUtils.debug(TAG, "Found " + protocol);
                                             ret.complete(MessageOuterClass.Message.parseFrom(message));
                                             break;
                                         case IPFS.KAD_DHT_PROTOCOL:
@@ -867,7 +852,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
 
         return activation.thenCompose(s -> ret);
     }
-    private Pusher pusher;
+
     public void setPusher(@Nullable Pusher pusher) {
         this.pusher = pusher;
     }
@@ -896,17 +881,17 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
     }
 
     @NonNull
-    private Multiaddr transform(@NonNull SocketAddress socketAddress){
+    private Multiaddr transform(@NonNull SocketAddress socketAddress) {
 
         InetSocketAddress inetSocketAddress = (InetSocketAddress) socketAddress;
         InetAddress inetAddress = inetSocketAddress.getAddress();
         boolean ipv6 = false;
-        if(inetAddress instanceof Inet6Address){
+        if (inetAddress instanceof Inet6Address) {
             ipv6 = true;
         }
         int port = inetSocketAddress.getPort();
         String multiaddress = "";
-        if(ipv6){
+        if (ipv6) {
             multiaddress = multiaddress.concat("/ip6/");
         } else {
             multiaddress = multiaddress.concat("/ip4/");
@@ -935,7 +920,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
         try {
             Multiaddr observed = transform(socketAddress);
             builder.setObservedAddr(ByteString.copyFrom(observed.getBytes()));
-        } catch (Throwable throwable){
+        } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         }
         return builder.build();

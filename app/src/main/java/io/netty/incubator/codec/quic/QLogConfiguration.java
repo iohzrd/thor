@@ -30,10 +30,10 @@ public final class QLogConfiguration {
     /**
      * Create a new configuration.
      *
-     * @param path              the path to the log file to use. This file must not exist yet. If the path is a
-     *                          directory the filename will be generated
-     * @param logTitle          the title to use when logging.
-     * @param logDescription    the description to use when logging.
+     * @param path           the path to the log file to use. This file must not exist yet. If the path is a
+     *                       directory the filename will be generated
+     * @param logTitle       the title to use when logging.
+     * @param logDescription the description to use when logging.
      */
     public QLogConfiguration(String path, String logTitle, String logDescription) {
         this.path = Objects.requireNonNull(path, "path");
