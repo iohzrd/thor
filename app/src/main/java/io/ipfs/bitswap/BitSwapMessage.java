@@ -28,9 +28,12 @@ public interface BitSwapMessage {
                 .setType(MessageOuterClass.Message.BlockPresenceType.Have).build().getSerializedSize();
     }
 
+    MessageOuterClass.Message ToProtoV1();
+
     static BitSwapMessage New(boolean full) {
         return new BitSwapMessageImpl(full);
     }
+
 
     static BitSwapMessage newMessageFromProto(MessageOuterClass.Message pbm) {
         BitSwapMessageImpl m = new BitSwapMessageImpl(pbm.getWantlist().getFull());
@@ -74,8 +77,6 @@ public interface BitSwapMessage {
         MessageOuterClass.Message message = MessageOuterClass.Message.parseFrom(data);
         return newMessageFromProto(message);
     }
-
-    MessageOuterClass.Message ToProtoV1();
 
     // Wantlist returns a slice of unique keys that represent data wanted by
     // the sender.

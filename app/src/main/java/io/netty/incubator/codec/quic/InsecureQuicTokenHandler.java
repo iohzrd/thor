@@ -15,12 +15,12 @@
  */
 package io.netty.incubator.codec.quic;
 
-import java.net.InetSocketAddress;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.util.CharsetUtil;
 import io.netty.util.NetUtil;
+
+import java.net.InetSocketAddress;
 
 /**
  * Insecure {@link QuicTokenHandler} which only does basic token generation / validation without any
@@ -30,17 +30,19 @@ import io.netty.util.NetUtil;
  */
 public final class InsecureQuicTokenHandler implements QuicTokenHandler {
 
-    public static final InsecureQuicTokenHandler INSTANCE = new InsecureQuicTokenHandler();
     private static final String SERVER_NAME = "netty";
     private static final byte[] SERVER_NAME_BYTES = SERVER_NAME.getBytes(CharsetUtil.US_ASCII);
+    private static final ByteBuf SERVER_NAME_BUFFER = Unpooled.wrappedBuffer(SERVER_NAME_BYTES);
+
     // Just package-private for unit tests
     static final int MAX_TOKEN_LEN = Quiche.QUICHE_MAX_CONN_ID_LEN +
             NetUtil.LOCALHOST6.getAddress().length + SERVER_NAME_BYTES.length;
-    private static final ByteBuf SERVER_NAME_BUFFER = Unpooled.wrappedBuffer(SERVER_NAME_BYTES);
 
     private InsecureQuicTokenHandler() {
         Quic.ensureAvailability();
     }
+
+    public static final InsecureQuicTokenHandler INSTANCE = new InsecureQuicTokenHandler();
 
     @Override
     public boolean writeToken(ByteBuf out, ByteBuf dcid, InetSocketAddress address) {

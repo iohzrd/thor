@@ -15,14 +15,15 @@
  */
 package io.netty.incubator.codec.quic;
 
+import io.netty.util.internal.ObjectUtil;
+
 import java.nio.ByteBuffer;
 import java.security.SecureRandom;
 
-import io.netty.util.internal.ObjectUtil;
-
 final class SecureRandomQuicConnectionIdGenerator implements QuicConnectionIdGenerator {
-    static final QuicConnectionIdGenerator INSTANCE = new SecureRandomQuicConnectionIdGenerator();
     private static final SecureRandom RANDOM = new SecureRandom();
+
+    static final QuicConnectionIdGenerator INSTANCE = new SecureRandomQuicConnectionIdGenerator();
 
     private SecureRandomQuicConnectionIdGenerator() {
     }

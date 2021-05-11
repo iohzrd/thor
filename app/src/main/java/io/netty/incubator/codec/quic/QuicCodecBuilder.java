@@ -15,11 +15,11 @@
  */
 package io.netty.incubator.codec.quic;
 
+import io.netty.channel.ChannelHandler;
+
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
-
-import io.netty.channel.ChannelHandler;
 
 import static io.netty.util.internal.ObjectUtil.checkInRange;
 import static io.netty.util.internal.ObjectUtil.checkPositive;
@@ -51,8 +51,6 @@ public abstract class QuicCodecBuilder<B extends QuicCodecBuilder<B>> {
     private Function<QuicChannel, ? extends QuicSslEngine> sslEngineProvider;
     private FlushStrategy flushStrategy = FlushStrategy.DEFAULT;
     private int version;
-    private Integer recvQueueLen;
-    private Integer sendQueueLen;
 
     QuicCodecBuilder(boolean server) {
         Quic.ensureAvailability();
@@ -99,8 +97,8 @@ public abstract class QuicCodecBuilder<B extends QuicCodecBuilder<B>> {
      * Sets the {@link FlushStrategy} that will be used to detect when an automatic flush
      * should happen.
      *
-     * @param flushStrategy the strategy to use.
-     * @return the instance itself.
+     * @param flushStrategy   the strategy to use.
+     * @return                the instance itself.
      */
     public final B flushStrategy(FlushStrategy flushStrategy) {
         this.flushStrategy = Objects.requireNonNull(flushStrategy, "flushStrategy");
@@ -109,11 +107,11 @@ public abstract class QuicCodecBuilder<B extends QuicCodecBuilder<B>> {
 
     /**
      * Sets the congestion control algorithm to use.
-     * <p>
+     *
      * The default is {@link QuicCongestionControlAlgorithm#CUBIC}.
      *
-     * @param congestionControlAlgorithm the {@link QuicCongestionControlAlgorithm} to use.
-     * @return the instance itself.
+     * @param congestionControlAlgorithm    the {@link QuicCongestionControlAlgorithm} to use.
+     * @return                              the instance itself.
      */
     public final B congestionControlAlgorithm(QuicCongestionControlAlgorithm congestionControlAlgorithm) {
         this.congestionControlAlgorithm = congestionControlAlgorithm;
@@ -123,11 +121,11 @@ public abstract class QuicCodecBuilder<B extends QuicCodecBuilder<B>> {
     /**
      * Set if <a href="https://tools.ietf.org/html/draft-thomson-quic-bit-grease-00">greasing</a> should be enabled
      * or not.
-     * <p>
+     *
      * The default value is {@code true}.
      *
-     * @param enable {@code true} if enabled, {@code false} otherwise.
-     * @return the instance itself.
+     * @param enable    {@code true} if enabled, {@code false} otherwise.
+     * @return          the instance itself.
      */
     public final B grease(boolean enable) {
         grease = enable;
@@ -136,13 +134,13 @@ public abstract class QuicCodecBuilder<B extends QuicCodecBuilder<B>> {
 
     /**
      * See <a href="https://docs.rs/quiche/0.6.0/quiche/struct.Config.html#method.set_max_idle_timeout">
-     * set_max_idle_timeout</a>.
-     * <p>
+     *     set_max_idle_timeout</a>.
+     *
      * The default value is infinite, that is, no timeout is used.
      *
-     * @param amount the maximum idle timeout.
-     * @param unit   the {@link TimeUnit}.
-     * @return the instance itself.
+     * @param amount    the maximum idle timeout.
+     * @param unit      the {@link TimeUnit}.
+     * @return          the instance itself.
      */
     public final B maxIdleTimeout(long amount, TimeUnit unit) {
         this.maxIdleTimeout = unit.toMillis(checkPositiveOrZero(amount, "amount"));
@@ -151,12 +149,12 @@ public abstract class QuicCodecBuilder<B extends QuicCodecBuilder<B>> {
 
     /**
      * See <a href="https://github.com/cloudflare/quiche/blob/35e38d987c1e53ef2bd5f23b754c50162b5adac8/src/lib.rs#L669">
-     * set_max_send_udp_payload_size</a>.
-     * <p>
+     *     set_max_send_udp_payload_size</a>.
+     *
      * The default and minimum value is 1200.
      *
-     * @param size the maximum payload size that is advertised to the remote peer.
-     * @return the instance itself.
+     * @param size    the maximum payload size that is advertised to the remote peer.
+     * @return        the instance itself.
      */
     public final B maxSendUdpPayloadSize(long size) {
         this.maxSendUdpPayloadSize = checkPositiveOrZero(size, "value");
@@ -165,12 +163,12 @@ public abstract class QuicCodecBuilder<B extends QuicCodecBuilder<B>> {
 
     /**
      * See <a href="https://github.com/cloudflare/quiche/blob/35e38d987c1e53ef2bd5f23b754c50162b5adac8/src/lib.rs#L662">
-     * set_max_recv_udp_payload_size</a>.
-     * <p>
+     *     set_max_recv_udp_payload_size</a>.
+     *
      * The default value is 65527.
      *
-     * @param size the maximum payload size that is advertised to the remote peer.
-     * @return the instance itself.
+     * @param size    the maximum payload size that is advertised to the remote peer.
+     * @return        the instance itself.
      */
     public final B maxRecvUdpPayloadSize(long size) {
         this.maxRecvUdpPayloadSize = checkPositiveOrZero(size, "value");
@@ -179,12 +177,12 @@ public abstract class QuicCodecBuilder<B extends QuicCodecBuilder<B>> {
 
     /**
      * See <a href="https://docs.rs/quiche/0.6.0/quiche/struct.Config.html#method.set_initial_max_data">
-     * set_initial_max_data</a>.
-     * <p>
+     *     set_initial_max_data</a>.
+     *
      * The default value is 0.
      *
-     * @param value the initial maximum data limit.
-     * @return the instance itself.
+     * @param value   the initial maximum data limit.
+     * @return        the instance itself.
      */
     public final B initialMaxData(long value) {
         this.initialMaxData = checkPositiveOrZero(value, "value");
@@ -194,12 +192,12 @@ public abstract class QuicCodecBuilder<B extends QuicCodecBuilder<B>> {
     /**
      * See
      * <a href="https://docs.rs/quiche/0.6.0/quiche/struct.Config.html#method.set_initial_max_stream_data_bidi_local">
-     * set_initial_max_stream_data_bidi_local</a>.
-     * <p>
+     *     set_initial_max_stream_data_bidi_local</a>.
+     *
      * The default value is 0.
      *
-     * @param value the initial maximum data limit for local bidirectional streams.
-     * @return the instance itself.
+     * @param value   the initial maximum data limit for local bidirectional streams.
+     * @return        the instance itself.
      */
     public final B initialMaxStreamDataBidirectionalLocal(long value) {
         this.initialMaxStreamDataBidiLocal = checkPositiveOrZero(value, "value");
@@ -209,12 +207,12 @@ public abstract class QuicCodecBuilder<B extends QuicCodecBuilder<B>> {
     /**
      * See
      * <a href="https://docs.rs/quiche/0.6.0/quiche/struct.Config.html#method.set_initial_max_stream_data_bidi_remote">
-     * set_initial_max_stream_data_bidi_remote</a>.
-     * <p>
+     *     set_initial_max_stream_data_bidi_remote</a>.
+     *
      * The default value is 0.
      *
-     * @param value the initial maximum data limit for remote bidirectional streams.
-     * @return the instance itself.
+     * @param value   the initial maximum data limit for remote bidirectional streams.
+     * @return        the instance itself.
      */
     public final B initialMaxStreamDataBidirectionalRemote(long value) {
         this.initialMaxStreamDataBidiRemote = checkPositiveOrZero(value, "value");
@@ -224,12 +222,12 @@ public abstract class QuicCodecBuilder<B extends QuicCodecBuilder<B>> {
     /**
      * See
      * <a href="https://docs.rs/quiche/0.6.0/quiche/struct.Config.html#method.set_initial_max_stream_data_uni">
-     * set_initial_max_stream_data_uni</a>.
-     * <p>
+     *     set_initial_max_stream_data_uni</a>.
+     *
      * The default value is 0.
      *
-     * @param value the initial maximum data limit for unidirectional streams.
-     * @return the instance itself.
+     * @param value   the initial maximum data limit for unidirectional streams.
+     * @return        the instance itself.
      */
     public final B initialMaxStreamDataUnidirectional(long value) {
         this.initialMaxStreamDataUni = checkPositiveOrZero(value, "value");
@@ -239,12 +237,12 @@ public abstract class QuicCodecBuilder<B extends QuicCodecBuilder<B>> {
     /**
      * See
      * <a href="https://docs.rs/quiche/0.6.0/quiche/struct.Config.html#method.set_initial_max_streams_bidi">
-     * set_initial_max_streams_bidi</a>.
-     * <p>
+     *     set_initial_max_streams_bidi</a>.
+     *
      * The default value is 0.
      *
-     * @param value the initial maximum stream limit for bidirectional streams.
-     * @return the instance itself.
+     * @param value   the initial maximum stream limit for bidirectional streams.
+     * @return        the instance itself.
      */
     public final B initialMaxStreamsBidirectional(long value) {
         this.initialMaxStreamsBidi = checkPositiveOrZero(value, "value");
@@ -254,12 +252,12 @@ public abstract class QuicCodecBuilder<B extends QuicCodecBuilder<B>> {
     /**
      * See
      * <a href="https://docs.rs/quiche/0.6.0/quiche/struct.Config.html#method.set_initial_max_streams_uni">
-     * set_initial_max_streams_uni</a>.
-     * <p>
+     *     set_initial_max_streams_uni</a>.
+     *
      * The default value is 0.
      *
-     * @param value the initial maximum stream limit for unidirectional streams.
-     * @return the instance itself.
+     * @param value   the initial maximum stream limit for unidirectional streams.
+     * @return        the instance itself.
      */
     public final B initialMaxStreamsUnidirectional(long value) {
         this.initialMaxStreamsUni = checkPositiveOrZero(value, "value");
@@ -269,12 +267,12 @@ public abstract class QuicCodecBuilder<B extends QuicCodecBuilder<B>> {
     /**
      * See
      * <a href="https://docs.rs/quiche/0.6.0/quiche/struct.Config.html#method.set_ack_delay_exponent">
-     * set_ack_delay_exponent</a>.
-     * <p>
+     *     set_ack_delay_exponent</a>.
+     *
      * The default value is 3.
      *
-     * @param value the delay exponent used for ACKs.
-     * @return the instance itself.
+     * @param value   the delay exponent used for ACKs.
+     * @return        the instance itself.
      */
     public final B ackDelayExponent(long value) {
         this.ackDelayExponent = checkPositiveOrZero(value, "value");
@@ -284,13 +282,13 @@ public abstract class QuicCodecBuilder<B extends QuicCodecBuilder<B>> {
     /**
      * See
      * <a href="https://docs.rs/quiche/0.6.0/quiche/struct.Config.html#method.set_max_ack_delay">
-     * set_max_ack_delay</a>.
-     * <p>
+     *     set_max_ack_delay</a>.
+     *
      * The default value is 25 milliseconds.
      *
-     * @param amount the max ack delay.
-     * @param unit   the {@link TimeUnit}.
-     * @return the instance itself.
+     * @param amount    the max ack delay.
+     * @param unit      the {@link TimeUnit}.
+     * @return          the instance itself.
      */
     public final B maxAckDelay(long amount, TimeUnit unit) {
         this.maxAckDelay = unit.toMillis(checkPositiveOrZero(amount, "amount"));
@@ -300,12 +298,12 @@ public abstract class QuicCodecBuilder<B extends QuicCodecBuilder<B>> {
     /**
      * See
      * <a href="https://docs.rs/quiche/0.6.0/quiche/struct.Config.html#method.set_disable_active_migration">
-     * set_disable_active_migration</a>.
-     * <p>
+     *     set_disable_active_migration</a>.
+     *
      * The default value is {@code true}.
      *
-     * @param enable {@code true} if migration should be enabled, {@code false} otherwise.
-     * @return the instance itself.
+     * @param enable  {@code true} if migration should be enabled, {@code false} otherwise.
+     * @return        the instance itself.
      */
     public final B activeMigration(boolean enable) {
         this.disableActiveMigration = !enable;
@@ -315,12 +313,12 @@ public abstract class QuicCodecBuilder<B extends QuicCodecBuilder<B>> {
     /**
      * See
      * <a href="https://docs.rs/quiche/0.6.0/quiche/struct.Config.html#method.enable_hystart">
-     * enable_hystart</a>.
-     * <p>
+     *     enable_hystart</a>.
+     *
      * The default value is {@code true}.
      *
-     * @param enable {@code true} if Hystart should be enabled.
-     * @return the instance itself.
+     * @param enable  {@code true} if Hystart should be enabled.
+     * @return        the instance itself.
      */
     public final B hystart(boolean enable) {
         this.enableHystart = enable;
@@ -329,37 +327,39 @@ public abstract class QuicCodecBuilder<B extends QuicCodecBuilder<B>> {
 
     /**
      * Sets the local connection id length that is used.
-     * <p>
+     *
      * The default is 20, which is also the maximum that is supported.
      *
-     * @param value the length of local generated connections ids.
-     * @return the instance itself.
+     * @param value   the length of local generated connections ids.
+     * @return        the instance itself.
      */
     public final B localConnectionIdLength(int value) {
-        this.localConnIdLength = checkInRange(value, 0, Quiche.QUICHE_MAX_CONN_ID_LEN, "value");
+        this.localConnIdLength = checkInRange(value, 0, Quiche.QUICHE_MAX_CONN_ID_LEN,  "value");
         return self();
     }
 
     /**
      * Allows to configure the {@code QUIC version} that should be used.
-     * <p>
+     *
      * The default value is the latest supported version by the underlying library.
      *
      * @param version the {@code QUIC version} to use.
-     * @return the instance itself.
+     * @return        the instance itself.
      */
     public final B version(int version) {
         this.version = version;
         return self();
     }
 
+    private Integer recvQueueLen;
+    private Integer sendQueueLen;
+
     /**
      * If configured this will enable <a href="https://tools.ietf.org/html/draft-ietf-quic-datagram-01">
-     * Datagram support.</a>
-     *
-     * @param recvQueueLen the RECV queue length.
-     * @param sendQueueLen the SEND queue length.
-     * @return the instance itself.
+     *     Datagram support.</a>
+     * @param recvQueueLen  the RECV queue length.
+     * @param sendQueueLen  the SEND queue length.
+     * @return              the instance itself.
      */
     public final B datagram(int recvQueueLen, int sendQueueLen) {
         checkPositive(recvQueueLen, "recvQueueLen");
@@ -372,11 +372,11 @@ public abstract class QuicCodecBuilder<B extends QuicCodecBuilder<B>> {
 
     /**
      * The {@link QuicSslContext} that will be used to create {@link QuicSslEngine}s for {@link QuicChannel}s.
-     * <p>
+     *
      * If you need a more flexible way to provide {@link QuicSslEngine}s use {@link #sslEngineProvider(Function)}.
      *
-     * @param sslContext the context.
-     * @return the instance itself.
+     * @param sslContext    the context.
+     * @return              the instance itself.
      */
     public final B sslContext(QuicSslContext sslContext) {
         if (server != sslContext.isServer()) {
@@ -390,8 +390,8 @@ public abstract class QuicCodecBuilder<B extends QuicCodecBuilder<B>> {
      * The {@link Function} that will return the {@link QuicSslEngine} that should be used for the
      * {@link QuicChannel}.
      *
-     * @param sslEngineProvider the provider.
-     * @return the instance itself.
+     * @param sslEngineProvider    the provider.
+     * @return                      the instance itself.
      */
     public final B sslEngineProvider(Function<QuicChannel, ? extends QuicSslEngine> sslEngineProvider) {
         this.sslEngineProvider = sslEngineProvider;
@@ -443,11 +443,11 @@ public abstract class QuicCodecBuilder<B extends QuicCodecBuilder<B>> {
     /**
      * Builds the QUIC codec.
      *
-     * @param config             the {@link QuicheConfig} that should be used.
-     * @param sslContextProvider the context provider
-     * @param localConnIdLength  the local connection id length.
-     * @param flushStrategy      the {@link FlushStrategy}  that should be used.
-     * @return the {@link ChannelHandler} which acts as codec.
+     * @param config                the {@link QuicheConfig} that should be used.
+     * @param sslContextProvider    the context provider
+     * @param localConnIdLength     the local connection id length.
+     * @param flushStrategy         the {@link FlushStrategy}  that should be used.
+     * @return                      the {@link ChannelHandler} which acts as codec.
      */
     protected abstract ChannelHandler build(QuicheConfig config,
                                             Function<QuicChannel, ? extends QuicSslEngine> sslContextProvider,

@@ -20,5 +20,4 @@ package io.netty.incubator.codec.quic;
  * {@link io.netty.channel.ChannelPipeline#fireUserEventTriggered(Object)} to notify the user about supported
  * QUIC extensions by the remote peer.
  */
-public interface QuicExtensionEvent extends QuicEvent {
-}
+public interface QuicExtensionEvent extends QuicEvent { }

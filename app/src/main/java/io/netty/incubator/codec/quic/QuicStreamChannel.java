@@ -15,13 +15,13 @@
  */
 package io.netty.incubator.codec.quic;
 
-import java.net.SocketAddress;
-
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelProgressivePromise;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.socket.DuplexChannel;
+
+import java.net.SocketAddress;
 
 /**
  * A QUIC stream.
@@ -188,7 +188,7 @@ public interface QuicStreamChannel extends DuplexChannel {
     /**
      * Shortcut for calling {@link #shutdownInput(int, ChannelPromise)} and {@link #shutdownInput(int, ChannelPromise)}.
      *
-     * @param error   the error to send.
+     * @param error the error to send.
      * @param promise will be notified on completion.
      * @return the future that is notified on completion.
      */
@@ -209,7 +209,7 @@ public interface QuicStreamChannel extends DuplexChannel {
      * Shutdown the input of the stream with the given error code. This means a {@code STOP_SENDING} frame will
      * be send to the remote peer and all data received will be discarded.
      *
-     * @param error   the error to send as part of the {@code STOP_SENDING} frame.
+     * @param error the error to send as part of the {@code STOP_SENDING} frame.
      * @param promise will be notified on completion.
      * @return the future that is notified on completion.
      */
@@ -238,7 +238,7 @@ public interface QuicStreamChannel extends DuplexChannel {
      * should use {@link #shutdownOutput(ChannelPromise)} which will shutdown the output by sending a {@code FIN}
      * and so signal a clean shutdown.
      *
-     * @param error   the error to send as part of the {@code RESET_STREAM} frame.
+     * @param error the error to send as part of the {@code RESET_STREAM} frame.
      * @param promise will be notified on completion.
      * @return the future that is notified on completion.
      */
@@ -283,8 +283,8 @@ public interface QuicStreamChannel extends DuplexChannel {
      * Update the priority of the stream. A stream's priority determines the order in which stream data is sent
      * on the wire (streams with lower priority are sent first).
      *
-     * @param priority the priority.
-     * @return future that is notified once the operation completes.
+     * @param priority  the priority.
+     * @return          future that is notified once the operation completes.
      */
     default ChannelFuture updatePriority(QuicStreamPriority priority) {
         return updatePriority(priority, newPromise());
@@ -294,9 +294,9 @@ public interface QuicStreamChannel extends DuplexChannel {
      * Update the priority of the stream. A stream's priority determines the order in which stream data is sent
      * on the wire (streams with lower priority are sent first).
      *
-     * @param priority the priority.
-     * @param promise  notified once operations completes.
-     * @return future that is notified once the operation completes.
+     * @param priority  the priority.
+     * @param promise   notified once operations completes.
+     * @return          future that is notified once the operation completes.
      */
     ChannelFuture updatePriority(QuicStreamPriority priority, ChannelPromise promise);
 

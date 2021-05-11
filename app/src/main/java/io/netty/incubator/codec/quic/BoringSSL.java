@@ -15,14 +15,16 @@
  */
 package io.netty.incubator.codec.quic;
 
+import io.netty.handler.ssl.util.LazyX509Certificate;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.cert.X509Certificate;
 
-import io.netty.handler.ssl.util.LazyX509Certificate;
-
 final class BoringSSL {
+    private BoringSSL() { }
+
     static final int SSL_VERIFY_NONE = BoringSSLNativeStaticallyReferencedJniMethods.ssl_verify_none();
     static final int SSL_VERIFY_FAIL_IF_NO_PEER_CERT = BoringSSLNativeStaticallyReferencedJniMethods
             .ssl_verify_fail_if_no_peer_cert();
@@ -34,8 +36,6 @@ final class BoringSSL {
             BoringSSLNativeStaticallyReferencedJniMethods.x509_v_err_cert_not_yet_valid();
     static final int X509_V_ERR_CERT_REVOKED = BoringSSLNativeStaticallyReferencedJniMethods.x509_v_err_cert_revoked();
     static final int X509_V_ERR_UNSPECIFIED = BoringSSLNativeStaticallyReferencedJniMethods.x509_v_err_unspecified();
-    private BoringSSL() {
-    }
 
     static long SSLContext_new(boolean server, String[] applicationProtocols,
                                BoringSSLHandshakeCompleteCallback handshakeCompleteCallback,
@@ -68,29 +68,19 @@ final class BoringSSL {
                                                byte[] applicationProtocols, Object handshakeCompleteCallback,
                                                Object certificateCallback, Object verifyCallback, int verifyDepth,
                                                byte[][] subjectNames);
-
     static native void SSLContext_set_early_data_enabled(long context, boolean enabled);
-
     static native long SSLContext_setSessionCacheSize(long context, long size);
-
     static native long SSLContext_setSessionCacheTimeout(long context, long size);
-
     static native void SSLContext_free(long context);
-
     static long SSL_new(long context, boolean server, String hostname) {
         return SSL_new0(context, server, tlsExtHostName(hostname));
     }
-
     static native long SSL_new0(long context, boolean server, String hostname);
-
     static native void SSL_free(long ssl);
-
     static native long EVP_PKEY_parse(byte[] bytes, String pass);
-
     static native void EVP_PKEY_free(long key);
 
     static native long CRYPTO_BUFFER_stack_new(long ssl, byte[][] bytes);
-
     static native void CRYPTO_BUFFER_stack_free(long chain);
 
     static native String ERR_last_error();

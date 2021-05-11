@@ -5,10 +5,10 @@ import androidx.annotation.Nullable;
 
 import java.util.Stack;
 
-import io.core.Closeable;
-import io.core.ClosedException;
 import io.ipfs.IPFS;
 import io.ipfs.cid.Cid;
+import io.core.Closeable;
+import io.core.ClosedException;
 import io.ipfs.unixfs.FSNode;
 
 public class Seeker {

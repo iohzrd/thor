@@ -15,6 +15,22 @@
  */
 package io.netty.incubator.codec.quic;
 
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.handler.ssl.ApplicationProtocolNegotiator;
+import io.netty.handler.ssl.ClientAuth;
+import io.netty.handler.ssl.SslHandler;
+import io.netty.util.AbstractReferenceCounted;
+import io.netty.util.ReferenceCounted;
+
+import javax.crypto.NoSuchPaddingException;
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.SSLSessionContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509ExtendedKeyManager;
+import javax.net.ssl.X509TrustManager;
 import java.io.File;
 import java.io.IOException;
 import java.security.InvalidAlgorithmParameterException;
@@ -34,23 +50,6 @@ import java.util.NoSuchElementException;
 import java.util.concurrent.Executor;
 import java.util.function.LongFunction;
 
-import javax.crypto.NoSuchPaddingException;
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLSession;
-import javax.net.ssl.SSLSessionContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
-import javax.net.ssl.X509ExtendedKeyManager;
-import javax.net.ssl.X509TrustManager;
-
-import io.netty.buffer.ByteBufAllocator;
-import io.netty.handler.ssl.ApplicationProtocolNegotiator;
-import io.netty.handler.ssl.ClientAuth;
-import io.netty.handler.ssl.SslHandler;
-import io.netty.util.AbstractReferenceCounted;
-import io.netty.util.ReferenceCounted;
-
 import static io.netty.util.internal.ObjectUtil.checkNotNull;
 
 final class QuicheQuicSslContext extends QuicSslContext {
@@ -58,11 +57,11 @@ final class QuicheQuicSslContext extends QuicSslContext {
     private final boolean server;
     @SuppressWarnings("deprecation")
     private final ApplicationProtocolNegotiator apn;
+    private long sessionCacheSize;
+    private long sessionTimeout;
     private final QuicheQuicSslSessionContext sessionCtx;
     private final QuicheQuicSslEngineMap engineMap = new QuicheQuicSslEngineMap();
     private final NativeSslContext nativeSslContext;
-    private long sessionCacheSize;
-    private long sessionTimeout;
 
     QuicheQuicSslContext(boolean server, long sessionTimeout, long sessionCacheSize,
                          ClientAuth clientAuth, TrustManagerFactory trustManagerFactory,
@@ -109,8 +108,17 @@ final class QuicheQuicSslContext extends QuicSslContext {
         sessionCtx = new QuicheQuicSslSessionContext(this);
     }
 
+    private X509ExtendedKeyManager chooseKeyManager(KeyManagerFactory keyManagerFactory) {
+        for (KeyManager manager: keyManagerFactory.getKeyManagers()) {
+            if (manager instanceof X509ExtendedKeyManager) {
+                return (X509ExtendedKeyManager) manager;
+            }
+        }
+        throw new IllegalArgumentException("No X509ExtendedKeyManager included");
+    }
+
     private static X509TrustManager chooseTrustManager(TrustManagerFactory trustManagerFactory) {
-        for (TrustManager manager : trustManagerFactory.getTrustManagers()) {
+        for (TrustManager manager: trustManagerFactory.getTrustManagers()) {
             if (manager instanceof X509TrustManager) {
                 return (X509TrustManager) manager;
             }
@@ -118,7 +126,7 @@ final class QuicheQuicSslContext extends QuicSslContext {
         throw new IllegalArgumentException("No X509TrustManager included");
     }
 
-    static X509Certificate[] toX509Certificates0(File file) throws CertificateException {
+     static X509Certificate[] toX509Certificates0(File file) throws CertificateException {
         return toX509Certificates(file);
     }
 
@@ -146,15 +154,6 @@ final class QuicheQuicSslContext extends QuicSslContext {
             default:
                 throw new Error(mode.toString());
         }
-    }
-
-    private X509ExtendedKeyManager chooseKeyManager(KeyManagerFactory keyManagerFactory) {
-        for (KeyManager manager : keyManagerFactory.getKeyManagers()) {
-            if (manager instanceof X509ExtendedKeyManager) {
-                return (X509ExtendedKeyManager) manager;
-            }
-        }
-        throw new IllegalArgumentException("No X509ExtendedKeyManager included");
     }
 
     QuicheQuicConnection createConnection(LongFunction<Long> connectionCreator, QuicheQuicSslEngine engine) {
@@ -309,23 +308,23 @@ final class QuicheQuicSslContext extends QuicSslContext {
         }
 
         @Override
-        public int getSessionTimeout() {
-            return (int) context.sessionTimeout();
-        }
-
-        @Override
         public void setSessionTimeout(int seconds) throws IllegalArgumentException {
             context.setSessionTimeout(seconds);
         }
 
         @Override
-        public int getSessionCacheSize() {
-            return (int) context.sessionCacheSize();
+        public int getSessionTimeout() {
+            return (int) context.sessionTimeout();
         }
 
         @Override
         public void setSessionCacheSize(int size) throws IllegalArgumentException {
             context.setSessionCacheSize(size);
+        }
+
+        @Override
+        public int getSessionCacheSize() {
+            return (int) context.sessionCacheSize();
         }
     }
 

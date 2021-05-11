@@ -102,7 +102,7 @@ public class AddrInfo {
             //LogUtils.error(TAG, "QUIC " + address.toString());
             this.addresses.add(address); // TODO
         } else {
-            LogUtils.info(TAG, address.toString());
+            LogUtils.info(TAG,  address.toString());
         }
 
         /*this.addresses.add(address);*/

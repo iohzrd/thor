@@ -13,6 +13,8 @@
 package io.crypto
 
 import crypto.pb.Crypto
+import io.crypto.PrivKey
+import io.crypto.PubKey
 import org.bouncycastle.crypto.generators.Ed25519KeyPairGenerator
 import org.bouncycastle.crypto.params.Ed25519KeyGenerationParameters
 import org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters

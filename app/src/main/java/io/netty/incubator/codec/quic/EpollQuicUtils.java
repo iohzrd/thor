@@ -15,20 +15,19 @@
  */
 package io.netty.incubator.codec.quic;
 
-import java.net.InetSocketAddress;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.epoll.SegmentedDatagramPacket;
 import io.netty.channel.socket.DatagramPacket;
 import io.netty.util.internal.ObjectUtil;
+
+import java.net.InetSocketAddress;
 
 /**
  * Class that provides utility methods to setup {@code QUIC} when using the {@code EPOLL} transport.
  */
 public final class EpollQuicUtils {
 
-    private EpollQuicUtils() {
-    }
+    private EpollQuicUtils() { }
 
     /**
      * Return a new {@link SegmentedDatagramPacketAllocator} that can be used while using

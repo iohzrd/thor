@@ -13,6 +13,9 @@
 package io.crypto
 
 import crypto.pb.Crypto
+import io.crypto.PrivKey
+import io.crypto.PubKey
+import io.crypto.*
 import io.core.toBytes
 import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPrivateKey
 import org.bouncycastle.jce.ECNamedCurveTable
@@ -21,6 +24,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec
 import org.bouncycastle.jce.spec.ECNamedCurveSpec
 import org.bouncycastle.jce.spec.ECPublicKeySpec
+import java.lang.RuntimeException
 import java.security.*
 import java.security.spec.PKCS8EncodedKeySpec
 import java.security.spec.X509EncodedKeySpec

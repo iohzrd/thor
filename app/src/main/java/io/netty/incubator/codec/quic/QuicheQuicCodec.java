@@ -15,14 +15,6 @@
  */
 package io.netty.incubator.codec.quic;
 
-import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
-import java.util.ArrayDeque;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Queue;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
@@ -32,34 +24,39 @@ import io.netty.channel.socket.DatagramPacket;
 import io.netty.util.internal.logging.InternalLogger;
 import io.netty.util.internal.logging.InternalLoggerFactory;
 
+import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
+import java.util.ArrayDeque;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Queue;
+
 /**
  * Abstract base class for QUIC codecs.
  */
 abstract class QuicheQuicCodec extends ChannelDuplexHandler {
     private static final InternalLogger LOGGER = InternalLoggerFactory.getInstance(QuicheQuicCodec.class);
-    protected final QuicheConfig config;
-    protected final int localConnIdLength;
+
     private final Map<ByteBuffer, QuicheQuicChannel> connections = new HashMap<>();
     private final Queue<QuicheQuicChannel> needsFireChannelReadComplete = new ArrayDeque<>();
     private final int maxTokenLength;
     private final FlushStrategy flushStrategy;
+
     private MessageSizeEstimator.Handle estimatorHandle;
     private QuicHeaderParser headerParser;
     private QuicHeaderParser.QuicHeaderProcessor parserCallback;
     private int pendingBytes;
     private int pendingPackets;
 
+    protected final QuicheConfig config;
+    protected final int localConnIdLength;
+
     QuicheQuicCodec(QuicheConfig config, int localConnIdLength, int maxTokenLength, FlushStrategy flushStrategy) {
         this.config = config;
         this.localConnIdLength = localConnIdLength;
         this.maxTokenLength = maxTokenLength;
         this.flushStrategy = flushStrategy;
-    }
-
-    private static void removeIfClosed(Iterator<?> iterator, QuicheQuicChannel current) {
-        if (current.freeIfClosed()) {
-            iterator.remove();
-        }
     }
 
     protected QuicheQuicChannel getChannel(ByteBuffer key) {
@@ -141,17 +138,17 @@ abstract class QuicheQuicCodec extends ChannelDuplexHandler {
     /**
      * Handle a QUIC packet and return {@code true} if we need to call {@link ChannelHandlerContext#flush()}.
      *
-     * @param ctx       the {@link ChannelHandlerContext}.
-     * @param sender    the {@link InetSocketAddress} of the sender of the QUIC packet
+     * @param ctx the {@link ChannelHandlerContext}.
+     * @param sender the {@link InetSocketAddress} of the sender of the QUIC packet
      * @param recipient the {@link InetSocketAddress} of the recipient of the QUIC packet
-     * @param type      the type of the packet.
-     * @param version   the QUIC version
-     * @param scid      the source connection id.
-     * @param dcid      the destination connection id
-     * @param token     the token
+     * @param type the type of the packet.
+     * @param version the QUIC version
+     * @param scid the source connection id.
+     * @param dcid the destination connection id
+     * @param token the token
      * @return {@code true} if we need to call {@link ChannelHandlerContext#flush()} before there is no new events
-     * for this handler in the current eventloop run.
-     * @throws Exception thrown if there is an error during processing.
+     *                      for this handler in the current eventloop run.
+     * @throws Exception  thrown if there is an error during processing.
      */
     protected abstract QuicheQuicChannel quicPacketRead(ChannelHandlerContext ctx, InetSocketAddress sender,
                                                         InetSocketAddress recipient, QuicPacketType type, int version,
@@ -159,7 +156,7 @@ abstract class QuicheQuicCodec extends ChannelDuplexHandler {
 
     @Override
     public final void channelReadComplete(ChannelHandlerContext ctx) {
-        for (; ; ) {
+        for (;;) {
             QuicheQuicChannel channel = needsFireChannelReadComplete.poll();
             if (channel == null) {
                 break;
@@ -191,11 +188,11 @@ abstract class QuicheQuicCodec extends ChannelDuplexHandler {
     }
 
     @Override
-    public final void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) {
+    public final void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise)  {
         int size = estimatorHandle.size(msg);
         if (size > 0) {
             pendingBytes += size;
-            pendingPackets++;
+            pendingPackets ++;
         }
         try {
             ctx.write(msg, promise);
@@ -219,5 +216,11 @@ abstract class QuicheQuicCodec extends ChannelDuplexHandler {
         pendingBytes = 0;
         pendingPackets = 0;
         ctx.flush();
+    }
+
+    private static void removeIfClosed(Iterator<?> iterator, QuicheQuicChannel current) {
+        if (current.freeIfClosed()) {
+            iterator.remove();
+        }
     }
 }

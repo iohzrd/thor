@@ -1,11 +1,12 @@
 package io.ipfs.multiformats
 
+import io.ipfs.host.PeerId
 import io.core.readUvarint
 import io.core.toByteArray
 import io.core.toByteBuf
-import io.ipfs.host.PeerId
 import io.netty.buffer.ByteBuf
 import io.netty.buffer.Unpooled
+import java.lang.RuntimeException
 
 /**
  * Class implements Multiaddress concept: https://github.com/multiformats/multiaddr

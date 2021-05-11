@@ -43,7 +43,7 @@ public final class QuicChannelOption<T> extends ChannelOption<T> {
     public static final ChannelOption<SegmentedDatagramPacketAllocator> SEGMENTED_DATAGRAM_PACKET_ALLOCATOR =
             valueOf(QuicChannelOption.class, "SEGMENTED_DATAGRAM_PACKET_ALLOCATOR");
 
-    @SuppressWarnings({"deprecation"})
+    @SuppressWarnings({ "deprecation" })
     private QuicChannelOption() {
         super(null);
     }

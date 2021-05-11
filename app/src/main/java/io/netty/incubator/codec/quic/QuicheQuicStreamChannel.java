@@ -15,10 +15,6 @@
  */
 package io.netty.incubator.codec.quic;
 
-import java.net.SocketAddress;
-import java.nio.channels.ClosedChannelException;
-import java.util.concurrent.RejectedExecutionException;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
@@ -44,6 +40,10 @@ import io.netty.util.ReferenceCountUtil;
 import io.netty.util.internal.StringUtil;
 import io.netty.util.internal.logging.InternalLogger;
 import io.netty.util.internal.logging.InternalLoggerFactory;
+
+import java.net.SocketAddress;
+import java.nio.channels.ClosedChannelException;
+import java.util.concurrent.RejectedExecutionException;
 
 /**
  * {@link QuicStreamChannel} implementation that uses <a href="https://github.com/cloudflare/quiche">quiche</a>.
@@ -405,10 +405,10 @@ final class QuicheQuicStreamChannel extends DefaultAttributeMap implements QuicS
     }
 
     private final class QuicStreamChannelUnsafe implements Unsafe {
-        private final ChannelPromise voidPromise = new VoidChannelPromise(
-                QuicheQuicStreamChannel.this, false);
         private RecvByteBufAllocator.Handle recvHandle;
 
+        private final ChannelPromise voidPromise = new VoidChannelPromise(
+                QuicheQuicStreamChannel.this, false);
         @Override
         public void connect(SocketAddress remote, SocketAddress local, ChannelPromise promise) {
             assert eventLoop().inEventLoop();
@@ -601,7 +601,7 @@ final class QuicheQuicStreamChannel extends DefaultAttributeMap implements QuicS
                     return false;
                 }
                 boolean written = false;
-                for (; ; ) {
+                for (;;) {
                     Object msg = queue.current();
                     if (msg == null) {
                         break;
@@ -629,7 +629,7 @@ final class QuicheQuicStreamChannel extends DefaultAttributeMap implements QuicS
         public void write(Object msg, ChannelPromise promise) {
             assert eventLoop().inEventLoop();
             if (msg instanceof ByteBuf) {
-                ByteBuf buffer = (ByteBuf) msg;
+                ByteBuf buffer = (ByteBuf)  msg;
                 if (!buffer.isDirect()) {
                     ByteBuf tmpBuffer = alloc().directBuffer(buffer.readableBytes());
                     tmpBuffer.writeBytes(buffer, buffer.readerIndex(), buffer.readableBytes());

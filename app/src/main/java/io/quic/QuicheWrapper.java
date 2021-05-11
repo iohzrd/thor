@@ -19,9 +19,10 @@ public class QuicheWrapper {
     public static QuicStreamPriority NORMAL = new QuicStreamPriority(10, false);
 
 
+
     public static void streamPriority(long connection, long streamId, QuicStreamPriority priority) {
         try {
-            streamPriority(connection, streamId, (byte) priority.urgency(), priority.isIncremental());
+           streamPriority(connection, streamId, (byte) priority.urgency(), priority.isIncremental());
         } catch (Throwable cause) {
             LogUtils.error(QuicheWrapper.class.getSimpleName(), cause);
         }
@@ -32,9 +33,8 @@ public class QuicheWrapper {
         Quiche.throwIfError(Quiche.quiche_conn_stream_priority(connection, streamId,
                 priority, incremental));
     }
-
     private static ByteBuf direct(@NonNull ByteBuf msg) {
-        ByteBuf buffer = msg;
+        ByteBuf buffer = (ByteBuf) msg;
         if (!buffer.isDirect()) {
             DirectIoByteBufAllocator allocator = new DirectIoByteBufAllocator(ByteBufAllocator.DEFAULT);
             ByteBuf tmpBuffer = allocator.directBuffer(buffer.readableBytes());

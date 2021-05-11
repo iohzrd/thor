@@ -10,10 +10,10 @@ import bitswap.pb.MessageOuterClass;
 import identify.pb.IdentifyOuterClass;
 import io.LogUtils;
 import io.ipfs.IPFS;
+import io.quic.QuicheWrapper;
 import io.netty.buffer.ByteBuf;
 import io.netty.incubator.codec.quic.QuicChannel;
 import io.netty.util.ReferenceCountUtil;
-import io.quic.QuicheWrapper;
 
 
 public class StreamHandler {
@@ -42,11 +42,11 @@ public class StreamHandler {
     public void channelRead(QuicChannel quicChannel, long streamId, ByteBuf byteBuf, boolean fin) {
 
         try {
-            if (byteBuf.capacity() > 0) {
+            if( byteBuf.capacity() > 0 ) {
                 channelRead0(quicChannel, streamId, byteBuf);
             }
 
-            if (fin) {
+            if(fin) {
                 QuicheWrapper.streamShutdown(connection,
                         streamId, true, true, 0);
                 close(streamId);

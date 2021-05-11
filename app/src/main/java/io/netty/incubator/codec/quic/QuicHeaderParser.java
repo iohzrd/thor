@@ -15,20 +15,20 @@
  */
 package io.netty.incubator.codec.quic;
 
-import java.net.InetSocketAddress;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+
+import java.net.InetSocketAddress;
 
 import static io.netty.incubator.codec.quic.Quiche.allocateNativeOrder;
 import static io.netty.util.internal.ObjectUtil.checkPositiveOrZero;
 
 /**
  * Parses the QUIC packet header and notifies a callback once parsing was successful.
- * <p>
+ *
  * Once the parser is not needed anymore the user needs to call {@link #close()} to ensure all resources are
  * released. Failed to do so may lead to memory leaks.
- * <p>
+ *
  * This class can be used for advanced use-cases. Usually you want to just use {@link QuicClientCodecBuilder} or
  * {@link QuicServerCodecBuilder}.
  */
@@ -84,16 +84,16 @@ public final class QuicHeaderParser implements AutoCloseable {
      * which means the caller of this method is expected to call {@link ByteBuf#release()} once the packet is not needed
      * anymore.
      *
-     * @param sender    the sender of the packet. This is directly passed to the {@link QuicHeaderProcessor} once
-     *                  parsing was successful.
-     * @param recipient the recipient of the packet.This is directly passed to the {@link QuicHeaderProcessor} once
-     *                  parsing was successful.
-     * @param packet    raw QUIC packet itself. The ownership of the packet is not transferred. This is directly
-     *                  passed to the {@link QuicHeaderProcessor} once parsing was successful.
-     * @param callback  the {@link QuicHeaderProcessor} that is called once a QUIC packet could be parsed and all
-     *                  the header values be extracted.
-     * @throws Exception thrown if we couldn't parse the header or if the {@link QuicHeaderProcessor} throws an
-     *                   exception.
+     * @param sender        the sender of the packet. This is directly passed to the {@link QuicHeaderProcessor} once
+     *                      parsing was successful.
+     * @param recipient     the recipient of the packet.This is directly passed to the {@link QuicHeaderProcessor} once
+     *                      parsing was successful.
+     * @param packet        raw QUIC packet itself. The ownership of the packet is not transferred. This is directly
+     *                      passed to the {@link QuicHeaderProcessor} once parsing was successful.
+     * @param callback      the {@link QuicHeaderProcessor} that is called once a QUIC packet could be parsed and all
+     *                      the header values be extracted.
+     * @throws Exception    thrown if we couldn't parse the header or if the {@link QuicHeaderProcessor} throws an
+     *                      exception.
      */
     public void parse(InetSocketAddress sender,
                       InetSocketAddress recipient, ByteBuf packet, QuicHeaderProcessor callback) throws Exception {
@@ -137,21 +137,21 @@ public final class QuicHeaderParser implements AutoCloseable {
         /**
          * Called when a QUIC packet header was parsed.
          *
-         * @param sender    the sender of the QUIC packet.
-         * @param recipient the recipient of the QUIC packet.
-         * @param packet    the raw QUIC packet. The ownership is not transferred, which means you will need to call
-         *                  {@link ByteBuf#retain()} on it if you want to keep a reference after this method
-         *                  returns.
-         * @param type      the type of the packet.
-         * @param version   the version of the packet.
-         * @param scid      the source connection id. The ownership is not transferred and its generally not allowed
-         *                  to hold any references to this buffer outside of the method as it will be re-used.
-         * @param dcid      the destination connection id. The ownership is not transferred and its generally not
-         *                  allowed to hold any references to this buffer outside of the method as it will be
-         *                  re-used.
-         * @param token     the token.The ownership is not transferred and its generally not allowed
-         *                  to hold any references to this buffer outside of the method as it will be re-used.
-         * @throws Exception throws if an error happens during processing.
+         * @param sender        the sender of the QUIC packet.
+         * @param recipient     the recipient of the QUIC packet.
+         * @param packet        the raw QUIC packet. The ownership is not transferred, which means you will need to call
+         *                      {@link ByteBuf#retain()} on it if you want to keep a reference after this method
+         *                      returns.
+         * @param type          the type of the packet.
+         * @param version       the version of the packet.
+         * @param scid          the source connection id. The ownership is not transferred and its generally not allowed
+         *                      to hold any references to this buffer outside of the method as it will be re-used.
+         * @param dcid          the destination connection id. The ownership is not transferred and its generally not
+         *                      allowed to hold any references to this buffer outside of the method as it will be
+         *                      re-used.
+         * @param token         the token.The ownership is not transferred and its generally not allowed
+         *                      to hold any references to this buffer outside of the method as it will be re-used.
+         * @throws Exception    throws if an error happens during processing.
          */
         void process(InetSocketAddress sender, InetSocketAddress recipient, ByteBuf packet,
                      QuicPacketType type, int version, ByteBuf scid, ByteBuf dcid, ByteBuf token) throws Exception;

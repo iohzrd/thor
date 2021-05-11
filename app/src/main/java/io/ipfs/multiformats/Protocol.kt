@@ -1,10 +1,10 @@
 package io.ipfs.multiformats
 
+import io.ipfs.host.PeerId
 import io.core.readUvarint
 import io.core.toByteArray
 import io.core.toByteBuf
 import io.core.writeUvarint
-import io.ipfs.host.PeerId
 import io.netty.buffer.ByteBuf
 import org.apache.commons.codec.binary.Base32
 import java.net.Inet4Address

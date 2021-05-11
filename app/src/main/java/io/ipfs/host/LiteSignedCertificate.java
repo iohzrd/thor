@@ -43,10 +43,10 @@ import java.util.Objects;
 import java.util.Random;
 
 import crypto.pb.Crypto;
-import io.crypto.EcdsaKt;
-import io.crypto.Ed25519Kt;
 import io.crypto.PrivKey;
 import io.crypto.PubKey;
+import io.crypto.EcdsaKt;
+import io.crypto.Ed25519Kt;
 import io.crypto.RsaKt;
 import io.crypto.Secp256k1Kt;
 import io.netty.buffer.ByteBuf;

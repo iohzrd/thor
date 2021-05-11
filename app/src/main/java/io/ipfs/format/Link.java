@@ -4,9 +4,9 @@ import androidx.annotation.NonNull;
 
 import java.util.Objects;
 
+import io.ipfs.cid.Cid;
 import io.core.Closeable;
 import io.core.ClosedException;
-import io.ipfs.cid.Cid;
 
 public class Link {
 

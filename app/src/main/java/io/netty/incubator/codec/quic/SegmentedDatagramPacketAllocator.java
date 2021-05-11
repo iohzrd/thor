@@ -15,10 +15,10 @@
  */
 package io.netty.incubator.codec.quic;
 
-import java.net.InetSocketAddress;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.socket.DatagramPacket;
+
+import java.net.InetSocketAddress;
 
 /**
  * Used to allocate datagram packets that use UDP_SEGMENT (GSO).
@@ -45,7 +45,7 @@ public interface SegmentedDatagramPacketAllocator {
      * The maximum number of segments to use per packet. By default this is {@code 10} but this may be overriden by
      * the implementation of the interface.
      *
-     * @return the segments.
+     * @return  the segments.
      */
     default int maxNumSegments() {
         return 10;
@@ -57,7 +57,7 @@ public interface SegmentedDatagramPacketAllocator {
      * @param buffer        the {@link ByteBuf} that is used as content.
      * @param segmentSize   the size of each segment.
      * @param remoteAddress the remote address to send to.
-     * @return the packet.
+     * @return              the packet.
      */
     DatagramPacket newPacket(ByteBuf buffer, int segmentSize, InetSocketAddress remoteAddress);
 }

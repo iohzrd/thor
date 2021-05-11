@@ -28,6 +28,15 @@ public interface FlushStrategy {
     FlushStrategy DEFAULT = afterNumBytes(20 * Quic.MAX_DATAGRAM_SIZE);
 
     /**
+     * Returns {@code true} if a flush should happen now, {@code false} otherwise.
+     *
+     * @param numPackets    the number of packets that were written since the last flush.
+     * @param numBytes      the number of bytes that were written since the last flush.
+     * @return              {@code true} if a flush should be done now, {@code false} otherwise.
+     */
+    boolean shouldFlushNow(int numPackets, int numBytes);
+
+    /**
      * Implementation that flushes after a number of bytes.
      *
      * @param bytes the number of bytes after which we should issue a flush.
@@ -48,13 +57,4 @@ public interface FlushStrategy {
         ObjectUtil.checkPositive(packets, "packets");
         return (numPackets, numBytes) -> numPackets > packets;
     }
-
-    /**
-     * Returns {@code true} if a flush should happen now, {@code false} otherwise.
-     *
-     * @param numPackets the number of packets that were written since the last flush.
-     * @param numBytes   the number of bytes that were written since the last flush.
-     * @return {@code true} if a flush should be done now, {@code false} otherwise.
-     */
-    boolean shouldFlushNow(int numPackets, int numBytes);
 }

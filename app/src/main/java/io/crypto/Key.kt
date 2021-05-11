@@ -14,6 +14,8 @@ package io.crypto
 
 import com.google.protobuf.ByteString
 import crypto.pb.Crypto
+import io.crypto.*
+import java.lang.RuntimeException
 import java.security.SecureRandom
 import crypto.pb.Crypto.PrivateKey as PbPrivateKey
 import crypto.pb.Crypto.PublicKey as PbPublicKey

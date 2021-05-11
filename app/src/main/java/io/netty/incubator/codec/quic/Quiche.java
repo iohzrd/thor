@@ -15,12 +15,6 @@
  */
 package io.netty.incubator.codec.quic;
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-
-import javax.net.ssl.SSLException;
-import javax.net.ssl.SSLHandshakeException;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelPromise;
@@ -29,107 +23,12 @@ import io.netty.util.internal.PlatformDependent;
 import io.netty.util.internal.logging.InternalLogger;
 import io.netty.util.internal.logging.InternalLoggerFactory;
 
+import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLHandshakeException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+
 public final class Quiche {
-    /**
-     * See <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#L266">QUICHE_SHUTDOWN_READ</a>.
-     */
-    public static final int QUICHE_SHUTDOWN_READ = QuicheNativeStaticallyReferencedJniMethods.quiche_shutdown_read();
-    /**
-     * See <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#L267">QUICHE_SHUTDOWN_WRITE</a>.
-     */
-    public static final int QUICHE_SHUTDOWN_WRITE = QuicheNativeStaticallyReferencedJniMethods.quiche_shutdown_write();
-    static final int QUICHE_PROTOCOL_VERSION = QuicheNativeStaticallyReferencedJniMethods.quiche_protocol_version();
-    static final int QUICHE_MAX_CONN_ID_LEN = QuicheNativeStaticallyReferencedJniMethods.quiche_max_conn_id_len();
-    /**
-     * See <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#L59">QUICHE_ERR_DONE</a>.
-     */
-    static final int QUICHE_ERR_DONE = QuicheNativeStaticallyReferencedJniMethods.quiche_err_done();
-    /**
-     * See
-     * <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#L62">QUICHE_ERR_BUFFER_TOO_SHORT</a>.
-     */
-    static final int QUICHE_ERR_BUFFER_TOO_SHORT =
-            QuicheNativeStaticallyReferencedJniMethods.quiche_err_buffer_too_short();
-    /**
-     * See
-     * <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#L65">QUICHE_ERR_UNKNOWN_VERSION</a>.
-     */
-    static final int QUICHE_ERR_UNKNOWN_VERSION =
-            QuicheNativeStaticallyReferencedJniMethods.quiche_err_unknown_version();
-    /**
-     * See
-     * <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#L69">QUICHE_ERR_INVALID_FRAME</a>.
-     */
-    static final int QUICHE_ERR_INVALID_FRAME = QuicheNativeStaticallyReferencedJniMethods.quiche_err_invalid_frame();
-    /**
-     * See
-     * <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#L72">QUICHE_ERR_INVALID_PACKET</a>.
-     */
-    static final int QUICHE_ERR_INVALID_PACKET = QuicheNativeStaticallyReferencedJniMethods.quiche_err_invalid_packet();
-    /**
-     * See
-     * <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#L76">QUICHE_ERR_INVALID_STATE</a>.
-     */
-    static final int QUICHE_ERR_INVALID_STATE = QuicheNativeStaticallyReferencedJniMethods.quiche_err_invalid_state();
-    /**
-     * See <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#L80">
-     * QUICHE_ERR_INVALID_STREAM_STATE</a>.
-     */
-    static final int QUICHE_ERR_INVALID_STREAM_STATE =
-            QuicheNativeStaticallyReferencedJniMethods.quiche_err_invalid_stream_state();
-    /**
-     * See <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#L83">
-     * QUICHE_ERR_INVALID_TRANSPORT_PARAM</a>.
-     */
-    static final int QUICHE_ERR_INVALID_TRANSPORT_PARAM =
-            QuicheNativeStaticallyReferencedJniMethods.quiche_err_invalid_transport_param();
-    /**
-     * See <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#L86">
-     * QUICHE_ERR_CRYPTO_FAIL</a>.
-     */
-    static final int QUICHE_ERR_CRYPTO_FAIL = QuicheNativeStaticallyReferencedJniMethods.quiche_err_crypto_fail();
-    /**
-     * See <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#L89">
-     * QUICHE_ERR_TLS_FAIL</a>.
-     */
-    static final int QUICHE_ERR_TLS_FAIL = QuicheNativeStaticallyReferencedJniMethods.quiche_err_tls_fail();
-    /**
-     * See <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#L92">
-     * QUICHE_ERR_FLOW_CONTROL</a>.
-     */
-    static final int QUICHE_ERR_FLOW_CONTROL = QuicheNativeStaticallyReferencedJniMethods.quiche_err_flow_control();
-    /**
-     * See <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#95">
-     * QUICHE_ERR_STREAM_LIMIT</a>.
-     */
-    static final int QUICHE_ERR_STREAM_LIMIT = QuicheNativeStaticallyReferencedJniMethods.quiche_err_stream_limit();
-    /**
-     * See <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#98">
-     * QUICHE_ERR_FINAL_SIZE</a>.
-     */
-    static final int QUICHE_ERR_FINAL_SIZE = QuicheNativeStaticallyReferencedJniMethods.quiche_err_final_size();
-    /**
-     * See <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#101">
-     * QUICHE_ERR_CONGESTION_CONTROL</a>.
-     */
-    static final int QUICHE_ERR_CONGESTION_CONTROL =
-            QuicheNativeStaticallyReferencedJniMethods.quiche_err_congestion_control();
-    /**
-     * See <a href="https://github.com/cloudflare/quiche/blob/0.7.0/include/quiche.h#L98">
-     * QUICHE_ERR_STREAM_STOPPED</a>.
-     */
-    static final int QUICHE_ERR_STREAM_STOPPED =
-            QuicheNativeStaticallyReferencedJniMethods.quiche_err_stream_stopped();
-    /**
-     * See <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#L176">
-     * QUICHE_CC_RENO</a>.
-     */
-    static final int QUICHE_CC_RENO = QuicheNativeStaticallyReferencedJniMethods.quiche_cc_reno();
-    /**
-     * See <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#L177">
-     * QUICHE_CC_CUBIC</a>.
-     */
-    static final int QUICHE_CC_CUBIC = QuicheNativeStaticallyReferencedJniMethods.quiche_cc_cubic();
     private static final InternalLogger logger = InternalLoggerFactory.getInstance(Quiche.class);
     private static final boolean DEBUG_LOGGING_ENABLED = logger.isDebugEnabled();
 
@@ -162,13 +61,9 @@ public final class Quiche {
             quiche_enable_debug_logging(new QuicheLogger(logger));
         }
     }
-
-    private Quiche() {
-    }
-
     private static void tryLoadClasses(Class<?> loadingClass, Class<?>... classes) {
         ClassLoader loader = PlatformDependent.getClassLoader(loadingClass);
-        for (Class<?> clazz : classes) {
+        for (Class<?> clazz: classes) {
             tryLoadClass(loader, clazz.getName());
         }
     }
@@ -183,7 +78,6 @@ public final class Quiche {
             // Ignore
         }
     }
-
     private static void loadNativeLibrary() {
         // This needs to be kept in sync with what is defined in netty_quic_quiche.c
         String libName = "netty_quiche";
@@ -202,6 +96,126 @@ public final class Quiche {
         }
     }
 
+    static final int QUICHE_PROTOCOL_VERSION = QuicheNativeStaticallyReferencedJniMethods.quiche_protocol_version();
+    static final int QUICHE_MAX_CONN_ID_LEN = QuicheNativeStaticallyReferencedJniMethods.quiche_max_conn_id_len();
+
+    /**
+     * See <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#L266">QUICHE_SHUTDOWN_READ</a>.
+     */
+    public static final int QUICHE_SHUTDOWN_READ = QuicheNativeStaticallyReferencedJniMethods.quiche_shutdown_read();
+
+    /**
+     * See <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#L267">QUICHE_SHUTDOWN_WRITE</a>.
+     */
+    public static final int QUICHE_SHUTDOWN_WRITE = QuicheNativeStaticallyReferencedJniMethods.quiche_shutdown_write();
+
+    /**
+     * See <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#L59">QUICHE_ERR_DONE</a>.
+     */
+    static final int QUICHE_ERR_DONE = QuicheNativeStaticallyReferencedJniMethods.quiche_err_done();
+
+    /**
+     * See
+     * <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#L62">QUICHE_ERR_BUFFER_TOO_SHORT</a>.
+     */
+    static final int QUICHE_ERR_BUFFER_TOO_SHORT =
+            QuicheNativeStaticallyReferencedJniMethods.quiche_err_buffer_too_short();
+
+    /**
+     * See
+     * <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#L65">QUICHE_ERR_UNKNOWN_VERSION</a>.
+     */
+    static final int QUICHE_ERR_UNKNOWN_VERSION =
+            QuicheNativeStaticallyReferencedJniMethods.quiche_err_unknown_version();
+
+    /**
+     * See
+     * <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#L69">QUICHE_ERR_INVALID_FRAME</a>.
+     */
+    static final int QUICHE_ERR_INVALID_FRAME = QuicheNativeStaticallyReferencedJniMethods.quiche_err_invalid_frame();
+
+    /**
+     * See
+     * <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#L72">QUICHE_ERR_INVALID_PACKET</a>.
+     */
+    static final int QUICHE_ERR_INVALID_PACKET = QuicheNativeStaticallyReferencedJniMethods.quiche_err_invalid_packet();
+
+    /**
+     * See
+     * <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#L76">QUICHE_ERR_INVALID_STATE</a>.
+     */
+    static final int QUICHE_ERR_INVALID_STATE = QuicheNativeStaticallyReferencedJniMethods.quiche_err_invalid_state();
+
+    /**
+     * See <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#L80">
+     *     QUICHE_ERR_INVALID_STREAM_STATE</a>.
+     */
+    static final int QUICHE_ERR_INVALID_STREAM_STATE =
+            QuicheNativeStaticallyReferencedJniMethods.quiche_err_invalid_stream_state();
+
+    /**
+     * See <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#L83">
+     *     QUICHE_ERR_INVALID_TRANSPORT_PARAM</a>.
+     */
+    static final int QUICHE_ERR_INVALID_TRANSPORT_PARAM =
+            QuicheNativeStaticallyReferencedJniMethods.quiche_err_invalid_transport_param();
+
+    /**
+     * See <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#L86">
+     *     QUICHE_ERR_CRYPTO_FAIL</a>.
+     */
+    static final int QUICHE_ERR_CRYPTO_FAIL = QuicheNativeStaticallyReferencedJniMethods.quiche_err_crypto_fail();
+
+    /**
+     * See <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#L89">
+     *     QUICHE_ERR_TLS_FAIL</a>.
+     */
+    static final int QUICHE_ERR_TLS_FAIL = QuicheNativeStaticallyReferencedJniMethods.quiche_err_tls_fail();
+
+    /**
+     * See <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#L92">
+     *     QUICHE_ERR_FLOW_CONTROL</a>.
+     */
+    static final int QUICHE_ERR_FLOW_CONTROL = QuicheNativeStaticallyReferencedJniMethods.quiche_err_flow_control();
+
+    /**
+     * See <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#95">
+     *     QUICHE_ERR_STREAM_LIMIT</a>.
+     */
+    static final int QUICHE_ERR_STREAM_LIMIT = QuicheNativeStaticallyReferencedJniMethods.quiche_err_stream_limit();
+
+    /**
+     * See <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#98">
+     *     QUICHE_ERR_FINAL_SIZE</a>.
+     */
+    static final int QUICHE_ERR_FINAL_SIZE = QuicheNativeStaticallyReferencedJniMethods.quiche_err_final_size();
+
+    /**
+     * See <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#101">
+     *     QUICHE_ERR_CONGESTION_CONTROL</a>.
+     */
+    static final int QUICHE_ERR_CONGESTION_CONTROL =
+            QuicheNativeStaticallyReferencedJniMethods.quiche_err_congestion_control();
+
+    /**
+     * See <a href="https://github.com/cloudflare/quiche/blob/0.7.0/include/quiche.h#L98">
+     *     QUICHE_ERR_STREAM_STOPPED</a>.
+     */
+    static final int QUICHE_ERR_STREAM_STOPPED =
+            QuicheNativeStaticallyReferencedJniMethods.quiche_err_stream_stopped();
+
+    /**
+     * See <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#L176">
+     *     QUICHE_CC_RENO</a>.
+     */
+    static final int QUICHE_CC_RENO = QuicheNativeStaticallyReferencedJniMethods.quiche_cc_reno();
+
+    /**
+     * See <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#L177">
+     *     QUICHE_CC_CUBIC</a>.
+     */
+    static final int QUICHE_CC_CUBIC = QuicheNativeStaticallyReferencedJniMethods.quiche_cc_cubic();
+
     /**
      * See <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#L105">quiche_version</a>.
      */
@@ -219,7 +233,6 @@ public final class Quiche {
     static native int quiche_header_info(long bufAddr, int bufLength, int dcil, long versionAddr, long typeAddr,
                                          long scidAddr, long scidLenAddr, long dcidAddr, long dcidLenAddr,
                                          long tokenAddr, long tokenLenAddr);
-
     /**
      * See <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#L215">quiche_negotiate_version</a>.
      */
@@ -240,7 +253,7 @@ public final class Quiche {
 
     /**
      * See <a href="https://github.com/cloudflare/quiche/blob/master/include/quiche.h#L248">
-     * quiche_conn_set_qlog_path</a>.
+     *     quiche_conn_set_qlog_path</a>.
      */
     static native boolean quiche_conn_set_qlog_path(long connAddr, String path, String logTitle, String logDescription);
 
@@ -261,13 +274,13 @@ public final class Quiche {
 
     /**
      * See <a href="https://github.com/cloudflare/quiche/blob/0.7.0/include/quiche.h#L330">
-     * quiche_conn_peer_streams_left_bidi</a>.
+     *     quiche_conn_peer_streams_left_bidi</a>.
      */
     static native long quiche_conn_peer_streams_left_bidi(long connAddr);
 
     /**
      * See <a href="https://github.com/cloudflare/quiche/blob/0.7.0/include/quiche.h#L334">
-     * quiche_conn_peer_streams_left_uni</a>.
+     *     quiche_conn_peer_streams_left_uni</a>.
      */
     static native long quiche_conn_peer_streams_left_uni(long connAddr);
 
@@ -371,7 +384,7 @@ public final class Quiche {
     /**
      * See
      * <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#L329">quiche_stream_iter_next</a>.
-     * <p>
+     *
      * This method will fill the {@code streamIds} array and return the number of streams that were filled into
      * the array. If the number is the same as the length of the array you should call it again until it returns
      * less to ensure you process all the streams later on.
@@ -381,13 +394,14 @@ public final class Quiche {
     /**
      * See
      * <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#L332">quiche_stream_iter_free</a>.
+     *
      */
     static native void quiche_stream_iter_free(long iterAddr);
 
     /**
      * See
      * <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#L358">
-     * quiche_conn_dgram_max_writable_len</a>.
+     *     quiche_conn_dgram_max_writable_len</a>.
      */
     static native int quiche_conn_dgram_max_writable_len(long connAddr);
 
@@ -395,21 +409,21 @@ public final class Quiche {
      * See
      * <a href=https://github.com/cloudflare/quiche/blob/
      * 9d0c677ef1411b24d720b5c8b73bcc94b5535c29/include/quiche.h#L381">
-     * quiche_conn_dgram_recv_front_len</a>.
+     *     quiche_conn_dgram_recv_front_len</a>.
      */
     static native int quiche_conn_dgram_recv_front_len(long connAddr);
 
     /**
      * See
      * <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#L361">
-     * quiche_conn_dgram_recv</a>.
+     *     quiche_conn_dgram_recv</a>.
      */
     static native int quiche_conn_dgram_recv(long connAddr, long buf, int size);
 
     /**
      * See
      * <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#L3651">
-     * quiche_conn_dgram_send</a>.
+     *     quiche_conn_dgram_send</a>.
      */
     static native int quiche_conn_dgram_send(long connAddr, long buf, int size);
 
@@ -422,112 +436,112 @@ public final class Quiche {
     /**
      * See
      * <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#129">
-     * quiche_config_grease</a>.
+     *     quiche_config_grease</a>.
      */
     static native void quiche_config_grease(long configAddr, boolean value);
 
     /**
      * See
      * <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#143">
-     * quiche_config_set_max_idle_timeout</a>.
+     *     quiche_config_set_max_idle_timeout</a>.
      */
     static native void quiche_config_set_max_idle_timeout(long configAddr, long value);
 
     /**
      * See
      * <a href="https://github.com/cloudflare/quiche/blob/0.7.0/include/quiche.h#L150">
-     * quiche_config_set_max_recv_udp_payload_size</a>.
+     *     quiche_config_set_max_recv_udp_payload_size</a>.
      */
     static native void quiche_config_set_max_recv_udp_payload_size(long configAddr, long value);
 
     /**
      * See
      * <a href="https://github.com/cloudflare/quiche/blob/0.7.0/include/quiche.h#L153">
-     * quiche_config_set_max_recv_udp_payload_size</a>.
+     *     quiche_config_set_max_recv_udp_payload_size</a>.
      */
     static native void quiche_config_set_max_send_udp_payload_size(long configAddr, long value);
 
     /**
      * See
      * <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#149">
-     * quiche_config_set_initial_max_data</a>.
+     *     quiche_config_set_initial_max_data</a>.
      */
     static native void quiche_config_set_initial_max_data(long configAddr, long value);
 
     /**
      * See
      * <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#152">
-     * quiche_config_set_initial_max_stream_data_bidi_local</a>.
+     *     quiche_config_set_initial_max_stream_data_bidi_local</a>.
      */
     static native void quiche_config_set_initial_max_stream_data_bidi_local(long configAddr, long value);
 
     /**
      * See
      * <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#155">
-     * quiche_config_set_initial_max_stream_data_bidi_remote</a>.
+     *     quiche_config_set_initial_max_stream_data_bidi_remote</a>.
      */
     static native void quiche_config_set_initial_max_stream_data_bidi_remote(long configAddr, long value);
 
     /**
      * See
      * <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#158">
-     * quiche_config_set_initial_max_stream_data_uni</a>.
+     *     quiche_config_set_initial_max_stream_data_uni</a>.
      */
     static native void quiche_config_set_initial_max_stream_data_uni(long configAddr, long value);
 
     /**
      * See
      * <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#161">
-     * quiche_config_set_initial_max_streams_bidi</a>.
+     *     quiche_config_set_initial_max_streams_bidi</a>.
      */
     static native void quiche_config_set_initial_max_streams_bidi(long configAddr, long value);
 
     /**
      * See
      * <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#164">
-     * quiche_config_set_initial_max_streams_uni</a>.
+     *     quiche_config_set_initial_max_streams_uni</a>.
      */
     static native void quiche_config_set_initial_max_streams_uni(long configAddr, long value);
 
     /**
      * See
      * <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#167">
-     * quiche_config_set_ack_delay_exponent</a>.
+     *     quiche_config_set_ack_delay_exponent</a>.
      */
     static native void quiche_config_set_ack_delay_exponent(long configAddr, long value);
 
     /**
      * See
      * <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#170">
-     * quiche_config_set_max_ack_delay</a>.
+     *     quiche_config_set_max_ack_delay</a>.
      */
     static native void quiche_config_set_max_ack_delay(long configAddr, long value);
 
     /**
      * See
      * <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#173">
-     * quiche_config_set_disable_active_migration</a>.
+     *     quiche_config_set_disable_active_migration</a>.
      */
     static native void quiche_config_set_disable_active_migration(long configAddr, boolean value);
 
     /**
      * See
      * <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#181">
-     * quiche_config_set_cc_algorithm</a>.
+     *     quiche_config_set_cc_algorithm</a>.
      */
     static native void quiche_config_set_cc_algorithm(long configAddr, int algo);
 
     /**
      * See
      * <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#184">
-     * quiche_config_enable_hystart</a>.
+     *     quiche_config_enable_hystart</a>.
      */
     static native void quiche_config_enable_hystart(long configAddr, boolean value);
 
     /**
      * See
      * <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#L187">
-     * quiche_config_enable_dgram</a>.
+     *     quiche_config_enable_dgram</a>.
      */
     static native void quiche_config_enable_dgram(long configAddr, boolean enable,
                                                   int recv_queue_len, int send_queue_len);
@@ -535,7 +549,7 @@ public final class Quiche {
     /**
      * See
      * <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#192">
-     * quiche_config_free</a>.
+     *     quiche_config_free</a>.
      */
     static native void quiche_config_free(long configAddr);
 
@@ -594,9 +608,9 @@ public final class Quiche {
 
     public static boolean throwIfError(int res) throws Exception {
         if (res < 0) {
-            if (res == Quiche.QUICHE_ERR_DONE) {
-                return true;
-            }
+             if (res == Quiche.QUICHE_ERR_DONE) {
+                 return true;
+             }
             throw Quiche.newException(res);
         }
         return false;
@@ -609,4 +623,6 @@ public final class Quiche {
             promise.setSuccess();
         }
     }
+
+    private Quiche() { }
 }

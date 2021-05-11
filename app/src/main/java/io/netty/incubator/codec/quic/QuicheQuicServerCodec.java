@@ -15,11 +15,6 @@
  */
 package io.netty.incubator.codec.quic;
 
-import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
-import java.util.Map;
-import java.util.function.Function;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
@@ -29,6 +24,11 @@ import io.netty.util.AttributeKey;
 import io.netty.util.CharsetUtil;
 import io.netty.util.internal.logging.InternalLogger;
 import io.netty.util.internal.logging.InternalLoggerFactory;
+
+import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
+import java.util.Map;
+import java.util.function.Function;
 
 import static io.netty.incubator.codec.quic.Quiche.allocateNativeOrder;
 
@@ -106,8 +106,8 @@ final class QuicheQuicServerCodec extends QuicheQuicCodec {
     }
 
     private QuicheQuicChannel handleServer(ChannelHandlerContext ctx, InetSocketAddress sender,
-                                           @SuppressWarnings("unused") QuicPacketType type, int version,
-                                           ByteBuf scid, ByteBuf dcid, ByteBuf token) throws Exception {
+                                 @SuppressWarnings("unused") QuicPacketType type, int version,
+                                 ByteBuf scid, ByteBuf dcid, ByteBuf token) throws Exception {
         if (!Quiche.quiche_version_is_supported(version)) {
             // Version is not supported, try to negotiate it.
             ByteBuf out = ctx.alloc().directBuffer(Quic.MAX_DATAGRAM_SIZE);
@@ -214,7 +214,7 @@ final class QuicheQuicServerCodec extends QuicheQuicCodec {
         QuicheQuicConnection connection = quicSslEngine.createConnection(ssl ->
                 Quiche.quiche_conn_new_with_tls(scidAddr, scidLen, ocidAddr, ocidLen,
                         config.nativeAddress(), ssl, true));
-        if (connection == null) {
+        if (connection  == null) {
             channel.unsafe().closeForcibly();
             LOGGER.debug("quiche_accept failed");
             return null;

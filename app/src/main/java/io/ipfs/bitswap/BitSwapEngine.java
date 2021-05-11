@@ -13,9 +13,9 @@ import java.util.Set;
 
 import bitswap.pb.MessageOuterClass;
 import io.LogUtils;
-import io.core.TimeoutCloseable;
 import io.ipfs.IPFS;
 import io.ipfs.cid.Cid;
+import io.core.TimeoutCloseable;
 import io.ipfs.format.Block;
 import io.ipfs.format.BlockStore;
 import io.ipfs.host.PeerId;

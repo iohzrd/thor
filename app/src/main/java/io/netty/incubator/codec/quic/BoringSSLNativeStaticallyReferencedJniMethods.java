@@ -16,22 +16,15 @@
 package io.netty.incubator.codec.quic;
 
 final class BoringSSLNativeStaticallyReferencedJniMethods {
-    private BoringSSLNativeStaticallyReferencedJniMethods() {
-    }
-
     static native int ssl_verify_none();
-
     static native int ssl_verify_peer();
-
     static native int ssl_verify_fail_if_no_peer_cert();
 
     static native int x509_v_ok();
-
     static native int x509_v_err_cert_has_expired();
-
     static native int x509_v_err_cert_not_yet_valid();
-
     static native int x509_v_err_cert_revoked();
-
     static native int x509_v_err_unspecified();
+
+    private BoringSSLNativeStaticallyReferencedJniMethods() { }
 }

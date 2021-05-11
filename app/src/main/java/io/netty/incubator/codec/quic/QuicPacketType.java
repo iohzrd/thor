@@ -59,11 +59,11 @@ public enum QuicPacketType {
     /**
      * Return the {@link QuicPacketType} for the given byte.
      *
-     * @param type the byte that represent the type.
-     * @return the {@link QuicPacketType}.
+     * @param type  the byte that represent the type.
+     * @return      the {@link QuicPacketType}.
      */
     static QuicPacketType of(byte type) {
-        switch (type) {
+        switch(type) {
             case 1:
                 return INITIAL;
             case 2:
