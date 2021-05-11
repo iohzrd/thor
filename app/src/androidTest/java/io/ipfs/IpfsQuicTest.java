@@ -92,7 +92,7 @@ public class IpfsQuicTest {
 
         Multiaddr multiaddr = new Multiaddr("/ip4/0.0.0.0/udp/" + port+ "/quic");
 
-        Future<QuicChannel> future = ipfs.getHost().dial(multiaddr, null);// TODO test
+        Future<QuicChannel> future = ipfs.getHost().dial(multiaddr, null);
 
         QuicChannel quicChannel = future.get();
 

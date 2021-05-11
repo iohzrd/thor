@@ -106,7 +106,7 @@ public class IPFS  {
     public static final int LOW_WATER = 50;
     public static final int HIGH_WATER = 300;
     public static final int GRACE_PERIOD = 10;
-    public static final int TIMEOUT_SEND = 1;
+    public static final int TIMEOUT_SEND = 10;
     public static final int TIMEOUT_REQUEST = 30;
     public static final int MIN_PEERS = 10;
     public static final long RESOLVE_MAX_TIME = 30000; // 30 sec
@@ -145,6 +145,7 @@ public class IPFS  {
     public static final int KAD_DHT_BETA = 20;
     public static final String NA = "na";
     public static final String LS = "ls";
+    public static LiteHost HOST;
 
     // rough estimates on expected sizes
     private static final int roughLinkBlockSize = 1 << 13; // 8KB
@@ -457,6 +458,8 @@ public class IPFS  {
 
         BlockStore blockstore = BlockStore.NewBlockstore(blocks);
         this.liteHost = new LiteHost(privateKey, blockstore, port, alpha);
+
+        HOST = liteHost; // shitty hack
         //this.liteHost.start(port); // TODO
 
 

@@ -19,11 +19,11 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.CompositeByteBuf;
 
-final class DirectIoByteBufAllocator implements ByteBufAllocator {
+public final class DirectIoByteBufAllocator implements ByteBufAllocator {
 
     private final ByteBufAllocator wrapped;
 
-    DirectIoByteBufAllocator(ByteBufAllocator wrapped) {
+    public DirectIoByteBufAllocator(ByteBufAllocator wrapped) {
         if (wrapped instanceof DirectIoByteBufAllocator) {
             wrapped = ((DirectIoByteBufAllocator) wrapped).wrapped();
         }

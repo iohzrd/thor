@@ -14,6 +14,7 @@ import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -76,6 +77,7 @@ import io.netty.incubator.codec.quic.QuicChannel;
 import io.netty.incubator.codec.quic.QuicClientCodecBuilder;
 import io.netty.incubator.codec.quic.QuicStreamChannel;
 import io.netty.incubator.codec.quic.QuicStreamType;
+import io.netty.util.AttributeKey;
 import io.netty.util.concurrent.Promise;
 
 
@@ -84,6 +86,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
     private static final Duration DefaultRecordEOL = Duration.ofHours(24);
     private final ConcurrentHashMap<PeerId, Long> metrics = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<PeerId, Long> actives = new ConcurrentHashMap<>();
+    public static final AttributeKey<PeerId> PEER_KEY = AttributeKey.newInstance("PEER_KEY");
     private final Set<PeerId> tags = ConcurrentHashMap.newKeySet();
     private final NioEventLoopGroup group = new NioEventLoopGroup(1);
     @NonNull
@@ -261,7 +264,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
         return conns;
     }
 
-    private void forwardMessage(@NonNull PeerId peerId, @NonNull MessageLite msg){
+    public void forwardMessage(@NonNull PeerId peerId, @NonNull MessageLite msg){
         if (msg instanceof MessageOuterClass.Message) {
             new Thread(() -> {
                 try {
@@ -271,7 +274,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
                 } catch (Throwable throwable) {
                     ReceiveError(peerId, IPFS.BITSWAP_PROTOCOL, "" + throwable.getMessage());
                 }
-            }).start();
+           }).start();
         }
     }
 
@@ -526,7 +529,9 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
                     QuicChannel quic = future.get();
                     Objects.requireNonNull(quic);
 
-                    connection = new LiteConnection(peerId, quic);
+
+
+                    connection = new LiteConnection(quic);
                     quic.closeFuture().addListener(future1 -> connections.remove(peerId));
                     addConnection(connection);
 
@@ -683,6 +688,21 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
         return ret;
     }
 
+
+    public void push(@NonNull PeerId peerId, @NonNull byte[] content) {
+        try {
+            Objects.requireNonNull(peerId);
+            Objects.requireNonNull(content);
+
+            if (pusher != null) {
+                ExecutorService executor = Executors.newSingleThreadExecutor();
+                executor.submit(() -> pusher.push(peerId, new String(content)));
+            }
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable);
+        }
+
+    }
     // TODO evaluate if it makes sens
     public int evalMaxResponseLength(@NonNull String protocol){
         if( protocol.equals(IPFS.IDENTITY_PROTOCOL) ||
@@ -840,8 +860,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
     }
 
 
-    public Promise<QuicChannel> dial(@NonNull Multiaddr multiaddr,
-                                     @Nullable PeerId peerId) throws Exception {
+    public Promise<QuicChannel> dial(@NonNull Multiaddr multiaddr, @NonNull PeerId peerId) throws Exception {
 
         InetAddress inetAddress;
         if (multiaddr.has(Protocol.IP4)) {
@@ -854,9 +873,8 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
         int port = multiaddr.udpPortFromMultiaddr();
 
 
-
         return (Promise<QuicChannel>) QuicChannel.newBootstrap(client)
-
+                .attr(PEER_KEY, peerId)
                 .streamHandler(new ChannelInboundHandlerAdapter() {
                     @Override
                     public void channelActive(ChannelHandlerContext ctx) throws Exception {
@@ -870,8 +888,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
 
                         LogUtils.error(TAG + "CLIENT", "Sreaming ID " + quicChannel.remoteAddress().streamId());
 
-                        quicChannel.pipeline().addLast(new DataStreamHandler(LiteHost.this,
-                                peerId, pusher));
+                        quicChannel.pipeline().addLast(new DataStreamHandler(LiteHost.this, pusher));
                     }
                 })
                 .remoteAddress(new InetSocketAddress(inetAddress, port))
@@ -880,8 +897,28 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
 
     }
 
+    @NonNull
+    private Multiaddr transform(@NonNull SocketAddress socketAddress){
 
-    IdentifyOuterClass.Identify createIdentity(@NonNull Multiaddr observed) {
+        InetSocketAddress inetSocketAddress = (InetSocketAddress) socketAddress;
+        InetAddress inetAddress = inetSocketAddress.getAddress();
+        boolean ipv6 = false;
+        if(inetAddress instanceof Inet6Address){
+            ipv6 = true;
+        }
+        int port = inetSocketAddress.getPort();
+        String multiaddress = "";
+        if(ipv6){
+            multiaddress = multiaddress.concat("/ip6/");
+        } else {
+            multiaddress = multiaddress.concat("/ip4/");
+        }
+        multiaddress = multiaddress + inetAddress.getHostAddress() + "/udp/" + port + "/quic";
+        return new Multiaddr(multiaddress);
+
+    }
+
+    IdentifyOuterClass.Identify createIdentity(@NonNull SocketAddress socketAddress) {
 
         IdentifyOuterClass.Identify.Builder builder = IdentifyOuterClass.Identify.newBuilder()
                 .setAgentVersion(IPFS.AGENT)
@@ -897,7 +934,12 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
         for (String protocol : protocols) {
             builder.addProtocols(protocol);
         }
-        builder.setObservedAddr(ByteString.copyFrom(observed.getBytes()));
+        try {
+            Multiaddr observed = transform(socketAddress);
+            builder.setObservedAddr(ByteString.copyFrom(observed.getBytes()));
+        } catch (Throwable throwable){
+            LogUtils.error(TAG, throwable);
+        }
         return builder.build();
     }
 
@@ -1003,10 +1045,9 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
 
     public static class LiteConnection implements Connection {
         private final QuicChannel channel;
-        private final PeerId peerId;
 
-        public LiteConnection(@NonNull PeerId peerId, @NonNull QuicChannel channel) {
-            this.peerId = peerId;
+
+        public LiteConnection(@NonNull QuicChannel channel) {
             this.channel = channel;
         }
 
@@ -1023,10 +1064,11 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
             return channel;
         }
 
+
         @NotNull
         @Override
         public PeerId remoteId() {
-            return peerId;
+            return channel.attr(LiteHost.PEER_KEY).get();
         }
 
         @Override

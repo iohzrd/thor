@@ -28,7 +28,7 @@ import javax.net.ssl.SSLHandshakeException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-final class Quiche {
+public final class Quiche {
     private static final InternalLogger logger = InternalLoggerFactory.getInstance(Quiche.class);
     private static final boolean DEBUG_LOGGING_ENABLED = logger.isDebugEnabled();
 
@@ -102,12 +102,12 @@ final class Quiche {
     /**
      * See <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#L266">QUICHE_SHUTDOWN_READ</a>.
      */
-    static final int QUICHE_SHUTDOWN_READ = QuicheNativeStaticallyReferencedJniMethods.quiche_shutdown_read();
+    public static final int QUICHE_SHUTDOWN_READ = QuicheNativeStaticallyReferencedJniMethods.quiche_shutdown_read();
 
     /**
      * See <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#L267">QUICHE_SHUTDOWN_WRITE</a>.
      */
-    static final int QUICHE_SHUTDOWN_WRITE = QuicheNativeStaticallyReferencedJniMethods.quiche_shutdown_write();
+    public static final int QUICHE_SHUTDOWN_WRITE = QuicheNativeStaticallyReferencedJniMethods.quiche_shutdown_write();
 
     /**
      * See <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#L59">QUICHE_ERR_DONE</a>.
@@ -304,13 +304,13 @@ final class Quiche {
     /**
      * See <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#L262">quiche_conn_stream_send</a>.
      */
-    static native int quiche_conn_stream_send(long connAddr, long streamId, long bufAddr, int bufLen, boolean fin);
+    public static native int quiche_conn_stream_send(long connAddr, long streamId, long bufAddr, int bufLen, boolean fin);
 
     /**
      * See
      * <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#L271">quiche_conn_stream_shutdown</a>.
      */
-    static native int quiche_conn_stream_shutdown(long connAddr, long streamId, int direction, long err);
+    public static native int quiche_conn_stream_shutdown(long connAddr, long streamId, int direction, long err);
 
     /**
      * See
@@ -564,13 +564,13 @@ final class Quiche {
     /**
      * Returns the memory address if the {@link ByteBuf}
      */
-    static long memoryAddress(ByteBuf buf) {
+    public static long memoryAddress(ByteBuf buf) {
         assert buf.isDirect();
         return buf.hasMemoryAddress() ? buf.memoryAddress() :
                 buffer_memory_address(buf.internalNioBuffer(buf.readerIndex(), buf.readableBytes()));
     }
 
-    static long memoryAddress(ByteBuffer buf) {
+    public static long memoryAddress(ByteBuffer buf) {
         assert buf.isDirect();
         return buffer_memory_address(buf);
     }
@@ -606,7 +606,7 @@ final class Quiche {
         return reason;
     }
 
-    static boolean throwIfError(int res) throws Exception {
+    public static boolean throwIfError(int res) throws Exception {
         if (res < 0) {
              if (res == Quiche.QUICHE_ERR_DONE) {
                  return true;

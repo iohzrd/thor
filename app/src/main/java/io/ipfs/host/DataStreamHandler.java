@@ -8,6 +8,7 @@ import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import bitswap.pb.MessageOuterClass;
 import identify.pb.IdentifyOuterClass;
 import io.LogUtils;
 import io.ipfs.IPFS;
@@ -16,7 +17,7 @@ import io.libp2p.core.multiformats.Multiaddr;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.incubator.codec.quic.QuicStreamChannel;
+import io.netty.incubator.codec.quic.QuicChannel;
 
 public class DataStreamHandler extends SimpleChannelInboundHandler<Object> {
     private static final String TAG = DataStreamHandler.class.getSimpleName();
@@ -25,12 +26,9 @@ public class DataStreamHandler extends SimpleChannelInboundHandler<Object> {
     private String lastProtocol;
     @Nullable
     private final Pusher pusher;
-    @Nullable
-    private final PeerId peerId; // TODO must not be null
 
-    public DataStreamHandler(@NonNull LiteHost host, @Nullable PeerId peerId, @Nullable Pusher pusher) {
+    public DataStreamHandler(@NonNull LiteHost host,  @Nullable Pusher pusher) {
         this.host = host;
-        this.peerId = peerId;
         this.pusher = pusher;
     }
 
@@ -52,6 +50,7 @@ public class DataStreamHandler extends SimpleChannelInboundHandler<Object> {
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, Object value) throws Exception {
 
+        QuicChannel quicChannel = (QuicChannel) ctx.channel().parent();
 
         ByteBuf msg = (ByteBuf) value;
         Objects.requireNonNull(msg);
@@ -72,23 +71,15 @@ public class DataStreamHandler extends SimpleChannelInboundHandler<Object> {
                 } else if (token.equals(IPFS.BITSWAP_PROTOCOL)) {
                     lastProtocol = IPFS.BITSWAP_PROTOCOL;
                     ctx.writeAndFlush(DataHandler.writeToken(IPFS.BITSWAP_PROTOCOL)).get();
-
-                    // TODO
                 } else if (token.equals(IPFS.IDENTITY_PROTOCOL)) {
                     //lastProtocol = IPFS.IDENTITY_PROTOCOL;
                     ctx.write(DataHandler.writeToken(IPFS.IDENTITY_PROTOCOL));
 
                     try {
-                        // TODO this is not correct
-                        Multiaddr multiaddr = new Multiaddr(
-                                "/ip4/127.0.0.1/udp/5001/quic");
-
                         IdentifyOuterClass.Identify response =
-                                host.createIdentity(multiaddr);
-                        ctx.writeAndFlush(DataHandler.encode(response))
-                                .addListener(QuicStreamChannel.SHUTDOWN_OUTPUT).get();
-
-                        LogUtils.error(TAG, "WRITE IDENTITY");
+                                host.createIdentity(quicChannel.remoteAddress());
+                        ctx.writeAndFlush(DataHandler.encode(response)).get();
+                        ctx.close().get();
                     } catch (Throwable throwable) {
                         LogUtils.error(TAG, throwable);
                     }
@@ -102,11 +93,12 @@ public class DataStreamHandler extends SimpleChannelInboundHandler<Object> {
                 switch (lastProtocol) {
                     case IPFS.BITSWAP_PROTOCOL:
                         LogUtils.error(TAG, "Found " + lastProtocol);
-                        //TODO
+                        host.forwardMessage(quicChannel.attr(LiteHost.PEER_KEY).get(),
+                                MessageOuterClass.Message.parseFrom(message));
                         break;
                     case IPFS.PUSH_PROTOCOL:
                         LogUtils.error(TAG, "Found " + lastProtocol);
-                        push(message);
+                        host.push(quicChannel.attr(LiteHost.PEER_KEY).get(), message);
                         break;
                     default:
                         throw new Exception("unknown protocol");
@@ -122,19 +114,5 @@ public class DataStreamHandler extends SimpleChannelInboundHandler<Object> {
     }
 
 
-    private void push(@NonNull byte[] content) {
-        try {
-            Objects.requireNonNull(peerId);
-            Objects.requireNonNull(content);
-
-            if (pusher != null) {
-                ExecutorService executor = Executors.newSingleThreadExecutor();
-                executor.submit(() -> pusher.push(peerId, new String(content)));
-            }
-        } catch (Throwable throwable) {
-            LogUtils.error(TAG, throwable);
-        }
-
-    }
 
 }

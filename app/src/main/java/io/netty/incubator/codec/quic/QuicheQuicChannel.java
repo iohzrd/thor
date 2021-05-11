@@ -15,7 +15,24 @@
  */
 package io.netty.incubator.codec.quic;
 
+import java.io.File;
+import java.net.ConnectException;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.nio.ByteBuffer;
+import java.nio.channels.AlreadyConnectedException;
+import java.nio.channels.ClosedChannelException;
+import java.nio.channels.ConnectionPendingException;
+import java.util.Map;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLongFieldUpdater;
+import java.util.function.Function;
+
+import io.LogUtils;
+import io.ipfs.host.StreamHandler;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.AbstractChannel;
 import io.netty.channel.Channel;
@@ -41,22 +58,6 @@ import io.netty.util.concurrent.Promise;
 import io.netty.util.internal.StringUtil;
 import io.netty.util.internal.logging.InternalLogger;
 import io.netty.util.internal.logging.InternalLoggerFactory;
-
-import java.io.File;
-import java.net.ConnectException;
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
-import java.nio.ByteBuffer;
-import java.nio.channels.AlreadyConnectedException;
-import java.nio.channels.ClosedChannelException;
-import java.nio.channels.ConnectionPendingException;
-import java.util.ArrayDeque;
-import java.util.Map;
-import java.util.Queue;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLongFieldUpdater;
-import java.util.function.Function;
 
 /**
  * {@link QuicChannel} implementation that uses <a href="https://github.com/cloudflare/quiche">quiche</a>.
@@ -193,6 +194,7 @@ final class QuicheQuicChannel extends AbstractChannel implements QuicChannel {
 
     void attachQuicheConnection(QuicheQuicConnection connection) {
         this.connection = connection;
+        LogUtils.error(getClass().getSimpleName(), "" + connection.address());
         byte[] traceId = Quiche.quiche_conn_trace_id(connection.address());
         if (traceId != null) {
             this.traceId = new String(traceId);
@@ -1225,6 +1227,89 @@ final class QuicheQuicChannel extends AbstractChannel implements QuicChannel {
             }
         }
 
+
+        void recvStream(long connAddr, long streamId) {
+
+
+            boolean finReceived = false;
+            boolean readable = true;
+            //ChannelPipeline pipeline = pipeline();
+            //  QuicheQuicStreamChannelConfig config = (QuicheQuicStreamChannelConfig) config();
+            // Directly access the DirectIoByteBufAllocator as we need an direct buffer to read into in all cases
+            // even if there is no Unsafe present and the direct buffer is not pooled.
+            DirectIoByteBufAllocator allocator = new DirectIoByteBufAllocator(ByteBufAllocator.DEFAULT);
+            @SuppressWarnings("deprecation")
+            RecvByteBufAllocator.Handle allocHandle = this.recvBufAllocHandle();
+
+
+            // We should loop as long as a read() was requested and there is anything left to read, which means the
+            // stream was marked as readable before.
+            while (readable) {
+                allocHandle.reset(config);
+                ByteBuf byteBuf = null;
+
+                // It's possible that the stream was marked as finish while we iterated over the readable streams
+                // or while we did have auto read disabled. If so we need to ensure we not try to read from it as it
+                // would produce an error.
+                boolean readCompleteNeeded = false;
+                boolean continueReading = true;
+                try {
+                    while (!finReceived && continueReading) {
+                        byteBuf = allocHandle.allocate(allocator);
+                        switch (streamRecv(streamId, byteBuf)) {
+                            case DONE:
+                                // Nothing left to read;
+                                readable = false;
+                                break;
+                            case FIN:
+                                // If we received a FIN we also should mark the channel as non readable as
+                                // there is nothing left to read really.
+                                readable = false;
+                                finReceived = true;
+                                // inputShutdown = true;
+                                break;
+                            case OK:
+                                break;
+                            default:
+                                throw new Error();
+                        }
+                        allocHandle.lastBytesRead(byteBuf.readableBytes());
+                        if (allocHandle.lastBytesRead() <= 0) {
+                            byteBuf.release();
+                            if (finReceived) {
+                                // If we read QuicStreamFrames we should fire an frame through the pipeline
+                                // with an empty buffer but the fin flag set to true.
+                                byteBuf = Unpooled.EMPTY_BUFFER;
+                            } else {
+                                byteBuf = null;
+                                break;
+                            }
+                        }
+                        // We did read one message.
+                        allocHandle.incMessagesRead(1);
+                        readCompleteNeeded = true;
+
+
+                        StreamHandler streamHandler = StreamHandler.getInstance(connAddr);
+                        streamHandler.channelRead(QuicheQuicChannel.this,
+                                streamId, byteBuf, finReceived);
+
+                        byteBuf = null;
+                        continueReading = allocHandle.continueReading();
+                    }
+
+                    if (readCompleteNeeded) {
+                        // TODO readComplete(allocHandle, pipeline);
+                    }
+
+                } catch (Throwable cause) {
+                    readable = false;
+                    //  handleReadException(pipeline, byteBuf, cause, allocHandle, readFrames);
+                }
+            }
+
+        }
+
         private void recvStream() {
             long connAddr = connection.address();
             long readableIterator = Quiche.quiche_conn_readable(connAddr);
@@ -1232,18 +1317,25 @@ final class QuicheQuicChannel extends AbstractChannel implements QuicChannel {
                 try {
                     // For streams we always process all streams when at least on read was requested.
                     if (recvStreamPending && streamReadable) {
-                        for (;;) {
+                        for (; ; ) {
                             int readable = Quiche.quiche_stream_iter_next(
                                     readableIterator, readableStreams);
                             for (int i = 0; i < readable; i++) {
                                 long streamId = readableStreams[i];
+                                //LogUtils.error(getClass().getSimpleName(), "streamID receive : " + streamId);
                                 QuicheQuicStreamChannel streamChannel = streams.get(streamId);
                                 if (streamChannel == null) {
-                                    recvStreamPending = false;
-                                    fireChannelReadCompletePending = true;
-                                    streamChannel = addNewStreamChannel(streamId);
-                                    streamChannel.readable();
-                                    pipeline().fireChannelRead(streamChannel);
+
+                                    if (server || streamId == 1) {
+                                        recvStreamPending = false;
+                                        fireChannelReadCompletePending = true;
+                                        streamChannel = addNewStreamChannel(streamId);
+                                        streamChannel.readable();
+                                        pipeline().fireChannelRead(streamChannel);
+                                    } else {
+
+                                        recvStream(connAddr, streamId);
+                                    }
                                 } else {
                                     streamChannel.readable();
                                 }

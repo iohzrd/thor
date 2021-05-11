@@ -14,4 +14,5 @@ public interface Connection {
     Multiaddr remoteAddress();
 
     QuicChannel channel();
+
 }

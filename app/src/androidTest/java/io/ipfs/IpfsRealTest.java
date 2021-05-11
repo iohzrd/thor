@@ -145,7 +145,7 @@ public class IpfsRealTest {
                 if (num.incrementAndGet() == 5) {
                     atomicBoolean.set(true);
                 }
-            }, Cid.Decode(res.getHash()), atomicBoolean::get);
+            }, Cid.Decode(res.getHash()), new TimeoutCloseable(30));
             fail();
         } catch (ClosedException closedException) {
             assertTrue(atomicBoolean.get());

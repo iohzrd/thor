@@ -13,6 +13,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
+import io.LogUtils;
 import io.ipfs.IPFS;
 import io.ipfs.core.ProtocolIssue;
 import io.ipfs.multibase.Charsets;
@@ -21,7 +22,8 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
 public class DataHandler {
-    private final ByteArrayOutputStream temp = new ByteArrayOutputStream();
+    private static final String TAG = DataHandler.class.getSimpleName();
+    private ByteArrayOutputStream temp = new ByteArrayOutputStream();
     private final Set<String> tokens = new HashSet<>();
     private final int maxLength;
     private boolean isDone = false;
@@ -135,6 +137,7 @@ public class DataHandler {
         try (InputStream inputStream = new ByteArrayInputStream(temp.toByteArray())) {
             expectedLength = (int) Multihash.readVarint(inputStream);
 
+            //LogUtils.error(TAG, "" + expectedLength);
             if (expectedLength > maxLength) {
                 throw new ProtocolIssue();
             }
@@ -146,14 +149,13 @@ public class DataHandler {
                 if (tokenData[read - 1] == '\n') { // expected to be for a token
 
                     // TODO first letter is always / what we are supporting
-                    try {
-                        String token = new String(tokenData, Charsets.UTF_8);
+
+                    String token = new String(tokenData, Charsets.UTF_8);
                         token = token.substring(0, read - 1);
-                        tokens.add(token);
-                    } catch (Throwable throwable) {
-                        message = tokenData;
-                    }
+                    tokens.add(token);
+                    //LogUtils.error(TAG, "token  " + token);
                 } else {
+                    //LogUtils.error(TAG, "token ??? " + new String(tokenData));
                     message = tokenData;
                 }
                 // check if still data to read
@@ -171,15 +173,13 @@ public class DataHandler {
 
     }
 
-    private void merge(DataHandler dataReader) {
+    private void merge(DataHandler dataReader) throws IOException {
         this.expectedLength = dataReader.expectedLength;
         this.isDone = dataReader.isDone;
         this.tokens.addAll(dataReader.tokens);
-        if (this.message == null) {
-            this.message = dataReader.message;
-        } else {
-            throw new RuntimeException("illegal state");
-        }
+        this.message = dataReader.message;
+        this.temp.close();
+        this.temp = dataReader.temp;
     }
 
     public int expectedBytes() {
