@@ -67,7 +67,6 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.handler.timeout.ReadTimeoutException;
-import io.netty.handler.timeout.ReadTimeoutHandler;
 import io.netty.incubator.codec.quic.QuicChannel;
 import io.netty.incubator.codec.quic.QuicClientCodecBuilder;
 import io.netty.incubator.codec.quic.QuicStreamChannel;
@@ -718,7 +717,6 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
                     new SimpleChannelInboundHandler<Object>() {
 
                         private DataHandler reader = new DataHandler(IPFS.BLOCK_SIZE_LIMIT);
-                        private boolean negotiation = true;
 
 
                         @Override
@@ -740,6 +738,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
                         protected void channelRead0(ChannelHandlerContext ctx, Object value)
                                 throws Exception {
 
+
                             ByteBuf msg = (ByteBuf) value;
                             Objects.requireNonNull(msg);
 
@@ -748,65 +747,30 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
                             byte[] data = out.toByteArray();
                             reader.load(data);
 
-                            if (negotiation) {
-                                if (reader.isDone()) {
+                            if (reader.isDone()) {
 
-                                    for (String received : reader.getTokens()) {
-                                        LogUtils.debug(TAG, "request " + received);
-                                        if (Objects.equals(received, IPFS.NA)) {
-                                            throw new ProtocolIssue();
-                                        } else if (Objects.equals(received, IPFS.STREAM_PROTOCOL)) {
-                                        } else if (Objects.equals(received, protocol)) {
-                                            negotiation = false;
-                                            if (message != null) {
-                                                activation.complete(
-                                                        ctx.writeAndFlush(DataHandler.encode(message))
-                                                                .addListener(QuicStreamChannel.SHUTDOWN_OUTPUT).get());
-                                            } else {
-                                                activation.complete(null);
-                                            }
+                                for (String received : reader.getTokens()) {
+                                    LogUtils.debug(TAG, "request " + received);
+                                    if (Objects.equals(received, IPFS.NA)) {
+                                        throw new ProtocolIssue();
+                                    } else if (Objects.equals(received, IPFS.STREAM_PROTOCOL)) {
+                                    } else if (Objects.equals(received, protocol)) {
+
+                                        if (message != null) {
+                                            activation.complete(
+                                                    ctx.writeAndFlush(DataHandler.encode(message))
+                                                            .addListener(QuicStreamChannel.SHUTDOWN_OUTPUT).get());
                                         } else {
-                                            throw new ProtocolIssue();
+                                            activation.complete(null);
                                         }
+                                    } else {
+                                        throw new ProtocolIssue();
                                     }
-
-                                    byte[] message = reader.getMessage();
-
-                                    if (message != null) {
-                                        switch (protocol) {
-                                            case IPFS.RELAY_PROTOCOL:
-                                                LogUtils.debug(TAG, "Found " + protocol);
-                                                ret.complete(relay.pb.Relay.CircuitRelay.parseFrom(message));
-                                                break;
-                                            case IPFS.IDENTITY_PROTOCOL:
-                                                LogUtils.debug(TAG, "Found " + protocol);
-                                                ret.complete(IdentifyOuterClass.Identify.parseFrom(message));
-                                                break;
-                                            case IPFS.BITSWAP_PROTOCOL:
-                                                LogUtils.debug(TAG, "Found " + protocol);
-                                                ret.complete(MessageOuterClass.Message.parseFrom(message));
-                                                break;
-                                            case IPFS.KAD_DHT_PROTOCOL:
-                                                LogUtils.debug(TAG, "Found " + protocol);
-                                                ret.complete(Dht.Message.parseFrom(message));
-                                                break;
-                                            default:
-                                                throw new Exception("unknown protocol");
-                                        }
-                                        ctx.close();
-                                    }
-                                    reader = new DataHandler(evalMaxResponseLength(protocol));
-                                } else {
-                                    LogUtils.debug(TAG, "iteration " + reader.hasRead() + " "
-                                            + reader.expectedBytes() + " " + protocol + " " + ctx.name() + " "
-                                            + ctx.channel().remoteAddress());
                                 }
 
-                            } else {
-                                if (reader.isDone()) {
+                                byte[] message = reader.getMessage();
 
-                                    byte[] message = reader.getMessage();
-
+                                if (message != null) {
                                     switch (protocol) {
                                         case IPFS.RELAY_PROTOCOL:
                                             LogUtils.debug(TAG, "Found " + protocol);
@@ -828,18 +792,18 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
                                             throw new Exception("unknown protocol");
                                     }
                                     ctx.close();
-
-                                } else {
-                                    LogUtils.debug(TAG, "iteration " + reader.hasRead() + " "
-                                            + reader.expectedBytes() + " " + protocol + " " + ctx.name() + " "
-                                            + ctx.channel().remoteAddress());
                                 }
+                                reader = new DataHandler(evalMaxResponseLength(protocol));
+                            } else {
+                                LogUtils.debug(TAG, "iteration " + reader.hasRead() + " "
+                                        + reader.expectedBytes() + " " + protocol + " " + ctx.name() + " "
+                                        + ctx.channel().remoteAddress());
                             }
                         }
                     }).sync().get(IPFS.TIMEOUT_REQUEST, TimeUnit.SECONDS);
 
 
-            streamChannel.pipeline().addFirst(new ReadTimeoutHandler(10, TimeUnit.SECONDS));
+            //streamChannel.pipeline().addFirst(new ReadTimeoutHandler(10, TimeUnit.SECONDS));
 
 
             streamChannel.writeAndFlush(DataHandler.writeToken(IPFS.STREAM_PROTOCOL));
