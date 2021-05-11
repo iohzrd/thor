@@ -13,6 +13,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
+import io.LogUtils;
 import io.ipfs.IPFS;
 import io.core.ProtocolIssue;
 import io.ipfs.multibase.Charsets;
@@ -138,6 +139,7 @@ public class DataHandler {
 
             //LogUtils.error(TAG, "" + expectedLength);
             if (expectedLength > maxLength) {
+                LogUtils.error(TAG, "expected length " + expectedLength + " max length " + maxLength);
                 throw new ProtocolIssue();
             }
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -145,9 +147,8 @@ public class DataHandler {
             if (read == expectedLength) {
                 // token found
                 byte[] tokenData = outputStream.toByteArray();
-                if (tokenData[read - 1] == '\n') { // expected to be for a token
-
-                    // TODO first letter is always / what we are supporting
+                // expected to be for a token
+                if (tokenData[0] == '/' && tokenData[read - 1] == '\n') {
 
                     String token = new String(tokenData, Charsets.UTF_8);
                         token = token.substring(0, read - 1);

@@ -613,7 +613,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
         }
 
         MessageLite res = ctrl.get();
-        LogUtils.error(TAG, "success request  " + res.getClass().getSimpleName());
+        LogUtils.verbose(TAG, "success request  " + res.getClass().getSimpleName());
         return res;
     }
 
@@ -634,7 +634,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
                         @Override
                         public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
                                 throws Exception {
-                            LogUtils.error(TAG+"SEND", cause.getClass().getSimpleName());
+                            LogUtils.error(TAG, cause);
                             ret.completeExceptionally(cause);
                             ctx.close().get();
                         }
@@ -739,7 +739,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
                         @Override
                         public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
                                 throws Exception {
-                            LogUtils.error(TAG, cause.getClass().getSimpleName());
+                            LogUtils.error(TAG, cause);
                             ret.completeExceptionally(cause);
                             activation.completeExceptionally(cause);
                             ctx.close().get();

@@ -50,7 +50,6 @@ public class StreamHandler {
                 QuicheWrapper.streamShutdown(connection,
                         streamId, true, true, 0);
                 close(streamId);
-                LogUtils.error(TAG, "Fin received " + streamId);
             }
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable); // TODO close etc
