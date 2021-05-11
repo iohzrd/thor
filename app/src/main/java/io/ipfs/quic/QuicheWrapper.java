@@ -4,16 +4,35 @@ import androidx.annotation.NonNull;
 
 import java.nio.ByteBuffer;
 
+import io.LogUtils;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelPromise;
 import io.netty.incubator.codec.quic.DirectIoByteBufAllocator;
+import io.netty.incubator.codec.quic.QuicStreamPriority;
 import io.netty.incubator.codec.quic.Quiche;
 import io.netty.util.ReferenceCountUtil;
 
 public class QuicheWrapper {
 
+    public static QuicStreamPriority URGENT = new QuicStreamPriority(5, false);
+    public static QuicStreamPriority NORMAL = new QuicStreamPriority(10, false);
 
+
+    public static void streamPriority(long connection, long streamId, QuicStreamPriority priority) {
+        try {
+           streamPriority(connection, streamId, (byte) priority.urgency(), priority.isIncremental());
+        } catch (Throwable cause) {
+            LogUtils.error(QuicheWrapper.class.getSimpleName(), cause);
+        }
+    }
+
+    private static void streamPriority(long connection, long streamId, byte priority, boolean incremental)
+            throws Exception {
+        Quiche.throwIfError(Quiche.quiche_conn_stream_priority(connection, streamId,
+                priority, incremental));
+    }
     private static ByteBuf direct(@NonNull ByteBuf msg) {
         ByteBuf buffer = (ByteBuf) msg;
         if (!buffer.isDirect()) {

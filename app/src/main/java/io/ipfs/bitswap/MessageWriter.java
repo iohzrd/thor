@@ -47,7 +47,7 @@ public class MessageWriter {
             return;
         }
 
-        network.writeMessage(closeable, peer, message);
+        network.writeMessage(closeable, peer, message, false);
 
 
     }
@@ -77,7 +77,7 @@ public class MessageWriter {
             return;
         }
 
-        network.writeMessage(closeable, peer, message);
+        network.writeMessage(closeable, peer, message, true);
 
     }
 

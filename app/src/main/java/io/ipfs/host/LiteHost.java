@@ -51,6 +51,7 @@ import io.ipfs.dht.KadDHT;
 import io.ipfs.dht.Routing;
 import io.ipfs.exchange.Interface;
 import io.ipfs.format.BlockStore;
+import io.ipfs.quic.QuicheWrapper;
 import io.ipfs.relay.Relay;
 import io.ipns.Ipns;
 import io.libp2p.core.PeerId;
@@ -279,7 +280,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
 
     @Override
     public void writeMessage(@NonNull Closeable closeable, @NonNull PeerId peerId,
-                             @NonNull BitSwapMessage message)
+                             @NonNull BitSwapMessage message, boolean urgentPriority)
             throws ClosedException, ProtocolIssue, TimeoutIssue, ConnectionIssue {
 
 
@@ -287,8 +288,8 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
 
             Connection con = connect(closeable, peerId);
             active(peerId);
-            send(closeable, IPFS.BITSWAP_PROTOCOL, con, message.ToProtoV1().toByteArray());
-            //forwardMessage(peerId, msg);// TODO why has it no success
+            send(closeable, IPFS.BITSWAP_PROTOCOL, con,
+                    message.ToProtoV1().toByteArray(), urgentPriority);
 
         } catch (ClosedException | ConnectionIssue exception) {
             done(peerId);
@@ -551,7 +552,8 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
 
 
     public void send(@NonNull Closeable closeable, @NonNull String protocol,
-                     @NonNull Connection conn, @NonNull byte[] data)
+                     @NonNull Connection conn, @NonNull byte[] data,
+                     boolean urgentPriority)
             throws InterruptedException, ExecutionException, ClosedException {
 
         if (closeable.isClosed()) {
@@ -561,7 +563,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
         QuicChannel quicChannel = conn.channel();
 
 
-        CompletableFuture<Void> ctrl = send(quicChannel, protocol, data);
+        CompletableFuture<Void> ctrl = send(quicChannel, protocol, data, urgentPriority);
 
 
         while (!ctrl.isDone()) {
@@ -610,7 +612,8 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
 
     public CompletableFuture<Void> send(@NonNull QuicChannel quicChannel,
                                         @NonNull String protocol,
-                                        @NonNull byte[] message) {
+                                        @NonNull byte[] message,
+                                        boolean urgentPriority) {
 
 
         LogUtils.error(TAG, protocol);
@@ -670,10 +673,13 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
                         }
                     }).sync().get(IPFS.TIMEOUT_SEND, TimeUnit.SECONDS);
 
+            if(urgentPriority) {
+                streamChannel.updatePriority(QuicheWrapper.URGENT);
+            }
 
-            LogUtils.error(TAG, streamChannel.pipeline().names().toString());
             streamChannel.write(DataHandler.writeToken(IPFS.STREAM_PROTOCOL));
             streamChannel.writeAndFlush(DataHandler.writeToken(protocol));
+
 
 
         } catch (Throwable throwable) {

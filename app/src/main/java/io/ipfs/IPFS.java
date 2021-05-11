@@ -1193,7 +1193,7 @@ public class IPFS  {
         try {
             Connection conn = liteHost.connect(new TimeoutCloseable(TIMEOUT_PUSH), peerId);
             liteHost.send(new TimeoutCloseable(TIMEOUT_PUSH), PUSH_PROTOCOL, conn,
-                    content.getBytes());
+                    content.getBytes(), false);
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         }

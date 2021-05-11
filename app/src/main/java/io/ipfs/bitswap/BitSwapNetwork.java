@@ -19,7 +19,7 @@ public interface BitSwapNetwork {
     boolean connectTo(@NonNull Closeable closeable, @NonNull PeerId peerId) throws ClosedException, ConnectionIssue;
 
     void writeMessage(@NonNull Closeable closeable, @NonNull PeerId peer,
-                      @NonNull BitSwapMessage message)
+                      @NonNull BitSwapMessage message, boolean urgentPriority)
             throws ClosedException, ProtocolIssue, TimeoutIssue, ConnectionIssue;
 
     void findProviders(@NonNull Closeable closeable, @NonNull Routing.Providers providers,

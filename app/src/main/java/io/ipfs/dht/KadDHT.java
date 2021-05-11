@@ -321,7 +321,7 @@ public class KadDHT implements Routing {
 
             long start = System.currentTimeMillis();
 
-            host.send(closeable, IPFS.KAD_DHT_PROTOCOL, con, message.toByteArray());
+            host.send(closeable, IPFS.KAD_DHT_PROTOCOL, con, message.toByteArray(), false);
 
             host.addLatency(p, System.currentTimeMillis() - start);
 

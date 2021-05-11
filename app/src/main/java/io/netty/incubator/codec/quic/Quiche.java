@@ -288,7 +288,7 @@ public final class Quiche {
      * See
      * <a href="https://github.com/cloudflare/quiche/blob/0.7.0/include/quiche.h#L275">quiche_conn_stream_priority</a>.
      */
-    static native int quiche_conn_stream_priority(
+    public static native int quiche_conn_stream_priority(
             long connAddr, long streamId, byte urgency, boolean incremental);
 
     /**
