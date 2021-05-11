@@ -1,4 +1,4 @@
-package io.libp2p.etc.types
+package io.core
 
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty

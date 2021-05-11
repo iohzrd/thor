@@ -16,7 +16,7 @@ import crypto.pb.Crypto
 import io.crypto.PrivKey
 import io.crypto.PubKey
 import io.crypto.*
-import io.libp2p.etc.types.toBytes
+import io.core.toBytes
 import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPrivateKey
 import org.bouncycastle.jce.ECNamedCurveTable
 import org.bouncycastle.jce.ECPointUtil

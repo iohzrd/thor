@@ -12,7 +12,7 @@
  */
 package io.crypto
 
-import io.libp2p.etc.types.toHex
+import io.core.toHex
 import org.bouncycastle.crypto.digests.SHA256Digest
 import org.bouncycastle.crypto.digests.SHA512Digest
 import org.bouncycastle.crypto.macs.HMac

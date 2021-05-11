@@ -1,4 +1,4 @@
-package io.libp2p.etc.types
+package io.core
 
 import com.google.protobuf.ByteString
 import java.lang.Math.min

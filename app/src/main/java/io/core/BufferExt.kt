@@ -1,4 +1,4 @@
-package io.libp2p.etc.types
+package io.core
 
 import io.netty.buffer.ByteBuf
 import io.netty.buffer.Unpooled
