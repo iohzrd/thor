@@ -20,6 +20,7 @@ public class QuicheWrapper {
     public static QuicStreamPriority NORMAL = new QuicStreamPriority(10, false);
 
 
+
     public static void streamPriority(long connection, long streamId, QuicStreamPriority priority) {
         try {
            streamPriority(connection, streamId, (byte) priority.urgency(), priority.isIncremental());

@@ -15,6 +15,8 @@
  */
 package io.netty.incubator.codec.quic;
 
+import androidx.annotation.NonNull;
+
 import java.io.File;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
@@ -34,6 +36,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.AbstractChannel;
+import io.netty.channel.AdaptiveRecvByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
@@ -1227,7 +1230,7 @@ final class QuicheQuicChannel extends AbstractChannel implements QuicChannel {
         }
 
 
-        void recvStream(long connAddr, long streamId) {
+        void readStream(@NonNull StreamHandler streamHandler, long streamId) {
 
 
             boolean finReceived = false;
@@ -1238,58 +1241,57 @@ final class QuicheQuicChannel extends AbstractChannel implements QuicChannel {
             // even if there is no Unsafe present and the direct buffer is not pooled.
             DirectIoByteBufAllocator allocator = new DirectIoByteBufAllocator(ByteBufAllocator.DEFAULT);
             @SuppressWarnings("deprecation")
-            RecvByteBufAllocator.Handle allocHandle = this.recvBufAllocHandle();
+            RecvByteBufAllocator.Handle allocHandle = new AdaptiveRecvByteBufAllocator().newHandle();
 
 
             // We should loop as long as a read() was requested and there is anything left to read, which means the
             // stream was marked as readable before.
-            while (readable) {
-                allocHandle.reset(config);
-                ByteBuf byteBuf = null;
 
-                // It's possible that the stream was marked as finish while we iterated over the readable streams
-                // or while we did have auto read disabled. If so we need to ensure we not try to read from it as it
-                // would produce an error.
-                boolean readCompleteNeeded = false;
-                boolean continueReading = true;
-                try {
-                    while (!finReceived && continueReading) {
-                        byteBuf = allocHandle.allocate(allocator);
-                        switch (streamRecv(streamId, byteBuf)) {
-                            case DONE:
-                                // Nothing left to read;
-                                readable = false;
-                                break;
-                            case FIN:
-                                // If we received a FIN we also should mark the channel as non readable as
-                                // there is nothing left to read really.
-                                readable = false;
-                                finReceived = true;
-                                // inputShutdown = true;
-                                break;
-                            case OK:
-                                break;
-                            default:
-                                throw new Error();
+            ByteBuf byteBuf;
+
+            // It's possible that the stream was marked as finish while we iterated over the readable streams
+            // or while we did have auto read disabled. If so we need to ensure we not try to read from it as it
+            // would produce an error.
+            boolean readCompleteNeeded = false;
+            boolean continueReading = true;
+            try {
+                while (!finReceived && continueReading && readable) {
+                    byteBuf = allocHandle.allocate(allocator);
+                    switch (streamRecv(streamId, byteBuf)) {
+                        case DONE:
+                            // Nothing left to read;
+                            readable = false;
+                            break;
+                        case FIN:
+                            // If we received a FIN we also should mark the channel as non readable as
+                            // there is nothing left to read really.
+                            readable = false;
+                            finReceived = true;
+                            // inputShutdown = true;
+                            break;
+                        case OK:
+                            break;
+                        default:
+                            throw new Error();
+                    }
+                    allocHandle.lastBytesRead(byteBuf.readableBytes());
+                    if (allocHandle.lastBytesRead() <= 0) {
+                        byteBuf.release();
+                        if (finReceived) {
+                            // If we read QuicStreamFrames we should fire an frame through the pipeline
+                            // with an empty buffer but the fin flag set to true.
+                            byteBuf = Unpooled.EMPTY_BUFFER;
+                        } else {
+                            byteBuf = null;
+                            break;
                         }
-                        allocHandle.lastBytesRead(byteBuf.readableBytes());
-                        if (allocHandle.lastBytesRead() <= 0) {
-                            byteBuf.release();
-                            if (finReceived) {
-                                // If we read QuicStreamFrames we should fire an frame through the pipeline
-                                // with an empty buffer but the fin flag set to true.
-                                byteBuf = Unpooled.EMPTY_BUFFER;
-                            } else {
-                                byteBuf = null;
-                                break;
-                            }
-                        }
+                    }
                         // We did read one message.
                         allocHandle.incMessagesRead(1);
                         readCompleteNeeded = true;
 
 
-                        StreamHandler streamHandler = StreamHandler.getInstance(connAddr);
+
                         streamHandler.channelRead(QuicheQuicChannel.this,
                                 streamId, byteBuf, finReceived);
 
@@ -1298,14 +1300,13 @@ final class QuicheQuicChannel extends AbstractChannel implements QuicChannel {
                     }
 
                     if (readCompleteNeeded) {
-                        // TODO readComplete(allocHandle, pipeline);
+                        allocHandle.readComplete();
                     }
 
                 } catch (Throwable cause) {
                     readable = false;
                     //  handleReadException(pipeline, byteBuf, cause, allocHandle, readFrames);
                 }
-            }
 
         }
 
@@ -1332,8 +1333,9 @@ final class QuicheQuicChannel extends AbstractChannel implements QuicChannel {
                                         streamChannel.readable();
                                         pipeline().fireChannelRead(streamChannel);
                                     } else {
-
-                                        recvStream(connAddr, streamId);
+                                        StreamHandler streamHandler =
+                                                StreamHandler.getInstance(connAddr);
+                                        readStream(streamHandler, streamId);
                                     }
                                 } else {
                                     streamChannel.readable();

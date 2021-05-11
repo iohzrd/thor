@@ -73,11 +73,6 @@ public class StreamHandler {
     protected void channelRead0(QuicChannel quicChannel, long streamId, ByteBuf msg) throws Exception {
 
 
-        PeerId peerId = quicChannel.attr(LiteHost.PEER_KEY).get();
-        if(peerId == null){
-            LogUtils.error(TAG, "ERROR " + connection + " " + quicChannel.remoteAddress().toString());
-        }
-
         DataHandler reader = handlers.get(streamId);
         if (reader == null) {
             reader = new DataHandler(IPFS.BLOCK_SIZE_LIMIT);
