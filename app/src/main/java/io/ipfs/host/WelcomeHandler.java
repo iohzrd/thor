@@ -1,12 +1,10 @@
 package io.ipfs.host;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import java.io.ByteArrayOutputStream;
 import java.util.Objects;
 
-import bitswap.pb.MessageOuterClass;
 import identify.pb.IdentifyOuterClass;
 import io.LogUtils;
 import io.ipfs.IPFS;
@@ -24,7 +22,6 @@ public class WelcomeHandler extends SimpleChannelInboundHandler<Object> {
     public WelcomeHandler(@NonNull LiteHost host) {
         this.host = host;
     }
-
 
 
     @Override
@@ -71,7 +68,6 @@ public class WelcomeHandler extends SimpleChannelInboundHandler<Object> {
                     + ctx.channel().remoteAddress());
         }
     }
-
 
 
 }

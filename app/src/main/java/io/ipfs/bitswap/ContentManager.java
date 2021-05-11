@@ -15,13 +15,13 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.LogUtils;
-import io.ipfs.cid.Cid;
 import io.core.Closeable;
 import io.core.ClosedException;
 import io.core.ConnectionIssue;
 import io.core.ProtocolIssue;
 import io.core.TimeoutCloseable;
 import io.core.TimeoutIssue;
+import io.ipfs.cid.Cid;
 import io.ipfs.format.Block;
 import io.ipfs.format.BlockStore;
 import io.ipfs.host.PeerId;

@@ -9,10 +9,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
-import io.ipfs.blockservice.BlockService;
-import io.ipfs.cid.Cid;
 import io.core.Closeable;
 import io.core.ClosedException;
+import io.ipfs.blockservice.BlockService;
+import io.ipfs.cid.Cid;
 import io.ipfs.datastore.Storage;
 import io.ipfs.exchange.Interface;
 import io.ipfs.format.BlockStore;

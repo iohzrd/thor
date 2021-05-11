@@ -27,20 +27,20 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import dht.pb.Dht;
 import io.LogUtils;
-import io.ipfs.IPFS;
-import io.ipfs.cid.Cid;
 import io.core.Closeable;
 import io.core.ClosedException;
 import io.core.ConnectionIssue;
 import io.core.ProtocolIssue;
 import io.core.TimeoutIssue;
+import io.ipfs.IPFS;
+import io.ipfs.cid.Cid;
 import io.ipfs.host.AddrInfo;
 import io.ipfs.host.Connection;
 import io.ipfs.host.LiteHost;
-import io.ipns.InvalidRecord;
-import io.ipns.Validator;
 import io.ipfs.host.PeerId;
 import io.ipfs.multiformats.Multiaddr;
+import io.ipns.InvalidRecord;
+import io.ipns.Validator;
 import io.netty.handler.timeout.ReadTimeoutException;
 import record.pb.RecordOuterClass;
 
@@ -340,17 +340,17 @@ public class KadDHT implements Routing {
         try {
 
             Connection con = host.connect(closeable, p);
-                host.active(p);
-                long start = System.currentTimeMillis();
+            host.active(p);
+            long start = System.currentTimeMillis();
 
-                MessageLite messageLite = host.request(closeable, IPFS.KAD_DHT_PROTOCOL, con, message);
-                Objects.requireNonNull(messageLite);
-                Dht.Message response = (Dht.Message) messageLite;
-                Objects.requireNonNull(response);
+            MessageLite messageLite = host.request(closeable, IPFS.KAD_DHT_PROTOCOL, con, message);
+            Objects.requireNonNull(messageLite);
+            Dht.Message response = (Dht.Message) messageLite;
+            Objects.requireNonNull(response);
 
-                host.addLatency(p, System.currentTimeMillis() - start);
+            host.addLatency(p, System.currentTimeMillis() - start);
 
-                return response;
+            return response;
 
         } catch (ClosedException | ConnectionIssue exception) {
             host.done(p);

@@ -10,10 +10,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 
-import io.ipfs.cid.Builder;
-import io.ipfs.cid.Cid;
 import io.core.Closeable;
 import io.core.ClosedException;
+import io.ipfs.cid.Builder;
+import io.ipfs.cid.Cid;
 import io.ipfs.format.Link;
 import io.ipfs.format.Node;
 import io.ipfs.merkledag.DagService;

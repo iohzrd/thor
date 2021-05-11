@@ -7,23 +7,23 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import io.core.Closeable;
+import io.core.ClosedException;
 import io.ipfs.blockservice.BlockService;
 import io.ipfs.cid.Cid;
 import io.ipfs.cid.Prefix;
-import io.core.Closeable;
-import io.core.ClosedException;
 import io.ipfs.datastore.Storage;
 import io.ipfs.exchange.Interface;
 import io.ipfs.format.BlockStore;
 import io.ipfs.format.Link;
 import io.ipfs.format.Node;
 import io.ipfs.format.ProtoNode;
+import io.ipfs.host.PeerId;
 import io.ipfs.merkledag.DagService;
 import io.ipfs.multihash.Multihash;
 import io.ipfs.offline.Exchange;
 import io.ipfs.unixfs.Directory;
 import io.ipfs.unixfs.FSNode;
-import io.ipfs.host.PeerId;
 
 
 public class Stream {

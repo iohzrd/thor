@@ -13,10 +13,6 @@
 package io.crypto
 
 import crypto.pb.Crypto
-import io.crypto.PrivKey
-import io.crypto.PubKey
-import io.crypto.sha256
-import io.crypto.SECP_256K1_ALGORITHM
 import org.bouncycastle.asn1.*
 import org.bouncycastle.asn1.sec.SECNamedCurves
 import org.bouncycastle.crypto.ec.CustomNamedCurves
@@ -27,7 +23,6 @@ import org.bouncycastle.math.ec.FixedPointCombMultiplier
 import org.bouncycastle.math.ec.FixedPointUtil
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
-import java.lang.RuntimeException
 import java.math.BigInteger
 import java.security.SecureRandom
 
