@@ -57,12 +57,13 @@ public class BitSwap implements Interface {
     @Override
     public void ReceiveMessage(@NonNull PeerId peer, @NonNull String protocol, @NonNull BitSwapMessage incoming) {
 
-        LogUtils.error(TAG, "ReceiveMessage " + peer.toBase58() + " " + protocol);
+        LogUtils.info(TAG, "ReceiveMessage " + peer.toBase58() + " " + protocol);
 
         List<Block> blocks = incoming.Blocks();
         List<Cid> haves = incoming.Haves();
         if (blocks.size() > 0 || haves.size() > 0) {
             try {
+                LogUtils.error(TAG, "ReceiveMessage " + peer.toBase58() + " " + protocol);
                 receiveBlocksFrom(peer, blocks, haves);
             } catch (Throwable throwable) {
                 LogUtils.error(TAG, throwable);

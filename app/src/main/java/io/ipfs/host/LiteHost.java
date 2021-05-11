@@ -671,11 +671,8 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
                     }).sync().get(IPFS.TIMEOUT_SEND, TimeUnit.SECONDS);
 
 
-            streamChannel.pipeline().addFirst(new ReadTimeoutHandler(IPFS.TIMEOUT_SEND, TimeUnit.SECONDS));
-
-
             LogUtils.error(TAG, streamChannel.pipeline().names().toString());
-            streamChannel.writeAndFlush(DataHandler.writeToken(IPFS.STREAM_PROTOCOL));
+            streamChannel.write(DataHandler.writeToken(IPFS.STREAM_PROTOCOL));
             streamChannel.writeAndFlush(DataHandler.writeToken(protocol));
 
 
@@ -753,14 +750,12 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
                             msg.readBytes(out, msg.readableBytes());
                             byte[] data = out.toByteArray();
                             reader.load(data);
-                            LogUtils.error(TAG, "Data length " + data.length);
-
 
                             if (negotiation) {
                                 if (reader.isDone()) {
 
                                     for (String received : reader.getTokens()) {
-                                        LogUtils.error(TAG+"REQUEST", "request " + received);
+                                        LogUtils.error(TAG , "request " + received);
                                         if (Objects.equals(received, IPFS.NA)) {
                                             throw new ProtocolIssue();
                                         } else if (Objects.equals(received, IPFS.STREAM_PROTOCOL)) {
@@ -808,7 +803,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
 
                             } else {
                                 if (reader.isDone()) {
-                                    LogUtils.error(TAG, "Reader is done");
+
                                     byte[] message = reader.getMessage();
 
                                     switch (protocol) {

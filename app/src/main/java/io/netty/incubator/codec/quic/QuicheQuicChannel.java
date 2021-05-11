@@ -29,7 +29,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.function.Function;
 
-import io.LogUtils;
 import io.ipfs.host.StreamHandler;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
@@ -194,7 +193,7 @@ final class QuicheQuicChannel extends AbstractChannel implements QuicChannel {
 
     void attachQuicheConnection(QuicheQuicConnection connection) {
         this.connection = connection;
-        LogUtils.error(getClass().getSimpleName(), "" + connection.address());
+
         byte[] traceId = Quiche.quiche_conn_trace_id(connection.address());
         if (traceId != null) {
             this.traceId = new String(traceId);
@@ -1322,7 +1321,7 @@ final class QuicheQuicChannel extends AbstractChannel implements QuicChannel {
                                     readableIterator, readableStreams);
                             for (int i = 0; i < readable; i++) {
                                 long streamId = readableStreams[i];
-                                //LogUtils.error(getClass().getSimpleName(), "streamID receive : " + streamId);
+
                                 QuicheQuicStreamChannel streamChannel = streams.get(streamId);
                                 if (streamChannel == null) {
 

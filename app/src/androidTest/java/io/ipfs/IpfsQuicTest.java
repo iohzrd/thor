@@ -57,7 +57,7 @@ public class IpfsQuicTest {
         context = ApplicationProvider.getApplicationContext();
     }
 
-    //@Test
+    @Test
     public void test_1() throws Exception {
 
         IPFS ipfs = TestEnv.getTestInstance(context);
@@ -69,12 +69,9 @@ public class IpfsQuicTest {
         QuicChannel channel = conn.get();
         assertNotNull(channel);
 
-
-
-
     }
 
-    //@Test
+    @Test
     public void test_2() throws Exception {
         QuicServerExample serverExample = new QuicServerExample();
         serverExample.main();
@@ -84,45 +81,6 @@ public class IpfsQuicTest {
 
     }
 
-    @Test
-    public void test_3() throws Exception {
-
-        IPFS ipfs = TestEnv.getTestInstance(context);
-        int port = ipfs.getPort();
-
-        Multiaddr multiaddr = new Multiaddr("/ip4/0.0.0.0/udp/" + port+ "/quic");
-
-        Future<QuicChannel> future = ipfs.getHost().dial(multiaddr, null);
-
-        QuicChannel quicChannel = future.get();
-
-        int size = 100000;
-        byte[] array = new byte[size]; // length is bounded by 7
-        for (int i = 0; i < size; i++) {
-            array[i] = 96;
-        }
-        String generatedString = new String(array, Charset.forName("UTF-8"));
-        CompletableFuture<MessageLite> ret = ipfs.getHost().request(
-                quicChannel, IPFS.IDENTITY_PROTOCOL,
-                IdentifyOuterClass.Identify.newBuilder().setAgentVersion(generatedString).build());
-
-        MessageLite message = ret.get();
-        assertNotNull(message);
-        IdentifyOuterClass.Identify identify = (IdentifyOuterClass.Identify) message;
-
-        assertNotNull(identify);
-        assertEquals(identify.getAgentVersion(), IPFS.AGENT);
-
-        ret = ipfs.getHost().request(
-                quicChannel, IPFS.IDENTITY_PROTOCOL, null);
-
-        message = ret.get();
-        assertNotNull(message);
-        identify = (IdentifyOuterClass.Identify) message;
-
-        assertNotNull(identify);
-        assertEquals(identify.getAgentVersion(), IPFS.AGENT);
-    }
 
     public final class QuicServerExample {
 
