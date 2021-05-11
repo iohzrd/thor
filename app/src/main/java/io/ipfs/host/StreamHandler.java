@@ -3,8 +3,6 @@ package io.ipfs.host;
 import androidx.annotation.NonNull;
 
 import java.io.ByteArrayOutputStream;
-import java.nio.ByteBuffer;
-import java.nio.channels.ClosedChannelException;
 import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -12,14 +10,10 @@ import bitswap.pb.MessageOuterClass;
 import identify.pb.IdentifyOuterClass;
 import io.LogUtils;
 import io.ipfs.IPFS;
+import io.ipfs.quic.QuicheWrapper;
 import io.libp2p.core.PeerId;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
-import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelPromise;
-import io.netty.incubator.codec.quic.DirectIoByteBufAllocator;
 import io.netty.incubator.codec.quic.QuicChannel;
-import io.netty.incubator.codec.quic.Quiche;
 import io.netty.util.ReferenceCountUtil;
 
 
@@ -53,8 +47,9 @@ public class StreamHandler {
                 channelRead0(quicChannel, streamId, byteBuf);
             }
 
-            if(fin){
-                streamShutdown(streamId, true, true, 0);
+            if(fin) {
+                QuicheWrapper.streamShutdown(connection,
+                        streamId, true, true, 0);
                 close(streamId);
                 LogUtils.error(TAG, "Fin received " + streamId);
             }
@@ -68,100 +63,12 @@ public class StreamHandler {
 
 
     private void close(long streamId) {
-        streamShutdown(streamId,true, true, 0);
+        QuicheWrapper.streamShutdown(connection, streamId, true, true, 0);
 
         protocols.remove(streamId);
         handlers.remove(streamId);
     }
 
-
-    private ByteBuf direct(ByteBuf msg) {
-        ByteBuf buffer = (ByteBuf) msg;
-        if (!buffer.isDirect()) {
-            DirectIoByteBufAllocator allocator = new DirectIoByteBufAllocator(ByteBufAllocator.DEFAULT);
-            ByteBuf tmpBuffer = allocator.directBuffer(buffer.readableBytes());
-            tmpBuffer.writeBytes(buffer, buffer.readerIndex(), buffer.readableBytes());
-            buffer.release();
-            msg = tmpBuffer;
-            return msg;
-        }
-        return msg;
-    }
-
-    private void writeAndFlush(long streamId, ByteBuf message) {
-        ByteBuf msg = direct(message);
-        try {
-            streamSend(streamId, msg, true);
-        } finally {
-            ReferenceCountUtil.release(msg);
-        }
-    }
-
-
-    private void write(long streamId, ByteBuf message) {
-        ByteBuf msg = direct(message);
-        try {
-            streamSend(streamId, msg, false);
-        } finally {
-            ReferenceCountUtil.release(msg);
-        }
-    }
-
-
-    int streamSend(long streamId, ByteBuf buffer, boolean fin) {
-        if (buffer.nioBufferCount() == 1) {
-            return streamSend0(streamId, buffer, fin);
-        }
-        ByteBuffer[] nioBuffers = buffer.nioBuffers();
-        int lastIdx = nioBuffers.length - 1;
-        int res = 0;
-        for (int i = 0; i < lastIdx; i++) {
-            ByteBuffer nioBuffer = nioBuffers[i];
-            while (nioBuffer.hasRemaining()) {
-                int localRes = streamSend(streamId, nioBuffer, false);
-                if (localRes <= 0) {
-                    return res;
-                }
-                res += localRes;
-
-                nioBuffer.position(nioBuffer.position() + localRes);
-            }
-        }
-        int localRes = streamSend(streamId, nioBuffers[lastIdx], fin);
-        if (localRes > 0) {
-            res += localRes;
-        }
-        return res;
-    }
-
-
-    void streamShutdown(long streamId, boolean read, boolean write, int err) {
-
-        int res = 0;
-        if (read) {
-            res |= Quiche.quiche_conn_stream_shutdown(connection, streamId, Quiche.QUICHE_SHUTDOWN_READ, err);
-        }
-        if (write) {
-            res |= Quiche.quiche_conn_stream_shutdown(connection, streamId, Quiche.QUICHE_SHUTDOWN_WRITE, err);
-        }
-
-    }
-
-    private int streamSend0(long streamId, ByteBuf buffer, boolean fin) {
-        return Quiche.quiche_conn_stream_send(connection, streamId,
-                Quiche.memoryAddress(buffer) + buffer.readerIndex(), buffer.readableBytes(), fin);
-    }
-
-    private int streamSend(long streamId, ByteBuffer buffer, boolean fin) {
-        return Quiche.quiche_conn_stream_send(connection, streamId,
-                Quiche.memoryAddress(buffer) + buffer.position(), buffer.remaining(), fin);
-    }
-
-    void streamSendFin(long streamId) throws Exception {
-        // Just write an empty buffer and set fin to true.
-        Quiche.throwIfError(streamSend0(streamId, Unpooled.EMPTY_BUFFER, true));
-
-    }
 
     protected void channelRead0(QuicChannel quicChannel, long streamId, ByteBuf msg) throws Exception {
 
@@ -187,26 +94,26 @@ public class StreamHandler {
                 protocols.put(streamId, token);
                 switch (token) {
                     case IPFS.STREAM_PROTOCOL:
-                        write(streamId, DataHandler.writeToken(IPFS.STREAM_PROTOCOL));
+                        QuicheWrapper.write(connection, streamId, DataHandler.writeToken(IPFS.STREAM_PROTOCOL));
                         break;
                     case IPFS.PUSH_PROTOCOL:
-                        writeAndFlush(streamId, DataHandler.writeToken(IPFS.PUSH_PROTOCOL));
-                        streamShutdown(streamId,false, true, 0);
+                        QuicheWrapper.writeAndFlush(connection, streamId, DataHandler.writeToken(IPFS.PUSH_PROTOCOL));
+                        QuicheWrapper.streamShutdown(connection, streamId, false, true, 0);
                         break;
                     case IPFS.BITSWAP_PROTOCOL:
-                        writeAndFlush(streamId, DataHandler.writeToken(IPFS.BITSWAP_PROTOCOL));
-                        streamShutdown(streamId,false, true, 0);
+                        QuicheWrapper.writeAndFlush(connection, streamId, DataHandler.writeToken(IPFS.BITSWAP_PROTOCOL));
+                        QuicheWrapper.streamShutdown(connection, streamId, false, true, 0);
                         break;
                     case IPFS.IDENTITY_PROTOCOL:
-                        write(streamId, DataHandler.writeToken(IPFS.IDENTITY_PROTOCOL));
+                        QuicheWrapper.write(connection, streamId, DataHandler.writeToken(IPFS.IDENTITY_PROTOCOL));
                         IdentifyOuterClass.Identify response =
                                 host.createIdentity(quicChannel.remoteAddress());
-                        writeAndFlush(streamId, DataHandler.encode(response));
+                        QuicheWrapper.writeAndFlush(connection, streamId, DataHandler.encode(response));
                         close(streamId);
                         return;
                     default:
                         // LogUtils.error(TAG, "Ignore " + token);
-                        streamSendFin(streamId);
+                        QuicheWrapper.streamSendFin(connection, streamId);
                         close(streamId);
                         return;
                 }
