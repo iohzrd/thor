@@ -1,9 +1,9 @@
 package io.ipfs.multiformats
 
 import io.ipfs.host.PeerId
-import io.libp2p.etc.types.readUvarint
-import io.libp2p.etc.types.toByteArray
-import io.libp2p.etc.types.toByteBuf
+import io.core.readUvarint
+import io.core.toByteArray
+import io.core.toByteBuf
 import io.netty.buffer.ByteBuf
 import io.netty.buffer.Unpooled
 import java.lang.RuntimeException

@@ -4,10 +4,10 @@ import io.crypto.PubKey
 import io.crypto.marshalPublicKey
 import io.ipfs.multiformats.Multihash
 import io.ipfs.multiformats.Base58
-import io.libp2p.etc.types.fromHex
-import io.libp2p.etc.types.toByteArray
-import io.libp2p.etc.types.toByteBuf
-import io.libp2p.etc.types.toHex
+import io.core.fromHex
+import io.core.toByteArray
+import io.core.toByteBuf
+import io.core.toHex
 import kotlin.random.Random
 
 /**

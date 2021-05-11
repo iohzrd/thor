@@ -57,8 +57,6 @@ import io.crypto.PrivKey;
 import io.crypto.PubKey;
 import io.ipfs.multiformats.Multiaddr;
 import io.ipfs.multiformats.Protocol;
-import io.libp2p.etc.types.NonCompleteException;
-import io.libp2p.etc.types.NothingToCompleteException;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
@@ -296,12 +294,6 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
             if (cause != null) {
                 if (cause instanceof ProtocolIssue) {
                     throw new ProtocolIssue();
-                }
-                if (cause instanceof NothingToCompleteException) {
-                    throw new ConnectionIssue();
-                }
-                if (cause instanceof NonCompleteException) {
-                    throw new ConnectionIssue();
                 }
                 if (cause instanceof ConnectionIssue) {
                     throw new ConnectionIssue();

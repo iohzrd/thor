@@ -1,8 +1,8 @@
 package io.ipfs.multiformats
 
-import io.libp2p.etc.types.readUvarint
-import io.libp2p.etc.types.toByteArray
-import io.libp2p.etc.types.writeUvarint
+import io.core.readUvarint
+import io.core.toByteArray
+import io.core.writeUvarint
 import io.netty.buffer.ByteBuf
 import io.netty.buffer.Unpooled
 import org.bouncycastle.jcajce.provider.digest.SHA3

@@ -41,8 +41,6 @@ import io.ipns.InvalidRecord;
 import io.ipns.Validator;
 import io.ipfs.host.PeerId;
 import io.ipfs.multiformats.Multiaddr;
-import io.libp2p.etc.types.NonCompleteException;
-import io.libp2p.etc.types.NothingToCompleteException;
 import io.netty.handler.timeout.ReadTimeoutException;
 import record.pb.RecordOuterClass;
 
@@ -364,12 +362,6 @@ public class KadDHT implements Routing {
                 LogUtils.info(TAG, cause.getClass().getSimpleName());
                 if (cause instanceof ProtocolIssue) {
                     throw new ProtocolIssue();
-                }
-                if (cause instanceof NothingToCompleteException) {
-                    throw new ConnectionIssue();
-                }
-                if (cause instanceof NonCompleteException) {
-                    throw new ConnectionIssue();
                 }
                 if (cause instanceof ConnectionIssue) {
                     throw new ConnectionIssue();
