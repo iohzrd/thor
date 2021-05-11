@@ -31,13 +31,6 @@ public class LocalConnectService {
 
             LogUtils.error(TAG, "Success ? " + connect + " for " + multiAddress);
 
-            PeerInfo info = ipfs.getPeerInfo(PeerId.fromBase58(pid), new TimeoutCloseable(10));
-
-            LogUtils.error(TAG, info.toString());
-
-
-            ipfs.notify(PeerId.fromBase58(pid), "Moin");
-
         } catch (Throwable throwable){
             LogUtils.error(TAG, throwable);
         }
