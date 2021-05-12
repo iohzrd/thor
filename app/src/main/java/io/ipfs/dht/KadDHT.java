@@ -343,7 +343,8 @@ public class KadDHT implements Routing {
             host.active(p);
             long start = System.currentTimeMillis();
 
-            MessageLite messageLite = host.request(closeable, IPFS.KAD_DHT_PROTOCOL, con, message);
+            MessageLite messageLite = host.request(closeable, IPFS.KAD_DHT_PROTOCOL, con, message,
+                    false);
             Objects.requireNonNull(messageLite);
             Dht.Message response = (Dht.Message) messageLite;
             Objects.requireNonNull(response);

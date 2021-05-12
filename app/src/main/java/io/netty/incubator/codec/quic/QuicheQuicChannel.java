@@ -227,6 +227,15 @@ final class QuicheQuicChannel extends AbstractChannel implements QuicChannel {
         }
     }
 
+    public long connection(){
+        return connection.address();
+    }
+
+    @Override
+    public QuicStreamIdGenerator getIdGenerator() {
+        return idGenerator;
+    }
+
     private void connect(Function<QuicChannel, ? extends QuicSslEngine> engineProvider,
                          long configAddr, int localConnIdLength,
                          boolean supportsDatagram) throws Exception {
@@ -1335,7 +1344,9 @@ final class QuicheQuicChannel extends AbstractChannel implements QuicChannel {
                                     } else {
                                         StreamHandler streamHandler =
                                                 StreamHandler.getInstance(connAddr);
-                                        readStream(streamHandler, streamId);
+                                        if(streamHandler != null) {
+                                            readStream(streamHandler, streamId);
+                                        }
                                     }
                                 } else {
                                     streamChannel.readable();

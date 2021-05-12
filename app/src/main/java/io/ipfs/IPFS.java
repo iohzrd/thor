@@ -17,12 +17,18 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
+import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
-import java.security.KeyStore;
-import java.security.cert.X509Certificate;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -38,17 +44,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-import javax.net.ssl.ManagerFactoryParameters;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
-
 import io.LogUtils;
 import io.core.Closeable;
 import io.core.ClosedException;
 import io.core.ConnectionIssue;
 import io.core.TimeoutCloseable;
 import io.crypto.PrivKey;
-import io.crypto.PubKey;
 import io.crypto.RsaPrivateKey;
 import io.ipfs.cid.Cid;
 import io.ipfs.dht.Routing;
@@ -78,11 +79,7 @@ import io.ipfs.utils.ReaderStream;
 import io.ipfs.utils.Resolver;
 import io.ipfs.utils.Stream;
 import io.ipfs.utils.WriterStream;
-import io.netty.handler.ssl.ClientAuth;
-import io.netty.handler.ssl.util.SimpleTrustManagerFactory;
 import io.netty.incubator.codec.quic.QuicSslContext;
-import io.netty.incubator.codec.quic.QuicSslContextBuilder;
-import io.netty.util.internal.EmptyArrays;
 import ipns.pb.Ipns;
 import threads.thor.core.blocks.BLOCKS;
 
@@ -106,16 +103,12 @@ public class IPFS {
     public static final int LOW_WATER = 50;
     public static final int HIGH_WATER = 300;
     public static final int GRACE_PERIOD = 10;
-    public static final int TIMEOUT_SEND = 10;
-    public static final int TIMEOUT_REQUEST = 30;
     public static final int MIN_PEERS = 10;
     public static final long RESOLVE_MAX_TIME = 30000; // 30 sec
     public static final int RESOLVE_TIMEOUT = 1000; // 1 sec
     public static final long WANTS_WAIT_TIMEOUT = 2000; // 2 sec
     public static final int CHUNK_SIZE = 262144;
     public static final String BITSWAP_PROTOCOL = "/ipfs/bitswap/1.2.0";
-
-    // BlockSizeLimit specifies the maximum size an imported block can have.
     public static final int BLOCK_SIZE_LIMIT = 1048576; // 1 MB
     public static final String IPFS_PATH = "/ipfs/";
     public static final String IPNS_PATH = "/ipns/";
@@ -145,7 +138,7 @@ public class IPFS {
     public static final int KAD_DHT_BETA = 20;
     public static final String NA = "na";
     public static final String LS = "ls";
-    public static final ConcurrentHashMap<PeerId, PubKey> remotes = new ConcurrentHashMap<>();
+
     // rough estimates on expected sizes
     private static final int roughLinkBlockSize = 1 << 13; // 8KB
     private static final int roughLinkSize = 34 + 8 + 5;// sha256 multihash + size + no name + protobuf framing
@@ -165,97 +158,38 @@ public class IPFS {
     public static final int LINKS_PER_BLOCK = roughLinkBlockSize / roughLinkSize;
 
 
-    private static final String PREF_KEY = "prefKey";
+    public static final String APRN = "libp2p";
+    private static final String PREF_KEY = IPFS.TAG;
     private static final String SWARM_PORT_KEY = "swarmPortKey";
     private static final String PRIVATE_KEY = "privateKey";
+    private static final String PUBLIC_KEY = "publicKey";
     private static final String CONCURRENCY_KEY = "concurrencyKey";
     private static final String TAG = IPFS.class.getSimpleName();
     private static final boolean CONNECTION_SERVICE_ENABLED = false;
-    private static final TrustManager tm = new X509TrustManager() {
-        @Override
-        public void checkClientTrusted(X509Certificate[] chain, String s) {
-            try {
-                // TODO activate again
-                if (false) {
-                    for (X509Certificate cert : chain) {
-                        PubKey pubKey = LiteSignedCertificate.extractPublicKey(cert);
-                        Objects.requireNonNull(pubKey);
-                        PeerId peerId = PeerId.fromPubKey(pubKey);
-                        Objects.requireNonNull(peerId);
-                        remotes.put(peerId, pubKey);
-                    }
-                }
-            } catch (Throwable throwable) {
-                throw new RuntimeException(throwable);
-            }
-        }
 
-        @Override
-        public void checkServerTrusted(X509Certificate[] chain, String s) {
-
-            try {
-                // TODO activate again
-                if (false) {
-                    for (X509Certificate cert : chain) {
-                        PubKey pubKey = LiteSignedCertificate.extractPublicKey(cert);
-                        Objects.requireNonNull(pubKey);
-                        PeerId peerId = PeerId.fromPubKey(pubKey);
-                        Objects.requireNonNull(peerId);
-                        remotes.put(peerId, pubKey);
-                    }
-                }
-            } catch (Throwable throwable) {
-                throw new RuntimeException(throwable);
-            }
-        }
-
-        @Override
-        public X509Certificate[] getAcceptedIssuers() {
-            return EmptyArrays.EMPTY_X509_CERTIFICATES;
-        }
-    };
+    private static final boolean SERVER_ACTIVE = false;
     public static LiteHost HOST;
-    public static QuicSslContext SERVER_SSL_INSTANCE;
-    public static QuicSslContext CLIENT_SSL_INSTANCE;
     private static IPFS INSTANCE = null;
+
+    @NonNull
     private final BLOCKS blocks;
-    private final int port;
-    private final LiteHost liteHost;
+    @NonNull
+    private final LiteHost host;
+    @NonNull
     private final Set<PeerId> swarm = ConcurrentHashMap.newKeySet();
-    //private final Host host;
+    @NonNull
     private final PrivKey privateKey;
-    private Connector connector;
+    private final int port;
     @NonNull
     private Reachable reachable = Reachable.UNKNOWN;
+    @Nullable
+    private Connector connector;
 
     private IPFS(@NonNull Context context) throws Exception {
 
-
         blocks = BLOCKS.getInstance(context);
 
-
-        String algorithm = "RSA";
-        final KeyPair keypair;
-
-        KeyPairGenerator keyGen = KeyPairGenerator.getInstance(algorithm);
-        keyGen.initialize(2048, LiteSignedCertificate.ThreadLocalInsecureRandom.current());
-        keypair = keyGen.generateKeyPair();
-
-
-
-        /*
-        if (getPrivateKey(context).isEmpty()) {
-            kotlin.Pair<PrivKey, PubKey> keys = KeyKt.generateKeyPair(KEY_TYPE.ED25519);
-            Base64.Encoder encoder = Base64.getEncoder();
-            setPrivateKey(context, encoder.encodeToString(keys.getFirst().bytes()));
-        }*/
-
-
-        /* TODO
-
-        node.setAgent(AGENT);
-        node.setPushing(false);
-        node.setEnableReachService(false);*/
+        KeyPair keypair = getKeyPair(context);
 
         int checkPort = getPort(context);
         if (isLocalPortFree(checkPort)) {
@@ -263,67 +197,35 @@ public class IPFS {
         } else {
             port = nextFreePort();
         }
-        // byte[] data = Base64.getDecoder().decode(getPrivateKey(context));
 
         privateKey = new RsaPrivateKey(keypair.getPrivate(), keypair.getPublic());
-        //privateKey = Ed25519Kt.unmarshalEd25519PrivateKey(data);
         LiteSignedCertificate selfSignedCertificate = new LiteSignedCertificate(privateKey, keypair);
-
-        CLIENT_SSL_INSTANCE = QuicSslContextBuilder.forClient(
-                selfSignedCertificate.privateKey(), null, selfSignedCertificate.certificate()).
-                trustManager(new SimpleTrustManagerFactory() {
-                    @Override
-                    protected void engineInit(KeyStore keyStore) throws Exception {
-
-                    }
-
-                    @Override
-                    protected void engineInit(ManagerFactoryParameters managerFactoryParameters) throws Exception {
-
-                    }
-
-                    @Override
-                    protected TrustManager[] engineGetTrustManagers() {
-                        return new TrustManager[]{tm};
-                    }
-                }).
-                applicationProtocols("libp2p").build();
-
-        SERVER_SSL_INSTANCE = QuicSslContextBuilder.forServer(
-                selfSignedCertificate.privateKey(), null, selfSignedCertificate.certificate())
-                .applicationProtocols("libp2p").clientAuth(ClientAuth.REQUIRE).
-                        trustManager(new SimpleTrustManagerFactory() {
-                            @Override
-                            protected void engineInit(KeyStore keyStore) throws Exception {
-
-                            }
-
-                            @Override
-                            protected void engineInit(ManagerFactoryParameters managerFactoryParameters) throws Exception {
-
-                            }
-
-                            @Override
-                            protected TrustManager[] engineGetTrustManagers() {
-                                return new TrustManager[]{tm};
-                            }
-                        }).build();
 
 
         int alpha = getConcurrencyValue(context);
 
 
         BlockStore blockstore = BlockStore.NewBlockstore(blocks);
-        this.liteHost = new LiteHost(privateKey, blockstore, port, alpha);
+        this.host = new LiteHost(selfSignedCertificate, privateKey, blockstore, port, alpha);
 
-        HOST = liteHost; // shitty hack
-        //this.liteHost.start(port); // TODO
+        HOST = host; // shitty hack
 
-
-        if (IPFS.CONNECTION_SERVICE_ENABLED) {
-            liteHost.addConnectionHandler(conn -> connected(conn.remoteId()));
+        if (IPFS.SERVER_ACTIVE) {
+            this.host.start();
         }
 
+        if (IPFS.CONNECTION_SERVICE_ENABLED) {
+            host.addConnectionHandler(conn -> connected(conn.remoteId()));
+        }
+
+    }
+
+    private static void setPublicKey(@NonNull Context context, @NonNull String key) {
+        SharedPreferences sharedPref = context.getSharedPreferences(
+                PREF_KEY, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putString(PUBLIC_KEY, key);
+        editor.apply();
     }
 
     // todo invoke this function not very often, try to work with PeerId
@@ -411,6 +313,46 @@ public class IPFS {
         }
     }
 
+    @NonNull
+    private static String getPublicKey(@NonNull Context context) {
+        SharedPreferences sharedPref = context.getSharedPreferences(
+                PREF_KEY, Context.MODE_PRIVATE);
+        return Objects.requireNonNull(sharedPref.getString(PUBLIC_KEY, ""));
+
+    }
+
+    private KeyPair getKeyPair(@NonNull Context context) throws NoSuchAlgorithmException, InvalidKeySpecException {
+
+        if (!getPrivateKey(context).isEmpty() && !getPublicKey(context).isEmpty()) {
+
+            Base64.Decoder decoder = Base64.getDecoder();
+
+            byte[] privateKeyData = decoder.decode(getPrivateKey(context));
+            byte[] publicKeyData = decoder.decode(getPublicKey(context));
+
+            PublicKey publicKey = KeyFactory.getInstance("RSA").
+                    generatePublic(new X509EncodedKeySpec(publicKeyData));
+            PrivateKey privateKey = KeyFactory.getInstance("RSA").
+                    generatePrivate(new PKCS8EncodedKeySpec(privateKeyData));
+
+            return new KeyPair(publicKey, privateKey);
+
+        } else {
+
+            String algorithm = "RSA";
+            final KeyPair keypair;
+
+            KeyPairGenerator keyGen = KeyPairGenerator.getInstance(algorithm);
+            keyGen.initialize(2048, LiteSignedCertificate.ThreadLocalInsecureRandom.current());
+            keypair = keyGen.generateKeyPair();
+
+            Base64.Encoder encoder = Base64.getEncoder();
+            setPrivateKey(context, encoder.encodeToString(keypair.getPrivate().getEncoded()));
+            setPublicKey(context, encoder.encodeToString(keypair.getPublic().getEncoded()));
+            return keypair;
+        }
+    }
+
     private static void setPrivateKey(@NonNull Context context, @NonNull String key) {
         SharedPreferences sharedPref = context.getSharedPreferences(
                 PREF_KEY, Context.MODE_PRIVATE);
@@ -465,7 +407,7 @@ public class IPFS {
 
     public boolean canHop(@NonNull PeerId peerId, @NonNull Closeable closeable)
             throws ConnectionIssue, ClosedException {
-        return liteHost.canHop(closeable, peerId);
+        return host.canHop(closeable, peerId);
     }
 
     @NonNull
@@ -486,7 +428,7 @@ public class IPFS {
 
     @NonNull
     public List<Multiaddr> listenAddresses() {
-        return liteHost.listenAddresses();
+        return host.listenAddresses();
     }
 
     public int getPort() {
@@ -510,10 +452,10 @@ public class IPFS {
             AtomicInteger failed = new AtomicInteger(0);
             AtomicReference<String> result = new AtomicReference<>("");
 
-            List<Connection> connections = liteHost.getConnections();
+            List<Connection> connections = host.getConnections();
             for (Connection conn : connections) {
                 try {
-                    PeerInfo peerInfo = liteHost.getPeerInfo(new TimeoutCloseable(5), conn);
+                    PeerInfo peerInfo = host.getPeerInfo(new TimeoutCloseable(5), conn);
                     Multiaddr observed = peerInfo.getObserved();
                     if (observed != null) {
                         LogUtils.error(TAG, "ObservedAddress " + observed.toString());
@@ -553,7 +495,7 @@ public class IPFS {
     public void provide(@NonNull Cid cid, @NonNull Closeable closable) throws ClosedException {
 
         try {
-            liteHost.getRouting().Provide(closable, cid);
+            host.getRouting().Provide(closable, cid);
         } catch (ClosedException closedException) {
             throw closedException;
         } catch (Throwable throwable) {
@@ -740,21 +682,21 @@ public class IPFS {
 
     @NonNull
     public PeerId getPeerID() {
-        return liteHost.Self();
+        return host.Self();
     }
 
     @NonNull
     public PeerInfo getPeerInfo(@NonNull PeerId peerId, @NonNull Closeable closeable)
             throws ClosedException, ConnectionIssue {
 
-        Connection conn = liteHost.connect(closeable, peerId);
+        Connection conn = host.connect(closeable, peerId);
 
-        return liteHost.getPeerInfo(closeable, conn);
+        return host.getPeerInfo(closeable, conn);
     }
 
     public void shutdown() {
         try {
-            liteHost.shutdown();
+            host.shutdown();
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         }
@@ -766,7 +708,7 @@ public class IPFS {
         Set<PeerId> peers = new HashSet<>();
 
         try {
-            for (Connection connection : liteHost.getConnections()) {
+            for (Connection connection : host.getConnections()) {
                 peers.add(connection.remoteId());
             }
         } catch (Throwable throwable) {
@@ -802,7 +744,7 @@ public class IPFS {
     public Node resolveNode(@NonNull String path, @NonNull Closeable closeable) throws ClosedException {
 
         try {
-            return Resolver.resolveNode(closeable, blocks, liteHost.getExchange(), path);
+            return Resolver.resolveNode(closeable, blocks, host.getExchange(), path);
         } catch (ClosedException closedException) {
             throw closedException;
         } catch (Throwable ignore) {
@@ -840,8 +782,8 @@ public class IPFS {
                         AddrInfo addrInfo = AddrInfo.create(peerId, multiaddr);
                         if (addrInfo.hasAddresses()) {
                             peers.add(peerId);
-                            liteHost.protectPeer(peerId);
-                            liteHost.addAddrs(addrInfo);
+                            host.protectPeer(peerId);
+                            host.addAddrs(addrInfo);
                         }
                     } catch (Throwable throwable) {
                         LogUtils.error(TAG, throwable);
@@ -852,7 +794,7 @@ public class IPFS {
                 List<Callable<Boolean>> tasks = new ArrayList<>();
                 ExecutorService executor = Executors.newFixedThreadPool(TIMEOUT_BOOTSTRAP);
                 for (PeerId peerId : peers) {
-                    tasks.add(() -> liteHost.connectTo(new TimeoutCloseable(TIMEOUT_BOOTSTRAP), peerId));
+                    tasks.add(() -> host.connectTo(new TimeoutCloseable(TIMEOUT_BOOTSTRAP), peerId));
                 }
 
                 List<Future<Boolean>> futures = executor.invokeAll(tasks, TIMEOUT_BOOTSTRAP, TimeUnit.SECONDS);
@@ -860,7 +802,7 @@ public class IPFS {
                     LogUtils.info(TAG, "\nBootstrap done " + future.isDone());
                 }
 
-                liteHost.getRouting().bootstrap();
+                host.getRouting().bootstrap();
             } catch (Throwable throwable) {
                 LogUtils.error(TAG, throwable);
             } finally {
@@ -882,7 +824,7 @@ public class IPFS {
             throws ClosedException {
 
         try {
-            liteHost.PublishName(closeable, privateKey, IPFS_PATH + cid.String(), getPeerID(), sequence);
+            host.PublishName(closeable, privateKey, IPFS_PATH + cid.String(), getPeerID(), sequence);
         } catch (ClosedException closedException) {
             throw closedException;
         } catch (Throwable throwable) {
@@ -899,7 +841,7 @@ public class IPFS {
                               @NonNull Cid cid,
                               @NonNull Closeable closeable) throws ClosedException {
         try {
-            liteHost.findProviders(closeable, providers, cid);
+            host.findProviders(closeable, providers, cid);
         } catch (ClosedException closedException) {
             throw closedException;
         } catch (Throwable throwable) {
@@ -910,7 +852,7 @@ public class IPFS {
     @NonNull
     public Multiaddr remoteAddress(@NonNull PeerId peerId, @NonNull Closeable closeable)
             throws ClosedException, ConnectionIssue {
-        return liteHost.connect(closeable, peerId).remoteAddress();
+        return host.connect(closeable, peerId).remoteAddress();
     }
 
     @Nullable
@@ -930,7 +872,7 @@ public class IPFS {
     public Cid resolve(@NonNull String path, @NonNull Closeable closeable) throws ClosedException {
 
         try {
-            Node node = Resolver.resolveNode(closeable, blocks, liteHost.getExchange(), path);
+            Node node = Resolver.resolveNode(closeable, blocks, host.getExchange(), path);
             if (node != null) {
                 return node.Cid();
             }
@@ -953,7 +895,7 @@ public class IPFS {
         boolean result;
         try {
             BlockStore blockstore = BlockStore.NewBlockstore(blocks);
-            result = Stream.IsDir(closeable, blockstore, liteHost.getExchange(), cid);
+            result = Stream.IsDir(closeable, blockstore, host.getExchange(), cid);
         } catch (ClosedException closedException) {
             throw closedException;
         } catch (Throwable e) {
@@ -1028,7 +970,7 @@ public class IPFS {
                 public void info(@NonNull Link link) {
                     infoList.add(link);
                 }
-            }, blockstore, liteHost.getExchange(), cid, resolveChildren);
+            }, blockstore, host.getExchange(), cid, resolveChildren);
 
         } catch (ClosedException closedException) {
             throw closedException;
@@ -1041,7 +983,7 @@ public class IPFS {
     @NonNull
     public Reader getReader(@NonNull Cid cid, @NonNull Closeable closeable) throws ClosedException {
         BlockStore blockstore = BlockStore.NewBlockstore(blocks);
-        return Reader.getReader(closeable, blockstore, liteHost.getExchange(), cid);
+        return Reader.getReader(closeable, blockstore, host.getExchange(), cid);
     }
 
     private void getToOutputStream(@NonNull OutputStream outputStream, @NonNull Cid cid,
@@ -1052,7 +994,7 @@ public class IPFS {
     }
 
     public void setPusher(@Nullable Pusher pusher) {
-        this.liteHost.setPusher(pusher);
+        this.host.setPusher(pusher);
     }
 
     @NonNull
@@ -1084,7 +1026,7 @@ public class IPFS {
             byte[] ipns = IPFS.IPNS_PATH.getBytes();
             byte[] ipnsKey = Bytes.concat(ipns, id.getBytes());
 
-            liteHost.getRouting().SearchValue(() -> (timeout.get() < System.currentTimeMillis())
+            host.getRouting().SearchValue(() -> (timeout.get() < System.currentTimeMillis())
                     || closeable.isClosed(), new Routing.ResolveInfo() {
 
                 private void setName(@NonNull String hash, long sequence) {
@@ -1154,15 +1096,15 @@ public class IPFS {
     }
 
     public long numConnections() {
-        return liteHost.numConnections();
+        return host.numConnections();
     }
 
     public void reset() {
         try {
 
-            liteHost.getExchange().reset();
+            host.getExchange().reset();
 
-            liteHost.trimConnections();
+            host.trimConnections();
 
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
@@ -1171,34 +1113,27 @@ public class IPFS {
 
     public void load(@NonNull Cid cid, @NonNull Closeable closeable) {
         try {
-            liteHost.getExchange().load(closeable, cid);
+            host.getExchange().load(closeable, cid);
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         }
     }
 
     public boolean isConnected(@NonNull PeerId peerId) {
-        return liteHost.isConnected(peerId);
+        return host.isConnected(peerId);
     }
 
 
     public boolean notify(@NonNull PeerId peerId, @NonNull String content) {
 
         try {
-            Connection conn = liteHost.connect(new TimeoutCloseable(TIMEOUT_PUSH), peerId);
-            liteHost.send(new TimeoutCloseable(TIMEOUT_PUSH), PUSH_PROTOCOL, conn,
+            Connection conn = host.connect(new TimeoutCloseable(TIMEOUT_PUSH), peerId);
+            host.send(new TimeoutCloseable(TIMEOUT_PUSH), PUSH_PROTOCOL, conn,
                     content.getBytes(), false);
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         }
         return false;
-    }
-
-
-    // TODO
-    //@Override
-    public boolean acceptPusher(@NonNull PeerId peerId) {
-        return swarm.contains(peerId);
     }
 
 
@@ -1242,18 +1177,18 @@ public class IPFS {
         Objects.requireNonNull(peerId);
 
         try {
-            liteHost.protectPeer(peerId);
+            host.protectPeer(peerId);
             if (multiAddress.startsWith(IPFS.P2P_PATH)) {
-                Set<Multiaddr> addrInfo = liteHost.getAddresses(peerId);
+                Set<Multiaddr> addrInfo = host.getAddresses(peerId);
                 if (addrInfo.isEmpty()) {
-                    return liteHost.getRouting().FindPeer(closeable, peerId);
+                    return host.getRouting().FindPeer(closeable, peerId);
                 } else {
-                    return liteHost.connectTo(closeable, peerId);
+                    return host.connectTo(closeable, peerId);
                 }
             } else {
                 AddrInfo addrInfo = AddrInfo.create(peerId, multiaddr);
-                liteHost.addAddrs(addrInfo);
-                return liteHost.connectTo(closeable, peerId);
+                host.addAddrs(addrInfo);
+                return host.connectTo(closeable, peerId);
             }
 
         } catch (ClosedException closedException) {
@@ -1268,11 +1203,7 @@ public class IPFS {
 
     @NonNull
     public LiteHost getHost() {
-        return liteHost;
-    }
-
-    public PrivKey getPrivKey() {
-        return privateKey;
+        return host;
     }
 
     public interface Connector {

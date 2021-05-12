@@ -29,6 +29,7 @@ public class StreamHandler {
         this.connection = connection;
     }
 
+
     public static StreamHandler getInstance(long connection) {
         StreamHandler streamHandler = streams.get(connection);
         if (streamHandler == null) {
@@ -90,18 +91,18 @@ public class StreamHandler {
                         QuicheWrapper.write(connection, streamId, DataHandler.writeToken(IPFS.STREAM_PROTOCOL));
                         break;
                     case IPFS.PUSH_PROTOCOL:
-                        QuicheWrapper.writeAndFlush(connection, streamId, DataHandler.writeToken(IPFS.PUSH_PROTOCOL));
+                        QuicheWrapper.writeAndFin(connection, streamId, DataHandler.writeToken(IPFS.PUSH_PROTOCOL));
                         QuicheWrapper.streamShutdown(connection, streamId, false, true, 0);
                         break;
                     case IPFS.BITSWAP_PROTOCOL:
-                        QuicheWrapper.writeAndFlush(connection, streamId, DataHandler.writeToken(IPFS.BITSWAP_PROTOCOL));
+                        QuicheWrapper.writeAndFin(connection, streamId, DataHandler.writeToken(IPFS.BITSWAP_PROTOCOL));
                         QuicheWrapper.streamShutdown(connection, streamId, false, true, 0);
                         break;
                     case IPFS.IDENTITY_PROTOCOL:
                         QuicheWrapper.write(connection, streamId, DataHandler.writeToken(IPFS.IDENTITY_PROTOCOL));
                         IdentifyOuterClass.Identify response =
                                 host.createIdentity(quicChannel.remoteAddress());
-                        QuicheWrapper.writeAndFlush(connection, streamId, DataHandler.encode(response));
+                        QuicheWrapper.writeAndFin(connection, streamId, DataHandler.encode(response));
                         close(streamId);
                         return;
                     default:

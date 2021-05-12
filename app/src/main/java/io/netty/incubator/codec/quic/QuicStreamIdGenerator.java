@@ -18,17 +18,17 @@ package io.netty.incubator.codec.quic;
 /**
  * Generates and hands over the next stream id to use for a QUIC stream.
  */
-final class QuicStreamIdGenerator {
+public final class QuicStreamIdGenerator {
     private long nextBidirectionalStreamId;
     private long nextUnidirectionalStreamId;
 
-    QuicStreamIdGenerator(boolean server) {
+    public QuicStreamIdGenerator(boolean server) {
         // See https://tools.ietf.org/html/draft-ietf-quic-transport-32#section-2.1
         nextBidirectionalStreamId = server ? 1 : 0;
         nextUnidirectionalStreamId = server ? 3 : 2;
     }
 
-    long nextStreamId(boolean bidirectional) {
+    public long nextStreamId(boolean bidirectional) {
         if (bidirectional) {
             long stream = nextBidirectionalStreamId;
             nextBidirectionalStreamId += 4;

@@ -43,6 +43,8 @@ public interface QuicStreamChannel extends DuplexChannel {
     @Deprecated
     ChannelFutureListener WRITE_FIN = f -> ((QuicStreamChannel) f.channel()).shutdownOutput();
 
+    long connection();
+
     /**
      * Should be added to a {@link ChannelFuture} when the output should be cleanly shutdown via a {@code FIN}. No more
      * writes will be allowed after this point.

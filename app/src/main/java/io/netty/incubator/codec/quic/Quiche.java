@@ -299,7 +299,7 @@ public final class Quiche {
     /**
      * See <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#L258">quiche_conn_stream_recv</a>.
      */
-    static native int quiche_conn_stream_recv(long connAddr, long streamId, long outAddr, int bufLen, long finAddr);
+    public static native int quiche_conn_stream_recv(long connAddr, long streamId, long outAddr, int bufLen, long finAddr);
 
     /**
      * See <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#L262">quiche_conn_stream_send</a>.
@@ -373,7 +373,7 @@ public final class Quiche {
      * See
      * <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#L282">quiche_conn_readable</a>.
      */
-    static native long quiche_conn_readable(long connAddr);
+    public static native long quiche_conn_readable(long connAddr);
 
     /**
      * See
@@ -389,7 +389,7 @@ public final class Quiche {
      * the array. If the number is the same as the length of the array you should call it again until it returns
      * less to ensure you process all the streams later on.
      */
-    static native int quiche_stream_iter_next(long iterAddr, long[] streamIds);
+    public static native int quiche_stream_iter_next(long iterAddr, long[] streamIds);
 
     /**
      * See

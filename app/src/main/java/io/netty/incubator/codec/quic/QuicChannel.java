@@ -249,4 +249,8 @@ public interface QuicChannel extends Channel {
     static QuicChannelBootstrap newBootstrap(Channel channel) {
         return new QuicChannelBootstrap(channel);
     }
+
+    long connection();
+
+    QuicStreamIdGenerator getIdGenerator();
 }

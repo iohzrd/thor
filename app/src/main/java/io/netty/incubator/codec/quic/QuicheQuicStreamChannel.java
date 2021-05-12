@@ -15,6 +15,8 @@
  */
 package io.netty.incubator.codec.quic;
 
+import androidx.annotation.NonNull;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
@@ -40,6 +42,7 @@ import io.netty.util.ReferenceCountUtil;
 import io.netty.util.internal.StringUtil;
 import io.netty.util.internal.logging.InternalLogger;
 import io.netty.util.internal.logging.InternalLoggerFactory;
+import io.quic.QuicheWrapper;
 
 import java.net.SocketAddress;
 import java.nio.channels.ClosedChannelException;
@@ -68,6 +71,7 @@ final class QuicheQuicStreamChannel extends DefaultAttributeMap implements QuicS
     private boolean finReceived;
     private boolean finSent;
 
+
     private volatile boolean registered;
     private volatile boolean writable = true;
     private volatile boolean active = true;
@@ -78,6 +82,7 @@ final class QuicheQuicStreamChannel extends DefaultAttributeMap implements QuicS
 
     QuicheQuicStreamChannel(QuicheQuicChannel parent, long streamId) {
         this.parent = parent;
+
         this.id = DefaultChannelId.newInstance();
         unsafe = new QuicStreamChannelUnsafe();
         this.pipeline = new DefaultChannelPipeline(this) {
@@ -266,6 +271,10 @@ final class QuicheQuicStreamChannel extends DefaultAttributeMap implements QuicS
         if (finSent && (finReceived || type() == QuicStreamType.UNIDIRECTIONAL && isLocalCreated())) {
             unsafe().close(unsafe().voidPromise());
         }
+    }
+
+    public long connection(){
+        return parent.connection();
     }
 
     private void removeStreamFromParent() {
