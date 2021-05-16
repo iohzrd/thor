@@ -1,9 +1,8 @@
 package io.ipfs.multiformats
 
 import io.core.BufferExt
-import io.core.readUvarint
+import io.core.ByteBufExt
 
-import io.core.writeUvarint
 import io.netty.buffer.ByteBuf
 import io.netty.buffer.Unpooled
 import org.bouncycastle.jcajce.provider.digest.SHA3
@@ -94,11 +93,11 @@ class Multihash(val bytes: ByteBuf, val desc: Descriptor, val lengthBits: Int, v
 
         @JvmStatic
         fun of(mh: ByteBuf): Multihash = with(mh) {
-            val desc = readUvarint().let {
+            val desc = ByteBufExt.readUvarint(this).let {
                 forCode(it)?.desc
                         ?: throw InvalidMultihashException("Unrecognised multihash header")
             }
-            val lengthBits = readUvarint().toInt().times(8) // bits
+            val lengthBits = ByteBufExt.readUvarint(this).toInt().times(8) // bits
             val value = slice()
             Multihash(this, desc, lengthBits, value)
         }
@@ -109,8 +108,8 @@ class Multihash(val bytes: ByteBuf, val desc: Descriptor, val lengthBits: Int, v
             val mhCode = code ?: REGISTRY[desc]?.code
             ?: throw InvalidMultihashException("Unrecognised multihash descriptor")
             with(Unpooled.buffer(lengthBytes + 10)) {
-                writeUvarint(mhCode)
-                writeUvarint(lengthBytes)
+                ByteBufExt.writeUvarint(this,mhCode)
+                ByteBufExt.writeUvarint(this,lengthBytes)
                 writeBytes(digest.slice(0, lengthBytes))
                 return Multihash(this, desc, lengthBits, digest)
             }

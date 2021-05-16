@@ -45,7 +45,7 @@ enum class Protocol(val code: Int, val size: Int, val typeName: String) {
     val encoded: ByteArray = encode(code)
 
     private fun encode(type: Int): ByteArray =
-            BufferExt.toByteArray(byteBuf(4).writeUvarint(type))
+            BufferExt.toByteArray(ByteBufExt.writeUvarint(byteBuf(4),type))
 
     open fun isPath() = false
 
@@ -102,14 +102,14 @@ enum class Protocol(val code: Int, val size: Int, val typeName: String) {
             }
 
     fun readAddressBytes(buf: ByteBuf): ByteArray {
-        val size = if (size != LENGTH_PREFIXED_VAR_SIZE) size / 8 else buf.readUvarint().toInt()
+        val size = if (size != LENGTH_PREFIXED_VAR_SIZE) size / 8 else ByteBufExt.readUvarint(buf).toInt()
         val bb = ByteArray(size)
         buf.readBytes(bb)
         return bb
     }
 
     fun writeAddressBytes(buf: ByteBuf, bytes: ByteArray) {
-        if (size == LENGTH_PREFIXED_VAR_SIZE) buf.writeUvarint(bytes.size)
+        if (size == LENGTH_PREFIXED_VAR_SIZE) ByteBufExt.writeUvarint(buf,bytes.size)
         buf.writeBytes(bytes)
     }
 

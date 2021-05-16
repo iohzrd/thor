@@ -1,7 +1,8 @@
 package io.ipfs.multiformats
 
 import io.core.BufferExt
-import io.core.readUvarint
+import io.core.ByteBufExt
+
 import io.ipfs.host.PeerId
 import io.netty.buffer.ByteBuf
 import io.netty.buffer.Unpooled
@@ -201,7 +202,7 @@ class Multiaddr(val components: List<Pair<Protocol, ByteArray>>) {
         private fun parseBytes(buf: ByteBuf): List<Pair<Protocol, ByteArray>> {
             val ret: MutableList<Pair<Protocol, ByteArray>> = mutableListOf()
             while (buf.isReadable) {
-                val protocol = Protocol.getOrThrow(buf.readUvarint().toInt())
+                val protocol = Protocol.getOrThrow(ByteBufExt.readUvarint(buf).toInt())
                 ret.add(protocol to protocol.readAddressBytes(buf))
             }
             return ret
