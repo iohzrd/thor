@@ -13,7 +13,6 @@
 package io.crypto
 
 import crypto.pb.Crypto
-import io.core.toBytes
 import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPrivateKey
 import org.bouncycastle.jce.ECNamedCurveTable
 import org.bouncycastle.jce.ECPointUtil
@@ -77,8 +76,6 @@ class EcdsaPublicKey(val pub: JavaECPublicKey) : PubKey(Crypto.KeyType.ECDSA) {
 
     override fun raw(): ByteArray = pub.encoded
 
-    fun toUncompressedBytes(): ByteArray =
-            byteArrayOf(0x04) + pub.w.affineX.toBytes(32) + pub.w.affineY.toBytes(32)
 
     override fun verify(data: ByteArray, signature: ByteArray): Boolean =
             with(Signature.getInstance(SHA_256_WITH_ECDSA, Libp2pCrypto.provider)) {
