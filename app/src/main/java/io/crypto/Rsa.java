@@ -36,13 +36,9 @@ public class Rsa {
             throw new RuntimeException("rsa keys must be >= 512 bits to be useful");
         } else {
             KeyPairGenerator var3 = KeyPairGenerator.getInstance("RSA", new BouncyCastleProvider());
-            boolean var4 = false;
-            boolean var5 = false;
-            boolean var7 = false;
             var3.initialize(bits, random);
-            KeyPair var10000 = var3.genKeyPair();
 
-            KeyPair kp = var10000;
+            KeyPair kp = var3.genKeyPair();
             PrivateKey var10004 = kp.getPrivate();
 
             PublicKey var10005 = kp.getPublic();

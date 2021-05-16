@@ -2,6 +2,8 @@ package io.crypto;
 
 
 
+import androidx.annotation.NonNull;
+
 import crypto.pb.Crypto;
 
 public abstract class PubKey implements Key {
@@ -15,10 +17,12 @@ public abstract class PubKey implements Key {
 
     public abstract boolean verify(byte[] var1, byte[] var2);
 
+    @NonNull
     public byte[] bytes() {
         return Key.marshalPublicKey(this);
     }
 
+    @NonNull
     public Crypto.KeyType getKeyType() {
         return this.keyType;
     }

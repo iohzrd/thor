@@ -2,6 +2,8 @@ package io.crypto;
 
 
 
+import androidx.annotation.NonNull;
+
 import crypto.pb.Crypto;
 
 public abstract class PrivKey implements Key {
@@ -19,11 +21,13 @@ public abstract class PrivKey implements Key {
     public abstract PubKey publicKey();
 
 
+    @NonNull
     public byte[] bytes() {
         return Key.marshalPrivateKey(this);
     }
 
 
+    @NonNull
     public Crypto.KeyType getKeyType() {
         return this.keyType;
     }

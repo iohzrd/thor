@@ -19,7 +19,6 @@ import java.util.Hashtable;
 
 import threads.LogUtils;
 import threads.thor.MainActivity;
-import threads.thor.core.DOCS;
 
 public class CustomWebChromeClient extends WebChromeClient {
     private static final int FULL_SCREEN_SETTING = View.SYSTEM_UI_FLAG_FULLSCREEN |
@@ -29,16 +28,13 @@ public class CustomWebChromeClient extends WebChromeClient {
     private final Activity mActivity;
     private final Hashtable<String, String> titles = new Hashtable<>();
     private final Hashtable<String, Bitmap> icons = new Hashtable<>();
-    private final DOCS docs;
     private View mCustomView;
     private WebChromeClient.CustomViewCallback mCustomViewCallback;
     private int mOriginalOrientation;
     private int mOriginalSystemUiVisibility;
 
     public CustomWebChromeClient(@NonNull Activity activity) {
-
         this.mActivity = activity;
-        this.docs = DOCS.getInstance(activity);
     }
 
     @Override
