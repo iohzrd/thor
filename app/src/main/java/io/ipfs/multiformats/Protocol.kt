@@ -1,9 +1,6 @@
 package io.ipfs.multiformats
 
-import io.core.readUvarint
-import io.core.toByteArray
-import io.core.toByteBuf
-import io.core.writeUvarint
+import io.core.*
 import io.ipfs.host.PeerId
 import io.netty.buffer.ByteBuf
 import org.apache.commons.codec.binary.Base32
@@ -48,7 +45,7 @@ enum class Protocol(val code: Int, val size: Int, val typeName: String) {
     val encoded: ByteArray = encode(code)
 
     private fun encode(type: Int): ByteArray =
-            byteBuf(4).writeUvarint(type).toByteArray()
+            BufferExt.toByteArray(byteBuf(4).writeUvarint(type))
 
     open fun isPath() = false
 
@@ -65,13 +62,12 @@ enum class Protocol(val code: Int, val size: Int, val typeName: String) {
                 TCP, UDP, DCCP, SCTP -> {
                     val x = Integer.parseInt(addr)
                     if (x > 65535) throw IllegalArgumentException("Failed to parse $this address $x > 65535")
-                    byteBuf(2).writeShort(x).toByteArray()
+                    BufferExt.toByteArray(byteBuf(2).writeShort(x))
                 }
                 IPFS, P2P -> {
                     val hashBytes = PeerId.fromBase58(addr).bytes
-                    byteBuf(32)
-                            .writeBytes(hashBytes)
-                            .toByteArray()
+                    BufferExt.toByteArray(byteBuf(32)
+                            .writeBytes(hashBytes))
                 }
                 ONION -> {
                     val split = addr.split(":")
@@ -87,23 +83,20 @@ enum class Protocol(val code: Int, val size: Int, val typeName: String) {
                     if (port > 65535) throw IllegalArgumentException("Port is > 65535: $port")
                     if (port < 1) throw IllegalArgumentException("Port is < 1: $port")
 
-                    byteBuf(18)
+                    BufferExt.toByteArray(byteBuf(18)
                             .writeBytes(onionHostBytes)
-                            .writeShort(port)
-                            .toByteArray()
+                            .writeShort(port))
                 }
                 UNIX -> {
                     val addr1 = if (addr.startsWith("/")) addr.substring(1) else addr
                     val path = addr1.toByteArray(StandardCharsets.UTF_8)
-                    byteBuf(path.size + 8)
-                            .writeBytes(path)
-                            .toByteArray()
+                    BufferExt.toByteArray(byteBuf(path.size + 8)
+                            .writeBytes(path))
                 }
                 DNS4, DNS6, DNSADDR, IP6ZONE -> {
                     val strBytes = addr.toByteArray(StandardCharsets.UTF_8)
-                    byteBuf(strBytes.size + 8)
-                            .writeBytes(strBytes)
-                            .toByteArray()
+                    BufferExt.toByteArray(byteBuf(strBytes.size + 8)
+                            .writeBytes(strBytes))
                 }
                 else -> throw IllegalArgumentException("Unknown multiaddr type: $this")
             }
@@ -130,14 +123,14 @@ enum class Protocol(val code: Int, val size: Int, val typeName: String) {
                 Inet6Address.getByAddress(addressBytes)
                         .toString().substring(1)
             }
-            TCP, UDP, DCCP, SCTP -> addressBytes.toByteBuf().readUnsignedShort().toString()
+            TCP, UDP, DCCP, SCTP -> BufferExt.toByteBuf(addressBytes).readUnsignedShort().toString()
             IPFS, P2P -> {
-                val addrBuf = addressBytes.toByteBuf()
-                PeerId(addrBuf.toByteArray()).toBase58()
+                val addrBuf = BufferExt.toByteBuf(addressBytes)
+                PeerId(BufferExt.toByteArray(addrBuf)).toBase58()
             }
             ONION -> {
-                val byteBuf = addressBytes.toByteBuf()
-                val host = byteBuf.readBytes(10).toByteArray()
+                val byteBuf = BufferExt.toByteBuf(addressBytes)
+                val host = BufferExt.toByteArray(byteBuf.readBytes(10))
                 val port = byteBuf.readUnsignedShort()
                 String(Base32().encode(host)).toLowerCase() + ":" + port
             }

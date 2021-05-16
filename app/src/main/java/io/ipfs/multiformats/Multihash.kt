@@ -1,7 +1,8 @@
 package io.ipfs.multiformats
 
+import io.core.BufferExt
 import io.core.readUvarint
-import io.core.toByteArray
+
 import io.core.writeUvarint
 import io.netty.buffer.ByteBuf
 import io.netty.buffer.Unpooled
@@ -12,7 +13,7 @@ const val MAX_HASH_LENGTH_BITS = 1024 * 1024 * 8
 
 class InvalidMultihashException(message: String) : Exception(message)
 
-fun MessageDigest.digest(bytes: ByteBuf): ByteBuf = Unpooled.wrappedBuffer(this.digest(bytes.toByteArray()))
+fun MessageDigest.digest(bytes: ByteBuf): ByteBuf = Unpooled.wrappedBuffer(this.digest(BufferExt.toByteArray(bytes)))
 
 /**
  * Implements Multihash spec: https://github.com/multiformats/multihash

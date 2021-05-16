@@ -1,8 +1,7 @@
 package io.ipfs.multiformats
 
+import io.core.BufferExt
 import io.core.readUvarint
-import io.core.toByteArray
-import io.core.toByteBuf
 import io.ipfs.host.PeerId
 import io.netty.buffer.ByteBuf
 import io.netty.buffer.Unpooled
@@ -34,7 +33,7 @@ class Multiaddr(val components: List<Pair<Protocol, ByteArray>>) {
     /**
      * Creates instance from serialized form from [ByteBuf]
      */
-    constructor(bytes: ByteArray) : this(parseBytes(bytes.toByteBuf()))
+    constructor(bytes: ByteArray) : this(parseBytes(BufferExt.toByteBuf(bytes)))
 
 
     constructor(parentAddr: Multiaddr, childAddr: Multiaddr) :
@@ -95,7 +94,7 @@ class Multiaddr(val components: List<Pair<Protocol, ByteArray>>) {
     /**
      * Returns serialized form as [ByteArray]
      */
-    fun getBytes(): ByteArray = writeBytes(Unpooled.buffer()).toByteArray()
+    fun getBytes(): ByteArray = BufferExt.toByteArray(writeBytes(Unpooled.buffer()))
 
     fun toPeerIdAndAddr(): Pair<PeerId, Multiaddr> {
         if (!has(Protocol.IPFS))

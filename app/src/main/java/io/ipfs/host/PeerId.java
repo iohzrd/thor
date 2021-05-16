@@ -6,7 +6,8 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
 
-import io.core.BufferExtKt;
+
+import io.core.BufferExt;
 import io.crypto.KeyKt;
 import io.crypto.PubKey;
 
@@ -38,8 +39,8 @@ public class PeerId implements Comparable<PeerId>{
         byte[] pubKeyBytes = KeyKt.marshalPublicKey(pubKey);
         Multihash.Descriptor descriptor = pubKeyBytes.length <= 42 ? new Multihash.Descriptor(Multihash.Digest.Identity, null) : new Multihash.Descriptor(Multihash.Digest.SHA2, 256);
 
-        Multihash mh = io.ipfs.multiformats.Multihash.digest(descriptor, BufferExtKt.toByteBuf(pubKeyBytes), null);
-        return new PeerId(BufferExtKt.toByteArray(mh.getBytes()));
+        Multihash mh = io.ipfs.multiformats.Multihash.digest(descriptor, BufferExt.toByteBuf(pubKeyBytes), null);
+        return new PeerId(BufferExt.toByteArray(mh.getBytes()));
     }
 
     @NotNull
