@@ -13,11 +13,11 @@ import io.ipfs.multiformats.Multihash;
 import kotlin.jvm.internal.Intrinsics;
 import kotlin.random.Random;
 
-public class Peer {
+public class PeerId {
     @NotNull
     private final byte[] bytes;
 
-    public Peer(@NotNull byte[] bytes) {
+    public PeerId(@NotNull byte[] bytes) {
         Intrinsics.checkNotNullParameter(bytes, "bytes");
 
         this.bytes = bytes;
@@ -68,7 +68,7 @@ public class Peer {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        Peer peer = (Peer) o;
+        PeerId peer = (PeerId) o;
         return Arrays.equals(bytes, peer.bytes);
     }
 
