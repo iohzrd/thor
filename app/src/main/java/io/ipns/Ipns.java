@@ -19,12 +19,12 @@ import java.util.Date;
 import java.util.Objects;
 
 import crypto.pb.Crypto;
-import io.crypto.EcdsaKt;
-import io.crypto.Ed25519Kt;
+import io.crypto.Ecdsa;
+import io.crypto.Ed25519;
 import io.crypto.PrivKey;
 import io.crypto.PubKey;
-import io.crypto.RsaKt;
-import io.crypto.Secp256k1Kt;
+import io.crypto.Rsa;
+import io.crypto.Secp256k1;
 import io.ipfs.IPFS;
 import io.ipfs.cid.Cid;
 import io.ipfs.host.PeerId;
@@ -62,13 +62,13 @@ public class Ipns implements Validator {
 
         switch (pmes.getType()) {
             case RSA:
-                return RsaKt.unmarshalRsaPublicKey(pubKeyData);
+                return Rsa.unmarshalRsaPublicKey(pubKeyData);
             case ECDSA:
-                return EcdsaKt.unmarshalEcdsaPublicKey(pubKeyData);
+                return Ecdsa.unmarshalEcdsaPublicKey(pubKeyData);
             case Secp256k1:
-                return Secp256k1Kt.unmarshalSecp256k1PublicKey(pubKeyData);
+                return Secp256k1.unmarshalSecp256k1PublicKey(pubKeyData);
             case Ed25519:
-                return Ed25519Kt.unmarshalEd25519PublicKey(pubKeyData);
+                return Ed25519.unmarshalEd25519PublicKey(pubKeyData);
             default:
                 throw new RuntimeException("BadKeyTypeException");
         }

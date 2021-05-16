@@ -18,7 +18,6 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
-import java.security.Provider;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Signature;
@@ -73,11 +72,14 @@ public class Rsa {
     }
 
     @NotNull
-    public static final PubKey unmarshalRsaPublicKey(@NotNull byte[] keyBytes) throws NoSuchAlgorithmException, InvalidKeySpecException {
-        Intrinsics.checkNotNullParameter(keyBytes, "keyBytes");
-        PublicKey var10002 = KeyFactory.getInstance("RSA", new BouncyCastleProvider()).generatePublic(new X509EncodedKeySpec(keyBytes));
-        Intrinsics.checkNotNullExpressionValue(var10002, "KeyFactory.getInstance(\n…EncodedKeySpec(keyBytes))");
-        return new RsaPublicKey(var10002);
+    public static final PubKey unmarshalRsaPublicKey(@NotNull byte[] keyBytes) {
+        try {
+            PublicKey var10002 = KeyFactory.getInstance("RSA", new BouncyCastleProvider()).generatePublic(new X509EncodedKeySpec(keyBytes));
+            Intrinsics.checkNotNullExpressionValue(var10002, "KeyFactory.getInstance(\n…EncodedKeySpec(keyBytes))");
+            return new RsaPublicKey(var10002);
+        } catch (Throwable throwable) {
+            throw new RuntimeException(throwable);
+        }
     }
 
     @NotNull

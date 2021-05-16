@@ -16,9 +16,9 @@ import java.security.cert.X509Certificate;
 
 
 import io.LogUtils;
+import io.crypto.Rsa;
 import io.ipfs.host.LiteSignedCertificate;
 import io.crypto.PubKey;
-import io.crypto.RsaPrivateKey;
 
 import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertNull;
@@ -59,7 +59,7 @@ public class IpfsSelfSigned {
         keyGen.initialize(2048, LiteSignedCertificate.ThreadLocalInsecureRandom.current());
         keypair = keyGen.generateKeyPair();
 
-        RsaPrivateKey privateKey = new RsaPrivateKey(keypair.getPrivate(), keypair.getPublic());
+        Rsa.RsaPrivateKey privateKey = new Rsa.RsaPrivateKey(keypair.getPrivate(), keypair.getPublic());
         X509Certificate cert = new LiteSignedCertificate(privateKey, keypair).cert();
 
         assertNotNull(cert);

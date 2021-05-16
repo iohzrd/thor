@@ -47,7 +47,8 @@ import io.core.ClosedException;
 import io.core.ConnectionIssue;
 import io.core.TimeoutCloseable;
 import io.crypto.PrivKey;
-import io.crypto.RsaPrivateKey;
+
+import io.crypto.Rsa;
 import io.ipfs.cid.Cid;
 import io.ipfs.dht.Routing;
 import io.ipfs.format.BlockStore;
@@ -201,7 +202,7 @@ public class IPFS {
             port = nextFreePort();
         }
 
-        privateKey = new RsaPrivateKey(keypair.getPrivate(), keypair.getPublic());
+        privateKey = new Rsa.RsaPrivateKey(keypair.getPrivate(), keypair.getPublic());
         LiteSignedCertificate selfSignedCertificate = new LiteSignedCertificate(privateKey, keypair);
 
 
