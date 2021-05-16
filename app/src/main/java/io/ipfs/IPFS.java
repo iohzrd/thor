@@ -47,7 +47,6 @@ import io.core.ClosedException;
 import io.core.ConnectionIssue;
 import io.core.TimeoutCloseable;
 import io.crypto.PrivKey;
-
 import io.crypto.Rsa;
 import io.ipfs.cid.Cid;
 import io.ipfs.dht.Routing;
@@ -62,10 +61,10 @@ import io.ipfs.host.LiteSignedCertificate;
 import io.ipfs.host.PeerId;
 import io.ipfs.host.PeerInfo;
 import io.ipfs.host.Pusher;
+import io.ipfs.multiaddr.Multiaddr;
+import io.ipfs.multiaddr.Protocol;
 import io.ipfs.multibase.Base58;
 import io.ipfs.multibase.Multibase;
-import io.ipfs.multiformats.Multiaddr;
-import io.ipfs.multiformats.Protocol;
 import io.ipfs.multihash.Multihash;
 import io.ipfs.utils.Link;
 import io.ipfs.utils.LinkCloseable;
@@ -79,19 +78,18 @@ import io.ipfs.utils.Resolver;
 import io.ipfs.utils.Stream;
 import io.ipfs.utils.WriterStream;
 import io.netty.incubator.codec.quic.QuicStreamChannel;
-import io.netty.util.concurrent.Future;
-import io.netty.util.concurrent.GenericFutureListener;
 import threads.thor.core.blocks.BLOCKS;
 
 public class IPFS {
     // TimeFormatIpfs is the format ipfs uses to represent time in string form
     // RFC3339Nano = "2006-01-02T15:04:05.999999999Z07:00"
-    public static final String RelayRendezvous = "/libp2p/relay";
+    public static final String RELAY_RENDEZVOUS = "/libp2p/relay";
     public static final String TimeFormatIpfs = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSS'Z'";
     public static final String RELAY_PROTOCOL = "/libp2p/circuit/relay/0.1.0";
     public static final String KAD_DHT_PROTOCOL = "/ipfs/kad/1.0.0";
     public static final String PUSH_PROTOCOL = "/ipfs/push/1.0.0";
     public static final String STREAM_PROTOCOL = "/multistream/1.0.0";
+    public static final String BIT_SWAP_PROTOCOL = "/ipfs/bitswap/1.2.0";
     public static final String IDENTITY_PROTOCOL = "/ipfs/id/1.0.0";
     public static final String INDEX_HTML = "index.html";
     public static final int PRELOAD = 25;
@@ -107,12 +105,13 @@ public class IPFS {
     public static final int RESOLVE_TIMEOUT = 1000; // 1 sec
     public static final long WANTS_WAIT_TIMEOUT = 2000; // 2 sec
     public static final int CHUNK_SIZE = 262144;
-    public static final String BITSWAP_PROTOCOL = "/ipfs/bitswap/1.2.0";
+
     public static final int BLOCK_SIZE_LIMIT = 1048576; // 1 MB
     public static final String IPFS_PATH = "/ipfs/";
     public static final String IPNS_PATH = "/ipns/";
     public static final String P2P_PATH = "/p2p/";
 
+    public static final boolean EVALUATE_PEER = false;
     public static final short PRIORITY_URGENT = 1;
     public static final short PRIORITY_HIGH = 5;
     public static final short PRIORITY_NORMAL = 10;
@@ -243,7 +242,7 @@ public class IPFS {
         byte[] data = Multibase.decode(name);
 
         if (data[0] == 0) {
-            Multihash mh = new Multihash(Multihash.Type.id, data);
+            Multihash mh = new Multihash(Multihash.Type.id, data); // TODO simply data to encode
             return PeerId.fromBase58(Base58.encode(mh.getHash()));
         } else {
             try (InputStream inputStream = new ByteArrayInputStream(data)) {
@@ -451,7 +450,6 @@ public class IPFS {
         reachable = Reachable.UNKNOWN;
         try {
 
-
             AtomicInteger success = new AtomicInteger(0);
             AtomicInteger failed = new AtomicInteger(0);
             AtomicReference<String> result = new AtomicReference<>("");
@@ -497,7 +495,6 @@ public class IPFS {
     }
 
     public void provide(@NonNull Cid cid, @NonNull Closeable closable) throws ClosedException {
-
         try {
             host.getRouting().Provide(closable, cid);
         } catch (ClosedException closedException) {
@@ -783,7 +780,7 @@ public class IPFS {
                 for (String multiAddress : addresses) {
                     try {
                         Multiaddr multiaddr = new Multiaddr(multiAddress);
-                        String name = multiaddr.getStringComponent(Protocol.P2P);
+                        String name = multiaddr.getStringComponent(Protocol.Type.P2P);
                         Objects.requireNonNull(name);
                         PeerId peerId = decode(name);
                         Objects.requireNonNull(peerId);
@@ -1037,39 +1034,32 @@ public class IPFS {
             byte[] ipns = IPFS.IPNS_PATH.getBytes();
             byte[] ipnsKey = Bytes.concat(ipns, id.getBytes());
 
-            host.getRouting().SearchValue(() -> (timeout.get() < System.currentTimeMillis())
-                    || closeable.isClosed(), new Routing.ResolveInfo() {
+            host.getRouting().SearchValue(
+                    () -> (timeout.get() < System.currentTimeMillis()) || closeable.isClosed(),
+                    entry -> {
 
+                        String value = entry.getValue();
+                        long sequence = entry.getSequence();
 
-                @Override
-                public void resolved(@NonNull io.ipns.Ipns.Entry entry) {
+                        LogUtils.info(TAG, "IpnsEntry : " + sequence + " " + value + " " +
+                                (System.currentTimeMillis() - time));
 
+                        if (sequence < last) {
+                            // newest value already available
+                            timeout.set(System.currentTimeMillis());
+                            return;
+                        }
 
-                    String value = entry.getValue();
-                    long sequence = entry.getSequence();
+                        if (value.startsWith(IPFS_PATH)) {
+                            timeout.set(System.currentTimeMillis() + RESOLVE_TIMEOUT);
 
-                    LogUtils.info(TAG, "IpnsEntry : " + sequence + " " + value + " " +
-                            (System.currentTimeMillis() - time));
+                            resolvedName.set(new ResolvedName(entry.getPeerId(),
+                                    sequence, value.replaceFirst(IPFS_PATH, "")));
+                        } else {
+                            LogUtils.error(TAG, "invalid value " + value);
+                        }
 
-                    if (sequence < last) {
-                        // newest value already available
-                        timeout.set(System.currentTimeMillis());
-                        return;
-                    }
-
-                    if (value.startsWith(IPFS_PATH)) {
-                        timeout.set(System.currentTimeMillis() + RESOLVE_TIMEOUT);
-
-                        resolvedName.set(new ResolvedName(entry.getPeerId(),
-                                sequence, value.replaceFirst(IPFS_PATH, "")));
-                    } else {
-                        LogUtils.error(TAG, "invalid value " + value);
-                    }
-
-
-
-                }
-            }, ipnsKey, 8);
+                    }, ipnsKey, 8);
 
         } catch (ClosedException ignore) {
             // ignore exception here
@@ -1185,7 +1175,7 @@ public class IPFS {
 
 
         Multiaddr multiaddr = new Multiaddr(multiAddress);
-        String name = multiaddr.getStringComponent(Protocol.P2P);
+        String name = multiaddr.getStringComponent(Protocol.Type.P2P);
         Objects.requireNonNull(name);
         PeerId peerId = decode(name);
         Objects.requireNonNull(peerId);

@@ -1,25 +1,29 @@
 package io.ipfs.multiaddr;
 
-import io.ipfs.multihash.*;
 
-import java.io.*;
-import java.util.*;
-import java.util.stream.*;
+import androidx.annotation.NonNull;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.EOFException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Arrays;
+import java.util.Objects;
+import java.util.stream.Stream;
 
 public class Multiaddr
 {
     private final byte[] raw;
-
-    public Multiaddr(Multihash hash) {
-        this("/ipfs/" + hash.toBase58());
-    }
+    private final String address;
 
     public Multiaddr(String address) {
-        this(decodeFromString(address));
+        this.address = address;
+        this.raw = decodeFromString(address);
     }
 
     public Multiaddr(byte[] raw) {
-        encodeToString(raw); // check validity
+        this.address = encodeToString(raw); // check validity
         this.raw = raw;
     }
 
@@ -108,9 +112,10 @@ public class Multiaddr
         return b.toString();
     }
 
+    @NonNull
     @Override
     public String toString() {
-        return encodeToString(raw);
+        return address;
     }
 
     @Override
@@ -124,4 +129,26 @@ public class Multiaddr
     public int hashCode() {
         return Arrays.hashCode(raw);
     }
+
+    public String getStringComponent(Protocol.Type type) {
+        String[] tokens = address.split("/");
+        for (int i = 0; i < tokens.length; i++) {
+            String token = tokens[i];
+            if (Objects.equals(token, type.name)) {
+                return tokens[i + 1];
+            }
+        }
+        return null;
+    }
+
+    public boolean has(@NonNull Protocol.Type type) {
+        String[] tokens = address.split("/");
+        for (String token : tokens) {
+            if (Objects.equals(token, type.name)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 }

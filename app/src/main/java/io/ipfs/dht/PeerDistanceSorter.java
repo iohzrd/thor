@@ -2,8 +2,6 @@ package io.ipfs.dht;
 
 import androidx.annotation.NonNull;
 
-import org.jetbrains.annotations.NotNull;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -19,7 +17,7 @@ public class PeerDistanceSorter extends ArrayList<PeerDistanceSorter.PeerDistanc
         this.target = target;
     }
 
-    @NotNull
+    @NonNull
     @Override
     public String toString() {
         return "PeerDistanceSorter{" +
@@ -56,7 +54,7 @@ public class PeerDistanceSorter extends ArrayList<PeerDistanceSorter.PeerDistanc
             this.distance = distance;
         }
 
-        @NotNull
+        @NonNull
         @Override
         public String toString() {
             return "PeerDistance{" +

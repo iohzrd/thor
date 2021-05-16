@@ -3,9 +3,7 @@ package io.ipfs.host;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import org.jetbrains.annotations.NotNull;
-
-import io.ipfs.multiformats.Multiaddr;
+import io.ipfs.multiaddr.Multiaddr;
 
 public class PeerInfo {
     @NonNull
@@ -31,12 +29,12 @@ public class PeerInfo {
         return observed;
     }
 
-    @NotNull
+    @NonNull
     public Multiaddr getAddress() {
         return address;
     }
 
-    @NotNull
+    @NonNull
     @Override
     public String toString() {
         return "PeerInfo{" +
@@ -47,12 +45,12 @@ public class PeerInfo {
                 '}';
     }
 
-    @NotNull
+    @NonNull
     public PeerId getPeerId() {
         return peerId;
     }
 
-    @NotNull
+    @NonNull
     public String getAgent() {
         return agent;
     }

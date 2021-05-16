@@ -2,8 +2,6 @@ package io.ipfs.dht;
 
 import androidx.annotation.NonNull;
 
-import org.jetbrains.annotations.NotNull;
-
 import java.math.BigInteger;
 
 import io.ipfs.host.PeerId;
@@ -32,7 +30,7 @@ public class QueryPeerState implements Comparable<QueryPeerState> {
         this.state = state;
     }
 
-    @NotNull
+    @NonNull
     @Override
     public String toString() {
         return "QueryPeerState{" +

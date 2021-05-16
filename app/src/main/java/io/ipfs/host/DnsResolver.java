@@ -19,8 +19,8 @@ import java.util.List;
 import java.util.Set;
 
 import io.LogUtils;
-import io.ipfs.multiformats.Multiaddr;
-import io.ipfs.multiformats.Protocol;
+import io.ipfs.multiaddr.Multiaddr;
+import io.ipfs.multiaddr.Protocol;
 
 
 public class DnsResolver {
@@ -119,10 +119,10 @@ public class DnsResolver {
     @NonNull
     public static List<Multiaddr> resolveDnsAddress(@NonNull Multiaddr multiaddr) {
         List<Multiaddr> mAddrs = new ArrayList<>();
-        String host = multiaddr.getStringComponent(Protocol.DNSADDR);
+        String host = multiaddr.getStringComponent(Protocol.Type.DNSADDR);
         if (host != null) {
             Set<String> addresses = resolveDnsAddress(host);
-            String peerId = multiaddr.getStringComponent(Protocol.P2P);
+            String peerId = multiaddr.getStringComponent(Protocol.Type.P2P);
             for (String addr : addresses) {
                 if (peerId != null) {
                     if (addr.endsWith(peerId)) {

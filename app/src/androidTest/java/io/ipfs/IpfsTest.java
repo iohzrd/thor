@@ -19,8 +19,8 @@ import io.ipfs.cid.Cid;
 import io.core.ClosedException;
 import io.core.TimeoutCloseable;
 import io.ipfs.host.DnsResolver;
+import io.ipfs.multiaddr.Multiaddr;
 import io.ipfs.utils.Link;
-import io.ipfs.multiformats.Multiaddr;
 
 import static junit.framework.TestCase.assertNotNull;
 import static org.junit.Assert.assertEquals;

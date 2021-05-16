@@ -10,7 +10,6 @@ import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.bouncycastle.jce.spec.ECNamedCurveSpec;
 import org.bouncycastle.jce.spec.ECParameterSpec;
 import org.bouncycastle.jce.spec.ECPublicKeySpec;
-import org.jetbrains.annotations.NotNull;
 
 import java.security.KeyFactory;
 import java.security.KeyPair;
@@ -24,16 +23,17 @@ import java.security.interfaces.ECPublicKey;
 import java.security.spec.ECPoint;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.Objects;
 
 import crypto.pb.Crypto;
-import kotlin.jvm.internal.Intrinsics;
+
 
 public class Ecdsa {
     private static final ECNamedCurveParameterSpec CURVE;
 
     static {
         ECNamedCurveParameterSpec var10000 = ECNamedCurveTable.getParameterSpec("P-256");
-        Intrinsics.checkNotNullExpressionValue(var10000, "ECNamedCurveTable.getParameterSpec(\"P-256\")");
+
         CURVE = var10000;
     }
 
@@ -45,7 +45,7 @@ public class Ecdsa {
             boolean var7 = false;
             var3.initialize(curve, random);
             KeyPair var10000 = var3.genKeyPair();
-            Intrinsics.checkNotNullExpressionValue(var10000, "with(\n        KeyPairGen…       genKeyPair()\n    }");
+
             KeyPair keypair = var10000;
             Pair var8;
             EcdsaPrivateKey var10002;
@@ -79,9 +79,8 @@ public class Ecdsa {
     }
 
 
-    @NotNull
-    public static final Pair generateEcdsaKeyPair(@NotNull SecureRandom random) {
-        Intrinsics.checkNotNullParameter(random, "random");
+    public static final Pair generateEcdsaKeyPair(SecureRandom random) {
+
         return generateECDSAKeyPairWithCurve(CURVE, random);
     }
 
@@ -94,30 +93,26 @@ public class Ecdsa {
         return generateEcdsaKeyPair(var0);
     }
 
-
-    @NotNull
     public static final Pair generateEcdsaKeyPair() {
         return generateEcdsaKeyPair$default(null, 1, null);
     }
 
-    @NotNull
-    public static final Pair generateEcdsaKeyPair(@NotNull String curve) {
-        Intrinsics.checkNotNullParameter(curve, "curve");
+
+    public static final Pair generateEcdsaKeyPair(String curve) {
+
         ECNamedCurveParameterSpec var10000 = ECNamedCurveTable.getParameterSpec(curve);
-        Intrinsics.checkNotNullExpressionValue(var10000, "ECNamedCurveTable.getParameterSpec(curve)");
+
         return generateECDSAKeyPairWithCurve$default(var10000, null, 2, null);
     }
 
-    @NotNull
-    public static final Pair ecdsaKeyPairFromKey(@NotNull EcdsaPrivateKey priv) {
-        Intrinsics.checkNotNullParameter(priv, "priv");
+    public static final Pair ecdsaKeyPairFromKey(EcdsaPrivateKey priv) {
+
         return new Pair(priv, priv.publicKey());
     }
 
-    @NotNull
-    public static final PrivKey unmarshalEcdsaPrivateKey(@NotNull byte[] keyBytes) {
+    public static final PrivKey unmarshalEcdsaPrivateKey(byte[] keyBytes) {
         try {
-            Intrinsics.checkNotNullParameter(keyBytes, "keyBytes");
+
             EcdsaPrivateKey var10000;
             PrivateKey var10002 = KeyFactory.getInstance("ECDSA", new BouncyCastleProvider()).generatePrivate(new PKCS8EncodedKeySpec(keyBytes));
             if (var10002 == null) {
@@ -131,10 +126,9 @@ public class Ecdsa {
         }
     }
 
-    @NotNull
-    public static final EcdsaPublicKey unmarshalEcdsaPublicKey(@NotNull byte[] keyBytes) {
+    public static final EcdsaPublicKey unmarshalEcdsaPublicKey(byte[] keyBytes) {
         try {
-            Intrinsics.checkNotNullParameter(keyBytes, "keyBytes");
+
             KeyFactory var1 = KeyFactory.getInstance("ECDSA", new BouncyCastleProvider());
             boolean var2 = false;
             boolean var3 = false;
@@ -152,14 +146,12 @@ public class Ecdsa {
         }
     }
 
-    @NotNull
-    public static EcdsaPublicKey decodeEcdsaPublicKeyUncompressed(@NotNull String ecCurve, @NotNull byte[] keyBytes) {
+    public static EcdsaPublicKey decodeEcdsaPublicKeyUncompressed(String ecCurve, byte[] keyBytes) {
         try {
-            Intrinsics.checkNotNullParameter(ecCurve, "ecCurve");
-            Intrinsics.checkNotNullParameter(keyBytes, "keyBytes");
+
             ECNamedCurveParameterSpec spec = ECNamedCurveTable.getParameterSpec(ecCurve);
             KeyFactory kf = KeyFactory.getInstance("ECDSA", new BouncyCastleProvider());
-            Intrinsics.checkNotNullExpressionValue(spec, "spec");
+
             ECNamedCurveSpec params = new ECNamedCurveSpec(ecCurve, spec.getCurve(), spec.getG(), spec.getN());
             ECPoint point = ECPointUtil.decodePoint(params.getCurve(), keyBytes);
             ECPublicKeySpec pubKeySpec = null; // TODO BUG new ECPublicKeySpec(point, params);
@@ -176,25 +168,24 @@ public class Ecdsa {
     }
 
     public static final class EcdsaPublicKey extends PubKey {
-        @NotNull
+
         private final ECPublicKey pub;
 
-        public EcdsaPublicKey(@NotNull ECPublicKey pub) {
+        public EcdsaPublicKey(ECPublicKey pub) {
             super(Crypto.KeyType.ECDSA);
             this.pub = pub;
         }
 
-        @NotNull
+
         public byte[] raw() {
             byte[] var10000 = this.pub.getEncoded();
-            Intrinsics.checkNotNullExpressionValue(var10000, "pub.encoded");
+
             return var10000;
         }
 
-        public boolean verify(@NotNull byte[] data, @NotNull byte[] signature) {
+        public boolean verify(byte[] data, byte[] signature) {
             try {
-                Intrinsics.checkNotNullParameter(data, "data");
-                Intrinsics.checkNotNullParameter(signature, "signature");
+
                 Signature var3 = Signature.getInstance("SHA256withECDSA", new BouncyCastleProvider());
                 boolean var4 = false;
                 boolean var5 = false;
@@ -211,7 +202,7 @@ public class Ecdsa {
             return this.pub.hashCode();
         }
 
-        @NotNull
+
         public final ECPublicKey getPub() {
             return this.pub;
         }
@@ -219,28 +210,28 @@ public class Ecdsa {
 
 
     public static final class EcdsaPrivateKey extends PrivKey {
-        @NotNull
+
         private final ECPrivateKey priv;
 
-        public EcdsaPrivateKey(@NotNull ECPrivateKey priv) {
+        public EcdsaPrivateKey(ECPrivateKey priv) {
             super(Crypto.KeyType.ECDSA);
             this.priv = priv;
-            if (Intrinsics.areEqual(this.priv.getFormat(), "PKCS#8") ^ true) {
+            if (!Objects.equals(this.priv.getFormat(), "PKCS#8")) {
                 throw new RuntimeException("Private key must be of \"PKCS#8\" format");
             }
         }
 
-        @NotNull
+
         public byte[] raw() {
             byte[] var10000 = this.priv.getEncoded();
-            Intrinsics.checkNotNullExpressionValue(var10000, "priv.encoded");
+
             return var10000;
         }
 
-        @NotNull
-        public byte[] sign(@NotNull byte[] data) {
+
+        public byte[] sign(byte[] data) {
             try {
-                Intrinsics.checkNotNullParameter(data, "data");
+
                 Signature var2 = Signature.getInstance("SHA256withECDSA", new BouncyCastleProvider());
                 boolean var3 = false;
                 boolean var4 = false;
@@ -248,7 +239,7 @@ public class Ecdsa {
                 var2.initSign(this.priv);
                 var2.update(data);
                 byte[] var10000 = var2.sign();
-                Intrinsics.checkNotNullExpressionValue(var10000, "with(\n            Signat…         sign()\n        }");
+
                 return var10000;
             } catch (Throwable throwable) {
                 throw new RuntimeException(throwable);
@@ -262,7 +253,7 @@ public class Ecdsa {
             return (PubKey)this.publicKey();
         }*/
 
-        @NotNull
+
         public EcdsaPublicKey publicKey() {
 
             ECPrivateKey var10000 = this.priv;
@@ -275,7 +266,7 @@ public class Ecdsa {
                     boolean var4 = false;
                     boolean var6 = false;
                     ECParameterSpec var9 = var2.getParameters();
-                    Intrinsics.checkNotNullExpressionValue(var9, "parameters");
+
                     org.bouncycastle.math.ec.ECPoint var10 = var9.getG();
                     if (var2 == null) {
                         throw new NullPointerException("null cannot be cast to non-null type org.bouncycastle.jce.interfaces.ECPrivateKey");
@@ -305,7 +296,6 @@ public class Ecdsa {
             return this.priv.hashCode();
         }
 
-        @NotNull
         public final ECPrivateKey getPriv() {
             return this.priv;
         }

@@ -1,7 +1,7 @@
 package io.ipfs.host;
 
 
-import io.ipfs.multiformats.Multiaddr;
+import io.ipfs.multiaddr.Multiaddr;
 import io.netty.channel.ChannelFuture;
 import io.netty.incubator.codec.quic.QuicChannel;
 

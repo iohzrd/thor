@@ -12,7 +12,7 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.Future;
 
 import io.ipfs.host.PeerId;
-import io.ipfs.multiformats.Multiaddr;
+import io.ipfs.multiaddr.Multiaddr;
 import io.netty.incubator.codec.quic.QuicChannel;
 
 import static junit.framework.TestCase.assertNotNull;

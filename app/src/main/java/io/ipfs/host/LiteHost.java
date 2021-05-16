@@ -7,8 +7,6 @@ import com.google.common.primitives.Bytes;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.MessageLite;
 
-import org.jetbrains.annotations.NotNull;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.Inet4Address;
@@ -62,8 +60,8 @@ import io.ipfs.dht.KadDHT;
 import io.ipfs.dht.Routing;
 import io.ipfs.exchange.Interface;
 import io.ipfs.format.BlockStore;
-import io.ipfs.multiformats.Multiaddr;
-import io.ipfs.multiformats.Protocol;
+import io.ipfs.multiaddr.Multiaddr;
+import io.ipfs.multiaddr.Protocol;
 import io.ipns.Ipns;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
@@ -107,8 +105,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
         @Override
         public void checkClientTrusted(X509Certificate[] chain, String s) {
             try {
-                // TODO activate again
-                if (false) {
+                if (IPFS.EVALUATE_PEER) {
                     for (X509Certificate cert : chain) {
                         PubKey pubKey = LiteSignedCertificate.extractPublicKey(cert);
                         Objects.requireNonNull(pubKey);
@@ -126,8 +123,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
         public void checkServerTrusted(X509Certificate[] chain, String s) {
 
             try {
-                // TODO activate again
-                if (false) {
+                if (IPFS.EVALUATE_PEER) {
                     for (X509Certificate cert : chain) {
                         PubKey pubKey = LiteSignedCertificate.extractPublicKey(cert);
                         Objects.requireNonNull(pubKey);
@@ -282,9 +278,9 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
                 try {
                     BitSwapMessage message = BitSwapMessage.newMessageFromProto(
                             (MessageOuterClass.Message) msg);
-                    ReceiveMessage(peerId, IPFS.BITSWAP_PROTOCOL, message);
+                    ReceiveMessage(peerId, IPFS.BIT_SWAP_PROTOCOL, message);
                 } catch (Throwable throwable) {
-                    ReceiveError(peerId, IPFS.BITSWAP_PROTOCOL, "" + throwable.getMessage());
+                    ReceiveError(peerId, IPFS.BIT_SWAP_PROTOCOL, "" + throwable.getMessage());
                 }
             }).start();
         }
@@ -315,11 +311,11 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
         List<Multiaddr> all = new ArrayList<>();
         for (Multiaddr ma : getAddresses(peerId)) {
             try {
-                if (ma.has(Protocol.DNS6)) {
+                if (ma.has(Protocol.Type.DNS6)) {
                     all.add(DnsResolver.resolveDns6(ma));
-                } else if (ma.has(Protocol.DNS4)) {
+                } else if (ma.has(Protocol.Type.DNS4)) {
                     all.add(DnsResolver.resolveDns4(ma));
-                } else if (ma.has(Protocol.DNSADDR)) {
+                } else if (ma.has(Protocol.Type.DNSADDR)) {
                     all.addAll(DnsResolver.resolveDnsAddress(ma));
                 } else {
                     all.add(ma);
@@ -448,7 +444,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
             */
 
 
-            send(closeable, IPFS.BITSWAP_PROTOCOL, conn,
+            send(closeable, IPFS.BIT_SWAP_PROTOCOL, conn,
                     message.ToProtoV1().toByteArray(), priority);
 
         } catch (ClosedException | ConnectionIssue exception) {
@@ -818,7 +814,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
 
 
     private List<String> getProtocols() {
-        return Arrays.asList(IPFS.STREAM_PROTOCOL, IPFS.IDENTITY_PROTOCOL, IPFS.BITSWAP_PROTOCOL);
+        return Arrays.asList(IPFS.STREAM_PROTOCOL, IPFS.IDENTITY_PROTOCOL, IPFS.BIT_SWAP_PROTOCOL);
     }
 
 
@@ -1175,7 +1171,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
                                             LogUtils.debug(TAG, "Found " + protocol);
                                             request.complete(IdentifyOuterClass.Identify.parseFrom(message));
                                             break;
-                                        case IPFS.BITSWAP_PROTOCOL:
+                                        case IPFS.BIT_SWAP_PROTOCOL:
                                             LogUtils.debug(TAG, "Found " + protocol);
                                             request.complete(MessageOuterClass.Message.parseFrom(message));
                                             break;
@@ -1218,14 +1214,14 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
     public Promise<QuicChannel> dial(@NonNull Multiaddr multiaddr, @NonNull PeerId peerId) throws UnknownHostException, InterruptedException {
 
         InetAddress inetAddress;
-        if (multiaddr.has(Protocol.IP4)) {
-            inetAddress = Inet4Address.getByName(multiaddr.getStringComponent(Protocol.IP4));
-        } else if (multiaddr.has(Protocol.IP6)) {
-            inetAddress = Inet6Address.getByName(multiaddr.getStringComponent(Protocol.IP6));
+        if (multiaddr.has(Protocol.Type.IP4)) {
+            inetAddress = Inet4Address.getByName(multiaddr.getStringComponent(Protocol.Type.IP4));
+        } else if (multiaddr.has(Protocol.Type.IP6)) {
+            inetAddress = Inet6Address.getByName(multiaddr.getStringComponent(Protocol.Type.IP6));
         } else {
             throw new RuntimeException();
         }
-        int port = multiaddr.udpPortFromMultiaddr();
+        int port = multiaddr.getPort();
 
         ChannelHandler codec = new QuicClientCodecBuilder()
                 .sslContext(sslClientContext)
@@ -1261,7 +1257,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
                 return relays.get(quicChannel);
             case IPFS.IDENTITY_PROTOCOL:
                 return idents.get(quicChannel);
-            case IPFS.BITSWAP_PROTOCOL:
+            case IPFS.BIT_SWAP_PROTOCOL:
                 return bitSwaps.get(quicChannel);
             case IPFS.KAD_DHT_PROTOCOL:
                 return kads.get(quicChannel);
@@ -1281,7 +1277,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
             case IPFS.IDENTITY_PROTOCOL:
                 idents.put(quicChannel, streamChannel);
                 break;
-            case IPFS.BITSWAP_PROTOCOL:
+            case IPFS.BIT_SWAP_PROTOCOL:
                 bitSwaps.put(quicChannel, streamChannel);
                 break;
             case IPFS.KAD_DHT_PROTOCOL:
@@ -1303,7 +1299,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
             case IPFS.IDENTITY_PROTOCOL:
                 idents.remove(quicChannel);
                 break;
-            case IPFS.BITSWAP_PROTOCOL:
+            case IPFS.BIT_SWAP_PROTOCOL:
                 bitSwaps.remove(quicChannel);
                 break;
             case IPFS.KAD_DHT_PROTOCOL:
@@ -1330,7 +1326,6 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
             this.multiaddr = multiaddr;
         }
 
-        @NotNull
         @Override
         public Multiaddr remoteAddress() {
             return multiaddr;
@@ -1342,7 +1337,6 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
         }
 
 
-        @NotNull
         @Override
         public PeerId remoteId() {
             return channel.attr(LiteHost.PEER_KEY).get();

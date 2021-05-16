@@ -9,7 +9,6 @@ import java.nio.ByteBuffer;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.Channel;
-import io.netty.channel.socket.DatagramPacket;
 import io.netty.incubator.codec.quic.DirectIoByteBufAllocator;
 import io.netty.incubator.codec.quic.Quic;
 import io.netty.incubator.codec.quic.QuicConnectionAddress;
@@ -18,7 +17,6 @@ import io.netty.incubator.codec.quic.Quiche;
 import io.netty.incubator.codec.quic.QuicheConfig;
 import io.netty.incubator.codec.quic.QuicheQuicConnection;
 import io.netty.incubator.codec.quic.QuicheQuicSslEngine;
-import io.netty.incubator.codec.quic.SegmentedDatagramPacketAllocator;
 
 public class QuicheConnector {
 
@@ -33,8 +31,8 @@ public class QuicheConnector {
 
         QuicheQuicConnection connection = connect(engine, config, Quiche.QUICHE_MAX_CONN_ID_LEN);
 
-        boolean success = connectionSendSimple( connection.address(), remote);
-        if(!success){
+        boolean success = connectionSendSimple(connection.address(), remote);
+        if (!success) {
             return null;
         }
         return connection;
@@ -93,12 +91,10 @@ public class QuicheConnector {
             inConnectionSend = false;
         }
     }*/
-
-
     private static boolean connectionSendSimple(long connection, InetSocketAddress remote) {
 
         boolean packetWasWritten = false;
-        for (;;) {
+        for (; ; ) {
             ByteBuf out = new DirectIoByteBufAllocator(ByteBufAllocator.DEFAULT)
                     .directBuffer(Quic.MAX_DATAGRAM_SIZE);
             int writerIndex = out.writerIndex();

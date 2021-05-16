@@ -75,7 +75,7 @@ public class IpfsRelayTest {
             ipfs.findProviders(peerId -> {
                 find.set(true);
                 throw new ClosedException();
-            }, Cid.nsToCid(IPFS.RelayRendezvous), new TimeoutCloseable(120));
+            }, Cid.nsToCid(IPFS.RELAY_RENDEZVOUS), new TimeoutCloseable(120));
 
             LogUtils.info(TAG, "NumSwarmPeers " + ipfs.numConnections());
 

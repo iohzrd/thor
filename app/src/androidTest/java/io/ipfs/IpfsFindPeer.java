@@ -16,7 +16,7 @@ import io.LogUtils;
 import io.ipfs.host.PeerInfo;
 import io.core.TimeoutCloseable;
 import io.ipfs.host.PeerId;
-import io.ipfs.multiformats.Multiaddr;
+import io.ipfs.multiaddr.Multiaddr;
 
 import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertTrue;

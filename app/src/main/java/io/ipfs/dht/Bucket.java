@@ -1,9 +1,7 @@
 package io.ipfs.dht;
 
 import androidx.annotation.NonNull;
-
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import androidx.annotation.Nullable;
 
 import java.util.Collection;
 import java.util.Map;
@@ -54,7 +52,7 @@ public class Bucket {
         return newbie;
     }
 
-    @NotNull
+    @NonNull
     @Override
     public String toString() {
         return "Bucket{" +

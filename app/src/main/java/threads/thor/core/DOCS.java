@@ -24,16 +24,15 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import io.ipfs.cid.Cid;
 import io.core.Closeable;
 import io.core.ClosedException;
-import io.ipfs.host.DnsResolver;
 import io.ipfs.IPFS;
+import io.ipfs.cid.Cid;
 import io.ipfs.format.Node;
-import io.ipfs.host.Pusher;
-import io.ipfs.utils.Link;
+import io.ipfs.host.DnsResolver;
 import io.ipfs.host.PeerId;
-import io.ipfs.multiformats.Multiaddr;
+import io.ipfs.multiaddr.Multiaddr;
+import io.ipfs.utils.Link;
 import threads.LogUtils;
 import threads.thor.InitApplication;
 import threads.thor.Settings;
@@ -64,13 +63,6 @@ public class DOCS {
     private DOCS(@NonNull Context context) {
         long start = System.currentTimeMillis();
         ipfs = IPFS.getInstance(context);
-        // TODO remove
-        ipfs.setPusher(new Pusher() {
-            @Override
-            public void push(@NonNull PeerId peerId, @NonNull String content) {
-                ipfs.notify(peerId, "lkdsfafdölasdfölaasöfldölas");
-            }
-        });
         pages = PAGES.getInstance(context);
         books = BOOKS.getInstance(context);
         refreshRedirectOptions(context);

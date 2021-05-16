@@ -2,6 +2,8 @@ package io.crypto;
 
 import android.util.Pair;
 
+import androidx.annotation.NonNull;
+
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Integer;
@@ -24,7 +26,6 @@ import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.math.ec.FixedPointCombMultiplier;
 import org.bouncycastle.math.ec.FixedPointUtil;
-import org.jetbrains.annotations.NotNull;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -33,7 +34,7 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 
 import crypto.pb.Crypto;
-import kotlin.jvm.internal.Intrinsics;
+
 
 public class Secp256k1 {
 
@@ -48,27 +49,26 @@ public class Secp256k1 {
         boolean var2 = false;
         boolean var4 = false;
         X9ECParameters var10000 = CURVE_PARAMS;
-        Intrinsics.checkNotNullExpressionValue(var10000, "CURVE_PARAMS");
+
         FixedPointUtil.precompute(var10000.getG());
         X9ECParameters var10002 = CURVE_PARAMS;
-        Intrinsics.checkNotNullExpressionValue(var10002, "CURVE_PARAMS");
+
         ECCurve var5 = var10002.getCurve();
         X9ECParameters var10003 = CURVE_PARAMS;
-        Intrinsics.checkNotNullExpressionValue(var10003, "CURVE_PARAMS");
+
         ECPoint var6 = var10003.getG();
         X9ECParameters var10004 = CURVE_PARAMS;
-        Intrinsics.checkNotNullExpressionValue(var10004, "CURVE_PARAMS");
+
         BigInteger var7 = var10004.getN();
         X9ECParameters var10005 = CURVE_PARAMS;
-        Intrinsics.checkNotNullExpressionValue(var10005, "CURVE_PARAMS");
+
         CURVE = new ECDomainParameters(var5, var6, var7, var10005.getH());
         S_UPPER_BOUND = new BigInteger("7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0", 16);
         S_FIXER_VALUE = new BigInteger("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141", 16);
     }
 
-    @NotNull
-    public static final Pair generateSecp256k1KeyPair(@NotNull SecureRandom random) {
-        Intrinsics.checkNotNullParameter(random, "random");
+    public static final Pair generateSecp256k1KeyPair(@NonNull SecureRandom random) {
+
         ECKeyPairGenerator var1 = new ECKeyPairGenerator();
         boolean var2 = false;
         boolean var3 = false;
@@ -77,11 +77,11 @@ public class Secp256k1 {
         boolean var7 = false;
         boolean var8 = false;
         boolean var10 = false;
-        Intrinsics.checkNotNullExpressionValue(var6, "it");
+
         ECDomainParameters domain = new ECDomainParameters(var6.getCurve(), var6.getG(), var6.getN(), var6.getH());
         var1.init(new ECKeyGenerationParameters(domain, random));
         AsymmetricCipherKeyPair keypair = var1.generateKeyPair();
-        Intrinsics.checkNotNullExpressionValue(keypair, "keypair");
+
         AsymmetricKeyParameter var10000 = keypair.getPrivate();
         if (var10000 == null) {
             throw new NullPointerException("null cannot be cast to non-null type org.bouncycastle.crypto.params.ECPrivateKeyParameters");
@@ -110,27 +110,23 @@ public class Secp256k1 {
         return generateSecp256k1KeyPair(var0);
     }
 
-    @NotNull
     public static final Pair generateSecp256k1KeyPair() {
         return generateSecp256k1KeyPair$default(null, 1, null);
     }
 
-    @NotNull
-    public static final PrivKey unmarshalSecp256k1PrivateKey(@NotNull byte[] data) {
-        Intrinsics.checkNotNullParameter(data, "data");
+    public static final PrivKey unmarshalSecp256k1PrivateKey(byte[] data) {
+
         return new Secp256k1PrivateKey(new ECPrivateKeyParameters(new BigInteger(1, data), CURVE));
     }
 
-    @NotNull
-    public static final PubKey unmarshalSecp256k1PublicKey(@NotNull byte[] data) {
-        Intrinsics.checkNotNullParameter(data, "data");
+
+    public static final PubKey unmarshalSecp256k1PublicKey(byte[] data) {
+
         return new Secp256k1PublicKey(new ECPublicKeyParameters(CURVE.getCurve().decodePoint(data), CURVE));
     }
 
-    @NotNull
-    public static final PubKey secp256k1PublicKeyFromCoordinates(@NotNull BigInteger x, @NotNull BigInteger y) {
-        Intrinsics.checkNotNullParameter(x, "x");
-        Intrinsics.checkNotNullParameter(y, "y");
+    public static final PubKey secp256k1PublicKeyFromCoordinates(BigInteger x, BigInteger y) {
+
         return new Secp256k1PublicKey(new ECPublicKeyParameters(CURVE.getCurve().createPoint(x, y), CURVE));
     }
 
@@ -153,23 +149,23 @@ public class Secp256k1 {
         private final BigInteger priv;
         private final ECPrivateKeyParameters privateKey;
 
-        public Secp256k1PrivateKey(@NotNull ECPrivateKeyParameters privateKey) {
+        public Secp256k1PrivateKey(ECPrivateKeyParameters privateKey) {
             super(Crypto.KeyType.Secp256k1);
             this.privateKey = privateKey;
             this.priv = this.privateKey.getD();
         }
 
-        @NotNull
+
         public byte[] raw() {
             byte[] var10000 = this.priv.toByteArray();
-            Intrinsics.checkNotNullExpressionValue(var10000, "priv.toByteArray()");
+
             return var10000;
         }
 
-        @NotNull
-        public byte[] sign(@NotNull byte[] data) {
+
+        public byte[] sign(byte[] data) {
             try {
-                Intrinsics.checkNotNullParameter(data, "data");
+
                 ECDSASigner var5 = new ECDSASigner();
                 boolean var6 = false;
                 boolean var7 = false;
@@ -187,10 +183,10 @@ public class Secp256k1 {
                     var10000 = s;
                 } else {
                     BigInteger var16 = Secp256k1.access$getS_FIXER_VALUE$p();
-                    Intrinsics.checkNotNullExpressionValue(s, "s");
+
                     var7 = false;
                     var10000 = var16.subtract(s);
-                    Intrinsics.checkNotNullExpressionValue(var10000, "this.subtract(other)");
+
                 }
 
                 BigInteger s_ = var10000;
@@ -206,14 +202,13 @@ public class Secp256k1 {
                 var18.addObject(new ASN1Integer(s_));
                 var18.close();
                 byte[] var19 = var17.toByteArray();
-                Intrinsics.checkNotNullExpressionValue(var19, "with(ByteArrayOutputStre…)\n            }\n        }");
+
                 return var19;
             } catch (Throwable throwable) {
                 throw new RuntimeException(throwable);
             }
         }
 
-        @NotNull
         public PubKey publicKey() {
             BigInteger privKey = this.priv.bitLength() > Secp256k1.access$getCURVE$p().getN().bitLength() ? this.priv.mod(Secp256k1.access$getCURVE$p().getN()) : this.priv;
             ECPoint publicPoint = (new FixedPointCombMultiplier()).multiply(Secp256k1.access$getCURVE$p().getG(), privKey);
@@ -228,21 +223,20 @@ public class Secp256k1 {
     public static final class Secp256k1PublicKey extends PubKey {
         private final ECPublicKeyParameters pub;
 
-        public Secp256k1PublicKey(@NotNull ECPublicKeyParameters pub) {
+        public Secp256k1PublicKey(ECPublicKeyParameters pub) {
             super(Crypto.KeyType.Secp256k1);
             this.pub = pub;
         }
 
-        @NotNull
+
         public byte[] raw() {
             byte[] var10000 = this.pub.getQ().getEncoded(true);
-            Intrinsics.checkNotNullExpressionValue(var10000, "pub.q.getEncoded(true)");
+
             return var10000;
         }
 
-        public boolean verify(@NotNull byte[] data, @NotNull byte[] signature) {
-            Intrinsics.checkNotNullParameter(data, "data");
-            Intrinsics.checkNotNullParameter(signature, "signature");
+        public boolean verify(byte[] data, byte[] signature) {
+
             ECDSASigner var4 = new ECDSASigner();
             boolean var5 = false;
             boolean var6 = false;
@@ -288,7 +282,7 @@ public class Secp256k1 {
                 //CloseableKt.closeFinally(var27, var31);
             }
 
-            Intrinsics.checkNotNullExpressionValue(var33, "ByteArrayInputStream(sig…                        }");
+
             if (var33 == null) {
                 throw new NullPointerException("null cannot be cast to non-null type org.bouncycastle.asn1.ASN1Sequence");
             } else {

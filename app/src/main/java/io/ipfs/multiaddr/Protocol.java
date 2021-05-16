@@ -1,22 +1,26 @@
 package io.ipfs.multiaddr;
 
-import io.core.BufferExt;
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.EOFException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.Inet4Address;
+import java.net.Inet6Address;
+import java.util.HashMap;
+import java.util.Map;
+
 import io.ipfs.host.PeerId;
-import io.ipfs.multibase.*;
-import io.ipfs.multihash.Multihash;
-import io.ipfs.cid.Cid;
+import io.ipfs.multibase.Multibase;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-
-import java.io.*;
-import java.net.*;
-import java.util.*;
 
 public class Protocol {
     public static int LENGTH_PREFIXED_VAR_SIZE = -1;
     private static final String IPV4_REGEX = "\\A(25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)(\\.(25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)){3}\\z";
 
-    enum Type {
+    public enum Type {
         IP4(4, 32, "ip4"),
         TCP(6, 16, "tcp"),
         DCCP(33, 16, "dccp"),

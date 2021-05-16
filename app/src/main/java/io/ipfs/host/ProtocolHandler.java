@@ -86,7 +86,7 @@ public class ProtocolHandler extends SimpleChannelInboundHandler<ByteBuf> {
                         LogUtils.debug(TAG, "Found " + protocol);
                         request.complete(IdentifyOuterClass.Identify.parseFrom(message));
                         break;
-                    case IPFS.BITSWAP_PROTOCOL:
+                    case IPFS.BIT_SWAP_PROTOCOL:
                         LogUtils.debug(TAG, "Found " + protocol);
                         request.complete(MessageOuterClass.Message.parseFrom(message));
                         break;

@@ -1,24 +1,24 @@
-package io.core;
+package io.ipfs.multiaddr;
 
-import org.jetbrains.annotations.NotNull;
+
+import androidx.annotation.NonNull;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
 
 public class BufferExt {
-    @NotNull
-    public static byte[] toByteArray(@NotNull ByteBuf byteBuf) {
+    @NonNull
+    public static byte[] toByteArray(@NonNull ByteBuf byteBuf) {
         byte[] bytes = new byte[byteBuf.readableBytes()];
         byteBuf.slice().readBytes(bytes);
         return bytes;
     }
 
-    @NotNull
-    public static byte[] toByteArray(@NotNull ByteBuf byteBuf, int from, int to) {
+    @NonNull
+    public static byte[] toByteArray(@NonNull ByteBuf byteBuf, int from, int to) {
 
         int len = byteBuf.readableBytes();
-        boolean var5 = false;
         int toFinal = Math.min(len, to);
         len = toFinal - from;
         byte[] ret = new byte[len];
@@ -26,8 +26,8 @@ public class BufferExt {
         return ret;
     }
 
-    @NotNull
-    public static ByteBuf toByteBuf(@NotNull byte[] bytes) {
+    @NonNull
+    public static ByteBuf toByteBuf(@NonNull byte[] bytes) {
         return Unpooled.wrappedBuffer(bytes);
     }
 }

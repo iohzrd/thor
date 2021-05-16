@@ -4,16 +4,14 @@ import androidx.annotation.NonNull;
 
 import com.google.common.collect.Iterables;
 
-import org.jetbrains.annotations.NotNull;
-
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
 import io.LogUtils;
-import io.ipfs.multiformats.Multiaddr;
-import io.ipfs.multiformats.Protocol;
+import io.ipfs.multiaddr.Multiaddr;
+import io.ipfs.multiaddr.Protocol;
 
 
 public class AddrInfo {
@@ -41,7 +39,7 @@ public class AddrInfo {
         return addrInfo;
     }
 
-    @NotNull
+    @NonNull
     @Override
     public String toString() {
         return "AddrInfo{" +
@@ -65,41 +63,41 @@ public class AddrInfo {
 
 
     private void addAddress(@NonNull Multiaddr address) {
-        if (address.has(Protocol.WS)) {
+        if (address.has(Protocol.Type.WS)) {
             LogUtils.info(TAG, "WS " + address.toString()); // maybe TODO
             return;
         }
-        if (address.has(Protocol.WSS)) {
+        if (address.has(Protocol.Type.WSS)) {
             LogUtils.info(TAG, "WSS " + address.toString()); // maybe TODO
             return;
         }
-        if (address.has(Protocol.DNS4)) {
+        if (address.has(Protocol.Type.DNS4)) {
             LogUtils.info(TAG, "DNS4 " + address.toString()); // maybe TODO
             this.addresses.add(address); // TODO
             return;
         }
-        if (address.has(Protocol.DNS6)) {
+        if (address.has(Protocol.Type.DNS6)) {
             LogUtils.info(TAG, "DNS6 " + address.toString()); // maybe TODO
             //this.addresses.add(address); // TODO
             return;
         }
-        if (address.has(Protocol.P2PCIRCUIT)) { // TODO SUPPORT THIS
+        if (address.has(Protocol.Type.P2PCIRCUIT)) { // TODO SUPPORT THIS
             LogUtils.info(TAG, "P2PCIRCUIT " + address.toString());
             return;
         }
 
 
-        if (address.has(Protocol.IP4)) {
-            if (Objects.equals(address.getStringComponent(Protocol.IP4), "127.0.0.1")) { // TODO
+        if (address.has(Protocol.Type.IP4)) {
+            if (Objects.equals(address.getStringComponent(Protocol.Type.IP4), "127.0.0.1")) { // TODO
                 return;
             }
         }
-        if (address.has(Protocol.IP6)) {
-            if (Objects.equals(address.getStringComponent(Protocol.IP6), "::1")) { // TODO
+        if (address.has(Protocol.Type.IP6)) {
+            if (Objects.equals(address.getStringComponent(Protocol.Type.IP6), "::1")) { // TODO
                 return;
             }
         }
-        if (address.has(Protocol.QUIC) && address.has(Protocol.IP4)) { // TODO SUPPORT THIS
+        if (address.has(Protocol.Type.QUIC) && address.has(Protocol.Type.IP4)) { // TODO SUPPORT THIS
             //LogUtils.error(TAG, "QUIC " + address.toString());
             this.addresses.add(address); // TODO
         } else {
