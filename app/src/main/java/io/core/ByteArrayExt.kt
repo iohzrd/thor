@@ -19,7 +19,6 @@ operator fun ByteArray.compareTo(other: ByteArray): Int {
     return 0
 }
 
-fun ByteArray.sliceTrailing(count: Int) = slice((size - count) until size)
 
 fun BigInteger.toBytes(numBytes: Int): ByteArray {
     val bytes = ByteArray(numBytes)
@@ -31,13 +30,6 @@ fun BigInteger.toBytes(numBytes: Int): ByteArray {
 }
 
 
-fun ByteArray.toIntBigEndian(): Int {
-    if (size != 4) throw IllegalArgumentException("Size $size != 4")
-    return (this[0].toInt() and 0xFF shl 24) or
-            (this[1].toInt() and 0xFF shl 16) or
-            (this[2].toInt() and 0xFF shl 8) or
-            (this[3].toInt() and 0xFF)
-}
 
 /**
  * Extends ByteBuf to add a read* method for unsigned varints, as defined in https://github.com/multiformats/unsigned-varint.

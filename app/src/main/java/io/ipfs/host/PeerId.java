@@ -1,5 +1,7 @@
 package io.ipfs.host;
 
+import com.google.common.primitives.UnsignedBytes;
+
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
@@ -14,7 +16,7 @@ import io.ipfs.multiformats.Multihash;
 import kotlin.jvm.internal.Intrinsics;
 import kotlin.random.Random;
 
-public class PeerId {
+public class PeerId implements Comparable<PeerId>{
     @NotNull
     private final byte[] bytes;
 
@@ -59,10 +61,6 @@ public class PeerId {
         return Base58.encode(this.bytes);
     }
 
-    @NotNull
-    public final String toHex() {
-        return ByteArrayExtKt.toHex(this.bytes);
-    }
 
     @Override
     public boolean equals(Object o) {
@@ -85,5 +83,10 @@ public class PeerId {
     @NotNull
     public final byte[] getBytes() {
         return this.bytes;
+    }
+
+    @Override
+    public int compareTo(PeerId o) {
+        return UnsignedBytes.lexicographicalComparator().compare(this.bytes, o.bytes);
     }
 }

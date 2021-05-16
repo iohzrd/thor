@@ -162,8 +162,7 @@ public class KadDHT implements Routing {
                 .setValue(ByteString.copyFrom(value))
                 .setTimeReceived(format).build();
 
-        ConcurrentSkipListSet<PeerId> handled = new ConcurrentSkipListSet<>(
-                (o1, o2) -> o1.toHex().compareTo(o2.toHex()));
+        ConcurrentSkipListSet<PeerId> handled = new ConcurrentSkipListSet<>();
         GetClosestPeers(ctx, key, addrInfo -> {
             PeerId peerId = addrInfo.getPeerId();
             if (!handled.contains(peerId)) {
@@ -209,8 +208,7 @@ public class KadDHT implements Routing {
 
         byte[] key = cid.Hash();
 
-        ConcurrentSkipListSet<PeerId> handled = new ConcurrentSkipListSet<>(
-                (o1, o2) -> o1.toHex().compareTo(o2.toHex()));
+        ConcurrentSkipListSet<PeerId> handled = new ConcurrentSkipListSet<>();
         runLookupWithFollowup(closeable, key, (ctx, p) -> {
 
             Dht.Message pms = findProvidersSingle(ctx, p, key);
@@ -293,8 +291,7 @@ public class KadDHT implements Routing {
 
         final Dht.Message mes = makeProvRecord(key);
 
-        ConcurrentSkipListSet<PeerId> handled = new ConcurrentSkipListSet<>(
-                (o1, o2) -> o1.toHex().compareTo(o2.toHex()));
+        ConcurrentSkipListSet<PeerId> handled = new ConcurrentSkipListSet<>();
         GetClosestPeers(ctx, key, addrInfo -> {
             PeerId peerId = addrInfo.getPeerId();
             if (!handled.contains(peerId)) {
