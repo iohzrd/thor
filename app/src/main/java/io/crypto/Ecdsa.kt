@@ -26,7 +26,7 @@ import java.security.spec.X509EncodedKeySpec
 import java.security.interfaces.ECPrivateKey as JavaECPrivateKey
 import java.security.interfaces.ECPublicKey as JavaECPublicKey
 
-private val CURVE: ECNamedCurveParameterSpec = ECNamedCurveTable.getParameterSpec(P256_CURVE)
+private val CURVE: ECNamedCurveParameterSpec = ECNamedCurveTable.getParameterSpec("P-256")
 
 /**
  * @param priv the private key backing this instance.
@@ -35,8 +35,8 @@ class EcdsaPrivateKey(val priv: JavaECPrivateKey) : PrivKey(Crypto.KeyType.ECDSA
 
     init {
         // Set up private key.
-        if (priv.format != KEY_PKCS8) {
-            throw RuntimeException("Private key must be of '$KEY_PKCS8' format")
+        if (priv.format != "PKCS#8") {
+            throw RuntimeException("Private key must be of \"PKCS#8\" format")
         }
     }
 
@@ -48,12 +48,17 @@ class EcdsaPrivateKey(val priv: JavaECPrivateKey) : PrivKey(Crypto.KeyType.ECDSA
      * @return the signature as a byte array.
      */
     override fun sign(data: ByteArray): ByteArray =
-            with(Signature.getInstance(SHA_256_WITH_ECDSA, Libp2pCrypto.provider)) {
-                // Signature is made up of r and s numbers.
-                initSign(priv)
-                update(data)
-                sign()
-            }
+        with(
+            Signature.getInstance(
+                "SHA256withECDSA",
+                org.bouncycastle.jce.provider.BouncyCastleProvider()
+            )
+        ) {
+            // Signature is made up of r and s numbers.
+            initSign(priv)
+            update(data)
+            sign()
+        }
 
     override fun publicKey(): EcdsaPublicKey {
         val pubSpec: ECPublicKeySpec = (priv as BCECPrivateKey).run {
@@ -61,7 +66,12 @@ class EcdsaPrivateKey(val priv: JavaECPrivateKey) : PrivKey(Crypto.KeyType.ECDSA
             ECPublicKeySpec(q, parameters)
         }
 
-        return with(KeyFactory.getInstance(ECDSA_ALGORITHM, Libp2pCrypto.provider)) {
+        return with(
+            KeyFactory.getInstance(
+                "ECDSA",
+                org.bouncycastle.jce.provider.BouncyCastleProvider()
+            )
+        ) {
             EcdsaPublicKey(generatePublic(pubSpec) as JavaECPublicKey)
         }
     }
@@ -78,11 +88,16 @@ class EcdsaPublicKey(val pub: JavaECPublicKey) : PubKey(Crypto.KeyType.ECDSA) {
 
 
     override fun verify(data: ByteArray, signature: ByteArray): Boolean =
-            with(Signature.getInstance(SHA_256_WITH_ECDSA, Libp2pCrypto.provider)) {
-                initVerify(pub)
-                update(data)
-                verify(signature)
-            }
+        with(
+            Signature.getInstance(
+                "SHA256withECDSA",
+                org.bouncycastle.jce.provider.BouncyCastleProvider()
+            )
+        ) {
+            initVerify(pub)
+            update(data)
+            verify(signature)
+        }
 
     override fun hashCode(): Int = pub.hashCode()
 }
@@ -93,7 +108,12 @@ class EcdsaPublicKey(val pub: JavaECPublicKey) : PubKey(Crypto.KeyType.ECDSA) {
  * @return a pair of private and public keys.
  */
 private fun generateECDSAKeyPairWithCurve(curve: ECNamedCurveParameterSpec, random: SecureRandom = SecureRandom()): Pair<EcdsaPrivateKey, EcdsaPublicKey> {
-    val keypair: KeyPair = with(KeyPairGenerator.getInstance(ECDSA_ALGORITHM, Libp2pCrypto.provider)) {
+    val keypair: KeyPair = with(
+        KeyPairGenerator.getInstance(
+            "ECDSA",
+            org.bouncycastle.jce.provider.BouncyCastleProvider()
+        )
+    ) {
         initialize(curve, random)
         genKeyPair()
     }
@@ -136,8 +156,9 @@ fun ecdsaKeyPairFromKey(priv: EcdsaPrivateKey): Pair<PrivKey, PubKey> = Pair(pri
  * @return a private key.
  */
 fun unmarshalEcdsaPrivateKey(keyBytes: ByteArray): PrivKey = EcdsaPrivateKey(
-        KeyFactory.getInstance(ECDSA_ALGORITHM, Libp2pCrypto.provider).generatePrivate(
-                PKCS8EncodedKeySpec(keyBytes)
+    KeyFactory.getInstance("ECDSA", org.bouncycastle.jce.provider.BouncyCastleProvider())
+        .generatePrivate(
+            PKCS8EncodedKeySpec(keyBytes)
         ) as JavaECPrivateKey
 )
 
@@ -147,9 +168,9 @@ fun unmarshalEcdsaPrivateKey(keyBytes: ByteArray): PrivKey = EcdsaPrivateKey(
  * @return a public key.
  */
 fun unmarshalEcdsaPublicKey(keyBytes: ByteArray): EcdsaPublicKey =
-        with(KeyFactory.getInstance(ECDSA_ALGORITHM, Libp2pCrypto.provider)) {
-            EcdsaPublicKey(generatePublic(X509EncodedKeySpec(keyBytes)) as JavaECPublicKey)
-        }
+    with(KeyFactory.getInstance("ECDSA", org.bouncycastle.jce.provider.BouncyCastleProvider())) {
+        EcdsaPublicKey(generatePublic(X509EncodedKeySpec(keyBytes)) as JavaECPublicKey)
+    }
 
 fun decodeEcdsaPublicKeyUncompressed(ecCurve: String, keyBytes: ByteArray): EcdsaPublicKey {
     val spec = ECNamedCurveTable.getParameterSpec(ecCurve)

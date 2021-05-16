@@ -36,9 +36,9 @@ class RsaPrivateKey(private val sk: JavaPrivateKey, private val pk: JavaPublicKe
 
     init {
         // Set up private key.
-        val isKeyOfFormat: Boolean = sk.format?.equals(KEY_PKCS8) ?: false
+        val isKeyOfFormat: Boolean = sk.format?.equals("PKCS#8") ?: false
         if (!isKeyOfFormat) {
-            throw RuntimeException("Private key must be of '$KEY_PKCS8' format")
+            throw RuntimeException("Private key must be of \"PKCS#8\" format")
         }
 
         val bcPrivateKeyInfo = PrivateKeyInfo.getInstance(sk.encoded)
@@ -48,11 +48,16 @@ class RsaPrivateKey(private val sk: JavaPrivateKey, private val pk: JavaPublicKe
     override fun raw(): ByteArray = pkcs1PrivateKeyBytes
 
     override fun sign(data: ByteArray): ByteArray =
-            with(Signature.getInstance(SHA_256_WITH_RSA, Libp2pCrypto.provider)) {
-                initSign(sk)
-                update(data)
-                sign()
-            }
+        with(
+            Signature.getInstance(
+                "SHA256withRSA",
+                org.bouncycastle.jce.provider.BouncyCastleProvider()
+            )
+        ) {
+            initSign(sk)
+            update(data)
+            sign()
+        }
 
     override fun publicKey(): PubKey = rsaPublicKey
 
@@ -67,11 +72,16 @@ class RsaPublicKey(private val k: JavaPublicKey) : PubKey(Crypto.KeyType.RSA) {
     override fun raw(): ByteArray = k.encoded
 
     override fun verify(data: ByteArray, signature: ByteArray): Boolean =
-            with(Signature.getInstance(SHA_256_WITH_RSA, Libp2pCrypto.provider)) {
-                initVerify(k)
-                update(data)
-                verify(signature)
-            }
+        with(
+            Signature.getInstance(
+                "SHA256withRSA",
+                org.bouncycastle.jce.provider.BouncyCastleProvider()
+            )
+        ) {
+            initVerify(k)
+            update(data)
+            verify(signature)
+        }
 
     override fun hashCode(): Int = k.hashCode()
 }
@@ -84,13 +94,13 @@ class RsaPublicKey(private val k: JavaPublicKey) : PubKey(Crypto.KeyType.RSA) {
 @JvmOverloads
 fun generateRsaKeyPair(bits: Int, random: SecureRandom = SecureRandom()): Pair<PrivKey, PubKey> {
     if (bits < 2048) {
-        throw RuntimeException(ErrRsaKeyTooSmall)
+        throw RuntimeException("rsa to small")
     }
 
     val kp: KeyPair = with(
             KeyPairGenerator.getInstance(
-                    RSA_ALGORITHM,
-                    Libp2pCrypto.provider
+                "RSA",
+                org.bouncycastle.jce.provider.BouncyCastleProvider()
             )
     ) {
         initialize(bits, random)
@@ -111,8 +121,8 @@ fun generateRsaKeyPair(bits: Int, random: SecureRandom = SecureRandom()): Pair<P
 fun unmarshalRsaPublicKey(keyBytes: ByteArray): PubKey =
         RsaPublicKey(
                 KeyFactory.getInstance(
-                        RSA_ALGORITHM,
-                        Libp2pCrypto.provider
+                    "RSA",
+                    org.bouncycastle.jce.provider.BouncyCastleProvider()
                 ).generatePublic(X509EncodedKeySpec(keyBytes))
         )
 
@@ -139,11 +149,14 @@ fun unmarshalRsaPrivateKey(keyBytes: ByteArray): PrivKey {
     val privateKeyInfo = PrivateKeyInfoFactory.createPrivateKeyInfo(privateKeyParameters)
     val algorithmId = privateKeyInfo.privateKeyAlgorithm.algorithm.id
     val spec = PKCS8EncodedKeySpec(privateKeyInfo.encoded)
-    val sk = KeyFactory.getInstance(algorithmId, Libp2pCrypto.provider).generatePrivate(spec)
+    val sk =
+        KeyFactory.getInstance(algorithmId, org.bouncycastle.jce.provider.BouncyCastleProvider())
+            .generatePrivate(spec)
 
     // We can extract the public key from the modulus and exponent of the private key. Woot!
-    val publicKeySpec = RSAPublicKeySpec(privateKeyParameters.modulus, privateKeyParameters.publicExponent)
-    val keyFactory = KeyFactory.getInstance(RSA_ALGORITHM)
+    val publicKeySpec =
+        RSAPublicKeySpec(privateKeyParameters.modulus, privateKeyParameters.publicExponent)
+    val keyFactory = KeyFactory.getInstance("RSA")
     val pk = keyFactory.generatePublic(publicKeySpec)
 
     return RsaPrivateKey(sk, pk)

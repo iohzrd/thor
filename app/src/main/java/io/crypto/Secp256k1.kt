@@ -27,7 +27,7 @@ import java.math.BigInteger
 import java.security.SecureRandom
 
 // The parameters of the secp256k1 curve that Bitcoin uses.
-private val CURVE_PARAMS = CustomNamedCurves.getByName(SECP_256K1_ALGORITHM)
+private val CURVE_PARAMS = CustomNamedCurves.getByName("secp256k1")
 
 private val CURVE: ECDomainParameters = CURVE_PARAMS.let {
     FixedPointUtil.precompute(CURVE_PARAMS.g)
@@ -49,7 +49,7 @@ class Secp256k1PrivateKey(private val privateKey: ECPrivateKeyParameters) : Priv
     override fun sign(data: ByteArray): ByteArray {
         val (r, s) = with(ECDSASigner()) {
             init(true, ParametersWithRandom(privateKey, SecureRandom()))
-            generateSignature(sha256(data)).let {
+            generateSignature(Hash.sha256(data)).let {
                 Pair(it[0], it[1])
             }
         }
@@ -104,7 +104,7 @@ class Secp256k1PublicKey(private val pub: ECPublicKeyParameters) : PubKey(Crypto
 
         val r = (asn1Encodables[0].toASN1Primitive() as ASN1Integer).value
         val s = (asn1Encodables[1].toASN1Primitive() as ASN1Integer).value
-        return signer.verifySignature(sha256(data), r.abs(), s.abs())
+        return signer.verifySignature(Hash.sha256(data), r.abs(), s.abs())
     }
 
     override fun hashCode(): Int = pub.hashCode()
@@ -116,7 +116,7 @@ class Secp256k1PublicKey(private val pub: ECPublicKeyParameters) : PubKey(Crypto
  */
 @JvmOverloads
 fun generateSecp256k1KeyPair(random: SecureRandom = SecureRandom()): Pair<PrivKey, PubKey> = with(ECKeyPairGenerator()) {
-    val domain = SECNamedCurves.getByName(SECP_256K1_ALGORITHM).let {
+    val domain = SECNamedCurves.getByName("secp256k1").let {
         ECDomainParameters(it.curve, it.g, it.n, it.h)
     }
     init(ECKeyGenerationParameters(domain, random))
