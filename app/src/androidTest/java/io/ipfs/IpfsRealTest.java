@@ -13,12 +13,11 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import io.LogUtils;
-import io.ipfs.cid.Cid;
 import io.core.ClosedException;
 import io.core.TimeoutCloseable;
+import io.ipfs.cid.Cid;
 import io.ipfs.format.Node;
 import io.ipfs.host.DnsResolver;
 import io.ipfs.utils.Link;
@@ -26,7 +25,6 @@ import io.ipfs.utils.Link;
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertTrue;
-import static junit.framework.TestCase.fail;
 
 @SuppressWarnings("SpellCheckingInspection")
 @RunWith(AndroidJUnit4.class)
@@ -40,7 +38,7 @@ public class IpfsRealTest {
         context = ApplicationProvider.getApplicationContext();
     }
 
-    //@Test
+    @Test
     public void test_1() {
 
         IPFS ipfs = TestEnv.getTestInstance(context);
@@ -74,7 +72,7 @@ public class IpfsRealTest {
         assertTrue(atomicBoolean.get());
     }
 
-    //@Test
+    @Test
     public void test_2() throws ClosedException, IOException {
 
         IPFS ipfs = TestEnv.getTestInstance(context);
@@ -98,7 +96,7 @@ public class IpfsRealTest {
 
     }
 
-    //@Test
+    @Test
     public void test_3() throws ClosedException {
 
         IPFS ipfs = TestEnv.getTestInstance(context);
@@ -133,7 +131,7 @@ public class IpfsRealTest {
     }
 
 
-    //@Test
+    @Test
     public void test_5() {
 
         IPFS ipfs = TestEnv.getTestInstance(context);

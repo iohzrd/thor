@@ -8,7 +8,8 @@ import io.core.BufferExtKt;
 import io.core.ByteArrayExtKt;
 import io.crypto.KeyKt;
 import io.crypto.PubKey;
-import io.ipfs.multiformats.Base58;
+
+import io.ipfs.multibase.Base58;
 import io.ipfs.multiformats.Multihash;
 import kotlin.jvm.internal.Intrinsics;
 import kotlin.random.Random;
@@ -29,7 +30,7 @@ public class PeerId {
     @NotNull
     public static PeerId fromBase58(@NotNull String str) {
         Intrinsics.checkNotNullParameter(str, "str");
-        return new PeerId(Base58.INSTANCE.decode(str));
+        return new PeerId(Base58.decode(str));
     }
 
     @NotNull
@@ -45,7 +46,6 @@ public class PeerId {
         Multihash.Descriptor descriptor = pubKeyBytes.length <= 42 ? new Multihash.Descriptor(Multihash.Digest.Identity, null) : new Multihash.Descriptor(Multihash.Digest.SHA2, 256);
 
         Multihash mh = io.ipfs.multiformats.Multihash.digest(descriptor, BufferExtKt.toByteBuf(pubKeyBytes), null);
-        // Multihash mh = io.ipfs.multiformats.Multihash.Companion.digest$default(Multihash.Companion, descriptor, BufferExtKt.toByteBuf(pubKeyBytes), (Integer)null, 4, (Object)null);
         return new PeerId(BufferExtKt.toByteArray(mh.getBytes()));
     }
 
@@ -56,7 +56,7 @@ public class PeerId {
 
     @NotNull
     public final String toBase58() {
-        return Base58.INSTANCE.encode(this.bytes);
+        return Base58.encode(this.bytes);
     }
 
     @NotNull
