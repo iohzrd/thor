@@ -176,7 +176,7 @@ public class BitSwapEngine {
                     BitSwapMessage msg = createMessage(task);
                     if (!msg.Empty()) {
                         try {
-                            network.writeMessage(new TimeoutCloseable(5), peer, msg, false);
+                            network.writeMessage(new TimeoutCloseable(5), peer, msg, IPFS.PRIORITY_NORMAL);
                         } catch (Throwable throwable) {
                             LogUtils.error(TAG, throwable);
                         }
@@ -194,7 +194,7 @@ public class BitSwapEngine {
                 BitSwapMessage msg = createMessage(task);
                 if (!msg.Empty()) {
                     try {
-                        network.writeMessage(new TimeoutCloseable(10), peer, msg, false);
+                        network.writeMessage(new TimeoutCloseable(10), peer, msg, IPFS.PRIORITY_NORMAL);
                     } catch (Throwable throwable) {
                         LogUtils.error(TAG, throwable);
                     }

@@ -30,10 +30,8 @@ import io.netty.util.ReferenceCountUtil;
 
 public class QuicheWrapper {
 private static final String TAG = QuicheWrapper.class.getSimpleName();
-    public static QuicStreamPriority URGENT = new QuicStreamPriority(5, false);
-    public static QuicStreamPriority NORMAL = new QuicStreamPriority(10, false);
 
-    public abstract class QuicheStreamStreamHandler {
+    public abstract static class QuicheStreamStreamHandler {
 
         public void channelRead(QuicheStream ctx, ByteBuf byteBuf, boolean fin) {
 
@@ -319,6 +317,7 @@ private static final String TAG = QuicheWrapper.class.getSimpleName();
 
     public static void streamShutdown(long connection, long streamId, boolean read, boolean write, int err) {
 
+        Quiche.quiche_conn_stream_finished(connection, streamId);
         int res = 0;
         if (read) {
             res |= Quiche.quiche_conn_stream_shutdown(connection, streamId, Quiche.QUICHE_SHUTDOWN_READ, err);

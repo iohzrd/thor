@@ -34,7 +34,7 @@ public class IpfsDnsAddress {
 
         boolean result = ipfs.swarmConnect(
                 "/dnsaddr/bootstrap.libp2p.io/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN",
-                ()-> false);
+                3);
         assertTrue(result);
 
 

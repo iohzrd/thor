@@ -9,7 +9,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -111,21 +110,7 @@ public class DataHandler {
             throws IOException, ProtocolIssue {
 
 
-        // shortcut NA
-        if (expectedLength == 0) {
-            if (Arrays.equals(data, IPFS.NA.getBytes())) {
-                tokens.add(IPFS.NA);
-                isDone = true;
-                return;
-            }
-            if (Arrays.equals(data, IPFS.LS.getBytes())) {
-                tokens.add(IPFS.LS);
-                isDone = true;
-                return;
-            }
-        }
         temp.write(data);
-
 
         // shorcut
         if (temp.size() < expectedLength) {
@@ -154,6 +139,10 @@ public class DataHandler {
                     token = token.substring(0, read - 1);
                     tokens.add(token);
                     //LogUtils.error(TAG, "token  " + token);
+                } else if (tokenData[0] == 'n' && tokenData[1] == 'a' && tokenData[read - 1] == '\n') {
+                    tokens.add(IPFS.NA);
+                } else if (tokenData[0] == 'l' && tokenData[1] == 's' && tokenData[read - 1] == '\n') {
+                    tokens.add(IPFS.LS);
                 } else {
                     //LogUtils.error(TAG, "token ??? " + new String(tokenData));
                     message = tokenData;

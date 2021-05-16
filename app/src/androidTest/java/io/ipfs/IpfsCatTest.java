@@ -12,14 +12,17 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 import io.LogUtils;
 import io.ipfs.cid.Cid;
 import io.core.ClosedException;
 import io.core.TimeoutCloseable;
 import io.core.TimeoutProgress;
+import io.ipfs.host.PeerId;
 import io.ipfs.utils.Link;
 
+import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.fail;
@@ -43,14 +46,31 @@ public class IpfsCatTest {
         IPFS ipfs = TestEnv.getTestInstance(context);
         Cid cid = Cid.Decode("Qmaisz6NMhDB51cCvNWa1GMS7LU1pAxdF4Ld6Ft9kZEP2a");
         long time = System.currentTimeMillis();
-        List<String> provs = new ArrayList<>();
-        ipfs.findProviders(peerId -> provs.add(peerId.toBase58()), cid, new TimeoutCloseable(45));
-        for (String prov : provs) {
-            LogUtils.debug(TAG, "Provider " + prov);
+        ConcurrentSkipListSet<PeerId> provs = new ConcurrentSkipListSet<>();
+        try {
+            ipfs.findProviders(provs::add, cid, new TimeoutCloseable(45));
+        } catch (ClosedException ignore){
+            // nothing to do
+        }
+        assertFalse(provs.isEmpty());
+
+        for (PeerId prov : provs) {
+            LogUtils.debug(TAG, "Provider " + prov.toBase58());
         }
         LogUtils.debug(TAG, "Time Providers : " + (System.currentTimeMillis() - time) + " [ms]");
 
+
+        for (PeerId prov : provs) {
+            try {
+                ipfs.swarmConnect(prov, IPFS.CONNECT_TIMEOUT);
+            } catch (Throwable throwable) {
+                LogUtils.verbose(TAG, throwable.getClass().getSimpleName());
+            }
+        }
+
         time = System.currentTimeMillis();
+
+
         List<Link> res = ipfs.getLinks(cid, new TimeoutCloseable(15));
         LogUtils.debug(TAG, "Time : " + (System.currentTimeMillis() - time) + " [ms]");
         assertNotNull(res);

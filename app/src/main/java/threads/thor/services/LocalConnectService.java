@@ -6,8 +6,6 @@ import androidx.annotation.NonNull;
 
 import io.LogUtils;
 import io.ipfs.IPFS;
-import io.ipfs.host.PeerInfo;
-import io.core.TimeoutCloseable;
 import io.ipfs.host.PeerId;
 
 public class LocalConnectService {
@@ -28,6 +26,10 @@ public class LocalConnectService {
 
 
             boolean connect = ipfs.swarmConnect(multiAddress, 10);
+
+            if (connect) {
+                ipfs.swarmEnhance(PeerId.fromBase58(pid));
+            }
 
             LogUtils.error(TAG, "Success ? " + connect + " for " + multiAddress);
 

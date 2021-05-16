@@ -17,7 +17,7 @@ package io.netty.incubator.codec.quic;
 
 import io.netty.util.ReferenceCounted;
 
-final class QuicheQuicConnection {
+public final class QuicheQuicConnection {
     private final ReferenceCounted refCnt;
     private long connection;
 
@@ -39,7 +39,7 @@ final class QuicheQuicConnection {
         }
     }
 
-    long address() {
+    public long address() {
         assert connection != -1;
         return connection;
     }

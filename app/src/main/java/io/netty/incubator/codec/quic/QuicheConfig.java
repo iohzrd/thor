@@ -15,7 +15,7 @@
  */
 package io.netty.incubator.codec.quic;
 
-final class QuicheConfig {
+public final class QuicheConfig {
     private final boolean isDatagramSupported;
     private long config = -1;
 
@@ -100,7 +100,7 @@ final class QuicheConfig {
         return isDatagramSupported;
     }
 
-    long nativeAddress() {
+    public long nativeAddress() {
         return config;
     }
 

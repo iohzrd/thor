@@ -16,10 +16,11 @@ import io.ipfs.host.PeerId;
 
 public interface BitSwapNetwork {
 
-    boolean connectTo(@NonNull Closeable closeable, @NonNull PeerId peerId) throws ClosedException, ConnectionIssue;
+    void connectTo(@NonNull Closeable closeable, @NonNull PeerId peerId, int timeout)
+            throws ClosedException, ConnectionIssue;
 
     void writeMessage(@NonNull Closeable closeable, @NonNull PeerId peer,
-                      @NonNull BitSwapMessage message, boolean urgentPriority)
+                      @NonNull BitSwapMessage message, short priority)
             throws ClosedException, ProtocolIssue, TimeoutIssue, ConnectionIssue;
 
     void findProviders(@NonNull Closeable closeable, @NonNull Routing.Providers providers,

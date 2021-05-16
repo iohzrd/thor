@@ -68,7 +68,7 @@ public class DOCS {
         ipfs.setPusher(new Pusher() {
             @Override
             public void push(@NonNull PeerId peerId, @NonNull String content) {
-                ipfs.notify(peerId, content);
+                ipfs.notify(peerId, "lkdsfafdölasdfölaasöfldölas");
             }
         });
         pages = PAGES.getInstance(context);
@@ -104,11 +104,13 @@ public class DOCS {
                     String address = page.getAddress();
                     if (!address.isEmpty()) {
                         connected = ipfs.swarmConnect(
-                                address.concat(Content.P2P_PATH).concat(page.getPid()), closeable);
+                                address.concat(Content.P2P_PATH).concat(page.getPid()),
+                                IPFS.CONNECT_TIMEOUT);
                     }
                 }
                 if (!connected) {
-                    connected = ipfs.swarmConnect(Content.P2P_PATH + pid, closeable);
+                    connected = ipfs.swarmConnect(Content.P2P_PATH + pid,
+                            IPFS.CONNECT_TIMEOUT);
                 }
 
                 if (page != null && connected) {
@@ -282,6 +284,7 @@ public class DOCS {
 
             throw new ResolveNameException(uri.toString());
         }
+
         resolves.put(pid, resolvedName.getHash());
         pages.setPageContent(pid, resolvedName.getHash());
         pages.setPageSequence(pid, resolvedName.getSequence());

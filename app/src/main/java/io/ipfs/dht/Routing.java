@@ -6,6 +6,7 @@ import io.core.Closeable;
 import io.core.ClosedException;
 import io.ipfs.cid.Cid;
 import io.ipfs.host.PeerId;
+import io.ipns.Ipns;
 
 public interface Routing {
     void PutValue(@NonNull Closeable closable, @NonNull byte[] key,
@@ -33,6 +34,6 @@ public interface Routing {
     }
 
     interface ResolveInfo {
-        void resolved(byte[] data);
+        void resolved(@NonNull Ipns.Entry entry);
     }
 }

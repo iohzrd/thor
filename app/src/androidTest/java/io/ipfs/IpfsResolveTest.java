@@ -64,6 +64,9 @@ public class IpfsResolveTest {
         IPFS.ResolvedName res = ipfs.resolveName(key, random, () -> false);
         assertNotNull(res);
 
+        LogUtils.error(TAG, res.toString());
+
+
         assertEquals(res.getHash(), cid.String());
 
     }

@@ -33,11 +33,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -57,6 +54,7 @@ import io.ipfs.format.BlockStore;
 import io.ipfs.format.Node;
 import io.ipfs.host.AddrInfo;
 import io.ipfs.host.Connection;
+import io.ipfs.host.DataHandler;
 import io.ipfs.host.DnsResolver;
 import io.ipfs.host.LiteHost;
 import io.ipfs.host.LiteSignedCertificate;
@@ -79,8 +77,9 @@ import io.ipfs.utils.ReaderStream;
 import io.ipfs.utils.Resolver;
 import io.ipfs.utils.Stream;
 import io.ipfs.utils.WriterStream;
-import io.netty.incubator.codec.quic.QuicSslContext;
-import ipns.pb.Ipns;
+import io.netty.incubator.codec.quic.QuicStreamChannel;
+import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.GenericFutureListener;
 import threads.thor.core.blocks.BLOCKS;
 
 public class IPFS {
@@ -98,8 +97,7 @@ public class IPFS {
     public static final int PRELOAD_DIST = 5;
     public static final String AGENT = "/go-ipfs/0.9.0/thor"; // todo rename
     public static final String PROTOCOL_VERSION = "ipfs/0.1.0";  // todo check again
-    public static final int TIMEOUT_BOOTSTRAP = 20;
-    public static final long TIMEOUT_PUSH = 3;
+    public static final int TIMEOUT_BOOTSTRAP = 10;
     public static final int LOW_WATER = 50;
     public static final int HIGH_WATER = 300;
     public static final int GRACE_PERIOD = 10;
@@ -113,6 +111,11 @@ public class IPFS {
     public static final String IPFS_PATH = "/ipfs/";
     public static final String IPNS_PATH = "/ipns/";
     public static final String P2P_PATH = "/p2p/";
+
+    public static final short PRIORITY_URGENT = 1;
+    public static final short PRIORITY_HIGH = 5;
+    public static final short PRIORITY_NORMAL = 10;
+
 
     // IPFS BOOTSTRAP
     @NonNull
@@ -138,6 +141,7 @@ public class IPFS {
     public static final int KAD_DHT_BETA = 20;
     public static final String NA = "na";
     public static final String LS = "ls";
+    public static final int CONNECT_TIMEOUT = 5;
 
     // rough estimates on expected sizes
     private static final int roughLinkBlockSize = 1 << 13; // 8KB
@@ -175,8 +179,7 @@ public class IPFS {
     private final BLOCKS blocks;
     @NonNull
     private final LiteHost host;
-    @NonNull
-    private final Set<PeerId> swarm = ConcurrentHashMap.newKeySet();
+
     @NonNull
     private final PrivKey privateKey;
     private final int port;
@@ -458,7 +461,7 @@ public class IPFS {
                     PeerInfo peerInfo = host.getPeerInfo(new TimeoutCloseable(5), conn);
                     Multiaddr observed = peerInfo.getObserved();
                     if (observed != null) {
-                        LogUtils.error(TAG, "ObservedAddress " + observed.toString());
+
                         if (Objects.equals(result.get(), observed.toString())) {
                             int value = success.incrementAndGet();
                             if (value >= 3) {
@@ -506,8 +509,8 @@ public class IPFS {
     public void rm(@NonNull Cid cid, boolean recursively) {
         try {
             Stream.Rm(() -> false, blocks, cid, recursively);
-        } catch (Throwable e) {
-            LogUtils.error(TAG, e);
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable);
         }
     }
 
@@ -689,7 +692,7 @@ public class IPFS {
     public PeerInfo getPeerInfo(@NonNull PeerId peerId, @NonNull Closeable closeable)
             throws ClosedException, ConnectionIssue {
 
-        Connection conn = host.connect(closeable, peerId);
+        Connection conn = host.connect(closeable, peerId, IPFS.CONNECT_TIMEOUT);
 
         return host.getPeerInfo(closeable, conn);
     }
@@ -717,13 +720,18 @@ public class IPFS {
         return peers;
     }
 
+    public void swarmConnect(@NonNull PeerId peerId, int timeout)
+            throws ConnectionIssue, ClosedException {
+        host.connectTo(new TimeoutCloseable(timeout), peerId, timeout);
+    }
+
     public boolean swarmConnect(@NonNull String multiAddress, int timeout) {
         try {
-            return swarmConnect(multiAddress, new TimeoutCloseable(timeout));
+            return swarmConnect(new TimeoutCloseable(timeout), multiAddress, timeout);
         } catch (ClosedException ignore) {
             // ignore
         } catch (Throwable throwable) {
-            LogUtils.error(TAG, throwable.getMessage());
+            LogUtils.error(TAG, throwable.getClass().getSimpleName());
         }
         return false;
     }
@@ -791,22 +799,24 @@ public class IPFS {
                 }
 
 
-                List<Callable<Boolean>> tasks = new ArrayList<>();
                 ExecutorService executor = Executors.newFixedThreadPool(TIMEOUT_BOOTSTRAP);
                 for (PeerId peerId : peers) {
-                    tasks.add(() -> host.connectTo(new TimeoutCloseable(TIMEOUT_BOOTSTRAP), peerId));
+                    executor.execute(() -> {
+                        try {
+                            host.connectTo(new TimeoutCloseable(TIMEOUT_BOOTSTRAP), peerId,
+                                    TIMEOUT_BOOTSTRAP);
+                        } catch (ClosedException | ConnectionIssue exception) {
+                            LogUtils.error(TAG, exception.getMessage());
+                        }
+                    });
                 }
-
-                List<Future<Boolean>> futures = executor.invokeAll(tasks, TIMEOUT_BOOTSTRAP, TimeUnit.SECONDS);
-                for (Future<Boolean> future : futures) {
-                    LogUtils.info(TAG, "\nBootstrap done " + future.isDone());
-                }
+                executor.awaitTermination(TIMEOUT_BOOTSTRAP, TimeUnit.SECONDS);
 
                 host.getRouting().bootstrap();
             } catch (Throwable throwable) {
                 LogUtils.error(TAG, throwable);
             } finally {
-                LogUtils.info(TAG, "NumPeers " + numConnections());
+                LogUtils.verbose(TAG, "NumPeers " + numConnections());
             }
 
 
@@ -852,7 +862,7 @@ public class IPFS {
     @NonNull
     public Multiaddr remoteAddress(@NonNull PeerId peerId, @NonNull Closeable closeable)
             throws ClosedException, ConnectionIssue {
-        return host.connect(closeable, peerId).remoteAddress();
+        return host.connect(closeable, peerId, IPFS.CONNECT_TIMEOUT).remoteAddress();
     }
 
     @Nullable
@@ -1013,9 +1023,9 @@ public class IPFS {
 
     @Nullable
     public ResolvedName resolveName(@NonNull String name, long last,
-                                    @NonNull Closeable closeable) throws ClosedException {
+                                    @NonNull Closeable closeable) {
 
-        LogUtils.info(TAG, "resolveName " + name);
+
         long time = System.currentTimeMillis();
 
         AtomicReference<ResolvedName> resolvedName = new AtomicReference<>(null);
@@ -1029,39 +1039,33 @@ public class IPFS {
             host.getRouting().SearchValue(() -> (timeout.get() < System.currentTimeMillis())
                     || closeable.isClosed(), new Routing.ResolveInfo() {
 
-                private void setName(@NonNull String hash, long sequence) {
-                    resolvedName.set(new ResolvedName(sequence,
-                            hash.replaceFirst(IPFS_PATH, "")));
-                }
 
                 @Override
-                public void resolved(byte[] data) {
+                public void resolved(@NonNull io.ipns.Ipns.Entry entry) {
 
-                    try {
-                        Ipns.IpnsEntry entry = Ipns.IpnsEntry.parseFrom(data);
-                        Objects.requireNonNull(entry);
-                        String hash = entry.getValue().toStringUtf8();
-                        long seq = entry.getSequence();
 
-                        LogUtils.info(TAG, "IpnsEntry : " + seq + " " + hash + " " +
-                                (System.currentTimeMillis() - time));
+                    String value = entry.getValue();
+                    long sequence = entry.getSequence();
 
-                        if (seq < last) {
-                            // newest value already available
-                            throw new ClosedException();
+                    LogUtils.info(TAG, "IpnsEntry : " + sequence + " " + value + " " +
+                            (System.currentTimeMillis() - time));
 
-                        }
-
-                        if (hash.startsWith(IPFS_PATH)) {
-                            timeout.set(System.currentTimeMillis() + RESOLVE_TIMEOUT);
-                            setName(hash, seq);
-                        } else {
-                            LogUtils.info(TAG, "invalid hash " + hash);
-                        }
-
-                    } catch (Throwable throwable) {
-                        LogUtils.error(TAG, throwable);
+                    if (sequence < last) {
+                        // newest value already available
+                        timeout.set(System.currentTimeMillis());
+                        return;
                     }
+
+                    if (value.startsWith(IPFS_PATH)) {
+                        timeout.set(System.currentTimeMillis() + RESOLVE_TIMEOUT);
+
+                        resolvedName.set(new ResolvedName(entry.getPeerId(),
+                                sequence, value.replaceFirst(IPFS_PATH, "")));
+                    } else {
+                        LogUtils.error(TAG, "invalid value " + value);
+                    }
+
+
 
                 }
             }, ipnsKey, 8);
@@ -1071,12 +1075,11 @@ public class IPFS {
         } catch (Throwable e) {
             LogUtils.error(TAG, e);
         }
+
+
         LogUtils.info(TAG, "Finished resolve name " + name + " " +
                 (System.currentTimeMillis() - time));
 
-        if (closeable.isClosed()) {
-            throw new ClosedException();
-        }
 
         return resolvedName.get();
     }
@@ -1127,9 +1130,18 @@ public class IPFS {
     public boolean notify(@NonNull PeerId peerId, @NonNull String content) {
 
         try {
-            Connection conn = host.connect(new TimeoutCloseable(TIMEOUT_PUSH), peerId);
-            host.send(new TimeoutCloseable(TIMEOUT_PUSH), PUSH_PROTOCOL, conn,
-                    content.getBytes(), false);
+            Connection conn = host.connect(new TimeoutCloseable(CONNECT_TIMEOUT), peerId,
+                    CONNECT_TIMEOUT);
+
+            QuicStreamChannel stream = host.getStream(new TimeoutCloseable(CONNECT_TIMEOUT),
+                    PUSH_PROTOCOL, conn, IPFS.PRIORITY_URGENT);
+            LogUtils.error(TAG, "write content " + content);
+            stream.writeAndFlush(DataHandler.encode(content.getBytes())).addListener(
+                    future -> stream.close().get());
+
+            /*
+            host.send(new TimeoutCloseable(CONNECT_TIMEOUT), PUSH_PROTOCOL, conn,
+                    content.getBytes(), IPFS.PRIORITY_URGENT);*/
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         }
@@ -1138,11 +1150,11 @@ public class IPFS {
 
 
     public void swarmReduce(@NonNull PeerId peerId) {
-        swarm.remove(peerId);
+        host.swarmReduce(peerId);
     }
 
     public void swarmEnhance(@NonNull PeerId peerId) {
-        swarm.add(peerId);
+        host.swarmEnhance(peerId);
     }
 
 
@@ -1158,7 +1170,7 @@ public class IPFS {
 
 
     public void connected(@NonNull PeerId peerId) {
-        if (swarm.contains(peerId)) {
+        if (host.swarmContains(peerId)) {
             if (connector != null) {
                 ExecutorService executor = Executors.newSingleThreadExecutor();
                 executor.submit(() -> connector.connected(peerId));
@@ -1166,8 +1178,9 @@ public class IPFS {
         }
     }
 
-    public boolean swarmConnect(@NonNull String multiAddress,
-                                @NonNull Closeable closeable) throws ClosedException {
+    private boolean swarmConnect(@NonNull Closeable closeable,
+                                 @NonNull String multiAddress,
+                                 int timeout) throws ClosedException {
 
 
         Multiaddr multiaddr = new Multiaddr(multiAddress);
@@ -1183,18 +1196,19 @@ public class IPFS {
                 if (addrInfo.isEmpty()) {
                     return host.getRouting().FindPeer(closeable, peerId);
                 } else {
-                    return host.connectTo(closeable, peerId);
+                    host.connectTo(closeable, peerId, timeout);
+                    return true;
                 }
             } else {
                 AddrInfo addrInfo = AddrInfo.create(peerId, multiaddr);
                 host.addAddrs(addrInfo);
-                return host.connectTo(closeable, peerId);
+                host.connectTo(closeable, peerId, timeout);
+                return true;
             }
 
         } catch (ClosedException closedException) {
             throw closedException;
         } catch (Throwable e) {
-            LogUtils.error(TAG, e);
             LogUtils.error(TAG, multiaddr + " " + e.getClass().getName());
         }
 
@@ -1215,9 +1229,28 @@ public class IPFS {
         @NonNull
         private final String hash;
 
-        public ResolvedName(long sequence, @NonNull String hash) {
+        @NonNull
+        private final PeerId peerId;
+
+        public ResolvedName(@NonNull PeerId peerId, long sequence, @NonNull String hash) {
+            this.peerId = peerId;
             this.sequence = sequence;
             this.hash = hash;
+        }
+
+        @NonNull
+        @Override
+        public String toString() {
+            return "ResolvedName{" +
+                    "sequence=" + sequence +
+                    ", hash='" + hash + '\'' +
+                    ", peerId=" + peerId.toBase58() +
+                    '}';
+        }
+
+        @NonNull
+        public PeerId getPeerId() {
+            return peerId;
         }
 
         public long getSequence() {

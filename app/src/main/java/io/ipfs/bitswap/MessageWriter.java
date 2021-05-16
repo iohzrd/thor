@@ -10,6 +10,7 @@ import io.core.ClosedException;
 import io.core.ConnectionIssue;
 import io.core.ProtocolIssue;
 import io.core.TimeoutIssue;
+import io.ipfs.IPFS;
 import io.ipfs.cid.Cid;
 import io.ipfs.host.PeerId;
 
@@ -47,7 +48,7 @@ public class MessageWriter {
             return;
         }
 
-        network.writeMessage(closeable, peer, message, false);
+        network.writeMessage(closeable, peer, message, IPFS.PRIORITY_NORMAL);
 
 
     }
@@ -77,7 +78,7 @@ public class MessageWriter {
             return;
         }
 
-        network.writeMessage(closeable, peer, message, true);
+        network.writeMessage(closeable, peer, message, IPFS.PRIORITY_URGENT);
 
     }
 

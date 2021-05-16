@@ -31,7 +31,7 @@ public final class QuicConnectionAddress extends SocketAddress {
     public static final QuicConnectionAddress EPHEMERAL = new QuicConnectionAddress(null, false);
 
     // Accessed by QuicheQuicheChannel
-    final ByteBuffer connId;
+    public final ByteBuffer connId;
 
     /**
      * Create a new instance

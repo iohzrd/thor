@@ -32,7 +32,7 @@ public final class Quic {
     @SuppressWarnings("unchecked")
     static final Map.Entry<AttributeKey<?>, Object>[] EMPTY_ATTRIBUTE_ARRAY = new Map.Entry[0];
 
-    static final int MAX_DATAGRAM_SIZE = 1350;
+    public static final int MAX_DATAGRAM_SIZE = 1350;
 
     private static final Throwable UNAVAILABILITY_CAUSE;
 

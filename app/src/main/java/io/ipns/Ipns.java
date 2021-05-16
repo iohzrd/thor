@@ -125,8 +125,9 @@ public class Ipns implements Validator {
         }
     }
 
+    @NonNull
     @Override
-    public void Validate(@NonNull byte[] key, byte[] value) throws InvalidRecord {
+    public Entry Validate(@NonNull byte[] key, byte[] value) throws InvalidRecord {
 
         byte[] ipns = IPFS.IPNS_PATH.getBytes();
         int index = Bytes.indexOf(key, ipns);
@@ -160,9 +161,11 @@ public class Ipns implements Validator {
         }
         Validate(pubKey, entry);
 
+
+        return new Entry(peerId, GetEOL(entry), entry.getValue().toStringUtf8(), entry.getSequence());
     }
 
-    private int Compare(@NonNull ipns.pb.Ipns.IpnsEntry a, @NonNull ipns.pb.Ipns.IpnsEntry b) throws InvalidRecord, ParseException {
+    private int Compare(@NonNull Ipns.Entry a, @NonNull Ipns.Entry b) {
 
         long as = a.getSequence();
         long bs = b.getSequence();
@@ -174,8 +177,8 @@ public class Ipns implements Validator {
             return -1;
         }
 
-        Date at = GetEOL(a);
-        Date bt = GetEOL(b);
+        Date at = a.getEol();
+        Date bt = b.getEol();
 
         if (at.after(bt)) {
             return 1;
@@ -186,14 +189,20 @@ public class Ipns implements Validator {
     }
 
     @Override
-    public int Select(@NonNull byte[] rec, @NonNull byte[] cmp) {
+    public int Select(@NonNull Ipns.Entry rec, @NonNull Ipns.Entry cmp) {
+        return Compare(rec, cmp);
+    }
 
+    @NonNull
+    private Date GetEOL(@NonNull ipns.pb.Ipns.IpnsEntry entry) throws InvalidRecord {
         try {
-            return Compare(ipns.pb.Ipns.IpnsEntry.parseFrom(rec),
-                    ipns.pb.Ipns.IpnsEntry.parseFrom(cmp));
-
+            if (entry.getValidityType() != ipns.pb.Ipns.IpnsEntry.ValidityType.EOL) {
+                throw new InvalidRecord();
+            }
+            String date = new String(entry.getValidity().toByteArray());
+            return getDate(date);
         } catch (Throwable throwable) {
-            throw new RuntimeException(throwable);
+            throw new InvalidRecord();
         }
     }
 
@@ -246,12 +255,34 @@ public class Ipns implements Validator {
         }
     }
 
-    @NonNull
-    private Date GetEOL(@NonNull ipns.pb.Ipns.IpnsEntry entry) throws InvalidRecord, ParseException {
-        if (entry.getValidityType() != ipns.pb.Ipns.IpnsEntry.ValidityType.EOL) {
-            throw new InvalidRecord();
+    public static class Entry {
+        private final PeerId peerId;
+        private final long sequence;
+        private final String value;
+        private final Date eol;
+
+        public Entry(@NonNull PeerId peerId, @NonNull Date eol,
+                     @NonNull String value, long sequence) {
+            this.peerId = peerId;
+            this.eol = eol;
+            this.sequence = sequence;
+            this.value = value;
         }
-        String date = new String(entry.getValidity().toByteArray());
-        return getDate(date);
+
+        public Date getEol() {
+            return eol;
+        }
+
+        public PeerId getPeerId() {
+            return peerId;
+        }
+
+        public long getSequence() {
+            return sequence;
+        }
+
+        public String getValue() {
+            return value;
+        }
     }
 }

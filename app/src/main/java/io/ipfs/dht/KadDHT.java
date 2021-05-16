@@ -31,17 +31,21 @@ import io.core.Closeable;
 import io.core.ClosedException;
 import io.core.ConnectionIssue;
 import io.core.ProtocolIssue;
+import io.core.TimeoutCloseable;
 import io.core.TimeoutIssue;
 import io.ipfs.IPFS;
 import io.ipfs.cid.Cid;
 import io.ipfs.host.AddrInfo;
 import io.ipfs.host.Connection;
+import io.ipfs.host.DataHandler;
 import io.ipfs.host.LiteHost;
 import io.ipfs.host.PeerId;
 import io.ipfs.multiformats.Multiaddr;
 import io.ipns.InvalidRecord;
+import io.ipns.Ipns;
 import io.ipns.Validator;
 import io.netty.handler.timeout.ReadTimeoutException;
+import io.netty.incubator.codec.quic.QuicStreamChannel;
 import record.pb.RecordOuterClass;
 
 
@@ -146,7 +150,8 @@ public class KadDHT implements Routing {
 
         // don't allow local users to put bad values.
         try {
-            validator.Validate(key, value);
+            Ipns.Entry entry = validator.Validate(key, value);
+            Objects.requireNonNull(entry);
         } catch (Throwable throwable) {
             throw new RuntimeException(throwable);
         }
@@ -163,41 +168,40 @@ public class KadDHT implements Routing {
             PeerId peerId = addrInfo.getPeerId();
             if (!handled.contains(peerId)) {
                 handled.add(peerId);
-                try {
-                    putValueToPeer(ctx, addrInfo.getPeerId(), rec);
-                    LogUtils.info(TAG, "PutValue Success to " + addrInfo.getPeerId().toBase58());
-                } catch (ClosedException closedException) {
-                    throw closedException;
-                } catch (Throwable throwable) {
-                    LogUtils.error(TAG, "PutValue Error " + throwable.getClass().getName());
-                }
+                ExecutorService service = Executors.newSingleThreadExecutor();
+                service.execute(() -> putValueToPeer(ctx, addrInfo.getPeerId(), rec));
             }
         });
 
     }
 
     private void putValueToPeer(@NonNull Closeable ctx, @NonNull PeerId p,
-                                @NonNull RecordOuterClass.Record rec)
-            throws TimeoutIssue, ProtocolIssue, ClosedException, ConnectionIssue {
+                                @NonNull RecordOuterClass.Record rec) {
 
-        Dht.Message pms = Dht.Message.newBuilder()
-                .setType(Dht.Message.MessageType.PUT_VALUE)
-                .setKey(rec.getKey())
-                .setRecord(rec)
-                .setClusterLevelRaw(0).build();
+        try {
+            Dht.Message pms = Dht.Message.newBuilder()
+                    .setType(Dht.Message.MessageType.PUT_VALUE)
+                    .setKey(rec.getKey())
+                    .setRecord(rec)
+                    .setClusterLevelRaw(0).build();
 
-        Dht.Message rimes = sendRequest(ctx, p, pms);
+            Dht.Message rimes = sendRequest(ctx, p, pms);
 
-        if (!Arrays.equals(rimes.getRecord().getValue().toByteArray(),
-                pms.getRecord().getValue().toByteArray())) {
-            throw new RuntimeException("value not put correctly put-message  " +
-                    pms.toString() + " get-message " + rimes.toString());
+            if (!Arrays.equals(rimes.getRecord().getValue().toByteArray(),
+                    pms.getRecord().getValue().toByteArray())) {
+                throw new RuntimeException("value not put correctly put-message  " +
+                        pms.toString() + " get-message " + rimes.toString());
+            }
+            LogUtils.verbose(TAG, "PutValue Success to " + p.toBase58());
+        } catch (ClosedException ignore) {
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable);
         }
+
     }
 
     @Override
-    public void FindProviders(@NonNull Closeable closeable,
-                              @NonNull Providers providers,
+    public void FindProviders(@NonNull Closeable closeable, @NonNull Providers providers,
                               @NonNull Cid cid) throws ClosedException {
         if (!cid.Defined()) {
             throw new RuntimeException("Cid invalid");
@@ -295,40 +299,39 @@ public class KadDHT implements Routing {
             PeerId peerId = addrInfo.getPeerId();
             if (!handled.contains(peerId)) {
                 handled.add(peerId);
-                try {
-                    sendMessage(ctx, peerId, mes);
-                    LogUtils.info(TAG, "Provide Success to " + addrInfo.getPeerId().toBase58());
-                } catch (ClosedException closedException) {
-                    throw closedException;
-                } catch (Throwable throwable) {
-                    LogUtils.error(TAG, "Provide Error " + throwable.getClass().getName());
-                }
+                ExecutorService service = Executors.newSingleThreadExecutor();
+                service.execute(() -> sendMessage(ctx, peerId, mes));
             }
         });
 
     }
 
 
-    private void sendMessage(@NonNull Closeable closeable, @NonNull PeerId p, @NonNull Dht.Message message)
-            throws ClosedException, ConnectionIssue {
+    private void sendMessage(@NonNull Closeable closeable, @NonNull PeerId p,
+                             @NonNull Dht.Message message) {
 
 
         try {
-            Connection con = host.connect(closeable, p);
+            Connection conn = host.connect(closeable, p, IPFS.CONNECT_TIMEOUT);
             host.active(p);
 
             long start = System.currentTimeMillis();
 
-            host.send(closeable, IPFS.KAD_DHT_PROTOCOL, con, message.toByteArray(), false);
+            QuicStreamChannel stream = host.getStream(closeable,
+                    IPFS.KAD_DHT_PROTOCOL, conn, IPFS.PRIORITY_HIGH);
+
+            stream.writeAndFlush(DataHandler.encode( message.toByteArray())).addListener(
+                    future -> stream.close().get());
+
+            //host.send(closeable, IPFS.KAD_DHT_PROTOCOL, conn, message.toByteArray(), IPFS.PRIORITY_HIGH);
 
             host.addLatency(p, System.currentTimeMillis() - start);
 
         } catch (ClosedException | ConnectionIssue exception) {
             host.done(p);
-            throw exception;
         } catch (Throwable throwable) {
             host.done(p);
-            throw new RuntimeException(throwable);
+            LogUtils.error(TAG, throwable);
         }
     }
 
@@ -339,12 +342,12 @@ public class KadDHT implements Routing {
 
         try {
 
-            Connection con = host.connect(closeable, p);
+            Connection con = host.connect(closeable, p, IPFS.CONNECT_TIMEOUT);
             host.active(p);
             long start = System.currentTimeMillis();
 
-            MessageLite messageLite = host.request(closeable, IPFS.KAD_DHT_PROTOCOL, con, message,
-                    false);
+            MessageLite messageLite = host.request(closeable, IPFS.KAD_DHT_PROTOCOL, con,
+                    message, IPFS.PRIORITY_HIGH);
             Objects.requireNonNull(messageLite);
             Dht.Message response = (Dht.Message) messageLite;
             Objects.requireNonNull(response);
@@ -536,7 +539,7 @@ public class KadDHT implements Routing {
     }
 
 
-    private Pair<RecordOuterClass.Record, List<AddrInfo>> getValueOrPeers(
+    private Pair<Ipns.Entry, List<AddrInfo>> getValueOrPeers(
             @NonNull Closeable ctx, @NonNull PeerId p, @NonNull byte[] key)
             throws TimeoutIssue, ClosedException, ProtocolIssue, ConnectionIssue {
 
@@ -546,15 +549,16 @@ public class KadDHT implements Routing {
         List<AddrInfo> peers = evalClosestPeers(pms);
 
         if (pms.hasRecord()) {
+
             RecordOuterClass.Record rec = pms.getRecord();
             try {
                 byte[] record = rec.getValue().toByteArray();
                 if (record != null && record.length > 0) {
-                    validator.Validate(rec.getKey().toByteArray(), record);
-                    return Pair.create(rec, peers);
+                    Ipns.Entry entry = validator.Validate(rec.getKey().toByteArray(), record);
+                    return Pair.create(entry, peers);
                 }
             } catch (Throwable throwable) {
-                LogUtils.info(TAG, "" + throwable.getMessage());
+                LogUtils.error(TAG, throwable);
             }
         }
 
@@ -570,12 +574,12 @@ public class KadDHT implements Routing {
 
         runLookupWithFollowup(ctx, key, (ctx1, p) -> {
 
-            Pair<RecordOuterClass.Record, List<AddrInfo>> result = getValueOrPeers(ctx1, p, key);
-            RecordOuterClass.Record rec = result.first;
+            Pair<Ipns.Entry, List<AddrInfo>> result = getValueOrPeers(ctx1, p, key);
+            Ipns.Entry entry = result.first;
             List<AddrInfo> peers = result.second;
 
-            if (rec != null) {
-                recordFunc.record(new RecordInfo(rec.getValue().toByteArray()));
+            if (entry != null) {
+                recordFunc.record(entry);
             }
 
             return peers;
@@ -584,14 +588,14 @@ public class KadDHT implements Routing {
     }
 
 
-    private void processValues(@NonNull Closeable ctx, @Nullable RecordInfo best,
-                               @NonNull RecordInfo v, @NonNull RecordReportFunc reporter) {
+    private void processValues(@NonNull Closeable ctx, @Nullable Ipns.Entry best,
+                               @NonNull Ipns.Entry v, @NonNull RecordReportFunc reporter) {
 
         if (best != null) {
-            if (Arrays.equals(best.Val, v.Val)) {
+            if (Objects.equals(best, v)) {
                 reporter.report(ctx, v, false);
             } else {
-                int value = validator.Select(best.Val, v.Val);
+                int value = validator.Select(best, v);
 
                 if (value == -1) {
                     reporter.report(ctx, v, false);
@@ -608,11 +612,11 @@ public class KadDHT implements Routing {
                             @NonNull byte[] key, final int quorum) throws ClosedException {
 
         AtomicInteger numResponses = new AtomicInteger(0);
-        AtomicReference<RecordInfo> best = new AtomicReference<>();
-        getValues(ctx, recordVal -> processValues(ctx, best.get(), recordVal, (ctx1, v, better) -> {
+        AtomicReference<Ipns.Entry> best = new AtomicReference<>();
+        getValues(ctx, entry -> processValues(ctx, best.get(), entry, (ctx1, v, better) -> {
             numResponses.incrementAndGet();
             if (better) {
-                resolveInfo.resolved(v.Val);
+                resolveInfo.resolved(v);
                 best.set(v);
             }
         }), key, () -> numResponses.get() == quorum);
@@ -632,11 +636,11 @@ public class KadDHT implements Routing {
 
 
     public interface RecordValueFunc {
-        void record(@NonNull RecordInfo recordInfo);
+        void record(@NonNull Ipns.Entry entry);
     }
 
     public interface RecordReportFunc {
-        void report(@NonNull Closeable ctx, @NonNull RecordInfo v, boolean better);
+        void report(@NonNull Closeable ctx, @NonNull Ipns.Entry entry, boolean better);
     }
 
 
@@ -644,11 +648,4 @@ public class KadDHT implements Routing {
         void peer(@NonNull AddrInfo addrInfo) throws ClosedException;
     }
 
-    private static class RecordInfo {
-        byte[] Val;
-
-        public RecordInfo(@NonNull byte[] data) {
-            this.Val = data;
-        }
-    }
 }

@@ -41,7 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.LongFunction;
 
-final class QuicheQuicSslEngine extends QuicSslEngine {
+public final class QuicheQuicSslEngine extends QuicSslEngine {
     private final QuicheQuicSslContext ctx;
     private final String peerHost;
     private final int peerPort;
@@ -66,7 +66,7 @@ final class QuicheQuicSslEngine extends QuicSslEngine {
         }
     }
 
-    QuicheQuicConnection createConnection(LongFunction<Long> connectionCreator) {
+    public QuicheQuicConnection createConnection(LongFunction<Long> connectionCreator) {
         return ctx.createConnection(connectionCreator, this);
     }
 

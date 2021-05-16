@@ -21,6 +21,7 @@ import io.core.ConnectionIssue;
 import io.core.ProtocolIssue;
 import io.core.TimeoutCloseable;
 import io.core.TimeoutIssue;
+import io.ipfs.IPFS;
 import io.ipfs.cid.Cid;
 import io.ipfs.format.Block;
 import io.ipfs.format.BlockStore;
@@ -112,19 +113,15 @@ public class ContentManager {
                                         LogUtils.info(TAG, "Provider Peer " +
                                                 peer.toBase58() + " cid " + cid.String());
 
-                                        if (network.connectTo(closeable, peer)) {
-                                            if (matches.containsKey(cid)) { // check still valid
-                                                LogUtils.info(TAG, "Found New Provider " + peer.toBase58()
-                                                        + " for " + cid.String());
-                                                peers.add(peer);
-                                                ConcurrentLinkedDeque<PeerId> match = matches.get(cid);
-                                                if (match != null) {
-                                                    match.add(peer);
-                                                }
+                                        network.connectTo(closeable, peer, IPFS.CONNECT_TIMEOUT);
+                                        if (matches.containsKey(cid)) { // check still valid
+                                            LogUtils.info(TAG, "Found New Provider " + peer.toBase58()
+                                                    + " for " + cid.String());
+                                            peers.add(peer);
+                                            ConcurrentLinkedDeque<PeerId> match = matches.get(cid);
+                                            if (match != null) {
+                                                match.add(peer);
                                             }
-                                        } else {
-                                            LogUtils.info(TAG, "Provider Peer Connection Failed " +
-                                                    peer.toBase58());
                                         }
                                     } catch (ClosedException | ConnectionIssue ignore) {
                                         // ignore
@@ -203,7 +200,7 @@ public class ContentManager {
                                     Collections.singletonList(cid));
                             handled.add(peer);
                             hasRun = true;
-                        } catch (ClosedException closedException) {
+                        } catch (ClosedException | TimeoutIssue ignore) {
                             // ignore
                         } catch (ProtocolIssue ignore) {
                             peers.remove(peer);
@@ -236,7 +233,7 @@ public class ContentManager {
                                     new TimeoutCloseable(closeable, 10), network, peer,
                                     Collections.singletonList(cid));
                             handled.add(peer);
-                        } catch (ClosedException closedException) {
+                        } catch (ClosedException | TimeoutIssue ignore) {
                             // ignore
                         } catch (ProtocolIssue | ConnectionIssue ignore) {
                             peers.remove(peer);
@@ -371,15 +368,11 @@ public class ContentManager {
                                     return;
                                 }
                                 try {
-                                    if (network.connectTo(loadCloseable, peer)) {
-                                        LogUtils.info(TAG, "Load Provider Found " + peer.toBase58()
-                                                + " for " + cid.String());
-                                        peers.add(peer);
-                                        priority.add(peer);
-                                    } else {
-                                        LogUtils.info(TAG, "Load Provider Connection Failed " +
-                                                peer.toBase58());
-                                    }
+                                    network.connectTo(loadCloseable, peer, IPFS.CONNECT_TIMEOUT);
+                                    LogUtils.info(TAG, "Load Provider Found " + peer.toBase58()
+                                            + " for " + cid.String());
+                                    peers.add(peer);
+                                    priority.add(peer);
                                 } catch (ClosedException | ConnectionIssue ignore) {
                                 } catch (Throwable throwable) {
                                     LogUtils.error(TAG, "Load Provider Failed " +

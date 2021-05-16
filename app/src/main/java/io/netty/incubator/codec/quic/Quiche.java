@@ -96,8 +96,8 @@ public final class Quiche {
         }
     }
 
-    static final int QUICHE_PROTOCOL_VERSION = QuicheNativeStaticallyReferencedJniMethods.quiche_protocol_version();
-    static final int QUICHE_MAX_CONN_ID_LEN = QuicheNativeStaticallyReferencedJniMethods.quiche_max_conn_id_len();
+    public static final int QUICHE_PROTOCOL_VERSION = QuicheNativeStaticallyReferencedJniMethods.quiche_protocol_version();
+    public static final int QUICHE_MAX_CONN_ID_LEN = QuicheNativeStaticallyReferencedJniMethods.quiche_max_conn_id_len();
 
     /**
      * See <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#L266">QUICHE_SHUTDOWN_READ</a>.
@@ -248,8 +248,8 @@ public final class Quiche {
     /**
      * See <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#L229">quiche_conn_new_with_tls</a>.
      */
-    static native long quiche_conn_new_with_tls(long scidAddr, int scidLen, long odcidAddr, int odcidLen,
-                                                long configAddr, long ssl, boolean isServer);
+    public static native long quiche_conn_new_with_tls(long scidAddr, int scidLen, long odcidAddr, int odcidLen,
+                                                       long configAddr, long ssl, boolean isServer);
 
     /**
      * See <a href="https://github.com/cloudflare/quiche/blob/master/include/quiche.h#L248">
@@ -265,7 +265,7 @@ public final class Quiche {
     /**
      * See <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#L262">quiche_conn_send</a>.
      */
-    static native int quiche_conn_send(long connAddr, long outAddr, int outLen);
+    public static native int quiche_conn_send(long connAddr, long outAddr, int outLen);
 
     /**
      * See <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#L373">quiche_conn_free</a>.
@@ -322,13 +322,13 @@ public final class Quiche {
      * See
      * <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#L277">quiche_conn_stream_finished</a>.
      */
-    static native boolean quiche_conn_stream_finished(long connAddr, long streamId);
+    public static native boolean quiche_conn_stream_finished(long connAddr, long streamId);
 
     /**
      * See
      * <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#L297">quiche_conn_close</a>.
      */
-    static native int quiche_conn_close(long connAddr, boolean app, long err, long reasonAddr, int reasonLen);
+    public static native int quiche_conn_close(long connAddr, boolean app, long err, long reasonAddr, int reasonLen);
 
     /**
      * See
