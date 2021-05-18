@@ -12,8 +12,8 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.util.List;
 
-import io.ipfs.cid.Cid;
 import io.core.ClosedException;
+import io.ipfs.cid.Cid;
 import io.ipfs.utils.Link;
 
 import static junit.framework.TestCase.assertEquals;

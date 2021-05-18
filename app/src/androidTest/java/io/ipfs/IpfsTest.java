@@ -15,9 +15,9 @@ import java.util.List;
 import java.util.Set;
 
 import io.LogUtils;
-import io.ipfs.cid.Cid;
 import io.core.ClosedException;
 import io.core.TimeoutCloseable;
+import io.ipfs.cid.Cid;
 import io.ipfs.host.DnsResolver;
 import io.ipfs.multiaddr.Multiaddr;
 import io.ipfs.utils.Link;
@@ -44,14 +44,13 @@ public class IpfsTest {
 
         List<Multiaddr> result = ipfs.listenAddresses();
         assertNotNull(result);
-        for (Multiaddr ma:result) {
+        for (Multiaddr ma : result) {
             LogUtils.debug(TAG, "Listen Address : " + ma.toString());
         }
 
         assertEquals(result.size(), 1); // TODO test is not correct (listen addresses should be improved)
 
     }
-
 
 
     @Test

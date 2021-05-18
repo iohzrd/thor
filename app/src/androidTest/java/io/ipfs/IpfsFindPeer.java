@@ -13,9 +13,9 @@ import org.junit.runner.RunWith;
 import java.util.Set;
 
 import io.LogUtils;
-import io.ipfs.host.PeerInfo;
 import io.core.TimeoutCloseable;
 import io.ipfs.host.PeerId;
+import io.ipfs.host.PeerInfo;
 import io.ipfs.multiaddr.Multiaddr;
 
 import static junit.framework.TestCase.assertNotNull;
@@ -36,8 +36,6 @@ public class IpfsFindPeer {
     public static void setup() {
         context = ApplicationProvider.getApplicationContext();
     }
-
-
 
 
     @Test

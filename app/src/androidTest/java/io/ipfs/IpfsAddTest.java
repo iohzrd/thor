@@ -21,9 +21,9 @@ import java.util.List;
 import java.util.UUID;
 
 import io.LogUtils;
-import io.ipfs.cid.Cid;
 import io.core.ClosedException;
 import io.core.TimeoutCloseable;
+import io.ipfs.cid.Cid;
 import io.ipfs.utils.Link;
 
 import static junit.framework.TestCase.assertEquals;
@@ -82,7 +82,7 @@ public class IpfsAddTest {
         byte[] data = ipfs.getData(text, new TimeoutCloseable(1));
         assertEquals(content, new String(data));
 
-        dir = ipfs.addLinkToDir(dir,"text.txt", text);
+        dir = ipfs.addLinkToDir(dir, "text.txt", text);
         assertNotNull(dir);
 
         List<Link> links = ipfs.links(dir, new TimeoutCloseable(1));
@@ -97,6 +97,7 @@ public class IpfsAddTest {
         assertEquals(links.size(), 0);
 
     }
+
     @Test
     public void add_wrap_test() throws Exception {
 

@@ -10,15 +10,14 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentSkipListSet;
 
 import io.LogUtils;
-import io.ipfs.cid.Cid;
 import io.core.ClosedException;
 import io.core.TimeoutCloseable;
 import io.core.TimeoutProgress;
+import io.ipfs.cid.Cid;
 import io.ipfs.host.PeerId;
 import io.ipfs.utils.Link;
 
@@ -49,7 +48,7 @@ public class IpfsCatTest {
         ConcurrentSkipListSet<PeerId> provs = new ConcurrentSkipListSet<>();
         try {
             ipfs.findProviders(provs::add, cid, new TimeoutCloseable(45));
-        } catch (ClosedException ignore){
+        } catch (ClosedException ignore) {
             // nothing to do
         }
         assertFalse(provs.isEmpty());

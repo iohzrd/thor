@@ -30,9 +30,9 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.LogUtils;
-import io.ipfs.cid.Cid;
 import io.core.Closeable;
 import io.ipfs.IPFS;
+import io.ipfs.cid.Cid;
 import io.ipfs.format.Node;
 import io.ipfs.utils.Reader;
 import threads.thor.BuildConfig;

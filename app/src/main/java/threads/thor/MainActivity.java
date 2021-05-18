@@ -97,6 +97,7 @@ import threads.thor.fragments.HistoryDialogFragment;
 import threads.thor.fragments.SettingsDialogFragment;
 import threads.thor.provider.FileDocumentsProvider;
 import threads.thor.services.DiscoveryService;
+import threads.thor.services.LocalConnectService;
 import threads.thor.services.QRCodeService;
 import threads.thor.services.RegistrationService;
 import threads.thor.services.ThorService;
@@ -108,7 +109,6 @@ import threads.thor.utils.PermissionAction;
 import threads.thor.work.ClearBrowserDataWorker;
 import threads.thor.work.DownloadContentWorker;
 import threads.thor.work.DownloadFileWorker;
-import threads.thor.services.LocalConnectService;
 
 
 public class MainActivity extends AppCompatActivity implements
@@ -197,15 +197,6 @@ public class MainActivity extends AppCompatActivity implements
                     }
                 }
             });
-    private final ActivityResultLauncher<String> requestPermissionLauncher =
-            registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
-                if (isGranted) {
-                    invokeScan();
-                } else {
-                    EVENTS.getInstance(getApplicationContext()).permission(
-                            getString(R.string.permission_camera_denied));
-                }
-            });
     private WebView mWebView;
     private long mLastClickTime = 0;
     private TextView mBrowserText;
@@ -253,6 +244,15 @@ public class MainActivity extends AppCompatActivity implements
                     LogUtils.error(TAG, throwable);
                 }
 
+            });
+    private final ActivityResultLauncher<String> requestPermissionLauncher =
+            registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
+                if (isGranted) {
+                    invokeScan();
+                } else {
+                    EVENTS.getInstance(getApplicationContext()).permission(
+                            getString(R.string.permission_camera_denied));
+                }
             });
     private boolean hasCamera;
     private NsdManager mNsdManager;
@@ -1871,7 +1871,7 @@ public class MainActivity extends AppCompatActivity implements
             mNsdManager = (NsdManager) getSystemService(Context.NSD_SERVICE);
             Objects.requireNonNull(mNsdManager);
             mNsdManager.registerService(serviceInfo, NsdManager.PROTOCOL_DNS_SD,
-                   RegistrationService.getInstance());
+                    RegistrationService.getInstance());
 
 
             DiscoveryService discovery = DiscoveryService.getInstance();

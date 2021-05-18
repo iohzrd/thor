@@ -210,7 +210,7 @@ public class DOCS {
                 mimeType = info.getMimeType();
             }
 
-        } catch(ClosedException closedException){
+        } catch (ClosedException closedException) {
             throw closedException;
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
@@ -383,7 +383,7 @@ public class DOCS {
                 try {
                     PeerId peerId = ipfs.getPeerId(host);
                     pageConnect(peerId, closeable);
-                } catch (Throwable ignore){
+                } catch (Throwable ignore) {
                     // ignore common use case
                 }
             }

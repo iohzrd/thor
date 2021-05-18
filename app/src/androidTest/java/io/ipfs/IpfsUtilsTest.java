@@ -44,7 +44,7 @@ public class IpfsUtilsTest {
 
 
         BigInteger dist = Util.Distance(a, b);
-        assertEquals(dist.longValue(),0L);
+        assertEquals(dist.longValue(), 0L);
 
         int res = Util.CommonPrefixLen(a, b);
         assertEquals(res, (a.data.length * 8));

@@ -6,8 +6,6 @@ import android.net.NetworkCapabilities;
 
 import androidx.annotation.NonNull;
 
-import io.LogUtils;
-
 class TestEnv {
     private static final String TAG = TestEnv.class.getSimpleName();
 

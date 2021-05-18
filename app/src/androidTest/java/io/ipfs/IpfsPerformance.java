@@ -24,7 +24,6 @@ import io.ipfs.utils.Progress;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertTrue;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
 @RunWith(AndroidJUnit4.class)
@@ -96,7 +95,6 @@ public class IpfsPerformance {
 
 
         ipfs.rm(cid, true);
-
 
 
     }

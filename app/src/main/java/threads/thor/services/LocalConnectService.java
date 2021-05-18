@@ -33,7 +33,7 @@ public class LocalConnectService {
 
             LogUtils.error(TAG, "Success ? " + connect + " for " + multiAddress);
 
-        } catch (Throwable throwable){
+        } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         }
     }

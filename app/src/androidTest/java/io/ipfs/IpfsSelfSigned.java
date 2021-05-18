@@ -14,15 +14,12 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.cert.X509Certificate;
 
-
 import io.LogUtils;
+import io.crypto.PubKey;
 import io.crypto.Rsa;
 import io.ipfs.host.LiteSignedCertificate;
-import io.crypto.PubKey;
 
 import static junit.framework.TestCase.assertNotNull;
-import static junit.framework.TestCase.assertNull;
-import static junit.framework.TestCase.assertTrue;
 
 
 @SuppressWarnings("SpellCheckingInspection")
@@ -47,7 +44,7 @@ public class IpfsSelfSigned {
 
         assertNotNull(ident);
 
-       // IPFS ipfs = TestEnv.getTestInstance(context);
+        // IPFS ipfs = TestEnv.getTestInstance(context);
 
         //X509Certificate cert = ipfs.getSelfSignedCertificate().cert();
 

@@ -31,12 +31,10 @@ public class IpfsDnsAddress {
         IPFS ipfs = TestEnv.getTestInstance(context);
 
 
-
         boolean result = ipfs.swarmConnect(
                 "/dnsaddr/bootstrap.libp2p.io/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN",
                 3);
         assertTrue(result);
-
 
 
     }
