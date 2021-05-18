@@ -1,4 +1,4 @@
-package io.ipns;
+package io.ipfs.ipns;
 
 import android.annotation.SuppressLint;
 
@@ -19,6 +19,8 @@ import java.util.Date;
 import java.util.Objects;
 
 import crypto.pb.Crypto;
+import io.core.InvalidRecord;
+import io.core.Validator;
 import io.crypto.Ecdsa;
 import io.crypto.Ed25519;
 import io.crypto.PrivKey;
@@ -127,7 +129,7 @@ public class Ipns implements Validator {
 
     @NonNull
     @Override
-    public Entry Validate(@NonNull byte[] key, byte[] value) throws InvalidRecord {
+    public Entry validate(@NonNull byte[] key, byte[] value) throws InvalidRecord {
 
         byte[] ipns = IPFS.IPNS_PATH.getBytes();
         int index = Bytes.indexOf(key, ipns);
@@ -189,7 +191,7 @@ public class Ipns implements Validator {
     }
 
     @Override
-    public int Select(@NonNull Ipns.Entry rec, @NonNull Ipns.Entry cmp) {
+    public int compare(@NonNull Ipns.Entry rec, @NonNull Ipns.Entry cmp) {
         return Compare(rec, cmp);
     }
 

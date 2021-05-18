@@ -30,8 +30,10 @@ import io.LogUtils;
 import io.core.Closeable;
 import io.core.ClosedException;
 import io.core.ConnectionIssue;
+import io.core.InvalidRecord;
 import io.core.ProtocolIssue;
 import io.core.TimeoutIssue;
+import io.core.Validator;
 import io.ipfs.IPFS;
 import io.ipfs.cid.Cid;
 import io.ipfs.host.AddrInfo;
@@ -39,10 +41,8 @@ import io.ipfs.host.Connection;
 import io.ipfs.host.DataHandler;
 import io.ipfs.host.LiteHost;
 import io.ipfs.host.PeerId;
+import io.ipfs.ipns.Ipns;
 import io.ipfs.multiaddr.Multiaddr;
-import io.ipns.InvalidRecord;
-import io.ipns.Ipns;
-import io.ipns.Validator;
 import io.netty.handler.timeout.ReadTimeoutException;
 import io.netty.incubator.codec.quic.QuicStreamChannel;
 import record.pb.RecordOuterClass;
@@ -148,7 +148,7 @@ public class KadDHT implements Routing {
 
         // don't allow local users to put bad values.
         try {
-            Ipns.Entry entry = validator.Validate(key, value);
+            Ipns.Entry entry = validator.validate(key, value);
             Objects.requireNonNull(entry);
         } catch (Throwable throwable) {
             throw new RuntimeException(throwable);
@@ -538,7 +538,7 @@ public class KadDHT implements Routing {
             try {
                 byte[] record = rec.getValue().toByteArray();
                 if (record != null && record.length > 0) {
-                    Ipns.Entry entry = validator.Validate(rec.getKey().toByteArray(), record);
+                    Ipns.Entry entry = validator.validate(rec.getKey().toByteArray(), record);
                     return Pair.create(entry, peers);
                 }
             } catch (Throwable throwable) {
@@ -579,7 +579,7 @@ public class KadDHT implements Routing {
             if (Objects.equals(best, v)) {
                 reporter.report(ctx, v, false);
             } else {
-                int value = validator.Select(best, v);
+                int value = validator.compare(best, v);
 
                 if (value == -1) {
                     reporter.report(ctx, v, false);
