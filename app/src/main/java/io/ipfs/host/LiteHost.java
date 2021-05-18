@@ -7,7 +7,6 @@ import com.google.common.primitives.Bytes;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.MessageLite;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
@@ -28,9 +27,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -40,13 +37,11 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
 import bitswap.pb.MessageOuterClass;
-import dht.pb.Dht;
 import identify.pb.IdentifyOuterClass;
 import io.LogUtils;
 import io.core.Closeable;
 import io.core.ClosedException;
 import io.core.ConnectionIssue;
-import io.core.ProtocolIssue;
 import io.crypto.PrivKey;
 import io.crypto.PubKey;
 import io.ipfs.IPFS;
@@ -59,20 +54,18 @@ import io.ipfs.dht.KadDht;
 import io.ipfs.dht.Routing;
 import io.ipfs.exchange.Interface;
 import io.ipfs.format.BlockStore;
+import io.ipfs.ident.IdentityService;
 import io.ipfs.ipns.Ipns;
 import io.ipfs.multiaddr.Multiaddr;
 import io.ipfs.multiaddr.Protocol;
 import io.ipfs.push.Pusher;
-import io.ipfs.utils.DataHandler;
+import io.ipfs.relay.RelayService;
 import io.netty.bootstrap.Bootstrap;
-import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.handler.ssl.ClientAuth;
@@ -83,15 +76,13 @@ import io.netty.incubator.codec.quic.QuicClientCodecBuilder;
 import io.netty.incubator.codec.quic.QuicServerCodecBuilder;
 import io.netty.incubator.codec.quic.QuicSslContext;
 import io.netty.incubator.codec.quic.QuicSslContextBuilder;
-import io.netty.incubator.codec.quic.QuicStreamChannel;
-import io.netty.incubator.codec.quic.QuicStreamPriority;
-import io.netty.incubator.codec.quic.QuicStreamType;
 import io.netty.incubator.codec.quic.QuicheQuicConnectionStats;
 import io.netty.util.AttributeKey;
 import io.netty.util.NetUtil;
 import io.netty.util.concurrent.Promise;
 import io.netty.util.internal.EmptyArrays;
 import io.quic.QuicheWrapper;
+import relay.pb.Relay;
 
 
 public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
@@ -419,12 +410,9 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
                                 @NonNull Connection conn) throws ClosedException {
 
         try {
-            MessageLite message = request(closeable, IPFS.IDENTITY_PROTOCOL, conn, null,
-                    IPFS.PRIORITY_HIGH);
-            Objects.requireNonNull(message);
-
-            IdentifyOuterClass.Identify identify = (IdentifyOuterClass.Identify) message;
+            IdentifyOuterClass.Identify identify = IdentityService.getIdentity(closeable, conn);
             Objects.requireNonNull(identify);
+
 
             String agent = identify.getAgentVersion();
             Multiaddr observedAddr = null;
@@ -504,18 +492,13 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
     public boolean canHop(@NonNull Closeable closeable, @NonNull PeerId peerId)
             throws ConnectionIssue, ClosedException {
 
-
-        relay.pb.Relay.CircuitRelay message = relay.pb.Relay.CircuitRelay.newBuilder()
-                .setType(relay.pb.Relay.CircuitRelay.Type.CAN_HOP)
-                .build();
-
         try {
             Connection conn = connect(closeable, peerId, IPFS.CONNECT_TIMEOUT);
-            MessageLite messageLite = request(closeable, IPFS.RELAY_PROTOCOL, conn, message,
-                    IPFS.PRIORITY_URGENT);
-            Objects.requireNonNull(messageLite);
-            relay.pb.Relay.CircuitRelay msg = (relay.pb.Relay.CircuitRelay) messageLite;
+
+            Relay.CircuitRelay msg = RelayService.getRelay(closeable, conn);
+
             Objects.requireNonNull(msg);
+
             return msg.getType() == relay.pb.Relay.CircuitRelay.Type.STATUS;
 
         } catch (ClosedException | ConnectionIssue exception) {
@@ -797,268 +780,6 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
         return getConnections().size();
     }
 
-    @NonNull
-    public MessageLite request(@NonNull Closeable closeable, @NonNull String protocol,
-                               @NonNull Connection conn, @Nullable MessageLite message,
-                               short priority)
-            throws InterruptedException, ExecutionException, ClosedException {
-
-
-        if (closeable.isClosed()) {
-            throw new ClosedException();
-        }
-
-        QuicChannel quicChannel = conn.channel();
-        long time = System.currentTimeMillis();
-
-
-        CompletableFuture<MessageLite> request = request(quicChannel, protocol, message, priority);
-
-        while (!request.isDone()) {
-            if (closeable.isClosed()) {
-                request.cancel(true);
-            }
-        }
-
-        if (closeable.isClosed()) {
-            throw new ClosedException();
-        }
-
-        MessageLite res = request.get();
-        LogUtils.info(TAG, "Request took " + protocol + " " + (System.currentTimeMillis() - time));
-        Objects.requireNonNull(res);
-        return res;
-    }
-
-    public CompletableFuture<Void> send(@NonNull QuicChannel quicChannel,
-                                        @NonNull String protocol,
-                                        @NonNull byte[] message,
-                                        short priority) {
-
-
-        CompletableFuture<Void> ret = new CompletableFuture<>();
-
-        try {
-            /*
-            QuicheWrapper.QuicheStream streamChannel = QuicheWrapper.createStream(
-                    new TimeoutCloseable(closeable, 1),
-                    QuicStreamType.BIDIRECTIONAL,
-                    new QuicheWrapper.QuicheStreamStreamHandler(){
-                        private DataHandler reader = new DataHandler(IPFS.BLOCK_SIZE_LIMIT);
-
-                        @Override
-                        public void exceptionCaught(QuicheWrapper.QuicheStream ctx, Throwable cause) {
-
-                        }
-
-                        public void channelRead0(QuicheWrapper.QuicheStream ctx, ByteBuf msg)
-                                throws Exception {
-
-
-                            ByteArrayOutputStream out = new ByteArrayOutputStream();
-                            msg.readBytes(out, msg.readableBytes());
-                            byte[] data = out.toByteArray();
-                            reader.load(data);
-
-                            if (reader.isDone()) {
-                                for (String received : reader.getTokens()) {
-                                    LogUtils.error(TAG, "send " + received);
-                                    if (Objects.equals(received, IPFS.NA)) {
-                                        throw new ProtocolIssue();
-                                    } else if (Objects.equals(received, IPFS.STREAM_PROTOCOL)) {
-                                    } else if (Objects.equals(received, protocol)) {
-                                        activation.complete(null);
-                                    } else {
-                                        throw new ProtocolIssue();
-                                    }
-                                }
-                                reader = new DataHandler(IPFS.BLOCK_SIZE_LIMIT);
-                            } else {
-                                LogUtils.debug(TAG, "iteration " + data.length + " "
-                                        + reader.expectedBytes() + " " + protocol );
-                            }
-                        }
-                    }, quicChannel.getIdGenerator(), quicChannel.connection());
-
-            */
-            QuicStreamChannel streamChannel = quicChannel.createStream(QuicStreamType.BIDIRECTIONAL,
-                    new SimpleChannelInboundHandler<Object>() {
-                        private DataHandler reader = new DataHandler(IPFS.BLOCK_SIZE_LIMIT);
-
-                        @Override
-                        public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
-                                throws Exception {
-                            LogUtils.error(TAG, protocol + " " + cause);
-                            ret.completeExceptionally(cause);
-                            ctx.close().get();
-                        }
-
-                        @Override
-                        public void channelUnregistered(ChannelHandlerContext ctx) {
-                            ret.completeExceptionally(new ConnectionIssue());
-                        }
-
-                        @Override
-                        protected void channelRead0(ChannelHandlerContext ctx, Object value)
-                                throws Exception {
-
-
-                            ByteBuf msg = (ByteBuf) value;
-                            Objects.requireNonNull(msg);
-
-                            ByteArrayOutputStream out = new ByteArrayOutputStream();
-                            msg.readBytes(out, msg.readableBytes());
-                            byte[] data = out.toByteArray();
-                            reader.load(data);
-
-                            if (reader.isDone()) {
-                                for (String received : reader.getTokens()) {
-                                    LogUtils.debug(TAG, "send " + received);
-                                    if (Objects.equals(received, IPFS.NA)) {
-                                        throw new ProtocolIssue();
-                                    } else if (Objects.equals(received, IPFS.STREAM_PROTOCOL)) {
-                                    } else if (Objects.equals(received, protocol)) {
-                                        ret.complete(ctx.writeAndFlush(
-                                                DataHandler.encode(message)).addListener(
-                                                (ChannelFutureListener) future -> ctx.close()).get());
-                                    } else {
-                                        throw new ProtocolIssue();
-                                    }
-                                }
-
-
-                                reader = new DataHandler(IPFS.BLOCK_SIZE_LIMIT);
-                            } else {
-                                LogUtils.debug(TAG, "iteration " + data.length + " "
-                                        + reader.expectedBytes() + " " + protocol + " " + ctx.name() + " "
-                                        + ctx.channel().remoteAddress());
-                            }
-                        }
-                    }).sync().get();
-
-            //streamChannel.pipeline().addFirst(new ReadTimeoutHandler(5, TimeUnit.SECONDS));
-
-
-            streamChannel.updatePriority(new QuicStreamPriority(priority, false));
-
-
-            streamChannel.writeAndFlush(DataHandler.writeToken(IPFS.STREAM_PROTOCOL));
-            streamChannel.writeAndFlush(DataHandler.writeToken(protocol));
-
-
-        } catch (Throwable throwable) {
-            LogUtils.error(TAG, throwable);
-            ret.completeExceptionally(throwable);
-        }
-
-        return ret;
-    }
-
-    public CompletableFuture<MessageLite> request(@NonNull QuicChannel quicChannel,
-                                                  @NonNull String protocol,
-                                                  @Nullable MessageLite messageLite,
-                                                  short priority) {
-
-        CompletableFuture<MessageLite> request = new CompletableFuture<>();
-        CompletableFuture<Void> activation = new CompletableFuture<>();
-
-        try {
-            QuicStreamChannel streamChannel = quicChannel.createStream(QuicStreamType.BIDIRECTIONAL,
-                    new SimpleChannelInboundHandler<ByteBuf>() {
-
-                        private DataHandler reader = new DataHandler(IPFS.BLOCK_SIZE_LIMIT);
-
-
-                        @Override
-                        public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
-                                throws Exception {
-                            LogUtils.error(TAG, protocol + " " + cause);
-                            request.completeExceptionally(cause);
-                            activation.completeExceptionally(cause);
-                            ctx.close().get();
-                        }
-
-                        @Override
-                        protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg)
-                                throws Exception {
-
-                            ByteArrayOutputStream out = new ByteArrayOutputStream();
-                            msg.readBytes(out, msg.readableBytes());
-                            byte[] data = out.toByteArray();
-                            reader.load(data);
-
-                            if (reader.isDone()) {
-
-                                for (String received : reader.getTokens()) {
-                                    LogUtils.verbose(TAG, "request " + received);
-                                    if (Objects.equals(received, IPFS.NA)) {
-                                        throw new ProtocolIssue();
-                                    } else if (Objects.equals(received, IPFS.STREAM_PROTOCOL)) {
-                                    } else if (Objects.equals(received, protocol)) {
-
-                                        if (messageLite != null) {
-                                            activation.complete(
-                                                    ctx.writeAndFlush(DataHandler.encode(messageLite))
-                                                            .addListener(QuicStreamChannel.SHUTDOWN_OUTPUT).get());
-                                        } else {
-                                            activation.complete(null);
-                                        }
-                                    } else {
-                                        throw new ProtocolIssue();
-                                    }
-                                }
-
-                                byte[] message = reader.getMessage();
-
-                                if (message != null) {
-                                    switch (protocol) {
-                                        case IPFS.RELAY_PROTOCOL:
-                                            LogUtils.debug(TAG, "Found " + protocol);
-                                            request.complete(relay.pb.Relay.CircuitRelay.parseFrom(message));
-                                            break;
-                                        case IPFS.IDENTITY_PROTOCOL:
-                                            LogUtils.debug(TAG, "Found " + protocol);
-                                            request.complete(IdentifyOuterClass.Identify.parseFrom(message));
-                                            break;
-                                        case IPFS.BIT_SWAP_PROTOCOL:
-                                            LogUtils.debug(TAG, "Found " + protocol);
-                                            request.complete(MessageOuterClass.Message.parseFrom(message));
-                                            break;
-                                        case IPFS.KAD_DHT_PROTOCOL:
-                                            LogUtils.debug(TAG, "Found " + protocol);
-                                            request.complete(Dht.Message.parseFrom(message));
-                                            break;
-                                        default:
-                                            throw new Exception("unknown protocol");
-                                    }
-                                    ctx.close();
-                                }
-                                reader = new DataHandler(evalMaxResponseLength(protocol));
-                            } else {
-                                LogUtils.debug(TAG, "iteration " + reader.hasRead() + " "
-                                        + reader.expectedBytes() + " " + protocol + " " + ctx.name() + " "
-                                        + ctx.channel().remoteAddress());
-                            }
-                        }
-                    }).sync().get();
-
-
-            //streamChannel.pipeline().addFirst(new ReadTimeoutHandler(5, TimeUnit.SECONDS));
-
-            streamChannel.updatePriority(new QuicStreamPriority(priority, false));
-
-
-            streamChannel.writeAndFlush(DataHandler.writeToken(IPFS.STREAM_PROTOCOL));
-            streamChannel.writeAndFlush(DataHandler.writeToken(protocol));
-
-        } catch (Throwable throwable) {
-            LogUtils.error(TAG, throwable);
-            activation.completeExceptionally(throwable);
-            request.completeExceptionally(throwable);
-        }
-
-        return activation.thenCompose(s -> request);
-    }
 
     public Promise<QuicChannel> dial(@NonNull Multiaddr multiaddr,
                                      @NonNull PeerId peerId) throws UnknownHostException, InterruptedException {
