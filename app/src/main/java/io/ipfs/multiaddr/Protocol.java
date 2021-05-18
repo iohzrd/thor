@@ -18,9 +18,9 @@ import io.ipfs.multibase.Multibase;
 
 public class Protocol {
     private static final String IPV4_REGEX = "\\A(25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)(\\.(25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)){3}\\z";
-    public static int LENGTH_PREFIXED_VAR_SIZE = -1;
     private static final Map<String, Protocol> byName = new HashMap<>();
     private static final Map<Integer, Protocol> byCode = new HashMap<>();
+    public static int LENGTH_PREFIXED_VAR_SIZE = -1;
 
     static {
         for (Protocol.Type t : Protocol.Type.values()) {
