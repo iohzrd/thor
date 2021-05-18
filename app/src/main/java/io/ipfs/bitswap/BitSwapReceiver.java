@@ -6,9 +6,7 @@ import io.ipfs.host.PeerId;
 
 
 public interface BitSwapReceiver {
-    void ReceiveMessage(@NonNull PeerId peer, @NonNull String protocol, @NonNull BitSwapMessage incoming);
+    boolean GatePeer(@NonNull PeerId peerID);
 
-    void ReceiveError(@NonNull PeerId peer, @NonNull String protocol, @NonNull String error);
-
-    boolean GatePeer(PeerId peerID);
+    boolean ReceiveMessage(@NonNull PeerId peer, @NonNull BitSwapMessage incoming);
 }

@@ -2,6 +2,8 @@ package io.crypto;
 
 import android.util.Pair;
 
+import androidx.annotation.NonNull;
+
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.generators.Ed25519KeyPairGenerator;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
@@ -16,13 +18,10 @@ import crypto.pb.Crypto;
 
 public class Ed25519 {
 
-    public static final Pair generateEd25519KeyPair(
+    public static Pair generateEd25519KeyPair(
             SecureRandom random) {
 
         Ed25519KeyPairGenerator var1 = new Ed25519KeyPairGenerator();
-        boolean var2 = false;
-        boolean var3 = false;
-        boolean var5 = false;
         var1.init(new Ed25519KeyGenerationParameters(random));
         AsymmetricCipherKeyPair keypair = var1.generateKeyPair();
 
@@ -60,13 +59,13 @@ public class Ed25519 {
     }
 
 
-    public static final PrivKey unmarshalEd25519PrivateKey(byte[] keyBytes) {
+    public static PrivKey unmarshalEd25519PrivateKey(byte[] keyBytes) {
 
         return new Ed25519PrivateKey(new Ed25519PrivateKeyParameters(keyBytes, 0));
     }
 
 
-    public static final PubKey unmarshalEd25519PublicKey(byte[] keyBytes) {
+    public static PubKey unmarshalEd25519PublicKey(byte[] keyBytes) {
 
         return new Ed25519PublicKey(new Ed25519PublicKeyParameters(keyBytes, 0));
     }
@@ -80,22 +79,18 @@ public class Ed25519 {
         }
 
 
+        @NonNull
         public byte[] raw() {
             return this.priv.getEncoded();
         }
 
 
         public byte[] sign(byte[] data) {
+            Ed25519Signer signer = new Ed25519Signer();
+            signer.init(true, this.priv);
+            signer.update(data, 0, data.length);
 
-            Ed25519Signer var2 = new Ed25519Signer();
-            boolean var3 = false;
-            boolean var4 = false;
-            boolean var6 = false;
-            var2.init(true, this.priv);
-            var2.update(data, 0, data.length);
-            byte[] var10000 = var2.generateSignature();
-
-            return var10000;
+            return signer.generateSignature();
         }
 
 
@@ -119,10 +114,9 @@ public class Ed25519 {
         }
 
 
+        @NonNull
         public byte[] raw() {
-            byte[] var10000 = this.pub.getEncoded();
-
-            return var10000;
+            return this.pub.getEncoded();
         }
 
         public boolean verify(byte[] data, byte[] signature) {

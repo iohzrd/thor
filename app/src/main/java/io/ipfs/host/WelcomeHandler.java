@@ -50,24 +50,24 @@ public class WelcomeHandler extends SimpleChannelInboundHandler<Object> {
                     ctx.write(DataHandler.writeToken(IPFS.STREAM_PROTOCOL));
                 } else if (token.equals(IPFS.IDENTITY_PROTOCOL)) {
                     ctx.write(DataHandler.writeToken(IPFS.IDENTITY_PROTOCOL));
-                    try {
-                        IdentifyOuterClass.Identify response =
-                                host.createIdentity(quicChannel.remoteAddress());
-                        ctx.writeAndFlush(DataHandler.encode(response)).get();
-                        ctx.close().get();
-                    } catch (Throwable throwable) {
-                        LogUtils.error(TAG, throwable);
-                    }
+
+                    IdentifyOuterClass.Identify response =
+                            host.createIdentity(quicChannel.remoteAddress());
+                    ctx.writeAndFlush(DataHandler.encode(response)).addListener(
+                            future -> ctx.close().get()
+                    );
+
                 } else {
-                    ctx.close().get();
+                    LogUtils.debug(TAG, token);
+                    ctx.writeAndFlush(DataHandler.writeToken(IPFS.NA)).addListener(
+                            future -> ctx.close().get()
+                    );
                 }
             }
         } else {
-            LogUtils.error(TAG, "iteration listener " + data.length + " "
+            LogUtils.debug(TAG, "iteration listener " + data.length + " "
                     + reader.expectedBytes() + " " + ctx.name() + " "
                     + ctx.channel().remoteAddress());
         }
     }
-
-
 }

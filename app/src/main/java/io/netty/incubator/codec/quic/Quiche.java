@@ -38,6 +38,7 @@ public final class Quiche {
 
         // This needs to match all the classes that are loaded via NETTY_JNI_UTIL_LOAD_CLASS or looked up via
         // NETTY_JNI_UTIL_FIND_CLASS.
+        /*
         tryLoadClasses(Quiche.class,
                 // netty_quic_boringssl
                 byte[].class, String.class, BoringSSLCertificateCallback.class,
@@ -59,7 +60,9 @@ public final class Quiche {
         // Let's enable debug logging for quiche if its enabled in our logger.
         if (DEBUG_LOGGING_ENABLED) {
             quiche_enable_debug_logging(new QuicheLogger(logger));
-        }
+        }*/
+
+        loadNativeLibrary();
     }
     private static void tryLoadClasses(Class<?> loadingClass, Class<?>... classes) {
         ClassLoader loader = PlatformDependent.getClassLoader(loadingClass);
@@ -355,7 +358,7 @@ public final class Quiche {
      * <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#L340">quiche_stats</a> being numerical.
      * The assumption made allows passing primitive array rather than dealing with objects.
      */
-    static native long[] quiche_conn_stats(long connAddr);
+    public static native long[] quiche_conn_stats(long connAddr);
 
     /**
      * See

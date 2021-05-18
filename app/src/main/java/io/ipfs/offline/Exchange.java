@@ -41,17 +41,14 @@ public class Exchange implements Interface {
     }
 
     @Override
-    public void ReceiveMessage(@NonNull PeerId peer, @NonNull String protocol, @NonNull BitSwapMessage incoming) {
-
+    public boolean GatePeer(@NonNull PeerId peerID) {
+        // nothing to do here
+        return false;
     }
 
     @Override
-    public void ReceiveError(@NonNull PeerId peer, @NonNull String protocol, @NonNull String error) {
-
-    }
-
-    @Override
-    public boolean GatePeer(PeerId peerID) {
+    public boolean ReceiveMessage(@NonNull PeerId peer, @NonNull BitSwapMessage incoming) {
+        // nothing to do here
         return false;
     }
 }

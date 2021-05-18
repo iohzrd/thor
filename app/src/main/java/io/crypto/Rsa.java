@@ -2,6 +2,8 @@ package io.crypto;
 
 import android.util.Pair;
 
+import androidx.annotation.NonNull;
+
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
@@ -117,13 +119,12 @@ public class Rsa {
                 PrivateKeyInfo bcPrivateKeyInfo = PrivateKeyInfo.getInstance(this.sk.getEncoded());
                 ASN1Primitive var10001 = bcPrivateKeyInfo.parsePrivateKey().toASN1Primitive();
 
-                byte[] var5 = var10001.getEncoded();
-
-                this.pkcs1PrivateKeyBytes = var5;
+                this.pkcs1PrivateKeyBytes = var10001.getEncoded();
             }
         }
 
 
+        @NonNull
         public byte[] raw() {
             return this.pkcs1PrivateKeyBytes;
         }
@@ -133,14 +134,11 @@ public class Rsa {
             try {
 
                 Signature var2 = Signature.getInstance("SHA256withRSA", new BouncyCastleProvider());
-                boolean var3 = false;
-                boolean var4 = false;
-                boolean var6 = false;
+
                 var2.initSign(this.sk);
                 var2.update(data);
-                byte[] var10000 = var2.sign();
 
-                return var10000;
+                return var2.sign();
             } catch (Throwable throwable) {
                 throw new RuntimeException(throwable);
             }
@@ -166,22 +164,19 @@ public class Rsa {
         }
 
 
+        @NonNull
         public byte[] raw() {
-            byte[] var10000 = this.k.getEncoded();
-
-            return var10000;
+            return this.k.getEncoded();
         }
 
         public boolean verify(byte[] data, byte[] signature) {
             try {
 
-                Signature var3 = Signature.getInstance("SHA256withRSA", new BouncyCastleProvider());
-                boolean var4 = false;
-                boolean var5 = false;
-                boolean var7 = false;
-                var3.initVerify(this.k);
-                var3.update(data);
-                return var3.verify(signature);
+                Signature sha256withRSA = Signature.getInstance(
+                        "SHA256withRSA", new BouncyCastleProvider());
+                sha256withRSA.initVerify(this.k);
+                sha256withRSA.update(data);
+                return sha256withRSA.verify(signature);
             } catch (Throwable throwable) {
                 throw new RuntimeException(throwable);
             }

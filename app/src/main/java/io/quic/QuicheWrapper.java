@@ -16,11 +16,26 @@ import io.netty.incubator.codec.quic.QuicStreamIdGenerator;
 import io.netty.incubator.codec.quic.QuicStreamPriority;
 import io.netty.incubator.codec.quic.QuicStreamType;
 import io.netty.incubator.codec.quic.Quiche;
+import io.netty.incubator.codec.quic.QuicheQuicConnectionStats;
 import io.netty.util.ReferenceCountUtil;
 
 
 public class QuicheWrapper {
     private static final String TAG = QuicheWrapper.class.getSimpleName();
+
+    public static QuicheQuicConnectionStats getStats(long connection){
+        try {
+            final long[] stats = Quiche.quiche_conn_stats(connection);
+            if (stats == null) {
+                return null;
+            }
+
+            return new QuicheQuicConnectionStats(stats[0], stats[1], stats[2], stats[3], stats[4], stats[5]);
+        } catch (Throwable throwable){
+            LogUtils.error(TAG, throwable);
+        }
+        return null;
+    }
 
     public static StreamRecvResult streamRecv(long connection, long streamId, ByteBuf buffer) throws Exception {
         ByteBuf finBuffer = new DirectIoByteBufAllocator(ByteBufAllocator.DEFAULT).directBuffer(1);

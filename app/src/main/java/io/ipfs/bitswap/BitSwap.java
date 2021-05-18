@@ -55,15 +55,16 @@ public class BitSwap implements Interface {
     }
 
     @Override
-    public void ReceiveMessage(@NonNull PeerId peer, @NonNull String protocol, @NonNull BitSwapMessage incoming) {
+    public boolean ReceiveMessage(@NonNull PeerId peer, @NonNull BitSwapMessage incoming) {
 
-        LogUtils.info(TAG, "ReceiveMessage " + peer.toBase58() + " " + protocol);
-
+        LogUtils.info(TAG, "ReceiveMessage " + peer.toBase58());
+        boolean abort = true;
         List<Block> blocks = incoming.Blocks();
         List<Cid> haves = incoming.Haves();
         if (blocks.size() > 0 || haves.size() > 0) {
             try {
-                LogUtils.error(TAG, "ReceiveMessage " + peer.toBase58() + " " + protocol);
+                abort = false;
+                LogUtils.debug(TAG, "ReceiveMessage " + peer.toBase58());
                 receiveBlocksFrom(peer, blocks, haves);
             } catch (Throwable throwable) {
                 LogUtils.error(TAG, throwable);
@@ -73,6 +74,7 @@ public class BitSwap implements Interface {
         if (IPFS.BITSWAP_ENGINE_ACTIVE) {
             engine.MessageReceived(peer, incoming);
         }
+        return abort;
     }
 
 
@@ -92,14 +94,9 @@ public class BitSwap implements Interface {
 
     }
 
-    @Override
-    public void ReceiveError(@NonNull PeerId peer, @NonNull String protocol, @NonNull String error) {
-        // TODO evaluate when this happens
-        LogUtils.error(TAG, "ReceiveError " + peer.toBase58() + " " + protocol + " " + error);
-    }
 
     @Override
-    public boolean GatePeer(PeerId peerID) {
+    public boolean GatePeer(@NonNull PeerId peerID) {
         return contentManager.GatePeer(peerID);
     }
 

@@ -5,6 +5,7 @@ import androidx.annotation.NonNull;
 import java.util.List;
 
 import bitswap.pb.MessageOuterClass;
+import io.LogUtils;
 import io.core.Closeable;
 import io.core.ClosedException;
 import io.core.ConnectionIssue;
@@ -16,7 +17,7 @@ import io.ipfs.host.PeerId;
 
 
 public class MessageWriter {
-
+    private static final String TAG = MessageWriter.class.getSimpleName();
     public static final int MaxPriority = Integer.MAX_VALUE;
 
 
@@ -47,8 +48,8 @@ public class MessageWriter {
         if (message.Empty()) {
             return;
         }
-
-        network.writeMessage(closeable, peer, message, IPFS.PRIORITY_NORMAL);
+        LogUtils.error(TAG, "send HAVE Message " + peer.toBase58());
+        network.writeMessage(closeable, peer, message, IPFS.PRIORITY_HIGH);
 
 
     }
@@ -78,6 +79,7 @@ public class MessageWriter {
             return;
         }
 
+        LogUtils.error(TAG, "send WANT Message " + peer.toBase58());
         network.writeMessage(closeable, peer, message, IPFS.PRIORITY_URGENT);
 
     }

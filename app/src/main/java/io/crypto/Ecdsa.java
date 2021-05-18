@@ -2,12 +2,12 @@ package io.crypto;
 
 import android.util.Pair;
 
+import androidx.annotation.NonNull;
+
 import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPrivateKey;
 import org.bouncycastle.jce.ECNamedCurveTable;
-import org.bouncycastle.jce.ECPointUtil;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
-import org.bouncycastle.jce.spec.ECNamedCurveSpec;
 import org.bouncycastle.jce.spec.ECParameterSpec;
 import org.bouncycastle.jce.spec.ECPublicKeySpec;
 
@@ -20,7 +20,6 @@ import java.security.SecureRandom;
 import java.security.Signature;
 import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.ECPublicKey;
-import java.security.spec.ECPoint;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Objects;
@@ -37,7 +36,7 @@ public class Ecdsa {
         CURVE = var10000;
     }
 
-    private static final Pair generateECDSAKeyPairWithCurve(ECNamedCurveParameterSpec curve, SecureRandom random) {
+    private static Pair generateECDSAKeyPairWithCurve(ECNamedCurveParameterSpec curve, SecureRandom random) {
         try {
             KeyPairGenerator var3 = KeyPairGenerator.getInstance("ECDSA", new BouncyCastleProvider());
             boolean var4 = false;
@@ -126,26 +125,21 @@ public class Ecdsa {
         }
     }
 
-    public static final EcdsaPublicKey unmarshalEcdsaPublicKey(byte[] keyBytes) {
+    public static EcdsaPublicKey unmarshalEcdsaPublicKey(byte[] keyBytes) {
         try {
+            KeyFactory keyFactory = KeyFactory.getInstance("ECDSA", new BouncyCastleProvider());
 
-            KeyFactory var1 = KeyFactory.getInstance("ECDSA", new BouncyCastleProvider());
-            boolean var2 = false;
-            boolean var3 = false;
-            boolean var5 = false;
-            EcdsaPublicKey var10000;
-            PublicKey var10002 = var1.generatePublic(new X509EncodedKeySpec(keyBytes));
-            if (var10002 == null) {
+            PublicKey publicKey = keyFactory.generatePublic(new X509EncodedKeySpec(keyBytes));
+            if (publicKey == null) {
                 throw new NullPointerException("null cannot be cast to non-null type java.security.interfaces.ECPublicKey");
             } else {
-                var10000 = new EcdsaPublicKey((ECPublicKey) var10002);
-                return var10000;
+                return new EcdsaPublicKey((ECPublicKey) publicKey);
             }
         } catch (Throwable throwable) {
             throw new RuntimeException(throwable);
         }
     }
-
+    /*
     public static EcdsaPublicKey decodeEcdsaPublicKeyUncompressed(String ecCurve, byte[] keyBytes) {
         try {
 
@@ -154,18 +148,17 @@ public class Ecdsa {
 
             ECNamedCurveSpec params = new ECNamedCurveSpec(ecCurve, spec.getCurve(), spec.getG(), spec.getN());
             ECPoint point = ECPointUtil.decodePoint(params.getCurve(), keyBytes);
-            ECPublicKeySpec pubKeySpec = null; // TODO BUG new ECPublicKeySpec(point, params);
+            ECPublicKeySpec pubKeySpec = new ECPublicKeySpec(point, params);
             PublicKey publicKey = kf.generatePublic(pubKeySpec);
             if (publicKey == null) {
                 throw new NullPointerException("null cannot be cast to non-null type java.security.interfaces.ECPublicKey");
             } else {
-                ECPublicKey var10000 = (ECPublicKey) publicKey;
                 return new EcdsaPublicKey((ECPublicKey) publicKey);
             }
         } catch (Throwable throwable) {
             throw new RuntimeException(throwable);
         }
-    }
+    }*/
 
     public static final class EcdsaPublicKey extends PubKey {
 
@@ -177,6 +170,7 @@ public class Ecdsa {
         }
 
 
+        @NonNull
         public byte[] raw() {
             byte[] var10000 = this.pub.getEncoded();
 
@@ -222,10 +216,9 @@ public class Ecdsa {
         }
 
 
+        @NonNull
         public byte[] raw() {
-            byte[] var10000 = this.priv.getEncoded();
-
-            return var10000;
+            return this.priv.getEncoded();
         }
 
 

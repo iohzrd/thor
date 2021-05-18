@@ -117,7 +117,6 @@ public class RoutingTable {
         synchronized (p.toBase58().intern()) {
 
             LogUtils.info(TAG, buckets.toString());
-            long latency = metrics.getLatency(p);
             int bucketID = bucketIdForPeer(p);
             Bucket bucket = getBucket(bucketID);
 
@@ -125,12 +124,11 @@ public class RoutingTable {
             // peer already exists in the Routing Table.
             Bucket.PeerInfo peer = bucket.getPeer(p);
             if (peer != null) {
-                peer.setLatency(latency);
                 return;
             }
 
             // peer's latency threshold is NOT acceptable
-            if (latency > maxLatency) {
+            if (metrics.getLatency(p) > maxLatency) {
                 // Connection doesnt meet requirements, skip!
                 return;
             }
@@ -138,20 +136,21 @@ public class RoutingTable {
 
             // We have enough space in the bucket (whether spawned or grouped).
             if (bucket.size() < bucketSize) {
-                bucket.addPeer(p, latency, isReplaceable);
+                bucket.addPeer(p, isReplaceable);
                 return;
             }
 
 
+
             // the bucket to which the peer belongs is full. Let's try to find a peer
             // in that bucket which is replaceable.
-            // we don't really need a stable sort here as it dosen't matter which peer we evict
+            // we don't really need a stable sort here as it doesn't matter which peer we evict
             // as long as it's a replaceable peer.
             Bucket.PeerInfo replaceablePeer = bucket.weakest(((p1, p2) -> {
                 boolean result;
                 if (p1.isReplaceable()) {
                     if (p2.isReplaceable()) {
-                        result = p1.getLatency() < p2.getLatency();
+                        result = metrics.getLatency(p1.getPeerId()) < metrics.getLatency(p2.getPeerId());
                     } else {
                         result = true;
                     }
@@ -159,7 +158,7 @@ public class RoutingTable {
                     if (p2.isReplaceable()) {
                         result = false;
                     } else {
-                        result = p1.getLatency() < p2.getLatency();
+                        result = metrics.getLatency(p1.getPeerId()) < metrics.getLatency(p2.getPeerId());
                     }
                 }
                 return result;
@@ -168,7 +167,7 @@ public class RoutingTable {
             if (replaceablePeer != null && replaceablePeer.isReplaceable()) {
                 // let's evict it and add the new peer
                 if (removePeer(replaceablePeer.getPeerId())) {
-                    bucket.addPeer(p, latency, isReplaceable);
+                    bucket.addPeer(p, isReplaceable);
                     return;
                 }
             }

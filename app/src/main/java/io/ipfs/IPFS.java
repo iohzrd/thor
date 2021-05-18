@@ -98,7 +98,7 @@ public class IPFS {
     public static final String PROTOCOL_VERSION = "ipfs/0.1.0";  // todo check again
     public static final int TIMEOUT_BOOTSTRAP = 10;
     public static final int LOW_WATER = 50;
-    public static final int HIGH_WATER = 300;
+    public static final int HIGH_WATER = 150;
     public static final int GRACE_PERIOD = 10;
     public static final int MIN_PEERS = 10;
     public static final long RESOLVE_MAX_TIME = 30000; // 30 sec
@@ -718,10 +718,6 @@ public class IPFS {
         return peers;
     }
 
-    public void swarmConnect(@NonNull PeerId peerId, int timeout)
-            throws ConnectionIssue, ClosedException {
-        host.connectTo(new TimeoutCloseable(timeout), peerId, timeout);
-    }
 
     public boolean swarmConnect(@NonNull String multiAddress, int timeout) {
         try {

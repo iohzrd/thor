@@ -193,7 +193,6 @@ public class ContentManager {
                         long start = System.currentTimeMillis();
                         try {
                             peers.add(peer);
-
                             MessageWriter.sendHaveMessage(closeable, network, peer,
                                     Collections.singletonList(cid));
                             handled.add(peer);

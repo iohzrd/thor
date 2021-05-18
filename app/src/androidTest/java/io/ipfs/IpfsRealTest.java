@@ -51,12 +51,10 @@ public class IpfsRealTest {
 
         LogUtils.error(TAG, res.toString());
 
-        try {
-            ipfs.swarmConnect(res.getPeerId(), IPFS.CONNECT_TIMEOUT);
-        } catch (Throwable throwable){
-            LogUtils.error(TAG, throwable.getClass().getSimpleName());
-        }
 
+        boolean result = ipfs.swarmConnect(IPFS.P2P_PATH + res.getPeerId().toBase58(),
+                IPFS.CONNECT_TIMEOUT);
+        LogUtils.error(TAG, res.getPeerId().toBase58() + " " + result);
 
 
         AtomicBoolean atomicBoolean = new AtomicBoolean(false);
@@ -84,7 +82,7 @@ public class IpfsRealTest {
         assertFalse(link.isEmpty());
 
         Node node = ipfs.resolveNode(link.concat("/").concat(IPFS.INDEX_HTML),
-                new TimeoutCloseable(30));
+                new TimeoutCloseable(60));
         assertNotNull(node);
 
         String text = ipfs.getText(node.Cid(), new TimeoutCloseable(30));
@@ -92,7 +90,6 @@ public class IpfsRealTest {
         assertNotNull(text);
         assertFalse(text.isEmpty());
         LogUtils.debug(TAG, text);
-
 
     }
 
@@ -126,8 +123,6 @@ public class IpfsRealTest {
         List<Link> links = ipfs.links(node.Cid(), new TimeoutCloseable(1));
         assertNotNull(links);
         assertFalse(links.isEmpty());
-
-
     }
 
 
@@ -144,11 +139,9 @@ public class IpfsRealTest {
 
         LogUtils.error(TAG, res.toString());
 
-        try {
-            ipfs.swarmConnect(res.getPeerId(), IPFS.CONNECT_TIMEOUT);
-        } catch (Throwable throwable){
-            LogUtils.error(TAG, throwable.getClass().getSimpleName());
-        }
+        boolean result = ipfs.swarmConnect(IPFS.P2P_PATH + res.getPeerId().toBase58(),
+                IPFS.CONNECT_TIMEOUT);
+        LogUtils.error(TAG, res.getPeerId().toBase58() + " " + result);
 
         AtomicBoolean atomicBoolean = new AtomicBoolean(false);
 

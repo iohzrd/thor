@@ -60,8 +60,8 @@ public class Bucket {
                 '}';
     }
 
-    public void addPeer(@NonNull PeerId p, long latency, boolean isReplaceable) {
-        Bucket.PeerInfo peerInfo = new Bucket.PeerInfo(p, latency, isReplaceable);
+    public void addPeer(@NonNull PeerId p, boolean isReplaceable) {
+        Bucket.PeerInfo peerInfo = new Bucket.PeerInfo(p, isReplaceable);
 
         if (LogUtils.isDebug()) {
             if (peers.containsKey(p)) {
@@ -104,21 +104,11 @@ public class Bucket {
         private final ID id;
         // if a bucket is full, this peer can be replaced to make space for a new peer.
         private final boolean replaceable;
-        private long latency;
 
-        public PeerInfo(@NonNull PeerId peerId, long latency, boolean replaceable) {
+        public PeerInfo(@NonNull PeerId peerId, boolean replaceable) {
             this.peerId = peerId;
-            this.latency = latency;
             this.id = Util.ConvertPeerID(peerId);
             this.replaceable = replaceable;
-        }
-
-        public long getLatency() {
-            return latency;
-        }
-
-        public void setLatency(long latency) {
-            this.latency = latency;
         }
 
         public boolean isReplaceable() {
@@ -128,8 +118,8 @@ public class Bucket {
         @NonNull
         @Override
         public String toString() {
-            return "{" +
-                    "latency=" + latency +
+            return "PeerInfo{" +
+                    "peerId=" + peerId +
                     ", replaceable=" + replaceable +
                     '}';
         }

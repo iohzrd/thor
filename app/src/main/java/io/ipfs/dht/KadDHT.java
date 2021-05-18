@@ -76,7 +76,6 @@ public class KadDHT implements Routing {
         try {
             for (Connection conn : host.getConnections()) {
                 PeerId peerId = conn.remoteId();
-                host.addLatency(peerId, 0L);
                 boolean isReplaceable = !host.isProtected(peerId);
                 peerFound(peerId, isReplaceable);
             }
@@ -191,7 +190,7 @@ public class KadDHT implements Routing {
                         pms.toString() + " get-message " + rimes.toString());
             }
             LogUtils.verbose(TAG, "PutValue Success to " + p.toBase58());
-        } catch (ClosedException ignore) {
+        } catch (ClosedException | ConnectionIssue ignore) {
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         }
@@ -309,24 +308,19 @@ public class KadDHT implements Routing {
 
         try {
             Connection conn = host.connect(closeable, p, IPFS.CONNECT_TIMEOUT);
-            host.active(p);
-
-            long start = System.currentTimeMillis();
 
             QuicStreamChannel stream = host.getStream(closeable,
                     IPFS.KAD_DHT_PROTOCOL, conn, IPFS.PRIORITY_HIGH);
 
-            stream.writeAndFlush(DataHandler.encode( message.toByteArray())).addListener(
+            stream.writeAndFlush(DataHandler.encode(message.toByteArray())).addListener(
                     future -> stream.close().get());
 
             //host.send(closeable, IPFS.KAD_DHT_PROTOCOL, conn, message.toByteArray(), IPFS.PRIORITY_HIGH);
 
-            host.addLatency(p, System.currentTimeMillis() - start);
 
-        } catch (ClosedException | ConnectionIssue exception) {
-            host.done(p);
+        } catch (ClosedException | ConnectionIssue ignore) {
+            // ignore
         } catch (Throwable throwable) {
-            host.done(p);
             LogUtils.error(TAG, throwable);
         }
     }
@@ -339,8 +333,6 @@ public class KadDHT implements Routing {
         try {
 
             Connection con = host.connect(closeable, p, IPFS.CONNECT_TIMEOUT);
-            host.active(p);
-            long start = System.currentTimeMillis();
 
             MessageLite messageLite = host.request(closeable, IPFS.KAD_DHT_PROTOCOL, con,
                     message, IPFS.PRIORITY_HIGH);
@@ -348,15 +340,11 @@ public class KadDHT implements Routing {
             Dht.Message response = (Dht.Message) messageLite;
             Objects.requireNonNull(response);
 
-            host.addLatency(p, System.currentTimeMillis() - start);
-
             return response;
 
         } catch (ClosedException | ConnectionIssue exception) {
-            host.done(p);
             throw exception;
         } catch (Throwable throwable) {
-            host.done(p);
             Throwable cause = throwable.getCause();
             if (cause != null) {
                 LogUtils.info(TAG, cause.getClass().getSimpleName());
