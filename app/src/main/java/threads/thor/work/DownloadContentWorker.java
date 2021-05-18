@@ -27,9 +27,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-import io.ipfs.core.ClosedException;
 import io.ipfs.IPFS;
 import io.ipfs.cid.Cid;
+import io.ipfs.core.ClosedException;
 import io.ipfs.utils.Link;
 import io.ipfs.utils.Progress;
 import threads.LogUtils;
