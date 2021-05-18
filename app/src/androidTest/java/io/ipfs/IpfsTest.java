@@ -15,9 +15,9 @@ import java.util.List;
 import java.util.Set;
 
 import io.LogUtils;
+import io.ipfs.cid.Cid;
 import io.ipfs.core.ClosedException;
 import io.ipfs.core.TimeoutCloseable;
-import io.ipfs.cid.Cid;
 import io.ipfs.host.DnsResolver;
 import io.ipfs.multiaddr.Multiaddr;
 import io.ipfs.utils.Link;

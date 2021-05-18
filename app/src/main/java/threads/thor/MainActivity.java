@@ -197,15 +197,6 @@ public class MainActivity extends AppCompatActivity implements
                     }
                 }
             });
-    private final ActivityResultLauncher<String> requestPermissionLauncher =
-            registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
-                if (isGranted) {
-                    invokeScan();
-                } else {
-                    EVENTS.getInstance(getApplicationContext()).permission(
-                            getString(R.string.permission_camera_denied));
-                }
-            });
     private WebView mWebView;
     private long mLastClickTime = 0;
     private TextView mBrowserText;
@@ -253,6 +244,15 @@ public class MainActivity extends AppCompatActivity implements
                     LogUtils.error(TAG, throwable);
                 }
 
+            });
+    private final ActivityResultLauncher<String> requestPermissionLauncher =
+            registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
+                if (isGranted) {
+                    invokeScan();
+                } else {
+                    EVENTS.getInstance(getApplicationContext()).permission(
+                            getString(R.string.permission_camera_denied));
+                }
             });
     private boolean hasCamera;
     private NsdManager mNsdManager;

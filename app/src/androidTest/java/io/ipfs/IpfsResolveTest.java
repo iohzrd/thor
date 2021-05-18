@@ -21,12 +21,12 @@ import java.util.Date;
 import java.util.Objects;
 
 import io.LogUtils;
+import io.ipfs.cid.Cid;
 import io.ipfs.core.ClosedException;
 import io.ipfs.core.TimeoutCloseable;
-import io.ipfs.cid.Cid;
 import io.ipfs.host.PeerId;
-import io.ipfs.multihash.Multihash;
 import io.ipfs.ipns.Ipns;
+import io.ipfs.multihash.Multihash;
 
 import static junit.framework.TestCase.assertNotNull;
 import static org.junit.Assert.assertEquals;

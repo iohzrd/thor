@@ -15,9 +15,9 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.LogUtils;
+import io.ipfs.cid.Cid;
 import io.ipfs.core.ClosedException;
 import io.ipfs.core.TimeoutCloseable;
-import io.ipfs.cid.Cid;
 import io.ipfs.format.Node;
 import io.ipfs.host.DnsResolver;
 import io.ipfs.utils.Link;
