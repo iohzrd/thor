@@ -56,7 +56,7 @@ import io.ipfs.bitswap.BitSwapMessage;
 import io.ipfs.bitswap.BitSwapNetwork;
 import io.ipfs.bitswap.BitSwapReceiver;
 import io.ipfs.cid.Cid;
-import io.ipfs.dht.KadDHT;
+import io.ipfs.dht.KadDht;
 import io.ipfs.dht.Routing;
 import io.ipfs.exchange.Interface;
 import io.ipfs.format.BlockStore;
@@ -194,7 +194,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
         this.port = port;
 
 
-        this.routing = new KadDHT(this,
+        this.routing = new KadDht(this,
                 new Ipns(), alpha, IPFS.KAD_DHT_BETA,
                 IPFS.KAD_DHT_BUCKET_SIZE);
 

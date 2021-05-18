@@ -28,21 +28,21 @@ public class Query {
     private static final String TAG = Query.class.getSimpleName();
 
     @NonNull
-    private final KadDHT dht;
+    private final KadDht dht;
     @NonNull
     private final List<PeerId> seedPeers;
     @NonNull
     private final QueryPeerSet queryPeers;
     @NonNull
-    private final KadDHT.QueryFunc queryFn;
+    private final KadDht.QueryFunc queryFn;
     @NonNull
-    private final KadDHT.StopFunc stopFn;
+    private final KadDht.StopFunc stopFn;
     @NonNull
     private final BlockingQueue<QueryUpdate> queue;
     private final int alpha;
 
-    public Query(@NonNull KadDHT dht, @NonNull byte[] key, @NonNull List<PeerId> seedPeers,
-                 @NonNull KadDHT.QueryFunc queryFn, @NonNull KadDHT.StopFunc stopFn) {
+    public Query(@NonNull KadDht dht, @NonNull byte[] key, @NonNull List<PeerId> seedPeers,
+                 @NonNull KadDht.QueryFunc queryFn, @NonNull KadDht.StopFunc stopFn) {
         this.dht = dht;
         this.seedPeers = seedPeers;
         this.queryPeers = QueryPeerSet.create(key);

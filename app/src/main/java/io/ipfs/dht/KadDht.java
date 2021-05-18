@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -44,13 +45,16 @@ import io.ipfs.host.PeerId;
 import io.ipfs.ipns.Ipns;
 import io.ipfs.multiaddr.Multiaddr;
 import io.netty.handler.timeout.ReadTimeoutException;
+import io.netty.incubator.codec.quic.QuicChannel;
 import io.netty.incubator.codec.quic.QuicStreamChannel;
+import io.netty.incubator.codec.quic.QuicStreamPriority;
+import io.netty.incubator.codec.quic.QuicStreamType;
 import record.pb.RecordOuterClass;
 
 
-public class KadDHT implements Routing {
+public class KadDht implements Routing {
 
-    private static final String TAG = KadDHT.class.getSimpleName();
+    private static final String TAG = KadDht.class.getSimpleName();
     public final LiteHost host;
     public final PeerId self;
     public final int beta;
@@ -59,7 +63,7 @@ public class KadDHT implements Routing {
     public final RoutingTable routingTable;
     private final Validator validator;
 
-    public KadDHT(@NonNull LiteHost host, @NonNull Validator validator,
+    public KadDht(@NonNull LiteHost host, @NonNull Validator validator,
                   int alpha, int beta, int bucketSize) {
         this.host = host;
         this.validator = validator;
@@ -309,13 +313,32 @@ public class KadDHT implements Routing {
         try {
             Connection conn = host.connect(closeable, p, IPFS.CONNECT_TIMEOUT);
 
-            QuicStreamChannel stream = host.getStream(closeable,
-                    IPFS.KAD_DHT_PROTOCOL, conn, IPFS.PRIORITY_HIGH);
+            QuicChannel quicChannel = conn.channel();
 
-            stream.writeAndFlush(DataHandler.encode(message.toByteArray())).addListener(
-                    future -> stream.close().get());
+            CompletableFuture<QuicStreamChannel> stream = new CompletableFuture<>();
+            QuicStreamChannel streamChannel = quicChannel.createStream(QuicStreamType.BIDIRECTIONAL,
+                    new KadDhtSend(stream)).sync().get();
 
-            //host.send(closeable, IPFS.KAD_DHT_PROTOCOL, conn, message.toByteArray(), IPFS.PRIORITY_HIGH);
+            streamChannel.updatePriority(new QuicStreamPriority(IPFS.PRIORITY_HIGH, false));
+
+            streamChannel.writeAndFlush(DataHandler.writeToken(IPFS.STREAM_PROTOCOL));
+            streamChannel.writeAndFlush(DataHandler.writeToken(IPFS.KAD_DHT_PROTOCOL));
+
+
+            while (!stream.isDone()) {
+                if (closeable.isClosed()) {
+                    stream.cancel(true);
+                }
+            }
+
+            if (closeable.isClosed()) {
+                throw new ClosedException();
+            }
+
+            QuicStreamChannel channel = stream.get();
+
+            channel.writeAndFlush(DataHandler.encode(message.toByteArray())).addListener(
+                    future -> channel.close().get());
 
 
         } catch (ClosedException | ConnectionIssue ignore) {
@@ -626,7 +649,6 @@ public class KadDHT implements Routing {
     public interface RecordReportFunc {
         void report(@NonNull Closeable ctx, @NonNull Ipns.Entry entry, boolean better);
     }
-
 
     public interface Channel {
         void peer(@NonNull AddrInfo addrInfo) throws ClosedException;
