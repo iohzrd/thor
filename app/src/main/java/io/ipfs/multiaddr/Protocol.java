@@ -1,5 +1,7 @@
 package io.ipfs.multiaddr;
 
+import androidx.annotation.NonNull;
+
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.EOFException;
@@ -91,6 +93,7 @@ public class Protocol {
         return type.code;
     }
 
+    @NonNull
     @Override
     public String toString() {
         return name();
@@ -116,17 +119,13 @@ public class Protocol {
                 case P2P:
                 case IPFS: {
                     byte[] hashBytes = PeerId.fromBase58(addr).getBytes();
-                    return BufferExt.toByteArray(Unpooled.buffer(32)
-                            .writeBytes(hashBytes));
-                    /*
-                    Multihash hash = Cid.decode(addr);
+
                     ByteArrayOutputStream bout = new ByteArrayOutputStream();
-                    byte[] hashBytes = hash.toBytes();
                     byte[] varint = new byte[(32 - Integer.numberOfLeadingZeros(hashBytes.length) + 6) / 7];
                     putUvarint(varint, hashBytes.length);
                     bout.write(varint);
                     bout.write(hashBytes);
-                    return bout.toByteArray();*/
+                    return bout.toByteArray();
                 }
                 case ONION: {
                     String[] split = addr.split(":");
@@ -260,11 +259,11 @@ public class Protocol {
             case DCCP:
             case SCTP:
                 return Integer.toString((in.read() << 8) | (in.read()));
+            case P2P:
             case IPFS:
                 buf = new byte[sizeForAddress];
                 read(in, buf);
-                ByteBuf addrBuf = BufferExt.toByteBuf(buf);
-                return new PeerId(BufferExt.toByteArray(addrBuf)).toBase58();
+                return new PeerId(buf).toBase58();
                 // TODO return Cid.cast(buf).toString();
             case ONION: {
                 byte[] host = new byte[10];

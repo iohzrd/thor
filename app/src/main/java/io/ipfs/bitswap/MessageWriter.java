@@ -48,7 +48,7 @@ public class MessageWriter {
         if (message.Empty()) {
             return;
         }
-        LogUtils.error(TAG, "send HAVE Message " + peer.toBase58());
+        LogUtils.debug(TAG, "send HAVE Message " + peer.toBase58());
         network.writeMessage(closeable, peer, message, IPFS.PRIORITY_HIGH);
 
 
@@ -79,7 +79,7 @@ public class MessageWriter {
             return;
         }
 
-        LogUtils.error(TAG, "send WANT Message " + peer.toBase58());
+        LogUtils.debug(TAG, "send WANT Message " + peer.toBase58());
         network.writeMessage(closeable, peer, message, IPFS.PRIORITY_URGENT);
 
     }

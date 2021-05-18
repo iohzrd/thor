@@ -31,17 +31,6 @@ public class Multiaddr
         return Arrays.copyOfRange(raw, 0, raw.length);
     }
 
-    public boolean isTCPIP() {
-        String[] parts = toString().substring(1).split("/");
-        if (parts.length != 4)
-            return false;
-        if (!parts[0].startsWith("ip"))
-            return false;
-        if (!parts[2].equals("tcp"))
-            return false;
-        return true;
-    }
-
     public String getHost() {
         String[] parts = toString().substring(1).split("/");
         if (parts[0].startsWith("ip") || parts[0].startsWith("dns"))
@@ -103,9 +92,9 @@ public class Multiaddr
                 if (addr.length() > 0)
                     b.append("/" +addr);
             }
-        }
-        catch (EOFException eof) {}
-        catch (IOException e) {
+        } catch (EOFException ignore) {
+            // ignore
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
 

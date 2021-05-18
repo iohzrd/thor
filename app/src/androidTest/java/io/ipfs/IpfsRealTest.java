@@ -49,19 +49,19 @@ public class IpfsRealTest {
         IPFS.ResolvedName res = ipfs.resolveName(key, 0, new TimeoutCloseable(30));
         assertNotNull(res);
 
-        LogUtils.error(TAG, res.toString());
+        LogUtils.debug(TAG, res.toString());
 
 
         boolean result = ipfs.swarmConnect(IPFS.P2P_PATH + res.getPeerId().toBase58(),
                 IPFS.CONNECT_TIMEOUT);
-        LogUtils.error(TAG, res.getPeerId().toBase58() + " " + result);
+        LogUtils.debug(TAG, res.getPeerId().toBase58() + " " + result);
 
 
         AtomicBoolean atomicBoolean = new AtomicBoolean(false);
 
         try {
             ipfs.findProviders(addrInfo -> {
-                LogUtils.error(TAG, addrInfo.toString());
+                LogUtils.debug(TAG, addrInfo.toString());
                 atomicBoolean.set(true);
             }, Cid.Decode(res.getHash()), new TimeoutCloseable(30));
 
@@ -137,17 +137,17 @@ public class IpfsRealTest {
         IPFS.ResolvedName res = ipfs.resolveName(key, 0, new TimeoutCloseable(30));
         assertNotNull(res);
 
-        LogUtils.error(TAG, res.toString());
+        LogUtils.debug(TAG, res.toString());
 
         boolean result = ipfs.swarmConnect(IPFS.P2P_PATH + res.getPeerId().toBase58(),
                 IPFS.CONNECT_TIMEOUT);
-        LogUtils.error(TAG, res.getPeerId().toBase58() + " " + result);
+        LogUtils.debug(TAG, res.getPeerId().toBase58() + " " + result);
 
         AtomicBoolean atomicBoolean = new AtomicBoolean(false);
 
         try {
             ipfs.findProviders(addrInfo -> {
-                LogUtils.error(TAG, addrInfo.toString());
+                LogUtils.debug(TAG, addrInfo.toString());
                 atomicBoolean.set(true);
             }, Cid.Decode(res.getHash()), new TimeoutCloseable(30));
 

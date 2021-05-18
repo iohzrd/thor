@@ -398,7 +398,7 @@ public class KadDHT implements Routing {
         try {
             return new Multiaddr(address.toByteArray());
         } catch (Throwable ignore) {
-            LogUtils.info(TAG, address.toStringUtf8());
+            LogUtils.error(TAG, address.toStringUtf8());
         }
         return null;
     }
