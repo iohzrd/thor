@@ -2,7 +2,6 @@ package io.ipfs.dht;
 
 import androidx.annotation.NonNull;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;

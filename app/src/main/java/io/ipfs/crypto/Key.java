@@ -23,8 +23,10 @@ public interface Key {
 
     @NonNull
     Crypto.KeyType getKeyType();
+
     @NonNull
     byte[] bytes();
+
     @NonNull
     byte[] raw();
 

@@ -14,8 +14,6 @@ import io.ipfs.utils.DataHandler;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.incubator.codec.quic.QuicStreamChannel;
-import io.netty.incubator.codec.quic.QuicStreamPriority;
 
 public class KadDhtSend extends SimpleChannelInboundHandler<ByteBuf> {
 

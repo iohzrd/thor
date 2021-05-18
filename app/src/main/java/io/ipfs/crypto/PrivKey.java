@@ -1,7 +1,6 @@
 package io.ipfs.crypto;
 
 
-
 import androidx.annotation.NonNull;
 
 import crypto.pb.Crypto;

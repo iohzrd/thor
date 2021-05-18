@@ -1,7 +1,6 @@
 package io.ipfs.dht;
 
 import android.annotation.SuppressLint;
-import android.util.Log;
 import android.util.Pair;
 
 import androidx.annotation.NonNull;
