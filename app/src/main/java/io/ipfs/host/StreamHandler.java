@@ -56,7 +56,7 @@ public class StreamHandler {
                 close(streamId);
             }
         } catch (Throwable throwable) {
-            LogUtils.error(TAG, throwable); // TODO close etc
+            LogUtils.error(TAG, throwable);
             close(streamId);
         } finally {
             ReferenceCountUtil.release(byteBuf);

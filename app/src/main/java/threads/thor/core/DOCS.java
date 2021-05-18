@@ -247,7 +247,7 @@ public class DOCS {
 
     @NonNull
     public String resolveName(@NonNull Uri uri, @NonNull String name, @NonNull Closeable closeable)
-            throws ResolveNameException, ClosedException {
+            throws ResolveNameException {
         String pid = ipfs.decodeName(name);
         String resolved = resolves.get(pid);
         if (resolved != null) {

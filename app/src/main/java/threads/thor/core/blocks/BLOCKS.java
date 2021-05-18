@@ -98,6 +98,7 @@ public class BLOCKS implements Storage {
         return getBlocksDatabase().blockDao().getBlockSize(Settings.BLOCKS + id);
     }
 
+    @SuppressWarnings("unused")
     public List<Block> getBlocks() {
         return getBlocksDatabase().blockDao().getBlocks();
     }

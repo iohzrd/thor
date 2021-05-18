@@ -319,9 +319,6 @@ public class Protocol {
                 return Multibase.encode(Multibase.Base.Base64, buf).substring(1).replaceAll("\\+", "-").replaceAll("/", "~");
             }
             case UNIX:
-                buf = new byte[sizeForAddress];
-                read(in, buf);
-                return new String(buf);
             case DNS4:
             case DNS6:
             case DNSADDR:

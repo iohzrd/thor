@@ -145,9 +145,9 @@ public interface BitSwapMessage {
 
 
     // Entry is a wantlist entry in a Bitswap message, with flags indicating
-// - whether message is a cancel
-// - whether requester wants a DONT_HAVE message
-// - whether requester wants a HAVE message (instead of the block)
+    // - whether message is a cancel
+    // - whether requester wants a DONT_HAVE message
+    // - whether requester wants a HAVE message (instead of the block)
     class Entry extends io.ipfs.bitswap.Entry {
         public boolean Cancel;
         public boolean SendDontHave;
@@ -199,39 +199,39 @@ public interface BitSwapMessage {
                             int priority, boolean cancel,
                             @NonNull MessageOuterClass.Message.Wantlist.WantType wantType,
                             boolean sendDontHave) {
-            Entry e = wantlist.get(c);
-            if (e != null) {
+            Entry entry = wantlist.get(c);
+            if (entry != null) {
                 // Only change priority if want is of the same type
-                if (e.WantType == wantType) {
-                    e.Priority = priority;
+                if (entry.WantType == wantType) {
+                    entry.Priority = priority;
                 }
                 // Only change from "dont cancel" to "do cancel"
                 if (cancel) {
-                    e.Cancel = cancel;
+                    entry.Cancel = cancel;
                 }
                 // Only change from "dont send" to "do send" DONT_HAVE
                 if (sendDontHave) {
-                    e.SendDontHave = sendDontHave;
+                    entry.SendDontHave = sendDontHave;
                 }
                 // want-block overrides existing want-have
                 if (wantType == MessageOuterClass.Message.Wantlist.WantType.Block
-                        && e.WantType == MessageOuterClass.Message.Wantlist.WantType.Have) {
-                    e.WantType = wantType;
+                        && entry.WantType == MessageOuterClass.Message.Wantlist.WantType.Have) {
+                    entry.WantType = wantType;
                 }
-                wantlist.put(c, e); // TODO why (not really needed)
+                wantlist.put(c, entry); // TODO why (not really needed)
                 return 0;
             }
 
-            e = new Entry();
-            e.Cid = c;
-            e.Priority = priority;
-            e.WantType = wantType;
-            e.SendDontHave = sendDontHave;
-            e.Cancel = cancel;
+            entry = new Entry();
+            entry.Cid = c;
+            entry.Priority = priority;
+            entry.WantType = wantType;
+            entry.SendDontHave = sendDontHave;
+            entry.Cancel = cancel;
 
-            wantlist.put(c, e);
+            wantlist.put(c, entry);
 
-            return e.Size();
+            return entry.Size();
         }
 
         @Override

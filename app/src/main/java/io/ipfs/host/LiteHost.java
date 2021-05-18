@@ -622,16 +622,6 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
 
     }
 
-    // TODO evaluate if it makes sens
-    public int evalMaxResponseLength(@NonNull String protocol) {
-        if (protocol.equals(IPFS.IDENTITY_PROTOCOL) ||
-                protocol.equals(IPFS.KAD_DHT_PROTOCOL)) {
-            return 25000;
-        }
-        return IPFS.BLOCK_SIZE_LIMIT;
-    }
-
-
     public void setPusher(@Nullable Pusher pusher) {
         this.pusher = pusher;
     }
