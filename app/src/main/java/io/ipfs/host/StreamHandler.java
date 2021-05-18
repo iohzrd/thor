@@ -164,7 +164,7 @@ public class StreamHandler {
                 }
             }
             handlers.remove(streamId);
-        }  else {
+        } else {
             LogUtils.debug(TAG, "Iteration  " + reader.hasRead() + " "
                     + reader.expectedBytes() + " Connection " + connection + " StreamId " + streamId);
         }

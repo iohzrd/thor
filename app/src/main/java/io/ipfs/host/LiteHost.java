@@ -88,9 +88,9 @@ import relay.pb.Relay;
 public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
     @NonNull
     public static final AttributeKey<PeerId> PEER_KEY = AttributeKey.newInstance("PEER_KEY");
-    private static final String TAG = LiteHost.class.getSimpleName();
     @NonNull
     public static final ConcurrentHashMap<PeerId, PubKey> remotes = new ConcurrentHashMap<>();
+    private static final String TAG = LiteHost.class.getSimpleName();
     @NonNull
     private static final Duration DefaultRecordEOL = Duration.ofHours(24);
     @NonNull
@@ -154,19 +154,15 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
     @NonNull
     private final LiteHostCertificate selfSignedCertificate;
     @NonNull
+    private final QuicSslContext sslClientContext;
+    @NonNull
+    private final Set<PeerId> swarm = ConcurrentHashMap.newKeySet();
+    @NonNull
     public List<ConnectionHandler> handlers = new ArrayList<>();
     @Nullable
     private Pusher pusher;
     @Nullable
     private Channel server;
-    @NonNull
-    private final QuicSslContext sslClientContext;
-    @NonNull
-    private final Set<PeerId> swarm = ConcurrentHashMap.newKeySet();
-
-
-
-
     private InetAddress localAddress;
 
     public LiteHost(@NonNull LiteHostCertificate selfSignedCertificate, @NonNull PrivKey privKey,
@@ -371,7 +367,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
     @Override
     public void connectTo(@NonNull Closeable closeable, @NonNull PeerId peerId, int timeout)
             throws ClosedException, ConnectionIssue {
-         connect(closeable, peerId, timeout);
+        connect(closeable, peerId, timeout);
 
     }
 
@@ -537,7 +533,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
 
                 InetAddress inetAddress = localAddress();
                 String pre = "/ip4/";
-                if(inetAddress instanceof  Inet6Address){
+                if (inetAddress instanceof Inet6Address) {
                     pre = "/ip6";
                 }
 
@@ -821,7 +817,6 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
 
 
     }
-
 
 
     public boolean swarmContains(@NonNull PeerId peerId) {

@@ -141,7 +141,6 @@ public class RoutingTable {
             }
 
 
-
             // the bucket to which the peer belongs is full. Let's try to find a peer
             // in that bucket which is replaceable.
             // we don't really need a stable sort here as it doesn't matter which peer we evict

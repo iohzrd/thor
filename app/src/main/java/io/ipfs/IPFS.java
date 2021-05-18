@@ -55,19 +55,19 @@ import io.ipfs.format.BlockStore;
 import io.ipfs.format.Node;
 import io.ipfs.host.AddrInfo;
 import io.ipfs.host.Connection;
-import io.ipfs.utils.DataHandler;
 import io.ipfs.host.DnsResolver;
 import io.ipfs.host.LiteHost;
 import io.ipfs.host.LiteHostCertificate;
 import io.ipfs.host.PeerId;
 import io.ipfs.host.PeerInfo;
-import io.ipfs.push.PushSend;
-import io.ipfs.push.Pusher;
 import io.ipfs.multiaddr.Multiaddr;
 import io.ipfs.multiaddr.Protocol;
 import io.ipfs.multibase.Base58;
 import io.ipfs.multibase.Multibase;
 import io.ipfs.multihash.Multihash;
+import io.ipfs.push.PushSend;
+import io.ipfs.push.Pusher;
+import io.ipfs.utils.DataHandler;
 import io.ipfs.utils.Link;
 import io.ipfs.utils.LinkCloseable;
 import io.ipfs.utils.Progress;
@@ -147,7 +147,7 @@ public class IPFS {
     public static final String NA = "na";
     public static final String LS = "ls";
     public static final int CONNECT_TIMEOUT = 5;
-
+    public static final String APRN = "libp2p";
     // rough estimates on expected sizes
     private static final int roughLinkBlockSize = 1 << 13; // 8KB
     private static final int roughLinkSize = 34 + 8 + 5;// sha256 multihash + size + no name + protobuf framing
@@ -165,15 +165,12 @@ public class IPFS {
     //                            = ( 8192 / 47 )
     //                            = (approximately) 174
     public static final int LINKS_PER_BLOCK = roughLinkBlockSize / roughLinkSize;
-
-
-    public static final String APRN = "libp2p";
-    private static final String PREF_KEY = IPFS.TAG;
     private static final String SWARM_PORT_KEY = "swarmPortKey";
     private static final String PRIVATE_KEY = "privateKey";
     private static final String PUBLIC_KEY = "publicKey";
     private static final String CONCURRENCY_KEY = "concurrencyKey";
     private static final String TAG = IPFS.class.getSimpleName();
+    private static final String PREF_KEY = IPFS.TAG;
     private static final boolean CONNECTION_SERVICE_ENABLED = false;
 
     private static final boolean SERVER_ACTIVE = false;
@@ -329,38 +326,6 @@ public class IPFS {
 
     }
 
-    private KeyPair getKeyPair(@NonNull Context context) throws NoSuchAlgorithmException, InvalidKeySpecException {
-
-        if (!getPrivateKey(context).isEmpty() && !getPublicKey(context).isEmpty()) {
-
-            Base64.Decoder decoder = Base64.getDecoder();
-
-            byte[] privateKeyData = decoder.decode(getPrivateKey(context));
-            byte[] publicKeyData = decoder.decode(getPublicKey(context));
-
-            PublicKey publicKey = KeyFactory.getInstance("RSA").
-                    generatePublic(new X509EncodedKeySpec(publicKeyData));
-            PrivateKey privateKey = KeyFactory.getInstance("RSA").
-                    generatePrivate(new PKCS8EncodedKeySpec(privateKeyData));
-
-            return new KeyPair(publicKey, privateKey);
-
-        } else {
-
-            String algorithm = "RSA";
-            final KeyPair keypair;
-
-            KeyPairGenerator keyGen = KeyPairGenerator.getInstance(algorithm);
-            keyGen.initialize(2048, LiteHostCertificate.ThreadLocalInsecureRandom.current());
-            keypair = keyGen.generateKeyPair();
-
-            Base64.Encoder encoder = Base64.getEncoder();
-            setPrivateKey(context, encoder.encodeToString(keypair.getPrivate().getEncoded()));
-            setPublicKey(context, encoder.encodeToString(keypair.getPublic().getEncoded()));
-            return keypair;
-        }
-    }
-
     private static void setPrivateKey(@NonNull Context context, @NonNull String key) {
         SharedPreferences sharedPref = context.getSharedPreferences(
                 PREF_KEY, Context.MODE_PRIVATE);
@@ -410,6 +375,38 @@ public class IPFS {
             return true;
         } catch (IOException e) {
             return false;
+        }
+    }
+
+    private KeyPair getKeyPair(@NonNull Context context) throws NoSuchAlgorithmException, InvalidKeySpecException {
+
+        if (!getPrivateKey(context).isEmpty() && !getPublicKey(context).isEmpty()) {
+
+            Base64.Decoder decoder = Base64.getDecoder();
+
+            byte[] privateKeyData = decoder.decode(getPrivateKey(context));
+            byte[] publicKeyData = decoder.decode(getPublicKey(context));
+
+            PublicKey publicKey = KeyFactory.getInstance("RSA").
+                    generatePublic(new X509EncodedKeySpec(publicKeyData));
+            PrivateKey privateKey = KeyFactory.getInstance("RSA").
+                    generatePrivate(new PKCS8EncodedKeySpec(privateKeyData));
+
+            return new KeyPair(publicKey, privateKey);
+
+        } else {
+
+            String algorithm = "RSA";
+            final KeyPair keypair;
+
+            KeyPairGenerator keyGen = KeyPairGenerator.getInstance(algorithm);
+            keyGen.initialize(2048, LiteHostCertificate.ThreadLocalInsecureRandom.current());
+            keypair = keyGen.generateKeyPair();
+
+            Base64.Encoder encoder = Base64.getEncoder();
+            setPrivateKey(context, encoder.encodeToString(keypair.getPrivate().getEncoded()));
+            setPublicKey(context, encoder.encodeToString(keypair.getPublic().getEncoded()));
+            return keypair;
         }
     }
 

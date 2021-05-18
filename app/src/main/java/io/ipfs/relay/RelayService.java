@@ -22,6 +22,7 @@ import relay.pb.Relay;
 public class RelayService {
 
     public static final String TAG = RelayService.class.getSimpleName();
+
     @NonNull
     public static Relay.CircuitRelay getRelay(
             @NonNull Closeable closeable, @NonNull Connection conn) throws ClosedException {
@@ -60,7 +61,6 @@ public class RelayService {
             throw new RuntimeException(throwable);
         }
     }
-
 
 
     private static CompletableFuture<Relay.CircuitRelay> requestRelay(

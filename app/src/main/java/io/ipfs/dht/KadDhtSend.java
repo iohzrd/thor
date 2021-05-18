@@ -33,7 +33,7 @@ public class KadDhtSend extends SimpleChannelInboundHandler<ByteBuf> {
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
             throws Exception {
-        LogUtils.error(TAG,  " " + cause);
+        LogUtils.error(TAG, " " + cause);
         stream.completeExceptionally(cause);
         ctx.close().get();
     }
@@ -50,8 +50,8 @@ public class KadDhtSend extends SimpleChannelInboundHandler<ByteBuf> {
         if (reader.isDone()) {
             for (String received : reader.getTokens()) {
                 if (Objects.equals(received, IPFS.KAD_DHT_PROTOCOL)) {
-                    stream.complete((QuicStreamChannel)ctx.channel());
-                } else if(!Objects.equals(received, IPFS.STREAM_PROTOCOL)) {
+                    stream.complete((QuicStreamChannel) ctx.channel());
+                } else if (!Objects.equals(received, IPFS.STREAM_PROTOCOL)) {
                     throw new ProtocolIssue();
                 }
             }

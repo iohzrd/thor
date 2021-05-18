@@ -14,7 +14,7 @@ import io.ipfs.cid.Cid;
 import io.ipfs.multibase.Base58;
 
 
-public class PeerId implements Comparable<PeerId>{
+public class PeerId implements Comparable<PeerId> {
 
     private final byte[] bytes;
 

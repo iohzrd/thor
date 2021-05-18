@@ -12,8 +12,7 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.stream.Stream;
 
-public class Multiaddr
-{
+public class Multiaddr {
     private final byte[] raw;
     private final String address;
 
@@ -27,34 +26,16 @@ public class Multiaddr
         this.raw = raw;
     }
 
-    public byte[] getBytes() {
-        return Arrays.copyOfRange(raw, 0, raw.length);
-    }
-
-    public String getHost() {
-        String[] parts = toString().substring(1).split("/");
-        if (parts[0].startsWith("ip") || parts[0].startsWith("dns"))
-            return parts[1];
-        throw new IllegalStateException("This multiaddress doesn't have a host: "+toString());
-    }
-
-    public int getPort() {
-        String[] parts = toString().substring(1).split("/");
-        if (parts[2].startsWith("tcp") || parts[2].startsWith("udp"))
-            return Integer.parseInt(parts[3]);
-        throw new IllegalStateException("This multiaddress doesn't have a port: "+toString());
-    }
-
     private static byte[] decodeFromString(String addr) {
         while (addr.endsWith("/"))
-            addr = addr.substring(0, addr.length()-1);
+            addr = addr.substring(0, addr.length() - 1);
         String[] parts = addr.split("/");
         if (parts[0].length() != 0)
             throw new IllegalStateException("MultiAddress must start with a /");
 
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
         try {
-            for (int i = 1; i < parts.length;) {
+            for (int i = 1; i < parts.length; ) {
                 String part = parts[i++];
                 Protocol p = Protocol.get(part);
                 p.appendCode(bout);
@@ -73,7 +54,7 @@ public class Multiaddr
             }
             return bout.toByteArray();
         } catch (IOException e) {
-            throw new IllegalStateException("Error decoding multiaddress: "+addr);
+            throw new IllegalStateException("Error decoding multiaddress: " + addr);
         }
     }
 
@@ -82,7 +63,7 @@ public class Multiaddr
         InputStream in = new ByteArrayInputStream(raw);
         try {
             while (true) {
-                int code = (int)Protocol.readVarint(in);
+                int code = (int) Protocol.readVarint(in);
                 Protocol p = Protocol.get(code);
                 b.append("/" + p.name());
                 if (p.size() == 0)
@@ -90,7 +71,7 @@ public class Multiaddr
 
                 String addr = p.readAddress(in);
                 if (addr.length() > 0)
-                    b.append("/" +addr);
+                    b.append("/" + addr);
             }
         } catch (EOFException ignore) {
             // ignore
@@ -99,6 +80,24 @@ public class Multiaddr
         }
 
         return b.toString();
+    }
+
+    public byte[] getBytes() {
+        return Arrays.copyOfRange(raw, 0, raw.length);
+    }
+
+    public String getHost() {
+        String[] parts = toString().substring(1).split("/");
+        if (parts[0].startsWith("ip") || parts[0].startsWith("dns"))
+            return parts[1];
+        throw new IllegalStateException("This multiaddress doesn't have a host: " + toString());
+    }
+
+    public int getPort() {
+        String[] parts = toString().substring(1).split("/");
+        if (parts[2].startsWith("tcp") || parts[2].startsWith("udp"))
+            return Integer.parseInt(parts[3]);
+        throw new IllegalStateException("This multiaddress doesn't have a port: " + toString());
     }
 
     @NonNull

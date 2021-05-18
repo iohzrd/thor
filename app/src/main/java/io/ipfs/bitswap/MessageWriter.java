@@ -17,9 +17,8 @@ import io.ipfs.host.PeerId;
 
 
 public class MessageWriter {
-    private static final String TAG = MessageWriter.class.getSimpleName();
     public static final int MaxPriority = Integer.MAX_VALUE;
-
+    private static final String TAG = MessageWriter.class.getSimpleName();
 
     public static void sendHaveMessage(@NonNull Closeable closeable,
                                        @NonNull BitSwap network,
