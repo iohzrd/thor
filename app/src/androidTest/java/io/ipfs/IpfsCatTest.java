@@ -14,9 +14,9 @@ import java.util.List;
 import java.util.concurrent.ConcurrentSkipListSet;
 
 import io.LogUtils;
-import io.core.ClosedException;
-import io.core.TimeoutCloseable;
-import io.core.TimeoutProgress;
+import io.ipfs.core.ClosedException;
+import io.ipfs.core.TimeoutCloseable;
+import io.ipfs.core.TimeoutProgress;
 import io.ipfs.cid.Cid;
 import io.ipfs.host.PeerId;
 import io.ipfs.utils.Link;

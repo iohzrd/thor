@@ -15,8 +15,8 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.LogUtils;
-import io.core.ClosedException;
-import io.core.TimeoutCloseable;
+import io.ipfs.core.ClosedException;
+import io.ipfs.core.TimeoutCloseable;
 import io.ipfs.cid.Cid;
 import io.ipfs.format.Node;
 import io.ipfs.host.DnsResolver;
@@ -42,7 +42,6 @@ public class IpfsRealTest {
     public void test_1() {
 
         IPFS ipfs = TestEnv.getTestInstance(context);
-        ipfs.reset();
 
         String key = "k2k4r8jllj4k33jxoa4vaeleqkrwu8b7tqz7tgczhptbfkhqr2i280fm";
 
@@ -74,7 +73,6 @@ public class IpfsRealTest {
     public void test_2() throws ClosedException, IOException {
 
         IPFS ipfs = TestEnv.getTestInstance(context);
-        ipfs.reset();
 
         String link = DnsResolver.resolveDnsLink("blog.ipfs.io");
 
@@ -97,7 +95,6 @@ public class IpfsRealTest {
     public void test_3() throws ClosedException {
 
         IPFS ipfs = TestEnv.getTestInstance(context);
-        ipfs.reset();
 
         Node node = ipfs.resolveNode("QmavE42xtK1VovJFVTVkCR5Jdf761QWtxmvak9Zx718TVr",
                 new TimeoutCloseable(30));
@@ -114,7 +111,6 @@ public class IpfsRealTest {
     public void test_4() throws ClosedException {
 
         IPFS ipfs = TestEnv.getTestInstance(context);
-        ipfs.reset();
 
         Node node = ipfs.resolveNode("QmfQiLpdBDbSkb2oySwFHzNucvLkHmGFxgK4oA2BUSwi4t",
                 new TimeoutCloseable(30));
@@ -130,7 +126,6 @@ public class IpfsRealTest {
     public void test_5() {
 
         IPFS ipfs = TestEnv.getTestInstance(context);
-        ipfs.reset();
 
         String key = "k2k4r8n098cwalcc7rdntd19nsjyzh6rku1hvgsmkjzvnw582mncc4b4";
 

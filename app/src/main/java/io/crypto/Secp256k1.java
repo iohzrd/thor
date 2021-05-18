@@ -56,7 +56,7 @@ public class Secp256k1 {
         S_FIXER_VALUE = new BigInteger("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141", 16);
     }
 
-    public static Pair generateSecp256k1KeyPair(@NonNull SecureRandom random) {
+    public static Pair<PrivKey, PrivKey> generateSecp256k1KeyPair(@NonNull SecureRandom random) {
 
         ECKeyPairGenerator var1 = new ECKeyPairGenerator();
         X9ECParameters var6 = SECNamedCurves.getByName("secp256k1");
@@ -85,18 +85,6 @@ public class Secp256k1 {
         }
     }
 
-    // $FF: synthetic method
-    public static Pair generateSecp256k1KeyPair$default(SecureRandom var0, int var1, Object var2) {
-        if ((var1 & 1) != 0) {
-            var0 = new SecureRandom();
-        }
-
-        return generateSecp256k1KeyPair(var0);
-    }
-
-    public static Pair generateSecp256k1KeyPair() {
-        return generateSecp256k1KeyPair$default(null, 1, null);
-    }
 
     public static PrivKey unmarshalSecp256k1PrivateKey(byte[] data) {
 

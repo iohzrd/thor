@@ -1,4 +1,4 @@
-package io.core;
+package io.ipfs.core;
 
 
 public class TimeoutIssue extends Exception {

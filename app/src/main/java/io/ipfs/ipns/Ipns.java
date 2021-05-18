@@ -19,8 +19,6 @@ import java.util.Date;
 import java.util.Objects;
 
 import crypto.pb.Crypto;
-import io.core.InvalidRecord;
-import io.core.Validator;
 import io.crypto.Ecdsa;
 import io.crypto.Ed25519;
 import io.crypto.PrivKey;
@@ -29,6 +27,8 @@ import io.crypto.Rsa;
 import io.crypto.Secp256k1;
 import io.ipfs.IPFS;
 import io.ipfs.cid.Cid;
+import io.ipfs.core.InvalidRecord;
+import io.ipfs.core.Validator;
 import io.ipfs.host.PeerId;
 import io.ipfs.multihash.Multihash;
 import ipns.pb.Ipns.IpnsEntry;

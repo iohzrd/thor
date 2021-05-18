@@ -10,7 +10,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import io.core.ClosedException;
+import io.ipfs.core.ClosedException;
 
 import static org.junit.Assert.assertTrue;
 

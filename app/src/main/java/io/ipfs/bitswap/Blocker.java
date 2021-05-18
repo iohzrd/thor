@@ -3,9 +3,9 @@ package io.ipfs.bitswap;
 import androidx.annotation.NonNull;
 
 import io.LogUtils;
-import io.core.Closeable;
 import io.ipfs.IPFS;
 import io.ipfs.cid.Cid;
+import io.ipfs.core.Closeable;
 
 public class Blocker {
     private static final String TAG = Blocker.class.getSimpleName();

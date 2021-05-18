@@ -5,7 +5,7 @@ import androidx.annotation.NonNull;
 import java.nio.ByteBuffer;
 
 import io.LogUtils;
-import io.core.Closeable;
+import io.ipfs.core.Closeable;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;

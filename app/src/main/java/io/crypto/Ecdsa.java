@@ -31,21 +31,18 @@ public class Ecdsa {
     private static final ECNamedCurveParameterSpec CURVE;
 
     static {
-        ECNamedCurveParameterSpec var10000 = ECNamedCurveTable.getParameterSpec("P-256");
-
-        CURVE = var10000;
+        CURVE = ECNamedCurveTable.getParameterSpec("P-256");
     }
 
-    private static Pair generateECDSAKeyPairWithCurve(ECNamedCurveParameterSpec curve, SecureRandom random) {
+    private static Pair<PrivKey, PrivKey> generateECDSAKeyPairWithCurve(ECNamedCurveParameterSpec curve, SecureRandom random) {
         try {
             KeyPairGenerator var3 = KeyPairGenerator.getInstance("ECDSA", new BouncyCastleProvider());
             boolean var4 = false;
             boolean var5 = false;
             boolean var7 = false;
             var3.initialize(curve, random);
-            KeyPair var10000 = var3.genKeyPair();
 
-            KeyPair keypair = var10000;
+            KeyPair keypair = var3.genKeyPair();
             Pair var8;
             EcdsaPrivateKey var10002;
             PrivateKey var10004 = keypair.getPrivate();

@@ -4,10 +4,10 @@ import androidx.annotation.NonNull;
 
 import java.util.Set;
 
-import io.core.Closeable;
-import io.core.ClosedException;
-import io.core.ConnectionIssue;
 import io.ipfs.cid.Cid;
+import io.ipfs.core.Closeable;
+import io.ipfs.core.ClosedException;
+import io.ipfs.core.ConnectionIssue;
 import io.ipfs.dht.Routing;
 import io.ipfs.host.PeerId;
 

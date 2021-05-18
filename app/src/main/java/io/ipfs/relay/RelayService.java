@@ -8,9 +8,9 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 import io.LogUtils;
-import io.core.Closeable;
-import io.core.ClosedException;
 import io.ipfs.IPFS;
+import io.ipfs.core.Closeable;
+import io.ipfs.core.ClosedException;
 import io.ipfs.host.Connection;
 import io.ipfs.utils.DataHandler;
 import io.netty.incubator.codec.quic.QuicChannel;

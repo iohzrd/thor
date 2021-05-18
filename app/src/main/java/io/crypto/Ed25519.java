@@ -18,7 +18,7 @@ import crypto.pb.Crypto;
 
 public class Ed25519 {
 
-    public static Pair generateEd25519KeyPair(
+    public static Pair<PrivKey, PrivKey> generateEd25519KeyPair(
             SecureRandom random) {
 
         Ed25519KeyPairGenerator var1 = new Ed25519KeyPairGenerator();

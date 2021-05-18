@@ -10,13 +10,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 
 import io.LogUtils;
-import io.core.Closeable;
-import io.core.ClosedException;
-import io.core.ConnectionIssue;
-import io.core.ProtocolIssue;
-import io.core.TimeoutIssue;
 import io.ipfs.IPFS;
 import io.ipfs.cid.Cid;
+import io.ipfs.core.Closeable;
+import io.ipfs.core.ClosedException;
+import io.ipfs.core.ConnectionIssue;
+import io.ipfs.core.ProtocolIssue;
+import io.ipfs.core.TimeoutIssue;
 import io.ipfs.exchange.Interface;
 import io.ipfs.format.Block;
 import io.ipfs.format.BlockStore;

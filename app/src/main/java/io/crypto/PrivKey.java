@@ -15,7 +15,7 @@ public abstract class PrivKey implements Key {
         this.keyType = keyType;
     }
 
-    public abstract byte[] sign(byte[] var1);
+    public abstract byte[] sign(byte[] data);
 
 
     public abstract PubKey publicKey();

@@ -23,20 +23,21 @@ import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import dht.pb.Dht;
 import io.LogUtils;
-import io.core.Closeable;
-import io.core.ClosedException;
-import io.core.ConnectionIssue;
-import io.core.InvalidRecord;
-import io.core.ProtocolIssue;
-import io.core.TimeoutIssue;
-import io.core.Validator;
 import io.ipfs.IPFS;
 import io.ipfs.cid.Cid;
+import io.ipfs.core.Closeable;
+import io.ipfs.core.ClosedException;
+import io.ipfs.core.ConnectionIssue;
+import io.ipfs.core.InvalidRecord;
+import io.ipfs.core.ProtocolIssue;
+import io.ipfs.core.TimeoutIssue;
+import io.ipfs.core.Validator;
 import io.ipfs.host.AddrInfo;
 import io.ipfs.host.Connection;
 import io.ipfs.host.LiteHost;
@@ -45,6 +46,7 @@ import io.ipfs.ipns.Ipns;
 import io.ipfs.multiaddr.Multiaddr;
 import io.ipfs.utils.DataHandler;
 import io.netty.handler.timeout.ReadTimeoutException;
+import io.netty.handler.timeout.ReadTimeoutHandler;
 import io.netty.incubator.codec.quic.QuicChannel;
 import io.netty.incubator.codec.quic.QuicStreamChannel;
 import io.netty.incubator.codec.quic.QuicStreamPriority;
@@ -411,8 +413,8 @@ public class KadDht implements Routing {
             QuicStreamChannel streamChannel = quicChannel.createStream(QuicStreamType.BIDIRECTIONAL,
                     new KadDhtRequest(activation, request, messageLite)).sync().get();
 
-
-            //streamChannel.pipeline().addFirst(new ReadTimeoutHandler(5, TimeUnit.SECONDS));
+            // TODO find right value
+            streamChannel.pipeline().addFirst(new ReadTimeoutHandler(15, TimeUnit.SECONDS));
 
             streamChannel.updatePriority(new QuicStreamPriority(priority, false));
 

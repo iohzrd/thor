@@ -13,7 +13,7 @@ import org.junit.runner.RunWith;
 import java.util.Set;
 
 import io.LogUtils;
-import io.core.TimeoutCloseable;
+import io.ipfs.core.TimeoutCloseable;
 import io.ipfs.host.PeerId;
 import io.ipfs.host.PeerInfo;
 import io.ipfs.multiaddr.Multiaddr;

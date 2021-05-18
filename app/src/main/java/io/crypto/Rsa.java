@@ -32,7 +32,8 @@ import crypto.pb.Crypto;
 public class Rsa {
 
 
-    public static Pair generateRsaKeyPair(int bits, SecureRandom random) throws NoSuchAlgorithmException, IOException {
+    public static Pair<PrivKey, PrivKey> generateRsaKeyPair(int bits, SecureRandom random)
+            throws NoSuchAlgorithmException, IOException {
 
         if (bits < 2048) {
             throw new RuntimeException("rsa keys must be >= 512 bits to be useful");
@@ -62,12 +63,12 @@ public class Rsa {
     }
 
 
-    public static final Pair generateRsaKeyPair(int bits) throws IOException, NoSuchAlgorithmException {
+    public static Pair generateRsaKeyPair(int bits) throws IOException, NoSuchAlgorithmException {
         return generateRsaKeyPair$default(bits, null, 2, null);
     }
 
 
-    public static final PubKey unmarshalRsaPublicKey(byte[] keyBytes) {
+    public static PubKey unmarshalRsaPublicKey(byte[] keyBytes) {
         try {
             PublicKey var10002 = KeyFactory.getInstance("RSA", new BouncyCastleProvider()).generatePublic(new X509EncodedKeySpec(keyBytes));
 
@@ -78,7 +79,7 @@ public class Rsa {
     }
 
 
-    public static final PrivKey unmarshalRsaPrivateKey(byte[] keyBytes) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
+    public static PrivKey unmarshalRsaPrivateKey(byte[] keyBytes) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
 
         RSAPrivateKey rsaPrivateKey = RSAPrivateKey.getInstance(ASN1Primitive.fromByteArray(keyBytes));
 
@@ -156,17 +157,17 @@ public class Rsa {
 
 
     public static final class RsaPublicKey extends PubKey {
-        private final PublicKey k;
+        private final PublicKey publicKey;
 
-        public RsaPublicKey(PublicKey k) {
+        public RsaPublicKey(PublicKey publicKey) {
             super(Crypto.KeyType.RSA);
-            this.k = k;
+            this.publicKey = publicKey;
         }
 
 
         @NonNull
         public byte[] raw() {
-            return this.k.getEncoded();
+            return this.publicKey.getEncoded();
         }
 
         public boolean verify(byte[] data, byte[] signature) {
@@ -174,7 +175,7 @@ public class Rsa {
 
                 Signature sha256withRSA = Signature.getInstance(
                         "SHA256withRSA", new BouncyCastleProvider());
-                sha256withRSA.initVerify(this.k);
+                sha256withRSA.initVerify(this.publicKey);
                 sha256withRSA.update(data);
                 return sha256withRSA.verify(signature);
             } catch (Throwable throwable) {
@@ -183,7 +184,7 @@ public class Rsa {
         }
 
         public int hashCode() {
-            return this.k.hashCode();
+            return this.publicKey.hashCode();
         }
     }
 }

@@ -10,8 +10,8 @@ import java.util.concurrent.CompletableFuture;
 
 import dht.pb.Dht;
 import io.LogUtils;
-import io.core.ProtocolIssue;
 import io.ipfs.IPFS;
+import io.ipfs.core.ProtocolIssue;
 import io.ipfs.utils.DataHandler;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
