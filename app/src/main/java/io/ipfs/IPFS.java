@@ -33,6 +33,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
@@ -54,13 +55,14 @@ import io.ipfs.format.BlockStore;
 import io.ipfs.format.Node;
 import io.ipfs.host.AddrInfo;
 import io.ipfs.host.Connection;
-import io.ipfs.host.DataHandler;
+import io.ipfs.utils.DataHandler;
 import io.ipfs.host.DnsResolver;
 import io.ipfs.host.LiteHost;
-import io.ipfs.host.LiteSignedCertificate;
+import io.ipfs.host.LiteHostCertificate;
 import io.ipfs.host.PeerId;
 import io.ipfs.host.PeerInfo;
-import io.ipfs.host.Pusher;
+import io.ipfs.push.PushSend;
+import io.ipfs.push.Pusher;
 import io.ipfs.multiaddr.Multiaddr;
 import io.ipfs.multiaddr.Protocol;
 import io.ipfs.multibase.Base58;
@@ -77,7 +79,10 @@ import io.ipfs.utils.ReaderStream;
 import io.ipfs.utils.Resolver;
 import io.ipfs.utils.Stream;
 import io.ipfs.utils.WriterStream;
+import io.netty.incubator.codec.quic.QuicChannel;
 import io.netty.incubator.codec.quic.QuicStreamChannel;
+import io.netty.incubator.codec.quic.QuicStreamPriority;
+import io.netty.incubator.codec.quic.QuicStreamType;
 import threads.thor.core.blocks.BLOCKS;
 
 public class IPFS {
@@ -202,7 +207,7 @@ public class IPFS {
         }
 
         privateKey = new Rsa.RsaPrivateKey(keypair.getPrivate(), keypair.getPublic());
-        LiteSignedCertificate selfSignedCertificate = new LiteSignedCertificate(privateKey, keypair);
+        LiteHostCertificate selfSignedCertificate = new LiteHostCertificate(privateKey, keypair);
 
 
         int alpha = getConcurrencyValue(context);
@@ -346,7 +351,7 @@ public class IPFS {
             final KeyPair keypair;
 
             KeyPairGenerator keyGen = KeyPairGenerator.getInstance(algorithm);
-            keyGen.initialize(2048, LiteSignedCertificate.ThreadLocalInsecureRandom.current());
+            keyGen.initialize(2048, LiteHostCertificate.ThreadLocalInsecureRandom.current());
             keypair = keyGen.generateKeyPair();
 
             Base64.Encoder encoder = Base64.getEncoder();
@@ -1120,15 +1125,25 @@ public class IPFS {
             Connection conn = host.connect(new TimeoutCloseable(CONNECT_TIMEOUT), peerId,
                     CONNECT_TIMEOUT);
 
-            QuicStreamChannel stream = host.getStream(new TimeoutCloseable(CONNECT_TIMEOUT),
-                    PUSH_PROTOCOL, conn, IPFS.PRIORITY_URGENT);
-            LogUtils.error(TAG, "write content " + content);
-            stream.writeAndFlush(DataHandler.encode(content.getBytes())).addListener(
-                    future -> stream.close().get());
 
-            /*
-            host.send(new TimeoutCloseable(CONNECT_TIMEOUT), PUSH_PROTOCOL, conn,
-                    content.getBytes(), IPFS.PRIORITY_URGENT);*/
+            QuicChannel quicChannel = conn.channel();
+
+            CompletableFuture<QuicStreamChannel> stream = new CompletableFuture<>();
+            QuicStreamChannel streamChannel = quicChannel.createStream(QuicStreamType.BIDIRECTIONAL,
+                    new PushSend(stream)).sync().get();
+
+            streamChannel.updatePriority(new QuicStreamPriority(IPFS.PRIORITY_HIGH, false));
+
+            streamChannel.writeAndFlush(DataHandler.writeToken(IPFS.STREAM_PROTOCOL));
+            streamChannel.writeAndFlush(DataHandler.writeToken(IPFS.PUSH_PROTOCOL));
+
+
+            QuicStreamChannel channel = stream.get(CONNECT_TIMEOUT, TimeUnit.SECONDS);
+
+            channel.writeAndFlush(DataHandler.encode(content.getBytes())).addListener(
+                    future -> channel.close().get());
+
+
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         }

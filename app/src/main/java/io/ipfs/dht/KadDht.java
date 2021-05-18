@@ -39,7 +39,7 @@ import io.ipfs.IPFS;
 import io.ipfs.cid.Cid;
 import io.ipfs.host.AddrInfo;
 import io.ipfs.host.Connection;
-import io.ipfs.host.DataHandler;
+import io.ipfs.utils.DataHandler;
 import io.ipfs.host.LiteHost;
 import io.ipfs.host.PeerId;
 import io.ipfs.ipns.Ipns;

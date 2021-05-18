@@ -1,4 +1,4 @@
-package io.ipfs.dht;
+package io.ipfs.bitswap;
 
 import androidx.annotation.NonNull;
 
@@ -13,27 +13,40 @@ import io.ipfs.utils.DataHandler;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.incubator.codec.quic.QuicChannel;
 import io.netty.incubator.codec.quic.QuicStreamChannel;
 
-public class KadDhtSend extends SimpleChannelInboundHandler<ByteBuf> {
+public class BitSwapSend extends SimpleChannelInboundHandler<ByteBuf> {
 
-    private static final String TAG = KadDhtSend.class.getSimpleName();
+    private static final String TAG = BitSwapSend.class.getSimpleName();
 
     @NonNull
     private final DataHandler reader = new DataHandler(1000);
 
     @NonNull
+    private final BitSwap bitSwap;
+    @NonNull
     private final CompletableFuture<QuicStreamChannel> stream;
 
-    public KadDhtSend(@NonNull CompletableFuture<QuicStreamChannel> stream) {
+    public BitSwapSend(@NonNull CompletableFuture<QuicStreamChannel> stream,
+                       @NonNull BitSwap bitSwap) {
         this.stream = stream;
+        this.bitSwap = bitSwap;
     }
 
+    @Override
+    public void channelUnregistered(ChannelHandlerContext ctx) {
+        LogUtils.error(TAG, "channelUnregistered ");
+
+        QuicChannel quicChannel = (QuicChannel) ctx.channel().parent();
+
+        bitSwap.removeStream(quicChannel);
+    }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
             throws Exception {
-        LogUtils.error(TAG,  " " + cause);
+        LogUtils.error(TAG, " " + cause);
         stream.completeExceptionally(cause);
         ctx.close().get();
     }
@@ -49,9 +62,9 @@ public class KadDhtSend extends SimpleChannelInboundHandler<ByteBuf> {
 
         if (reader.isDone()) {
             for (String received : reader.getTokens()) {
-                if (Objects.equals(received, IPFS.KAD_DHT_PROTOCOL)) {
-                    stream.complete((QuicStreamChannel)ctx.channel());
-                } else if(!Objects.equals(received, IPFS.STREAM_PROTOCOL)) {
+                if (Objects.equals(received, IPFS.BIT_SWAP_PROTOCOL)) {
+                    stream.complete((QuicStreamChannel) ctx.channel());
+                } else if (!Objects.equals(received, IPFS.STREAM_PROTOCOL)) {
                     throw new ProtocolIssue();
                 }
             }

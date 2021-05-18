@@ -43,14 +43,10 @@ import java.util.Objects;
 import java.util.Random;
 
 import crypto.pb.Crypto;
-
-
 import io.crypto.Ecdsa;
 import io.crypto.Ed25519;
 import io.crypto.PrivKey;
 import io.crypto.PubKey;
-
-
 import io.crypto.Rsa;
 import io.crypto.Secp256k1;
 import io.netty.buffer.ByteBuf;
@@ -78,9 +74,9 @@ import io.netty.util.internal.logging.InternalLoggerFactory;
  * If it fails, it tries to use <a href="https://www.bouncycastle.org/">Bouncy Castle</a> as a fallback.
  * </p>
  */
-public final class LiteSignedCertificate {
+public final class LiteHostCertificate {
     public static final String certificatePrefix = "libp2p-tls-handshake:";
-    private static final String TAG = LiteSignedCertificate.class.getSimpleName();
+    private static final String TAG = LiteHostCertificate.class.getSimpleName();
     private static final InternalLogger logger = InternalLoggerFactory.getInstance(io.netty.handler.ssl.util.SelfSignedCertificate.class);
     /**
      * Current time minus 1 year, just in case software clock goes back due to time synchronization
@@ -124,7 +120,7 @@ public final class LiteSignedCertificate {
      * Creates a new instance.
      * <p> Algorithm: RSA </p>
      */
-    public LiteSignedCertificate(PrivKey privKey, KeyPair keypair) throws Exception {
+    public LiteHostCertificate(PrivKey privKey, KeyPair keypair) throws Exception {
         this(privKey, keypair, DEFAULT_NOT_BEFORE, DEFAULT_NOT_AFTER);
     }
 
@@ -136,7 +132,7 @@ public final class LiteSignedCertificate {
      * @param notBefore Certificate is not valid before this time
      * @param notAfter  Certificate is not valid after this time
      */
-    public LiteSignedCertificate(PrivKey privKey, KeyPair keypair, Date notBefore, Date notAfter)
+    public LiteHostCertificate(PrivKey privKey, KeyPair keypair, Date notBefore, Date notAfter)
             throws Exception {
         this(privKey, keypair, "localhost", notBefore, notAfter);
     }
@@ -149,7 +145,7 @@ public final class LiteSignedCertificate {
      * @param notBefore Certificate is not valid before this time
      * @param notAfter  Certificate is not valid after this time
      */
-    public LiteSignedCertificate(PrivKey privKey, KeyPair keypair, String fqdn, Date notBefore, Date notAfter)
+    public LiteHostCertificate(PrivKey privKey, KeyPair keypair, String fqdn, Date notBefore, Date notAfter)
             throws Exception {
         // Bypass entropy collection by using insecure random generator.
         // We just want to generate it without any delay because it's for testing purposes only.
@@ -164,7 +160,7 @@ public final class LiteSignedCertificate {
      * @param notBefore Certificate is not valid before this time
      * @param notAfter  Certificate is not valid after this time
      */
-    public LiteSignedCertificate(PrivKey privKey, KeyPair keypair, String fqdn, SecureRandom random, Date notBefore, Date notAfter)
+    public LiteHostCertificate(PrivKey privKey, KeyPair keypair, String fqdn, SecureRandom random, Date notBefore, Date notAfter)
             throws Exception {
 
 
@@ -285,7 +281,7 @@ public final class LiteSignedCertificate {
     }
 
     public static String getLiteExtension() {
-        return LiteSignedCertificate.integersToString(LiteSignedCertificate.extensionID);
+        return LiteHostCertificate.integersToString(LiteHostCertificate.extensionID);
     }
 
     public static String integersToString(int[] values) {
@@ -394,7 +390,7 @@ public final class LiteSignedCertificate {
 
     public static PubKey extractPublicKey(@NonNull X509Certificate cert) throws IOException {
 
-        byte[] extension = cert.getExtensionValue(LiteSignedCertificate.getLiteExtension());
+        byte[] extension = cert.getExtensionValue(LiteHostCertificate.getLiteExtension());
         Objects.requireNonNull(extension);
 
         ASN1OctetString octs = (ASN1OctetString) ASN1Primitive.fromByteArray(extension);
@@ -411,7 +407,7 @@ public final class LiteSignedCertificate {
 
         byte[] certKeyPub = cert.getPublicKey().getEncoded();
 
-        byte[] verify = Bytes.concat(LiteSignedCertificate.certificatePrefix.getBytes(), certKeyPub);
+        byte[] verify = Bytes.concat(LiteHostCertificate.certificatePrefix.getBytes(), certKeyPub);
 
         boolean result = pubKey.verify(verify, skSignature);
 

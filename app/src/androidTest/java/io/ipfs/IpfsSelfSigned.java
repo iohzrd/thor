@@ -17,7 +17,7 @@ import java.security.cert.X509Certificate;
 import io.LogUtils;
 import io.crypto.PubKey;
 import io.crypto.Rsa;
-import io.ipfs.host.LiteSignedCertificate;
+import io.ipfs.host.LiteHostCertificate;
 
 import static junit.framework.TestCase.assertNotNull;
 
@@ -37,10 +37,10 @@ public class IpfsSelfSigned {
     public void test_certificate() throws Exception {
 
 
-        LogUtils.error(TAG, LiteSignedCertificate.integersToString(LiteSignedCertificate.extensionID));
+        LogUtils.error(TAG, LiteHostCertificate.integersToString(LiteHostCertificate.extensionID));
 
         ASN1ObjectIdentifier ident = new ASN1ObjectIdentifier(
-                LiteSignedCertificate.integersToString(LiteSignedCertificate.extensionID));
+                LiteHostCertificate.integersToString(LiteHostCertificate.extensionID));
 
         assertNotNull(ident);
 
@@ -53,15 +53,15 @@ public class IpfsSelfSigned {
         final KeyPair keypair;
 
         KeyPairGenerator keyGen = KeyPairGenerator.getInstance(algorithm);
-        keyGen.initialize(2048, LiteSignedCertificate.ThreadLocalInsecureRandom.current());
+        keyGen.initialize(2048, LiteHostCertificate.ThreadLocalInsecureRandom.current());
         keypair = keyGen.generateKeyPair();
 
         Rsa.RsaPrivateKey privateKey = new Rsa.RsaPrivateKey(keypair.getPrivate(), keypair.getPublic());
-        X509Certificate cert = new LiteSignedCertificate(privateKey, keypair).cert();
+        X509Certificate cert = new LiteHostCertificate(privateKey, keypair).cert();
 
         assertNotNull(cert);
 
-        PubKey pubKey = LiteSignedCertificate.extractPublicKey(cert);
+        PubKey pubKey = LiteHostCertificate.extractPublicKey(cert);
         assertNotNull(pubKey);
 
     }

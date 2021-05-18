@@ -30,19 +30,16 @@ public class BitSwapEngine {
 
 
     @NonNull
-    private final BitSwapNetwork network;
+    private final BitSwap bitSwap;
 
-    private BitSwapEngine(@NonNull BlockStore bs, @NonNull BitSwapNetwork network,
-                          @NonNull PeerId self) {
+    BitSwapEngine(@NonNull BitSwap bitSwap,
+                  @NonNull BlockStore bs,
+
+                  @NonNull PeerId self) {
+        this.bitSwap = bitSwap;
         this.blockstore = bs;
-        this.network = network;
         this.self = self;
 
-    }
-
-    // NewEngine creates a new block sending engine for the given block store
-    public static BitSwapEngine NewEngine(@NonNull BlockStore bs, @NonNull BitSwapNetwork network, @NonNull PeerId self) {
-        return new BitSwapEngine(bs, network, self);
     }
 
     private BitSwapMessage createMessage(@NonNull Task task) {
@@ -176,7 +173,7 @@ public class BitSwapEngine {
                     BitSwapMessage msg = createMessage(task);
                     if (!msg.Empty()) {
                         try {
-                            network.writeMessage(new TimeoutCloseable(5), peer, msg, IPFS.PRIORITY_NORMAL);
+                            bitSwap.writeMessage(new TimeoutCloseable(5), peer, msg, IPFS.PRIORITY_NORMAL);
                         } catch (Throwable throwable) {
                             LogUtils.error(TAG, throwable);
                         }
@@ -194,7 +191,7 @@ public class BitSwapEngine {
                 BitSwapMessage msg = createMessage(task);
                 if (!msg.Empty()) {
                     try {
-                        network.writeMessage(new TimeoutCloseable(10), peer, msg, IPFS.PRIORITY_NORMAL);
+                        bitSwap.writeMessage(new TimeoutCloseable(10), peer, msg, IPFS.PRIORITY_NORMAL);
                     } catch (Throwable throwable) {
                         LogUtils.error(TAG, throwable);
                     }

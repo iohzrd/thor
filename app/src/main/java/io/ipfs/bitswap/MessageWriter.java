@@ -22,7 +22,7 @@ public class MessageWriter {
 
 
     public static void sendHaveMessage(@NonNull Closeable closeable,
-                                       @NonNull BitSwapNetwork network,
+                                       @NonNull BitSwap network,
                                        @NonNull PeerId peer,
                                        @NonNull List<Cid> wantHaves)
             throws ClosedException, ProtocolIssue, TimeoutIssue, ConnectionIssue {
@@ -55,7 +55,7 @@ public class MessageWriter {
     }
 
     public static void sendWantsMessage(@NonNull Closeable closeable,
-                                        @NonNull BitSwapNetwork network,
+                                        @NonNull BitSwap network,
                                         @NonNull PeerId peer,
                                         @NonNull List<Cid> wantBlocks)
             throws ClosedException, ProtocolIssue, TimeoutIssue, ConnectionIssue {

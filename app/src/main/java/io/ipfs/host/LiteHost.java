@@ -47,7 +47,6 @@ import io.core.Closeable;
 import io.core.ClosedException;
 import io.core.ConnectionIssue;
 import io.core.ProtocolIssue;
-import io.core.TimeoutIssue;
 import io.crypto.PrivKey;
 import io.crypto.PubKey;
 import io.ipfs.IPFS;
@@ -63,6 +62,8 @@ import io.ipfs.format.BlockStore;
 import io.ipfs.ipns.Ipns;
 import io.ipfs.multiaddr.Multiaddr;
 import io.ipfs.multiaddr.Protocol;
+import io.ipfs.push.Pusher;
+import io.ipfs.utils.DataHandler;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
@@ -76,7 +77,6 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.handler.ssl.ClientAuth;
 import io.netty.handler.ssl.util.SimpleTrustManagerFactory;
-import io.netty.handler.timeout.ReadTimeoutException;
 import io.netty.incubator.codec.quic.InsecureQuicTokenHandler;
 import io.netty.incubator.codec.quic.QuicChannel;
 import io.netty.incubator.codec.quic.QuicClientCodecBuilder;
@@ -109,7 +109,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
             try {
                 if (IPFS.EVALUATE_PEER) {
                     for (X509Certificate cert : chain) {
-                        PubKey pubKey = LiteSignedCertificate.extractPublicKey(cert);
+                        PubKey pubKey = LiteHostCertificate.extractPublicKey(cert);
                         Objects.requireNonNull(pubKey);
                         PeerId peerId = PeerId.fromPubKey(pubKey);
                         Objects.requireNonNull(peerId);
@@ -127,7 +127,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
             try {
                 if (IPFS.EVALUATE_PEER) {
                     for (X509Certificate cert : chain) {
-                        PubKey pubKey = LiteSignedCertificate.extractPublicKey(cert);
+                        PubKey pubKey = LiteHostCertificate.extractPublicKey(cert);
                         Objects.requireNonNull(pubKey);
                         PeerId peerId = PeerId.fromPubKey(pubKey);
                         Objects.requireNonNull(peerId);
@@ -161,7 +161,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
     @NonNull
     private final NioEventLoopGroup group = new NioEventLoopGroup(1);
     @NonNull
-    private final LiteSignedCertificate selfSignedCertificate;
+    private final LiteHostCertificate selfSignedCertificate;
     @NonNull
     public List<ConnectionHandler> handlers = new ArrayList<>();
     @Nullable
@@ -173,21 +173,12 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
     @NonNull
     private final Set<PeerId> swarm = ConcurrentHashMap.newKeySet();
 
-    @NonNull
-    public ConcurrentHashMap<QuicChannel, QuicStreamChannel> kads = new ConcurrentHashMap<>();
-    @NonNull
-    public ConcurrentHashMap<QuicChannel, QuicStreamChannel> bitSwaps = new ConcurrentHashMap<>();
-    @NonNull
-    public ConcurrentHashMap<QuicChannel, QuicStreamChannel> pushes = new ConcurrentHashMap<>();
-    @NonNull
-    public ConcurrentHashMap<QuicChannel, QuicStreamChannel> relays = new ConcurrentHashMap<>();
-    @NonNull
-    public ConcurrentHashMap<QuicChannel, QuicStreamChannel> idents = new ConcurrentHashMap<>();
+
 
 
     private InetAddress localAddress;
 
-    public LiteHost(@NonNull LiteSignedCertificate selfSignedCertificate, @NonNull PrivKey privKey,
+    public LiteHost(@NonNull LiteHostCertificate selfSignedCertificate, @NonNull PrivKey privKey,
                     @NonNull BlockStore blockstore, int port, int alpha) {
         this.selfSignedCertificate = selfSignedCertificate;
         this.privKey = privKey;
@@ -421,43 +412,6 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
         } catch (Throwable throwable) {
             return false;
         }
-    }
-
-    @Override
-    public void writeMessage(@NonNull Closeable closeable, @NonNull PeerId peerId,
-                             @NonNull BitSwapMessage message, short priority)
-            throws ClosedException, ProtocolIssue, TimeoutIssue, ConnectionIssue {
-
-        try {
-            Connection conn = connect(closeable, peerId, IPFS.CONNECT_TIMEOUT);
-
-            /*
-            QuicStreamChannel stream = getStream(closeable, IPFS.BITSWAP_PROTOCOL, conn, priority);
-            stream.writeAndFlush(DataHandler.encode(message.ToProtoV1()));
-            */
-
-
-            send(closeable, IPFS.BIT_SWAP_PROTOCOL, conn,
-                    message.ToProtoV1().toByteArray(), priority);
-
-        } catch (ClosedException | ConnectionIssue exception) {
-            throw exception;
-        } catch (Throwable throwable) {
-            Throwable cause = throwable.getCause();
-            if (cause != null) {
-                if (cause instanceof ProtocolIssue) {
-                    throw new ProtocolIssue();
-                }
-                if (cause instanceof ConnectionIssue) {
-                    throw new ConnectionIssue();
-                }
-                if (cause instanceof ReadTimeoutException) {
-                    throw new TimeoutIssue();
-                }
-            }
-            throw new RuntimeException(throwable);
-        }
-
     }
 
     @NonNull
@@ -698,83 +652,11 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
         return IPFS.BLOCK_SIZE_LIMIT;
     }
 
-    public QuicStreamChannel getStream(@NonNull Closeable closeable,
-                                       @NonNull String protocol,
-                                       @NonNull Connection conn, short priority)
-            throws InterruptedException, ExecutionException, ClosedException {
-
-        if (closeable.isClosed()) {
-            throw new ClosedException();
-        }
-
-        QuicChannel quicChannel = conn.channel();
-
-        QuicStreamChannel stored = getStream(quicChannel, protocol);
-        if (stored != null) {
-            if (stored.isOpen() && stored.isWritable()) {
-                return stored;
-            } else {
-                removeStream(quicChannel, protocol);
-            }
-        }
-
-
-        CompletableFuture<QuicStreamChannel> ctrl = getStream(quicChannel, protocol, priority);
-
-
-        while (!ctrl.isDone()) {
-            if (closeable.isClosed()) {
-                ctrl.cancel(true);
-            }
-        }
-
-        if (closeable.isClosed()) {
-            throw new ClosedException();
-        }
-
-        QuicStreamChannel stream = ctrl.get();
-
-        Objects.requireNonNull(stream);
-        putStream(quicChannel, protocol, stream);
-        return stream;
-    }
 
     public void setPusher(@Nullable Pusher pusher) {
         this.pusher = pusher;
     }
 
-    public void send(@NonNull Closeable closeable, @NonNull String protocol,
-                     @NonNull Connection conn, @NonNull byte[] data, short priority)
-            throws InterruptedException, ExecutionException, ClosedException {
-
-        if (closeable.isClosed()) {
-            throw new ClosedException();
-        }
-
-        long time = System.currentTimeMillis();
-
-        /*
-        QuicChannel quicChannel = conn.channel();
-        CompletableFuture<Void> cf = send(quicChannel, protocol, data, priority);
-
-        while (!cf.isDone()) {
-            if (closeable.isClosed()) {
-                cf.cancel(true);
-            }
-        }
-
-        if (closeable.isClosed()) {
-            throw new ClosedException();
-        }
-        cf.get();*/
-
-        QuicStreamChannel stream = getStream(closeable, protocol, conn, priority);
-        stream.writeAndFlush(DataHandler.encode(data));
-
-
-        LogUtils.verbose(TAG, "Send took " + protocol + " " + (System.currentTimeMillis() - time));
-
-    }
 
     @NonNull
     private Multiaddr transform(@NonNull SocketAddress socketAddress) {
@@ -928,15 +810,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
 
         QuicChannel quicChannel = conn.channel();
         long time = System.currentTimeMillis();
-        /*
-        CompletableFuture<MessageLite> request = new CompletableFuture<>();
-        QuicStreamChannel stream = getStream(closeable, protocol, conn, priority);
-        stream.pipeline().removeLast();
-        stream.pipeline().addLast(new ProtocolHandler(this, request, protocol));
 
-        if( message != null ) {
-            stream.writeAndFlush(DataHandler.encode(message));
-        }*/
 
         CompletableFuture<MessageLite> request = request(quicChannel, protocol, message, priority);
 
@@ -954,30 +828,6 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
         LogUtils.info(TAG, "Request took " + protocol + " " + (System.currentTimeMillis() - time));
         Objects.requireNonNull(res);
         return res;
-    }
-
-    public CompletableFuture<QuicStreamChannel> getStream(@NonNull QuicChannel quicChannel,
-                                                          @NonNull String protocol, short priority) {
-
-
-        CompletableFuture<QuicStreamChannel> stream = new CompletableFuture<>();
-
-        try {
-            QuicStreamChannel streamChannel = quicChannel.createStream(QuicStreamType.BIDIRECTIONAL,
-                    new NegotiatorHandler(stream, this, protocol)).sync().get();
-
-            streamChannel.updatePriority(new QuicStreamPriority(priority, false));
-
-
-            streamChannel.writeAndFlush(DataHandler.writeToken(IPFS.STREAM_PROTOCOL));
-            streamChannel.writeAndFlush(DataHandler.writeToken(protocol));
-
-        } catch (Throwable throwable) {
-            LogUtils.error(TAG, throwable);
-            stream.completeExceptionally(throwable);
-        }
-
-        return stream;
     }
 
     public CompletableFuture<Void> send(@NonNull QuicChannel quicChannel,
@@ -1114,7 +964,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
 
         try {
             QuicStreamChannel streamChannel = quicChannel.createStream(QuicStreamType.BIDIRECTIONAL,
-                    new SimpleChannelInboundHandler<Object>() {
+                    new SimpleChannelInboundHandler<ByteBuf>() {
 
                         private DataHandler reader = new DataHandler(IPFS.BLOCK_SIZE_LIMIT);
 
@@ -1129,12 +979,8 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
                         }
 
                         @Override
-                        protected void channelRead0(ChannelHandlerContext ctx, Object value)
+                        protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg)
                                 throws Exception {
-
-
-                            ByteBuf msg = (ByteBuf) value;
-                            Objects.requireNonNull(msg);
 
                             ByteArrayOutputStream out = new ByteArrayOutputStream();
                             msg.readBytes(out, msg.readableBytes());
@@ -1255,67 +1101,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
 
     }
 
-    public QuicStreamChannel getStream(@NonNull QuicChannel quicChannel, @NonNull String protocol) {
-        switch (protocol) {
-            case IPFS.RELAY_PROTOCOL:
-                return relays.get(quicChannel);
-            case IPFS.IDENTITY_PROTOCOL:
-                return idents.get(quicChannel);
-            case IPFS.BIT_SWAP_PROTOCOL:
-                return bitSwaps.get(quicChannel);
-            case IPFS.KAD_DHT_PROTOCOL:
-                return kads.get(quicChannel);
-            case IPFS.PUSH_PROTOCOL:
-                return pushes.get(quicChannel);
-            default:
-                throw new RuntimeException("missing list for protocol");
-        }
-    }
 
-    public void putStream(@NonNull QuicChannel quicChannel, @NonNull String protocol,
-                          @NonNull QuicStreamChannel streamChannel) {
-        switch (protocol) {
-            case IPFS.RELAY_PROTOCOL:
-                relays.put(quicChannel, streamChannel);
-                break;
-            case IPFS.IDENTITY_PROTOCOL:
-                idents.put(quicChannel, streamChannel);
-                break;
-            case IPFS.BIT_SWAP_PROTOCOL:
-                bitSwaps.put(quicChannel, streamChannel);
-                break;
-            case IPFS.KAD_DHT_PROTOCOL:
-                kads.put(quicChannel, streamChannel);
-                break;
-            case IPFS.PUSH_PROTOCOL:
-                pushes.put(quicChannel, streamChannel);
-                break;
-            default:
-                throw new RuntimeException("missing list for protocol");
-        }
-    }
-
-    public void removeStream(@NonNull QuicChannel quicChannel, @NonNull String protocol) {
-        switch (protocol) {
-            case IPFS.RELAY_PROTOCOL:
-                relays.remove(quicChannel);
-                break;
-            case IPFS.IDENTITY_PROTOCOL:
-                idents.remove(quicChannel);
-                break;
-            case IPFS.BIT_SWAP_PROTOCOL:
-                bitSwaps.remove(quicChannel);
-                break;
-            case IPFS.KAD_DHT_PROTOCOL:
-                kads.remove(quicChannel);
-                break;
-            case IPFS.PUSH_PROTOCOL:
-                pushes.remove(quicChannel);
-                break;
-            default:
-                throw new RuntimeException("missing list for protocol");
-        }
-    }
 
     public boolean swarmContains(@NonNull PeerId peerId) {
         return swarm.contains(peerId);

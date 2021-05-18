@@ -41,8 +41,10 @@ public class ContentManager {
     private final ConcurrentSkipListSet<Cid> loads = new ConcurrentSkipListSet<>();
     private final ConcurrentHashMap<Cid, ConcurrentLinkedDeque<PeerId>> matches = new ConcurrentHashMap<>();
     private final Blocker blocker = new Blocker();
+    private final BitSwap bitSwap;
 
-    public ContentManager(@NonNull BlockStore blockStore, @NonNull BitSwapNetwork network) {
+    public ContentManager(@NonNull BitSwap bitSwap, @NonNull BlockStore blockStore, @NonNull BitSwapNetwork network) {
+        this.bitSwap = bitSwap;
         this.blockStore = blockStore;
         this.network = network;
     }
@@ -161,7 +163,7 @@ public class ContentManager {
                         long start = System.currentTimeMillis();
                         try {
                             if (matches.containsKey(cid)) {
-                                MessageWriter.sendWantsMessage(closeable, network, peer,
+                                MessageWriter.sendWantsMessage(closeable, bitSwap, peer,
                                         Collections.singletonList(cid));
                                 wants.add(peer);
                                 handled.add(peer);
@@ -193,7 +195,7 @@ public class ContentManager {
                         long start = System.currentTimeMillis();
                         try {
                             peers.add(peer);
-                            MessageWriter.sendHaveMessage(closeable, network, peer,
+                            MessageWriter.sendHaveMessage(closeable, bitSwap, peer,
                                     Collections.singletonList(cid));
                             handled.add(peer);
                             hasRun = true;
@@ -227,7 +229,7 @@ public class ContentManager {
                         try {
                             peers.add(peer);
                             MessageWriter.sendHaveMessage(
-                                    new TimeoutCloseable(closeable, 10), network, peer,
+                                    new TimeoutCloseable(closeable, 10), bitSwap, peer,
                                     Collections.singletonList(cid));
                             handled.add(peer);
                         } catch (ClosedException | TimeoutIssue ignore) {
@@ -322,10 +324,10 @@ public class ContentManager {
                     long start = System.currentTimeMillis();
                     try {
                         if (wantsMessage) {
-                            MessageWriter.sendWantsMessage(closeable, network, peer, loads);
+                            MessageWriter.sendWantsMessage(closeable, bitSwap, peer, loads);
                             wantsMessage = false;
                         } else {
-                            MessageWriter.sendHaveMessage(closeable, network, peer, loads);
+                            MessageWriter.sendHaveMessage(closeable, bitSwap, peer, loads);
                         }
                     } catch (ClosedException | TimeoutIssue ignore) {
                         // ignore
