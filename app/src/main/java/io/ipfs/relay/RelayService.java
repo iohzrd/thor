@@ -6,6 +6,7 @@ import com.google.protobuf.MessageLite;
 
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 import io.LogUtils;
 import io.ipfs.IPFS;
@@ -13,6 +14,7 @@ import io.ipfs.core.Closeable;
 import io.ipfs.core.ClosedException;
 import io.ipfs.host.Connection;
 import io.ipfs.utils.DataHandler;
+import io.netty.handler.timeout.ReadTimeoutHandler;
 import io.netty.incubator.codec.quic.QuicChannel;
 import io.netty.incubator.codec.quic.QuicStreamChannel;
 import io.netty.incubator.codec.quic.QuicStreamPriority;
@@ -74,7 +76,7 @@ public class RelayService {
                     new RelayRequest(activation, request, messageLite)).sync().get();
 
 
-            //streamChannel.pipeline().addFirst(new ReadTimeoutHandler(5, TimeUnit.SECONDS));
+            streamChannel.pipeline().addFirst(new ReadTimeoutHandler(10, TimeUnit.SECONDS));
 
             streamChannel.updatePriority(new QuicStreamPriority(IPFS.PRIORITY_URGENT, false));
 

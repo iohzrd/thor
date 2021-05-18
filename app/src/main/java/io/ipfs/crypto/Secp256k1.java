@@ -1,4 +1,4 @@
-package io.crypto;
+package io.ipfs.crypto;
 
 import android.util.Pair;
 
@@ -35,6 +35,7 @@ import java.security.SecureRandom;
 import crypto.pb.Crypto;
 
 
+@SuppressWarnings("unused")
 public class Secp256k1 {
 
     private static final X9ECParameters CURVE_PARAMS = CustomNamedCurves.getByName("secp256k1");
@@ -56,38 +57,35 @@ public class Secp256k1 {
         S_FIXER_VALUE = new BigInteger("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141", 16);
     }
 
-    public static Pair<PrivKey, PrivKey> generateSecp256k1KeyPair(@NonNull SecureRandom random) {
+    public static Pair<Secp256k1PrivateKey, Secp256k1PublicKey> generateSecp256k1KeyPair(@NonNull SecureRandom random) {
 
-        ECKeyPairGenerator var1 = new ECKeyPairGenerator();
-        X9ECParameters var6 = SECNamedCurves.getByName("secp256k1");
+        ECKeyPairGenerator ecKeyPairGenerator = new ECKeyPairGenerator();
+        X9ECParameters secp256k1 = SECNamedCurves.getByName("secp256k1");
 
 
-        ECDomainParameters domain = new ECDomainParameters(var6.getCurve(), var6.getG(), var6.getN(), var6.getH());
-        var1.init(new ECKeyGenerationParameters(domain, random));
-        AsymmetricCipherKeyPair keypair = var1.generateKeyPair();
+        ECDomainParameters domain = new ECDomainParameters(secp256k1.getCurve(),
+                secp256k1.getG(), secp256k1.getN(), secp256k1.getH());
+        ecKeyPairGenerator.init(new ECKeyGenerationParameters(domain, random));
+        AsymmetricCipherKeyPair keypair = ecKeyPairGenerator.generateKeyPair();
 
-        AsymmetricKeyParameter var10000 = keypair.getPrivate();
-        if (var10000 == null) {
+        AsymmetricKeyParameter aPrivate = keypair.getPrivate();
+        if (aPrivate == null) {
             throw new NullPointerException("null cannot be cast to non-null type org.bouncycastle.crypto.params.ECPrivateKeyParameters");
         } else {
-            ECPrivateKeyParameters privateKey = (ECPrivateKeyParameters) var10000;
-            Pair var12;
-            Secp256k1PrivateKey var10002 = new Secp256k1PrivateKey(privateKey);
-            Secp256k1PublicKey var10003;
-            AsymmetricKeyParameter var10005 = keypair.getPublic();
-            if (var10005 == null) {
+            ECPrivateKeyParameters privateKey = (ECPrivateKeyParameters) aPrivate;
+
+            Secp256k1PrivateKey secp256k1PrivateKey = new Secp256k1PrivateKey(privateKey);
+
+            AsymmetricKeyParameter keypairPublic = keypair.getPublic();
+            if (keypairPublic == null) {
                 throw new NullPointerException("null cannot be cast to non-null type org.bouncycastle.crypto.params.ECPublicKeyParameters");
             } else {
-                var10003 = new Secp256k1PublicKey((ECPublicKeyParameters) var10005);
-                var12 = new Pair(var10002, var10003);
-                return var12;
+                return Pair.create(secp256k1PrivateKey, new Secp256k1PublicKey((ECPublicKeyParameters) keypairPublic));
             }
         }
     }
 
-
     public static PrivKey unmarshalSecp256k1PrivateKey(byte[] data) {
-
         return new Secp256k1PrivateKey(new ECPrivateKeyParameters(new BigInteger(1, data), CURVE));
     }
 
@@ -102,18 +100,17 @@ public class Secp256k1 {
         return new Secp256k1PublicKey(new ECPublicKeyParameters(CURVE.getCurve().createPoint(x, y), CURVE));
     }
 
-    // $FF: synthetic method
-    public static BigInteger access$getS_UPPER_BOUND$p() {
+
+    public static BigInteger accessUpperBound() {
         return S_UPPER_BOUND;
     }
 
-    // $FF: synthetic method
-    public static BigInteger access$getS_FIXER_VALUE$p() {
+
+    public static BigInteger accessFixerValue() {
         return S_FIXER_VALUE;
     }
 
-    // $FF: synthetic method
-    public static ECDomainParameters access$getCURVE$p() {
+    public static ECDomainParameters accessCurve() {
         return CURVE;
     }
 
@@ -145,10 +142,10 @@ public class Secp256k1 {
                 BigInteger r = var4.first;
                 BigInteger s = var4.second;
                 BigInteger var10000;
-                if (s.compareTo(Secp256k1.access$getS_UPPER_BOUND$p()) <= 0) {
+                if (s.compareTo(Secp256k1.accessUpperBound()) <= 0) {
                     var10000 = s;
                 } else {
-                    BigInteger var16 = Secp256k1.access$getS_FIXER_VALUE$p();
+                    BigInteger var16 = Secp256k1.accessFixerValue();
 
                     var10000 = var16.subtract(s);
 
@@ -168,9 +165,9 @@ public class Secp256k1 {
         }
 
         public PubKey publicKey() {
-            BigInteger privKey = this.priv.bitLength() > Secp256k1.access$getCURVE$p().getN().bitLength() ? this.priv.mod(Secp256k1.access$getCURVE$p().getN()) : this.priv;
-            ECPoint publicPoint = (new FixedPointCombMultiplier()).multiply(Secp256k1.access$getCURVE$p().getG(), privKey);
-            return new Secp256k1PublicKey(new ECPublicKeyParameters(publicPoint, Secp256k1.access$getCURVE$p()));
+            BigInteger privKey = this.priv.bitLength() > Secp256k1.accessCurve().getN().bitLength() ? this.priv.mod(Secp256k1.accessCurve().getN()) : this.priv;
+            ECPoint publicPoint = (new FixedPointCombMultiplier()).multiply(Secp256k1.accessCurve().getG(), privKey);
+            return new Secp256k1PublicKey(new ECPublicKeyParameters(publicPoint, Secp256k1.accessCurve()));
         }
 
         public int hashCode() {
@@ -217,10 +214,8 @@ public class Secp256k1 {
             } finally {
                 try {
                     var27.close();
-                } catch (Throwable throwable) {
-                    throw new RuntimeException(throwable);
+                } catch (Throwable ignore) {
                 }
-                //CloseableKt.closeFinally(var27, var31);
             }
 
 

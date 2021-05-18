@@ -1,4 +1,4 @@
-package io.crypto;
+package io.ipfs.crypto;
 
 
 
@@ -6,25 +6,30 @@ import androidx.annotation.NonNull;
 
 import crypto.pb.Crypto;
 
-public abstract class PubKey implements Key {
+public abstract class PrivKey implements Key {
 
     private final Crypto.KeyType keyType;
 
-    public PubKey(Crypto.KeyType keyType) {
+    public PrivKey(Crypto.KeyType keyType) {
         super();
         this.keyType = keyType;
     }
 
-    public abstract boolean verify(byte[] var1, byte[] var2);
+    public abstract byte[] sign(byte[] data);
 
+
+    public abstract PubKey publicKey();
+
+
+    @SuppressWarnings("unused")
     @NonNull
     public byte[] bytes() {
-        return Key.marshalPublicKey(this);
+        return Key.marshalPrivateKey(this);
     }
+
 
     @NonNull
     public Crypto.KeyType getKeyType() {
         return this.keyType;
     }
 }
-

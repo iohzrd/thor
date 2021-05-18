@@ -1,7 +1,8 @@
-package io.crypto;
+package io.ipfs.crypto;
 
 import org.bouncycastle.jcajce.provider.digest.SHA1;
 
+@SuppressWarnings("unused")
 public class Hash {
 
     public static byte[] sha1(byte[] data) {

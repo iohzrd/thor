@@ -127,6 +127,9 @@ public class BitSwap implements Interface {
     public void writeMessage(@NonNull Closeable closeable, @NonNull PeerId peer,
                              @NonNull BitSwapMessage message, short priority)
             throws ClosedException, ProtocolIssue, TimeoutIssue, ConnectionIssue {
+
+        long time = System.currentTimeMillis();
+        boolean success = false;
         try {
             Connection conn = network.connect(closeable, peer, IPFS.CONNECT_TIMEOUT);
 
@@ -134,16 +137,9 @@ public class BitSwap implements Interface {
                 throw new ClosedException();
             }
 
-            long time = System.currentTimeMillis();
-
-
             QuicStreamChannel stream = getStream(closeable, conn, priority);
             stream.writeAndFlush(DataHandler.encode(message.ToProtoV1().toByteArray()));
-
-
-            LogUtils.verbose(TAG, "Send took " + IPFS.BIT_SWAP_PROTOCOL + " " + (System.currentTimeMillis() - time));
-
-
+            success = true;
         } catch (ClosedException | ConnectionIssue exception) {
             throw exception;
         } catch (Throwable throwable) {
@@ -160,6 +156,8 @@ public class BitSwap implements Interface {
                 }
             }
             throw new RuntimeException(throwable);
+        } finally {
+            LogUtils.info(TAG, "Send took " + success + " " + (System.currentTimeMillis() - time));
         }
     }
 
@@ -188,7 +186,8 @@ public class BitSwap implements Interface {
     }
 
     private QuicStreamChannel getStream(@NonNull Closeable closeable,
-                                        @NonNull Connection conn, short priority)
+                                        @NonNull Connection conn,
+                                        short priority)
             throws InterruptedException, ExecutionException, ClosedException {
 
         if (closeable.isClosed()) {
@@ -205,7 +204,6 @@ public class BitSwap implements Interface {
                 removeStream(quicChannel);
             }
         }
-
 
         CompletableFuture<QuicStreamChannel> ctrl = getStream(quicChannel, priority);
 

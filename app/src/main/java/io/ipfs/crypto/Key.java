@@ -1,4 +1,4 @@
-package io.crypto;
+package io.ipfs.crypto;
 
 import androidx.annotation.NonNull;
 

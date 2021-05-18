@@ -1,4 +1,4 @@
-package io.crypto;
+package io.ipfs.crypto;
 
 import android.util.Pair;
 
@@ -29,71 +29,53 @@ import java.security.spec.X509EncodedKeySpec;
 
 import crypto.pb.Crypto;
 
+@SuppressWarnings("unused")
 public class Rsa {
 
 
-    public static Pair<PrivKey, PrivKey> generateRsaKeyPair(int bits, SecureRandom random)
+    public static Pair<RsaPrivateKey, RsaPublicKey> generateRsaKeyPair(int bits, SecureRandom random)
             throws NoSuchAlgorithmException, IOException {
 
         if (bits < 2048) {
             throw new RuntimeException("rsa keys must be >= 512 bits to be useful");
         } else {
-            KeyPairGenerator var3 = KeyPairGenerator.getInstance("RSA", new BouncyCastleProvider());
-            var3.initialize(bits, random);
-
-            KeyPair kp = var3.genKeyPair();
-            PrivateKey var10004 = kp.getPrivate();
-
-            PublicKey var10005 = kp.getPublic();
-
-            RsaPrivateKey var10002 = new RsaPrivateKey(var10004, var10005);
-            var10005 = kp.getPublic();
-
-            return new Pair(var10002, new RsaPublicKey(var10005));
+            KeyPairGenerator rsa = KeyPairGenerator.getInstance("RSA", new BouncyCastleProvider());
+            rsa.initialize(bits, random);
+            KeyPair kp = rsa.genKeyPair();
+            RsaPrivateKey var10002 = new RsaPrivateKey(kp.getPrivate(), kp.getPublic());
+            return Pair.create(var10002, new RsaPublicKey(kp.getPublic()));
         }
-    }
-
-    // $FF: synthetic method
-    public static Pair generateRsaKeyPair$default(int var0, SecureRandom var1, int var2, Object var3) throws IOException, NoSuchAlgorithmException {
-        if ((var2 & 2) != 0) {
-            var1 = new SecureRandom();
-        }
-
-        return generateRsaKeyPair(var0, var1);
-    }
-
-
-    public static Pair generateRsaKeyPair(int bits) throws IOException, NoSuchAlgorithmException {
-        return generateRsaKeyPair$default(bits, null, 2, null);
     }
 
 
     public static PubKey unmarshalRsaPublicKey(byte[] keyBytes) {
         try {
-            PublicKey var10002 = KeyFactory.getInstance("RSA", new BouncyCastleProvider()).generatePublic(new X509EncodedKeySpec(keyBytes));
-
-            return new RsaPublicKey(var10002);
+            PublicKey publicKey = KeyFactory.getInstance("RSA",
+                    new BouncyCastleProvider()).generatePublic(new X509EncodedKeySpec(keyBytes));
+            return new RsaPublicKey(publicKey);
         } catch (Throwable throwable) {
             throw new RuntimeException(throwable);
         }
     }
 
-
-    public static PrivKey unmarshalRsaPrivateKey(byte[] keyBytes) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
+    @NonNull
+    public static PrivKey unmarshalRsaPrivateKey(byte[] keyBytes)
+            throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
 
         RSAPrivateKey rsaPrivateKey = RSAPrivateKey.getInstance(ASN1Primitive.fromByteArray(keyBytes));
 
         RSAPrivateCrtKeyParameters privateKeyParameters = new RSAPrivateCrtKeyParameters(rsaPrivateKey.getModulus(), rsaPrivateKey.getPublicExponent(), rsaPrivateKey.getPrivateExponent(), rsaPrivateKey.getPrime1(), rsaPrivateKey.getPrime2(), rsaPrivateKey.getExponent1(), rsaPrivateKey.getExponent2(), rsaPrivateKey.getCoefficient());
         PrivateKeyInfo privateKeyInfo = PrivateKeyInfoFactory.createPrivateKeyInfo(privateKeyParameters);
 
-        AlgorithmIdentifier var10000 = privateKeyInfo.getPrivateKeyAlgorithm();
+        AlgorithmIdentifier privateKeyAlgorithm = privateKeyInfo.getPrivateKeyAlgorithm();
 
-        ASN1ObjectIdentifier var10 = var10000.getAlgorithm();
+        ASN1ObjectIdentifier algorithm = privateKeyAlgorithm.getAlgorithm();
 
-        String algorithmId = var10.getId();
+        String algorithmId = algorithm.getId();
         PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(privateKeyInfo.getEncoded());
         PrivateKey sk = KeyFactory.getInstance(algorithmId, new BouncyCastleProvider()).generatePrivate(spec);
-        RSAPublicKeySpec publicKeySpec = new RSAPublicKeySpec(privateKeyParameters.getModulus(), privateKeyParameters.getPublicExponent());
+        RSAPublicKeySpec publicKeySpec = new RSAPublicKeySpec(privateKeyParameters.getModulus(),
+                privateKeyParameters.getPublicExponent());
         KeyFactory keyFactory = KeyFactory.getInstance("RSA");
         PublicKey pk = keyFactory.generatePublic(publicKeySpec);
 

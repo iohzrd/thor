@@ -8,9 +8,9 @@ import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.Random;
 
-import io.crypto.Key;
-import io.crypto.PubKey;
 import io.ipfs.cid.Cid;
+import io.ipfs.crypto.Key;
+import io.ipfs.crypto.PubKey;
 import io.ipfs.multibase.Base58;
 
 

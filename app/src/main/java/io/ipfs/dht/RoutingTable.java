@@ -16,7 +16,6 @@ import io.ipfs.host.PeerId;
 public class RoutingTable {
 
     private static final String TAG = RoutingTable.class.getSimpleName();
-    public final long maxLatency = Duration.ofMinutes(1).toMillis();
     private final ID local;  // ID of the local peer
     private final ConcurrentHashMap<Integer, Bucket> buckets = new ConcurrentHashMap<>();
     private final int bucketSize;
@@ -124,12 +123,6 @@ public class RoutingTable {
             // peer already exists in the Routing Table.
             Bucket.PeerInfo peer = bucket.getPeer(p);
             if (peer != null) {
-                return;
-            }
-
-            // peer's latency threshold is NOT acceptable
-            if (metrics.getLatency(p) > maxLatency) {
-                // Connection doesnt meet requirements, skip!
                 return;
             }
 

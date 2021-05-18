@@ -6,6 +6,7 @@ import java.io.ByteArrayOutputStream;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
+import dht.pb.Dht;
 import io.LogUtils;
 import io.ipfs.IPFS;
 import io.ipfs.core.ProtocolIssue;
@@ -14,6 +15,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.incubator.codec.quic.QuicStreamChannel;
+import io.netty.incubator.codec.quic.QuicStreamPriority;
 
 public class KadDhtSend extends SimpleChannelInboundHandler<ByteBuf> {
 
@@ -23,12 +25,14 @@ public class KadDhtSend extends SimpleChannelInboundHandler<ByteBuf> {
     private final DataHandler reader = new DataHandler(1000);
 
     @NonNull
-    private final CompletableFuture<QuicStreamChannel> stream;
+    private final CompletableFuture<Void> stream;
+    @NonNull
+    private final Dht.Message message;
 
-    public KadDhtSend(@NonNull CompletableFuture<QuicStreamChannel> stream) {
+    public KadDhtSend(@NonNull CompletableFuture<Void> stream, @NonNull Dht.Message message) {
         this.stream = stream;
+        this.message = message;
     }
-
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
@@ -50,7 +54,7 @@ public class KadDhtSend extends SimpleChannelInboundHandler<ByteBuf> {
         if (reader.isDone()) {
             for (String received : reader.getTokens()) {
                 if (Objects.equals(received, IPFS.KAD_DHT_PROTOCOL)) {
-                    stream.complete((QuicStreamChannel) ctx.channel());
+                    stream.complete(ctx.writeAndFlush(DataHandler.encode(message.toByteArray())).get());
                 } else if (!Objects.equals(received, IPFS.STREAM_PROTOCOL)) {
                     throw new ProtocolIssue();
                 }

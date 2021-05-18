@@ -1,4 +1,4 @@
-package io.crypto;
+package io.ipfs.crypto;
 
 import android.util.Pair;
 
@@ -16,48 +16,33 @@ import java.security.SecureRandom;
 
 import crypto.pb.Crypto;
 
+@SuppressWarnings("unused")
 public class Ed25519 {
 
-    public static Pair<PrivKey, PrivKey> generateEd25519KeyPair(
+    public static Pair<Ed25519PrivateKey, Ed25519PublicKey> generateEd25519KeyPair(
             SecureRandom random) {
 
-        Ed25519KeyPairGenerator var1 = new Ed25519KeyPairGenerator();
-        var1.init(new Ed25519KeyGenerationParameters(random));
-        AsymmetricCipherKeyPair keypair = var1.generateKeyPair();
+        Ed25519KeyPairGenerator keyPairGenerator = new Ed25519KeyPairGenerator();
+        keyPairGenerator.init(new Ed25519KeyGenerationParameters(random));
+        AsymmetricCipherKeyPair keypair = keyPairGenerator.generateKeyPair();
 
-        AsymmetricKeyParameter var10000 = keypair.getPrivate();
-        if (var10000 == null) {
+        AsymmetricKeyParameter aPrivate = keypair.getPrivate();
+        if (aPrivate == null) {
             throw new NullPointerException("null cannot be cast to non-null type org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters");
         } else {
-            Ed25519PrivateKeyParameters privateKey = (Ed25519PrivateKeyParameters) var10000;
-            Pair var8;
+            Ed25519PrivateKeyParameters privateKey = (Ed25519PrivateKeyParameters) aPrivate;
             Ed25519PrivateKey var10002 = new Ed25519PrivateKey(privateKey);
-            Ed25519PublicKey var10003;
-            AsymmetricKeyParameter var10005 = keypair.getPublic();
-            if (var10005 == null) {
+
+            AsymmetricKeyParameter keypairPublic = keypair.getPublic();
+            if (keypairPublic == null) {
                 throw new NullPointerException("null cannot be cast to non-null type org.bouncycastle.crypto.params.Ed25519PublicKeyParameters");
             } else {
-                var10003 = new Ed25519PublicKey(((Ed25519PublicKeyParameters) var10005));
-                var8 = new Pair(var10002, var10003);
-                return var8;
+                Ed25519PublicKey publicKey = new Ed25519PublicKey(((Ed25519PublicKeyParameters) keypairPublic));
+                return Pair.create(var10002, publicKey);
+
             }
         }
     }
-
-    // $FF: synthetic method
-    public static Pair generateEd25519KeyPair$default(SecureRandom var0, int var1, Object var2) {
-        if ((var1 & 1) != 0) {
-            var0 = new SecureRandom();
-        }
-
-        return generateEd25519KeyPair(var0);
-    }
-
-
-    public static final Pair generateEd25519KeyPair() {
-        return generateEd25519KeyPair$default(null, 1, null);
-    }
-
 
     public static PrivKey unmarshalEd25519PrivateKey(byte[] keyBytes) {
 
@@ -71,23 +56,23 @@ public class Ed25519 {
     }
 
     public static final class Ed25519PrivateKey extends PrivKey {
-        private final Ed25519PrivateKeyParameters priv;
+        private final Ed25519PrivateKeyParameters privateKeyParameters;
 
         public Ed25519PrivateKey(Ed25519PrivateKeyParameters priv) {
             super(Crypto.KeyType.Ed25519);
-            this.priv = priv;
+            this.privateKeyParameters = priv;
         }
 
 
         @NonNull
         public byte[] raw() {
-            return this.priv.getEncoded();
+            return this.privateKeyParameters.getEncoded();
         }
 
 
         public byte[] sign(byte[] data) {
             Ed25519Signer signer = new Ed25519Signer();
-            signer.init(true, this.priv);
+            signer.init(true, this.privateKeyParameters);
             signer.update(data, 0, data.length);
 
             return signer.generateSignature();
@@ -95,16 +80,17 @@ public class Ed25519 {
 
 
         public PubKey publicKey() {
-            Ed25519PublicKeyParameters var10002 = this.priv.generatePublicKey();
+            Ed25519PublicKeyParameters var10002 = this.privateKeyParameters.generatePublicKey();
 
             return new Ed25519PublicKey(var10002);
         }
 
         public int hashCode() {
-            return this.priv.hashCode();
+            return this.privateKeyParameters.hashCode();
         }
     }
 
+    @SuppressWarnings("unused")
     public static final class Ed25519PublicKey extends PubKey {
         private final Ed25519PublicKeyParameters pub;
 

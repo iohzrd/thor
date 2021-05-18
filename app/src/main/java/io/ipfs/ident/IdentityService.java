@@ -4,6 +4,7 @@ import androidx.annotation.NonNull;
 
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 import identify.pb.IdentifyOuterClass;
 import io.LogUtils;
@@ -12,6 +13,7 @@ import io.ipfs.core.Closeable;
 import io.ipfs.core.ClosedException;
 import io.ipfs.host.Connection;
 import io.ipfs.utils.DataHandler;
+import io.netty.handler.timeout.ReadTimeoutHandler;
 import io.netty.incubator.codec.quic.QuicChannel;
 import io.netty.incubator.codec.quic.QuicStreamChannel;
 import io.netty.incubator.codec.quic.QuicStreamPriority;
@@ -64,7 +66,7 @@ public class IdentityService {
                     new IdentityRequest(activation, request)).sync().get();
 
 
-            //streamChannel.pipeline().addFirst(new ReadTimeoutHandler(5, TimeUnit.SECONDS));
+            streamChannel.pipeline().addFirst(new ReadTimeoutHandler(10, TimeUnit.SECONDS));
 
             streamChannel.updatePriority(new QuicStreamPriority(IPFS.PRIORITY_HIGH, false));
 

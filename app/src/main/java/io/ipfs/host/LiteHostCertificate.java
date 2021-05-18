@@ -43,12 +43,12 @@ import java.util.Objects;
 import java.util.Random;
 
 import crypto.pb.Crypto;
-import io.crypto.Ecdsa;
-import io.crypto.Ed25519;
-import io.crypto.PrivKey;
-import io.crypto.PubKey;
-import io.crypto.Rsa;
-import io.crypto.Secp256k1;
+import io.ipfs.crypto.Ecdsa;
+import io.ipfs.crypto.Ed25519;
+import io.ipfs.crypto.PrivKey;
+import io.ipfs.crypto.PubKey;
+import io.ipfs.crypto.Rsa;
+import io.ipfs.crypto.Secp256k1;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.base64.Base64;

@@ -1,6 +1,7 @@
 package io.ipfs.dht;
 
 import android.annotation.SuppressLint;
+import android.util.Log;
 import android.util.Pair;
 
 import androidx.annotation.NonNull;
@@ -24,6 +25,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -285,7 +287,7 @@ public class KadDht implements Routing {
     }
 
     @Override
-    public void Provide(@NonNull Closeable ctx, @NonNull Cid cid) throws ClosedException {
+    public void Provide(@NonNull Closeable closeable, @NonNull Cid cid) throws ClosedException {
 
         if (!cid.Defined()) {
             throw new RuntimeException("invalid cid: undefined");
@@ -296,12 +298,12 @@ public class KadDht implements Routing {
         final Dht.Message mes = makeProvRecord(key);
 
         ConcurrentSkipListSet<PeerId> handled = new ConcurrentSkipListSet<>();
-        GetClosestPeers(ctx, key, addrInfo -> {
+        GetClosestPeers(closeable, key, addrInfo -> {
             PeerId peerId = addrInfo.getPeerId();
             if (!handled.contains(peerId)) {
                 handled.add(peerId);
                 ExecutorService service = Executors.newSingleThreadExecutor();
-                service.execute(() -> sendMessage(ctx, peerId, mes));
+                service.execute(() -> sendMessage(closeable, peerId, mes));
             }
         });
 
@@ -311,39 +313,26 @@ public class KadDht implements Routing {
     private void sendMessage(@NonNull Closeable closeable, @NonNull PeerId p,
                              @NonNull Dht.Message message) {
 
-
         try {
             Connection conn = host.connect(closeable, p, IPFS.CONNECT_TIMEOUT);
-
-            QuicChannel quicChannel = conn.channel();
-
-            CompletableFuture<QuicStreamChannel> stream = new CompletableFuture<>();
-            QuicStreamChannel streamChannel = quicChannel.createStream(QuicStreamType.BIDIRECTIONAL,
-                    new KadDhtSend(stream)).sync().get();
-
-            streamChannel.updatePriority(new QuicStreamPriority(IPFS.PRIORITY_HIGH, false));
-
-            streamChannel.writeAndFlush(DataHandler.writeToken(IPFS.STREAM_PROTOCOL));
-            streamChannel.writeAndFlush(DataHandler.writeToken(IPFS.KAD_DHT_PROTOCOL));
-
-
-            while (!stream.isDone()) {
-                if (closeable.isClosed()) {
-                    stream.cancel(true);
-                }
-            }
 
             if (closeable.isClosed()) {
                 throw new ClosedException();
             }
+            QuicChannel quicChannel = conn.channel();
 
-            QuicStreamChannel channel = stream.get();
+            CompletableFuture<Void> stream = new CompletableFuture<>();
+            QuicStreamChannel streamChannel = quicChannel.createStream(QuicStreamType.BIDIRECTIONAL,
+                    new KadDhtSend(stream, message)).sync().get();
 
-            channel.writeAndFlush(DataHandler.encode(message.toByteArray())).addListener(
-                    future -> channel.close().get());
+            streamChannel.updatePriority(new QuicStreamPriority(IPFS.PRIORITY_HIGH, false));
+            streamChannel.writeAndFlush(DataHandler.writeToken(IPFS.STREAM_PROTOCOL));
+            streamChannel.writeAndFlush(DataHandler.writeToken(IPFS.KAD_DHT_PROTOCOL));
 
+            stream.get(IPFS.CONNECT_TIMEOUT, TimeUnit.SECONDS);
+            streamChannel.close().get();
 
-        } catch (ClosedException | ConnectionIssue ignore) {
+        } catch (ClosedException | ConnectionIssue | TimeoutException ignore) {
             // ignore
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);

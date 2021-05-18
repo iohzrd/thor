@@ -15,8 +15,8 @@ import java.security.KeyPairGenerator;
 import java.security.cert.X509Certificate;
 
 import io.LogUtils;
-import io.crypto.PubKey;
-import io.crypto.Rsa;
+import io.ipfs.crypto.PubKey;
+import io.ipfs.crypto.Rsa;
 import io.ipfs.host.LiteHostCertificate;
 
 import static junit.framework.TestCase.assertNotNull;

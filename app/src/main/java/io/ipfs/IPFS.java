@@ -43,13 +43,13 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.LogUtils;
-import io.crypto.PrivKey;
-import io.crypto.Rsa;
 import io.ipfs.cid.Cid;
 import io.ipfs.core.Closeable;
 import io.ipfs.core.ClosedException;
 import io.ipfs.core.ConnectionIssue;
 import io.ipfs.core.TimeoutCloseable;
+import io.ipfs.crypto.PrivKey;
+import io.ipfs.crypto.Rsa;
 import io.ipfs.dht.Routing;
 import io.ipfs.format.BlockStore;
 import io.ipfs.format.Node;
