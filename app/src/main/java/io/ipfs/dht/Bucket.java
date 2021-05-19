@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import io.LogUtils;
+import io.ipfs.host.Metrics;
 import io.ipfs.host.PeerId;
 
 public class Bucket {
@@ -19,22 +20,31 @@ public class Bucket {
         return peers.get(p);
     }
 
+
     @Nullable
-    public PeerInfo weakest(@NonNull MinFunc func) {
+    public PeerId weakest(@NonNull Metrics metrics) {
         if (size() == 0) {
             return null;
         }
-        PeerInfo minVal = null;
+        long latency = 0;
+        PeerId found = null;
         for (Map.Entry<PeerId, PeerInfo> entry : peers.entrySet()) {
-            if (minVal == null) {
-                minVal = entry.getValue();
-            } else {
-                if (func.less(minVal, entry.getValue())) {
-                    minVal = entry.getValue();
+            PeerInfo info = entry.getValue();
+            PeerId peerId = entry.getKey();
+            if (info.isReplaceable()) {
+                long tmp = metrics.getLatency(peerId);
+                if (tmp >= latency) {
+                    latency = tmp;
+                    found = peerId;
+                }
+
+                // shortcut
+                if (tmp == Long.MAX_VALUE) {
+                    break;
                 }
             }
         }
-        return minVal;
+        return found;
     }
 
     public synchronized Bucket split(int cpl, @NonNull ID target) {

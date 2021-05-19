@@ -26,7 +26,7 @@ public class KadDhtRequest extends SimpleChannelInboundHandler<ByteBuf> {
     private final CompletableFuture<Void> activation;
     @NonNull
     private final MessageLite messageLite;
-    private DataHandler reader = new DataHandler(25000);
+    private DataHandler reader = new DataHandler(IPFS.PROTOCOL_READER_LIMIT);
 
     public KadDhtRequest(@NonNull CompletableFuture<Void> activation,
                          @NonNull CompletableFuture<Dht.Message> request,
@@ -73,7 +73,7 @@ public class KadDhtRequest extends SimpleChannelInboundHandler<ByteBuf> {
                 request.complete(Dht.Message.parseFrom(message));
                 ctx.close().get();
             }
-            reader = new DataHandler(25000);
+            reader = new DataHandler(IPFS.CHUNK_SIZE);
         } else {
             LogUtils.debug(TAG, "iteration " + reader.hasRead() + " "
                     + reader.expectedBytes() + " " + ctx.name() + " "

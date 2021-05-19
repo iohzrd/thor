@@ -72,19 +72,17 @@ public class StreamHandler {
     }
 
 
-    protected void doClose(long connection) throws Exception {
+    protected void doClose(long connection) {
+        try {
+            final ByteBuf reason = Unpooled.EMPTY_BUFFER;
+            Quiche.throwIfError(Quiche.quiche_conn_close(connection, false, 0,
+                    Quiche.memoryAddress(reason) + reason.readerIndex(), reason.readableBytes()));
 
-
-        final boolean app;
-        final int err;
-        final ByteBuf reason = Unpooled.EMPTY_BUFFER;
-        app = false;
-        err = 0;
-
-        Quiche.throwIfError(Quiche.quiche_conn_close(connection, app, err,
-                Quiche.memoryAddress(reason) + reason.readerIndex(), reason.readableBytes()));
-
-
+            Quiche.quiche_conn_free(connection); // ???
+            LogUtils.error(TAG, "success closing ?");
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable);
+        }
     }
 
     protected void channelRead0(QuicChannel quicChannel, long streamId, ByteBuf msg) throws Exception {
@@ -152,7 +150,6 @@ public class StreamHandler {
                             if (abort) {
                                 QuicheWrapper.streamSendFin(connection, streamId);
                                 close(streamId);
-                                quicChannel.close().get();
                             }
                             break;
                         case IPFS.PUSH_PROTOCOL:

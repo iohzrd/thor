@@ -14,4 +14,6 @@ public interface Connection {
 
     QuicChannel channel();
 
+    void disconnect();
+
 }

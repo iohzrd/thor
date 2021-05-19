@@ -182,15 +182,11 @@ public class Query {
 
     private void queryPeer(@NonNull Closeable ctx, @NonNull PeerId queryPeer) throws ClosedException {
 
-
         try {
-
             if (ctx.isClosed()) {
                 throw new ClosedException();
             }
-
             List<AddrInfo> newPeers = queryFn.query(ctx, queryPeer);
-
 
             // query successful, try to add to routing table
             dht.peerFound(queryPeer, true);

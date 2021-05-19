@@ -86,10 +86,9 @@ import io.netty.incubator.codec.quic.QuicStreamType;
 import threads.thor.core.blocks.BLOCKS;
 
 public class IPFS {
-    // TimeFormatIpfs is the format ipfs uses to represent time in string form
-    // RFC3339Nano = "2006-01-02T15:04:05.999999999Z07:00"
+
+    public static final String TimeFormatIpfs = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSS'Z'";  // RFC3339Nano = "2006-01-02T15:04:05.999999999Z07:00"
     public static final String RELAY_RENDEZVOUS = "/libp2p/relay";
-    public static final String TimeFormatIpfs = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSS'Z'";
     public static final String RELAY_PROTOCOL = "/libp2p/circuit/relay/0.1.0";
     public static final String KAD_DHT_PROTOCOL = "/ipfs/kad/1.0.0";
     public static final String PUSH_PROTOCOL = "/ipfs/push/1.0.0";
@@ -97,26 +96,41 @@ public class IPFS {
     public static final String BIT_SWAP_PROTOCOL = "/ipfs/bitswap/1.2.0";
     public static final String IDENTITY_PROTOCOL = "/ipfs/id/1.0.0";
     public static final String INDEX_HTML = "index.html";
+    public static final String AGENT = "/go-ipfs/0.9.0/thor"; // todo rename
+    public static final String PROTOCOL_VERSION = "ipfs/0.1.0";
+    public static final String IPFS_PATH = "/ipfs/";
+    public static final String IPNS_PATH = "/ipns/";
+    public static final String P2P_PATH = "/p2p/";
+    public static final String LIB2P_DNS = "bootstrap.libp2p.io"; // IPFS BOOTSTRAP DNS
+    public static final String NA = "na";
+    public static final String LS = "ls";
+    public static final String APRN = "libp2p";
+
+
     public static final int PRELOAD = 25;
     public static final int PRELOAD_DIST = 5;
-    public static final String AGENT = "/go-ipfs/0.9.0/thor"; // todo rename
-    public static final String PROTOCOL_VERSION = "ipfs/0.1.0";  // todo check again
+    public static final int CHUNK_SIZE = 262144;
+    public static final int BLOCK_SIZE_LIMIT = 1048576; // 1 MB
+    public static final long RESOLVE_MAX_TIME = 30000; // 30 sec
+    public static final boolean SEND_DONT_HAVES = false;
+    public static final boolean BITSWAP_ENGINE_ACTIVE = false;
+    public static final int PROTOCOL_READER_LIMIT = 1000;
     public static final int TIMEOUT_BOOTSTRAP = 10;
     public static final int LOW_WATER = 50;
     public static final int HIGH_WATER = 150;
     public static final int GRACE_PERIOD = 10;
     public static final int MIN_PEERS = 10;
-    public static final long RESOLVE_MAX_TIME = 30000; // 30 sec
+    private static final String SWARM_PORT_KEY = "swarmPortKey";
+    private static final String PRIVATE_KEY = "privateKey";
     public static final int RESOLVE_TIMEOUT = 1000; // 1 sec
     public static final long WANTS_WAIT_TIMEOUT = 2000; // 2 sec
-    public static final int CHUNK_SIZE = 262144;
-
-    public static final int BLOCK_SIZE_LIMIT = 1048576; // 1 MB
-    public static final String IPFS_PATH = "/ipfs/";
-    public static final String IPNS_PATH = "/ipns/";
-    public static final String P2P_PATH = "/p2p/";
-
+    private static final String PUBLIC_KEY = "publicKey";
     public static final boolean EVALUATE_PEER = false;
+    private static final String CONCURRENCY_KEY = "concurrencyKey";
+    private static final String TAG = IPFS.class.getSimpleName();
+    private static final String PREF_KEY = IPFS.TAG;
+    private static final boolean CONNECTION_SERVICE_ENABLED = false;
+
     public static final short PRIORITY_URGENT = 1;
     public static final short PRIORITY_HIGH = 5;
     public static final short PRIORITY_NORMAL = 10;
@@ -128,7 +142,6 @@ public class IPFS {
             "/ip4/147.75.195.153/tcp/4001/p2p/QmW9m57aiBDHAkKj9nmFSEn7ZqrcF1fZS4bipsTCHburei",// default relay  libp2p
             "/ip4/147.75.70.221/tcp/4001/p2p/Qme8g49gm3q4Acp7xWBKg3nAa9fxZ1YmyDJdyGgoG6LsXh",// default relay  libp2p
 
-
             "/ip4/104.131.131.82/tcp/4001/p2p/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ", // mars.i.ipfs.io
 
             "/dnsaddr/bootstrap.libp2p.io/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN", // default dht peer
@@ -137,17 +150,11 @@ public class IPFS {
             "/dnsaddr/bootstrap.libp2p.io/p2p/QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt" // default dht peer
 
     ));
-    // IPFS BOOTSTRAP DNS
-    public static final String LIB2P_DNS = "bootstrap.libp2p.io";
-    public static final boolean SEND_DONT_HAVES = false;
-    public static final boolean BITSWAP_ENGINE_ACTIVE = false;
+    private static final boolean SERVER_ACTIVE = false;
     public static final int KAD_DHT_BUCKET_SIZE = 20;
-    // The number of peers closest to a target that must have responded for a query path to terminate
     public static final int KAD_DHT_BETA = 20;
-    public static final String NA = "na";
-    public static final String LS = "ls";
     public static final int CONNECT_TIMEOUT = 5;
-    public static final String APRN = "libp2p";
+
     // rough estimates on expected sizes
     private static final int roughLinkBlockSize = 1 << 13; // 8KB
     private static final int roughLinkSize = 34 + 8 + 5;// sha256 multihash + size + no name + protobuf framing
@@ -165,23 +172,13 @@ public class IPFS {
     //                            = ( 8192 / 47 )
     //                            = (approximately) 174
     public static final int LINKS_PER_BLOCK = roughLinkBlockSize / roughLinkSize;
-    private static final String SWARM_PORT_KEY = "swarmPortKey";
-    private static final String PRIVATE_KEY = "privateKey";
-    private static final String PUBLIC_KEY = "publicKey";
-    private static final String CONCURRENCY_KEY = "concurrencyKey";
-    private static final String TAG = IPFS.class.getSimpleName();
-    private static final String PREF_KEY = IPFS.TAG;
-    private static final boolean CONNECTION_SERVICE_ENABLED = false;
-
-    private static final boolean SERVER_ACTIVE = false;
-    public static LiteHost HOST;
+    public static LiteHost HOST; // TODO
     private static IPFS INSTANCE = null;
 
     @NonNull
     private final BLOCKS blocks;
     @NonNull
     private final LiteHost host;
-
     @NonNull
     private final PrivKey privateKey;
     private final int port;
@@ -1093,11 +1090,7 @@ public class IPFS {
 
     public void reset() {
         try {
-
             host.getExchange().reset();
-
-            host.trimConnections();
-
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         }

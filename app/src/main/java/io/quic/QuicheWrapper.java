@@ -23,6 +23,10 @@ import io.netty.util.ReferenceCountUtil;
 public class QuicheWrapper {
     private static final String TAG = QuicheWrapper.class.getSimpleName();
 
+    public static boolean isClosed(long connection) {
+        return Quiche.quiche_conn_is_closed(connection);
+    }
+
     public static QuicheQuicConnectionStats getStats(long connection){
         try {
             final long[] stats = Quiche.quiche_conn_stats(connection);

@@ -130,6 +130,7 @@ public class BitSwap implements Interface {
 
         long time = System.currentTimeMillis();
         boolean success = false;
+        network.protectPeer(peer);
         try {
             Connection conn = network.connect(closeable, peer, IPFS.CONNECT_TIMEOUT);
 
@@ -143,6 +144,7 @@ public class BitSwap implements Interface {
         } catch (ClosedException | ConnectionIssue exception) {
             throw exception;
         } catch (Throwable throwable) {
+            network.unprotectPeer(peer);
             Throwable cause = throwable.getCause();
             if (cause != null) {
                 if (cause instanceof ProtocolIssue) {

@@ -3,7 +3,6 @@ package io.ipfs.host;
 import androidx.annotation.NonNull;
 
 import java.io.ByteArrayOutputStream;
-import java.util.Objects;
 
 import identify.pb.IdentifyOuterClass;
 import io.LogUtils;
@@ -14,10 +13,10 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.incubator.codec.quic.QuicChannel;
 
-public class WelcomeHandler extends SimpleChannelInboundHandler<Object> {
+public class WelcomeHandler extends SimpleChannelInboundHandler<ByteBuf> {
     private static final String TAG = WelcomeHandler.class.getSimpleName();
     private final LiteHost host;
-    private final DataHandler reader = new DataHandler(IPFS.BLOCK_SIZE_LIMIT);
+    private final DataHandler reader = new DataHandler(IPFS.PROTOCOL_READER_LIMIT);
 
 
     public WelcomeHandler(@NonNull LiteHost host) {
@@ -33,12 +32,10 @@ public class WelcomeHandler extends SimpleChannelInboundHandler<Object> {
 
 
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, Object value) throws Exception {
+    protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
 
         QuicChannel quicChannel = (QuicChannel) ctx.channel().parent();
 
-        ByteBuf msg = (ByteBuf) value;
-        Objects.requireNonNull(msg);
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         msg.readBytes(out, msg.readableBytes());
@@ -66,7 +63,7 @@ public class WelcomeHandler extends SimpleChannelInboundHandler<Object> {
                 }
             }
         } else {
-            LogUtils.debug(TAG, "iteration listener " + data.length + " "
+            LogUtils.error(TAG, "iteration listener " + data.length + " "
                     + reader.expectedBytes() + " " + ctx.name() + " "
                     + ctx.channel().remoteAddress());
         }

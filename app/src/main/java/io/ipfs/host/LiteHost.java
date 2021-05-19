@@ -154,8 +154,6 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
     @NonNull
     private final LiteHostCertificate selfSignedCertificate;
     @NonNull
-    private final QuicSslContext sslClientContext;
-    @NonNull
     private final Set<PeerId> swarm = ConcurrentHashMap.newKeySet();
     @NonNull
     public List<ConnectionHandler> handlers = new ArrayList<>();
@@ -164,7 +162,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
     @Nullable
     private Channel server;
     private InetAddress localAddress;
-
+    private Channel client;
     public LiteHost(@NonNull LiteHostCertificate selfSignedCertificate, @NonNull PrivKey privKey,
                     @NonNull BlockStore blockstore, int port, int alpha) {
         this.selfSignedCertificate = selfSignedCertificate;
@@ -179,7 +177,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
         this.exchange = BitSwap.create(this, blockstore);
 
 
-        sslClientContext = QuicSslContextBuilder.forClient(
+        QuicSslContext sslClientContext = QuicSslContextBuilder.forClient(
                 selfSignedCertificate.privateKey(), null, selfSignedCertificate.certificate()).
                 trustManager(new SimpleTrustManagerFactory() {
                     @Override
@@ -198,6 +196,29 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
                     }
                 }).
                 applicationProtocols(IPFS.APRN).build();
+
+
+        ChannelHandler codec = new QuicClientCodecBuilder()
+                .sslContext(sslClientContext)
+                .maxIdleTimeout(IPFS.GRACE_PERIOD, TimeUnit.SECONDS)
+                .initialMaxData(IPFS.BLOCK_SIZE_LIMIT)
+                .initialMaxStreamDataBidirectionalLocal(IPFS.BLOCK_SIZE_LIMIT)
+                .initialMaxStreamDataBidirectionalRemote(IPFS.BLOCK_SIZE_LIMIT)
+                .initialMaxStreamsBidirectional(1000)
+                .initialMaxStreamsUnidirectional(1000)
+                .build();
+
+
+        Bootstrap bs = new Bootstrap();
+
+        try {
+            client = bs.group(group)
+                    .channel(NioDatagramChannel.class)
+                    .handler(codec)
+                    .bind(port).sync().channel();
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable);
+        }
 
     }
 
@@ -596,9 +617,16 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
     private void removeConnection(@NonNull Connection conn) {
         try {
             LogUtils.verbose(TAG, "Remove Connection " + conn.remoteId().toBase58());
+
             connections.remove(conn.remoteId());
 
-            conn.channel().parent().close().get();
+            /* sometimes it worked
+             long addr = conn.channel().connection();
+            if(QuicheWrapper.isClosed(addr)){
+                LogUtils.error(TAG, "Connection closed !!!");
+            } else {
+                LogUtils.error(TAG, "Connection not closed !!!");
+            }*/
 
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
@@ -694,13 +722,17 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
 
 
     public long getLatency(@NonNull PeerId peerId) {
-        Connection conn = connections.get(peerId);
-        if (conn != null) {
-            QuicheQuicConnectionStats stats = QuicheWrapper.getStats(
-                    conn.channel().connection());
-            if (stats != null) {
-                return stats.deliveryRate();
+        try {
+            Connection conn = connections.get(peerId);
+            if (conn != null) {
+                QuicheQuicConnectionStats stats = QuicheWrapper.getStats(
+                        conn.channel().connection());
+                if (stats != null) {
+                    return stats.deliveryRate();
+                }
             }
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable);
         }
         return Long.MAX_VALUE;
     }
@@ -716,51 +748,6 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
     public boolean isProtected(@NonNull PeerId peerId) {
         return tags.contains(peerId);
     }
-
-    public void trimConnections() {
-
-        int numConns = numConnections();
-        LogUtils.verbose(TAG, "trimConnections (before) " + numConns);
-
-        int highWater = IPFS.HIGH_WATER;
-        if (numConns > highWater) {
-
-            int lowWater = IPFS.LOW_WATER;
-            int hasToBeClosed = numConns - lowWater;
-
-            // TODO maybe sort connections how fast they are (the fastest will not be closed)
-
-            for (Connection connection : getConnections()) {
-
-                try {
-                    QuicheQuicConnectionStats stats = QuicheWrapper.getStats(
-                            connection.channel().connection());
-                    if (stats != null) {
-                        LogUtils.verbose(TAG, "trimConnections (stats) " + stats.toString());
-                    }
-
-                } catch (Throwable throwable) {
-                    LogUtils.error(TAG, throwable);
-                }
-
-
-                if (hasToBeClosed > 0) {
-                    try {
-                        PeerId peerId = connection.remoteId();
-                        if (!isProtected(peerId)) {
-
-                            connection.close().get();
-                            hasToBeClosed--;
-                        }
-                    } catch (Throwable throwable) {
-                        LogUtils.error(TAG, throwable);
-                    }
-                }
-            }
-        }
-        LogUtils.verbose(TAG, "trimConnections (after) " + numConnections());
-    }
-
 
     public int numConnections() {
         return getConnections().size();
@@ -780,24 +767,6 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
         }
         int port = multiaddr.getPort();
 
-        ChannelHandler codec = new QuicClientCodecBuilder()
-                .sslContext(sslClientContext)
-                .maxIdleTimeout(IPFS.GRACE_PERIOD, TimeUnit.SECONDS)
-                .initialMaxData(IPFS.BLOCK_SIZE_LIMIT)
-                .initialMaxStreamDataBidirectionalLocal(IPFS.BLOCK_SIZE_LIMIT)
-                .initialMaxStreamDataBidirectionalRemote(IPFS.BLOCK_SIZE_LIMIT)
-                .initialMaxStreamsBidirectional(100)
-                .initialMaxStreamsUnidirectional(100)
-                .build();
-
-
-        Bootstrap bs = new Bootstrap();
-
-        Channel client = bs.group(group)
-                .channel(NioDatagramChannel.class)
-                .handler(codec)
-                .bind(0).sync().channel();
-
 
         return (Promise<QuicChannel>) QuicChannel.newBootstrap(client)
                 .attr(PEER_KEY, peerId)
@@ -808,12 +777,11 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
 
     }
 
-
     public boolean swarmContains(@NonNull PeerId peerId) {
         return swarm.contains(peerId);
     }
 
-    public static class LiteConnection implements Connection {
+    public class LiteConnection implements Connection {
         private final QuicChannel channel;
         private final Multiaddr multiaddr;
 
@@ -830,6 +798,17 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
         @Override
         public QuicChannel channel() {
             return channel;
+        }
+
+        @Override
+        public void disconnect() {
+            try {
+                if (!isProtected(remoteId())) {
+                    channel.disconnect();
+                }
+            } catch (Exception exception) {
+                LogUtils.error(TAG, exception);
+            }
         }
 
 

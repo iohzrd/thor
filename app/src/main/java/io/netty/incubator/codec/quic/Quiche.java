@@ -273,7 +273,7 @@ public final class Quiche {
     /**
      * See <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#L373">quiche_conn_free</a>.
      */
-    static native void quiche_conn_free(long connAddr);
+    public static native void quiche_conn_free(long connAddr);
 
     /**
      * See <a href="https://github.com/cloudflare/quiche/blob/0.7.0/include/quiche.h#L330">
@@ -349,7 +349,7 @@ public final class Quiche {
      * See
      * <a href="https://github.com/cloudflare/quiche/blob/0.6.0/include/quiche.h#L312">quiche_conn_is_closed</a>.
      */
-    static native boolean quiche_conn_is_closed(long connAddr);
+    public static native boolean quiche_conn_is_closed(long connAddr);
 
     /**
      * See

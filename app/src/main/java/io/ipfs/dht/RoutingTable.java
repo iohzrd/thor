@@ -114,7 +114,7 @@ public class RoutingTable {
 
         synchronized (p.toBase58().intern()) {
 
-            LogUtils.info(TAG, buckets.toString());
+            LogUtils.verbose(TAG, buckets.toString());
             int bucketID = bucketIdForPeer(p);
             Bucket bucket = getBucket(bucketID);
 
@@ -137,27 +137,11 @@ public class RoutingTable {
             // in that bucket which is replaceable.
             // we don't really need a stable sort here as it doesn't matter which peer we evict
             // as long as it's a replaceable peer.
-            Bucket.PeerInfo replaceablePeer = bucket.weakest(((p1, p2) -> {
-                boolean result;
-                if (p1.isReplaceable()) {
-                    if (p2.isReplaceable()) {
-                        result = metrics.getLatency(p1.getPeerId()) < metrics.getLatency(p2.getPeerId());
-                    } else {
-                        result = true;
-                    }
-                } else {
-                    if (p2.isReplaceable()) {
-                        result = false;
-                    } else {
-                        result = metrics.getLatency(p1.getPeerId()) < metrics.getLatency(p2.getPeerId());
-                    }
-                }
-                return result;
-            }));
+            PeerId replaceablePeer = bucket.weakest(metrics);
 
-            if (replaceablePeer != null && replaceablePeer.isReplaceable()) {
+            if (replaceablePeer != null) {
                 // let's evict it and add the new peer
-                if (removePeer(replaceablePeer.getPeerId())) {
+                if (removePeer(replaceablePeer)) {
                     bucket.addPeer(p, isReplaceable);
                     return;
                 }

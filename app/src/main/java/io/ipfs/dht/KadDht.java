@@ -197,7 +197,7 @@ public class KadDht implements Routing {
                         pms.toString() + " get-message " + rimes.toString());
             }
             LogUtils.verbose(TAG, "PutValue Success to " + p.toBase58());
-        } catch (ClosedException | ConnectionIssue ignore) {
+        } catch (ClosedException | ConnectionIssue | TimeoutIssue ignore) {
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         }
@@ -311,9 +311,10 @@ public class KadDht implements Routing {
 
     private void sendMessage(@NonNull Closeable closeable, @NonNull PeerId p,
                              @NonNull Dht.Message message) {
-
+        long time = System.currentTimeMillis();
+        Connection conn = null;
         try {
-            Connection conn = host.connect(closeable, p, IPFS.CONNECT_TIMEOUT);
+            conn = host.connect(closeable, p, IPFS.CONNECT_TIMEOUT);
 
             if (closeable.isClosed()) {
                 throw new ClosedException();
@@ -335,6 +336,11 @@ public class KadDht implements Routing {
             // ignore
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
+        } finally {
+            LogUtils.debug(TAG, "Send took " + (System.currentTimeMillis() - time));
+            if (conn != null) {
+                conn.disconnect();
+            }
         }
     }
 
@@ -343,13 +349,13 @@ public class KadDht implements Routing {
             throws ClosedException, ProtocolIssue, TimeoutIssue, ConnectionIssue {
 
 
-        try {
+        long time = System.currentTimeMillis();
+        Connection conn = null;
 
-            Connection conn = host.connect(closeable, p, IPFS.CONNECT_TIMEOUT);
+        try {
+            conn = host.connect(closeable, p, IPFS.CONNECT_TIMEOUT);
 
             QuicChannel quicChannel = conn.channel();
-            long time = System.currentTimeMillis();
-
 
             CompletableFuture<Dht.Message> request = request(quicChannel,
                     message, IPFS.PRIORITY_HIGH);
@@ -365,7 +371,6 @@ public class KadDht implements Routing {
             }
 
             Dht.Message msg = request.get();
-            LogUtils.info(TAG, "Request took " + (System.currentTimeMillis() - time));
             Objects.requireNonNull(msg);
             return msg;
 
@@ -387,6 +392,12 @@ public class KadDht implements Routing {
             }
             LogUtils.error(TAG, throwable);
             throw new RuntimeException(throwable);
+        } finally {
+            LogUtils.debug(TAG, "Request took " + (System.currentTimeMillis() - time));
+
+            if (conn != null) {
+                conn.disconnect();
+            }
         }
     }
 
@@ -402,7 +413,7 @@ public class KadDht implements Routing {
                     new KadDhtRequest(activation, request, messageLite)).sync().get();
 
             // TODO find right value
-            streamChannel.pipeline().addFirst(new ReadTimeoutHandler(15, TimeUnit.SECONDS));
+            streamChannel.pipeline().addFirst(new ReadTimeoutHandler(10, TimeUnit.SECONDS));
 
             streamChannel.updatePriority(new QuicStreamPriority(priority, false));
 
