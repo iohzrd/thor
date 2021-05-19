@@ -1161,6 +1161,9 @@ public class IPFS {
     }
 
 
+    public Set<Multiaddr> getAddresses(@NonNull PeerId peerId){
+        return host.getAddresses(peerId);
+    }
     public void connected(@NonNull PeerId peerId) {
         if (host.swarmContains(peerId)) {
             if (connector != null) {
@@ -1184,7 +1187,7 @@ public class IPFS {
         try {
             host.protectPeer(peerId);
             if (multiAddress.startsWith(IPFS.P2P_PATH)) {
-                Set<Multiaddr> addrInfo = host.getAddresses(peerId);
+                Set<Multiaddr> addrInfo = getAddresses(peerId);
                 if (addrInfo.isEmpty()) {
                     return host.getRouting().FindPeer(closeable, peerId);
                 } else {

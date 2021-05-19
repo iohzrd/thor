@@ -36,12 +36,16 @@ public class IpfsRelayTest {
     public void test_relay_canHop() {
         IPFS ipfs = TestEnv.getTestInstance(context);
         long start = System.currentTimeMillis();
-        PeerId relay1 = PeerId.fromBase58("QmW9m57aiBDHAkKj9nmFSEn7ZqrcF1fZS4bipsTCHburei");
+
+
+        PeerId relay = PeerId.fromBase58("QmW9m57aiBDHAkKj9nmFSEn7ZqrcF1fZS4bipsTCHburei");
+        boolean result = ipfs.swarmConnect(IPFS.P2P_PATH + relay.toBase58(),
+                IPFS.CONNECT_TIMEOUT);
+        assertTrue(result);
+
         try {
-
-            boolean result = ipfs.canHop(relay1, new TimeoutCloseable(10));
+            result = ipfs.canHop(relay, new TimeoutCloseable(10));
             assertTrue(result);
-
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
             fail();
@@ -50,12 +54,16 @@ public class IpfsRelayTest {
         }
 
         start = System.currentTimeMillis();
-        PeerId relay2 = PeerId.fromBase58("Qme8g49gm3q4Acp7xWBKg3nAa9fxZ1YmyDJdyGgoG6LsXh");
+        relay = PeerId.fromBase58("Qme8g49gm3q4Acp7xWBKg3nAa9fxZ1YmyDJdyGgoG6LsXh");
+
+        result = ipfs.swarmConnect(IPFS.P2P_PATH + relay.toBase58(),
+                IPFS.CONNECT_TIMEOUT);
+        assertTrue(result);
+
+
         try {
-
-            boolean result = ipfs.canHop(relay2, new TimeoutCloseable(10));
+            result = ipfs.canHop(relay, new TimeoutCloseable(10));
             assertTrue(result);
-
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
             fail();

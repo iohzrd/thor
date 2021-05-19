@@ -127,13 +127,13 @@ public class KadDht implements Routing {
     }
 
 
-    private void GetClosestPeers(@NonNull Closeable ctx, @NonNull byte[] key,
+    private void GetClosestPeers(@NonNull Closeable closeable, @NonNull byte[] key,
                                  @NonNull Channel channel) throws ClosedException {
         if (key.length == 0) {
             throw new RuntimeException("can't lookup empty key");
         }
 
-        runLookupWithFollowup(ctx, key, (ctx1, p) -> {
+        runLookupWithFollowup(closeable, key, (ctx1, p) -> {
 
             Dht.Message pms = findPeerSingle(ctx1, p, key);
 
@@ -144,7 +144,7 @@ public class KadDht implements Routing {
             }
 
             return peers;
-        }, ctx::isClosed);
+        }, closeable::isClosed);
 
 
     }

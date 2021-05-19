@@ -28,7 +28,7 @@ import static org.junit.Assert.assertFalse;
 public class IpfsFindPeer {
     private static final String TAG = IpfsFindPeer.class.getSimpleName();
 
-    private static final String DUMMY_PID = "QmVLnkyetpt7JNpjLmZX21q9F8ZMnhBts3Q53RcAGxWH6V";
+
 
     private static Context context;
 
@@ -38,98 +38,45 @@ public class IpfsFindPeer {
     }
 
 
-    @Test
-    public void swarm_connect() {
-
-        IPFS ipfs = TestEnv.getTestInstance(context);
-        String pc = "QmRxoQNy1gNGMM1746Tw8UBNBF8axuyGkzcqb2LYFzwuXd";
-
-        // TIMEOUT not working
-        boolean result = ipfs.swarmConnect(IPFS.P2P_PATH + pc, 6);
-        assertFalse(result);
-
-    }
-
-
-    //@Test
-    public void test_local_peer() {
-        IPFS ipfs = TestEnv.getTestInstance(context);
-
-        String local = "Qmf5TsSK8dVm3btzuUrnvS8wfUW6e2vMxMRkzV9rsG6eDa";
-
-
-        boolean result = ipfs.swarmConnect(IPFS.P2P_PATH + local, 60);
-
-        assertTrue(result);
-
-    }
 
     @Test
-    public void test_swarm_connect() {
+    public void find_peer_test0() {
+
         IPFS ipfs = TestEnv.getTestInstance(context);
 
-        PeerId relay = ipfs.getPeerId("QmchgNzyUFyf2wpfDMmpGxMKHA3PkC1f3H2wUgbs21vXoz");
+        PeerId relay = PeerId.fromBase58("QmW9m57aiBDHAkKj9nmFSEn7ZqrcF1fZS4bipsTCHburei");
 
+        boolean result = ipfs.swarmConnect(IPFS.P2P_PATH + relay.toBase58(),
+                IPFS.CONNECT_TIMEOUT * 10);
+        LogUtils.debug(TAG, relay.toBase58() + " " + result);
 
-        boolean connected = ipfs.isConnected(relay);
-        assertFalse(connected);
+        Set<Multiaddr> addresses = ipfs.getAddresses(relay);
+        assertFalse(addresses.isEmpty());
 
-        LogUtils.debug(TAG, "Stage 1");
-
-        boolean result = ipfs.swarmConnect(IPFS.P2P_PATH + relay, 1);
-        assertFalse(result);
-
-        LogUtils.debug(TAG, "Stage 2");
-
-        result = ipfs.swarmConnect(IPFS.P2P_PATH + relay, 10);
-        assertFalse(result);
-
-        LogUtils.debug(TAG, "Stage 3");
-
-        relay = ipfs.getPeerId(DUMMY_PID);
-        result = ipfs.swarmConnect(IPFS.P2P_PATH + relay, 10);
-        assertFalse(result);
-
-        LogUtils.debug(TAG, "Stage 4");
-
-    }
-
-
-    @Test
-    public void test_print_swarm_peers() {
-        IPFS ipfs = TestEnv.getTestInstance(context);
-
-
-        Set<PeerId> peers = ipfs.connectedPeers();
-
-        assertNotNull(peers);
-        LogUtils.debug(TAG, "Peers : " + peers.size());
-        for (PeerId peerId : peers) {
-
-            try {
-                PeerInfo peerInfo = ipfs.getPeerInfo(peerId, new TimeoutCloseable(10));
-
-
-                LogUtils.debug(TAG, peerInfo.toString());
-                assertNotNull(peerInfo.getAddress());
-                assertNotNull(peerInfo.getAgent());
-                assertNotNull(peerInfo.getPeerId());
-
-                Multiaddr observed = peerInfo.getObserved();
-                if (observed != null) {
-                    LogUtils.debug(TAG, observed.toString());
-                }
-
-            } catch (Throwable throwable) {
-                LogUtils.debug(TAG, "" + throwable.getClass().getName());
-            }
-
-            long time = System.currentTimeMillis();
-            LogUtils.debug(TAG, "isConnected : " + ipfs.isConnected(peerId)
-                    + " " + (System.currentTimeMillis() - time));
+        for (Multiaddr addr:addresses) {
+            LogUtils.debug(TAG, addr.toString());
         }
 
+
     }
 
+    //@Test
+    public void find_peer_text1() {
+
+        IPFS ipfs = TestEnv.getTestInstance(context);
+
+        String key = "k2k4r8jllj4k33jxoa4vaeleqkrwu8b7tqz7tgczhptbfkhqr2i280fm";
+
+        IPFS.ResolvedName res = ipfs.resolveName(key, 0, new TimeoutCloseable(30));
+        assertNotNull(res);
+
+        LogUtils.debug(TAG, res.toString());
+
+
+        boolean result = ipfs.swarmConnect(IPFS.P2P_PATH + res.getPeerId().toBase58(),
+                IPFS.CONNECT_TIMEOUT);
+        LogUtils.debug(TAG, res.getPeerId().toBase58() + " " + result);
+
+    }
 
 }
