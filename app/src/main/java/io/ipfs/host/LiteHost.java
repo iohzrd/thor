@@ -742,22 +742,6 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork {
     }
 
 
-    public long getLatency(@NonNull PeerId peerId) {
-        try {
-            Connection conn = connections.get(peerId);
-            if (conn != null) {
-                QuicheQuicConnectionStats stats = QuicheWrapper.getStats(
-                        conn.channel().connection());
-                if (stats != null) {
-                    return stats.deliveryRate();
-                }
-            }
-        } catch (Throwable throwable) {
-            LogUtils.error(TAG, throwable);
-        }
-        return Long.MAX_VALUE;
-    }
-
     public void protectPeer(@NonNull PeerId peerId) {
         tags.add(peerId);
     }

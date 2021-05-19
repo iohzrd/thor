@@ -375,7 +375,7 @@ public class KadDht implements Routing {
             Dht.Message msg = request.get();
             Objects.requireNonNull(msg);
 
-            p.setLatency(host.getLatency(p));
+            p.setLatency(System.currentTimeMillis()-time);
 
             return msg;
 
