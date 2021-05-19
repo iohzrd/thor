@@ -163,6 +163,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork {
     private Channel server;
     private InetAddress localAddress;
     private Channel client;
+
     public LiteHost(@NonNull LiteHostCertificate selfSignedCertificate, @NonNull PrivKey privKey,
                     @NonNull BlockStore blockstore, int port, int alpha) {
         this.selfSignedCertificate = selfSignedCertificate;
@@ -317,11 +318,11 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork {
             }
         }
         List<Multiaddr> result = new ArrayList<>();
-        for (Multiaddr addr:all) {
-            if(AddrInfo.isSupported(addr)){
-                if(ipv6 && addr.has(Protocol.Type.IP6)) {
+        for (Multiaddr addr : all) {
+            if (AddrInfo.isSupported(addr)) {
+                if (ipv6 && addr.has(Protocol.Type.IP6)) {
                     result.add(addr);
-                } else if(!ipv6 && addr.has(Protocol.Type.IP4)){
+                } else if (!ipv6 && addr.has(Protocol.Type.IP4)) {
                     result.add(addr);
                 } else {
                     LogUtils.verbose(TAG, "Ignore " + addr.toString());
@@ -583,8 +584,8 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork {
 
 
     // TODO improve (check network configuration or so)
-    private boolean inet6(){
-        if(localAddress != null){
+    private boolean inet6() {
+        if (localAddress != null) {
             return localAddress instanceof Inet6Address;
         }
         return false;

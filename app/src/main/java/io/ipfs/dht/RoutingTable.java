@@ -19,7 +19,6 @@ public class RoutingTable {
     private final int bucketSize;
 
 
-
     public RoutingTable(int bucketSize, @NonNull ID local) {
         this.bucketSize = bucketSize;
         this.local = local;

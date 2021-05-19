@@ -113,22 +113,12 @@ public class IPFS {
     public static final int HIGH_WATER = 1000;
     public static final int GRACE_PERIOD = 10;
     public static final int MIN_PEERS = 10;
-    private static final String SWARM_PORT_KEY = "swarmPortKey";
-    private static final String PRIVATE_KEY = "privateKey";
     public static final int RESOLVE_TIMEOUT = 1000; // 1 sec
     public static final long WANTS_WAIT_TIMEOUT = 500; // 500 ms
-    private static final String PUBLIC_KEY = "publicKey";
     public static final boolean EVALUATE_PEER = false;
-    private static final String CONCURRENCY_KEY = "concurrencyKey";
-    private static final String TAG = IPFS.class.getSimpleName();
-    private static final String PREF_KEY = IPFS.TAG;
-    private static final boolean CONNECTION_SERVICE_ENABLED = false;
-
     public static final short PRIORITY_URGENT = 1;
     public static final short PRIORITY_HIGH = 5;
     public static final short PRIORITY_NORMAL = 10;
-
-
     // IPFS BOOTSTRAP
     @NonNull
     public static final List<String> IPFS_BOOTSTRAP_NODES = new ArrayList<>(Arrays.asList(
@@ -143,11 +133,17 @@ public class IPFS {
             "/dnsaddr/bootstrap.libp2p.io/p2p/QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt" // default dht peer
 
     ));
-    private static final boolean SERVER_ACTIVE = false;
     public static final int KAD_DHT_BUCKET_SIZE = 20;
     public static final int KAD_DHT_BETA = 20;
     public static final int CONNECT_TIMEOUT = 5;
-
+    private static final String SWARM_PORT_KEY = "swarmPortKey";
+    private static final String PRIVATE_KEY = "privateKey";
+    private static final String PUBLIC_KEY = "publicKey";
+    private static final String CONCURRENCY_KEY = "concurrencyKey";
+    private static final String TAG = IPFS.class.getSimpleName();
+    private static final String PREF_KEY = IPFS.TAG;
+    private static final boolean CONNECTION_SERVICE_ENABLED = false;
+    private static final boolean SERVER_ACTIVE = false;
     // rough estimates on expected sizes
     private static final int roughLinkBlockSize = 1 << 13; // 8KB
     private static final int roughLinkSize = 34 + 8 + 5;// sha256 multihash + size + no name + protobuf framing
@@ -1138,9 +1134,10 @@ public class IPFS {
     }
 
 
-    public Set<Multiaddr> getAddresses(@NonNull PeerId peerId){
+    public Set<Multiaddr> getAddresses(@NonNull PeerId peerId) {
         return host.getAddresses(peerId);
     }
+
     public void connected(@NonNull PeerId peerId) {
         if (host.swarmContains(peerId)) {
             if (connector != null) {

@@ -401,7 +401,7 @@ public class KadDht implements Routing {
             LogUtils.debug(TAG, "Request took " + (System.currentTimeMillis() - time));
 
             if (conn != null) {
-               conn.disconnect();
+                conn.disconnect();
             }
         }
     }

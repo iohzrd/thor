@@ -41,7 +41,7 @@ public class AddrInfo {
 
     public static boolean isSupported(@NonNull Multiaddr address) {
 
-        if( address.has(Protocol.Type.DNSADDR)){
+        if (address.has(Protocol.Type.DNSADDR)) {
             return true;
         }
         if (address.has(Protocol.Type.DNS4)) {
@@ -92,7 +92,7 @@ public class AddrInfo {
 
 
     private void addAddress(@NonNull Multiaddr address) {
-        if(isSupported(address)){
+        if (isSupported(address)) {
             addresses.add(address);
         }
     }

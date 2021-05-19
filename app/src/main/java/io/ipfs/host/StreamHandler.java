@@ -22,9 +22,9 @@ public class StreamHandler {
     private static final ConcurrentHashMap<Long, StreamHandler> streams = new ConcurrentHashMap<>();
     private final long connection;
     private final LiteHost host;
-    private long time = System.currentTimeMillis();
     private final HashMap<Long, DataHandler> handlers = new HashMap<>();
     private final HashMap<Long, String> protocols = new HashMap<>();
+    private long time = System.currentTimeMillis();
 
     public StreamHandler(@NonNull LiteHost host, long connection) {
         this.host = host;
@@ -69,7 +69,6 @@ public class StreamHandler {
         protocols.remove(streamId);
         handlers.remove(streamId);
     }
-
 
 
     protected void channelRead0(QuicChannel quicChannel, long streamId, ByteBuf msg) throws Exception {

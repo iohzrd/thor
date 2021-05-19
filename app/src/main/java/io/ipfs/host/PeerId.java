@@ -17,16 +17,8 @@ import io.ipfs.multibase.Base58;
 public class PeerId implements Comparable<PeerId> {
 
     private final byte[] bytes;
-
-    public long getLatency() {
-        return latency;
-    }
-
-    public void setLatency(long latency) {
-        this.latency = latency;
-    }
-
     private long latency = Long.MAX_VALUE;
+
     public PeerId(byte[] bytes) {
         this.bytes = bytes;
         if (this.bytes.length < 32 || this.bytes.length > 50) {
@@ -63,6 +55,13 @@ public class PeerId implements Comparable<PeerId> {
         }
     }
 
+    public long getLatency() {
+        return latency;
+    }
+
+    public void setLatency(long latency) {
+        this.latency = latency;
+    }
 
     @NonNull
     public final String toBase58() {
