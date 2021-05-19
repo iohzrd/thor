@@ -4,6 +4,6 @@ import androidx.annotation.NonNull;
 
 import io.ipfs.host.PeerId;
 
-public interface Pusher {
+public interface Push {
     void push(@NonNull PeerId peerId, @NonNull String content);
 }

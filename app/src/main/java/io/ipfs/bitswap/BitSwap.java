@@ -58,12 +58,12 @@ public class BitSwap implements Interface {
 
     @Nullable
     @Override
-    public Block getBlock(@NonNull Closeable closeable, @NonNull Cid cid) throws ClosedException {
-        return contentManager.getBlock(closeable, cid);
+    public Block getBlock(@NonNull Closeable closeable, @NonNull Cid cid, boolean root) throws ClosedException {
+        return contentManager.getBlock(closeable, cid, root);
     }
 
     @Override
-    public void loadBlocks(@NonNull Closeable closeable, @NonNull List<Cid> cids) {
+    public void preload(@NonNull Closeable closeable, @NonNull List<Cid> cids) {
         contentManager.loadBlocks(closeable, cids);
     }
 

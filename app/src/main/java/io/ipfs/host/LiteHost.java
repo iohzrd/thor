@@ -58,11 +58,10 @@ import io.ipfs.ident.IdentityService;
 import io.ipfs.ipns.Ipns;
 import io.ipfs.multiaddr.Multiaddr;
 import io.ipfs.multiaddr.Protocol;
-import io.ipfs.push.Pusher;
+import io.ipfs.push.Push;
 import io.ipfs.relay.RelayService;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -159,7 +158,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork {
     @NonNull
     public List<ConnectionHandler> handlers = new ArrayList<>();
     @Nullable
-    private Pusher pusher;
+    private Push push;
     @Nullable
     private Channel server;
     private InetAddress localAddress;
@@ -205,8 +204,8 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork {
                 .initialMaxData(IPFS.BLOCK_SIZE_LIMIT)
                 .initialMaxStreamDataBidirectionalLocal(IPFS.BLOCK_SIZE_LIMIT)
                 .initialMaxStreamDataBidirectionalRemote(IPFS.BLOCK_SIZE_LIMIT)
-                .initialMaxStreamsBidirectional(1000)
-                .initialMaxStreamsUnidirectional(1000)
+                .initialMaxStreamsBidirectional(IPFS.HIGH_WATER)
+                .initialMaxStreamsUnidirectional(IPFS.HIGH_WATER)
                 .build();
 
 
@@ -256,15 +255,15 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork {
     @NonNull
     public List<Connection> getConnections() {
 
-        // first simple solution (testi is conn is open
-        List<Connection> conns = new ArrayList<>();
+        // first simple solution (test if conn is open)
+        List<Connection> cones = new ArrayList<>();
         for (Connection conn : connections.values()) {
             if (conn.channel().isOpen()) {
-                conns.add(conn);
+                cones.add(conn);
             }
         }
 
-        return conns;
+        return cones;
     }
 
     public void forwardMessage(@NonNull PeerId peerId, @NonNull MessageLite msg) {
@@ -661,9 +660,9 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork {
             Objects.requireNonNull(peerId);
             Objects.requireNonNull(content);
 
-            if (pusher != null) {
+            if (push != null) {
                 ExecutorService executor = Executors.newSingleThreadExecutor();
-                executor.submit(() -> pusher.push(peerId, new String(content)));
+                executor.submit(() -> push.push(peerId, new String(content)));
             }
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
@@ -671,8 +670,8 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork {
 
     }
 
-    public void setPusher(@Nullable Pusher pusher) {
-        this.pusher = pusher;
+    public void setPush(@Nullable Push push) {
+        this.push = push;
     }
 
 
@@ -836,11 +835,6 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork {
         @Override
         public PeerId remoteId() {
             return channel.attr(LiteHost.PEER_KEY).get();
-        }
-
-        @Override
-        public ChannelFuture close() {
-            return channel.close();
         }
 
 

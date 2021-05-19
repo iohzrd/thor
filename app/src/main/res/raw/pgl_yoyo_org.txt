@@ -3059,7 +3059,7 @@ stats.merriam-webster.com
 stats.mirrorfootball.co.uk
 stats.nextgen-email.com
 stats.olark.com
-stats.pusher.com
+stats.push.com
 stats.rdphv.net
 stats.self.com
 stats.townnews.com

@@ -10,7 +10,7 @@ import io.ipfs.core.ClosedException;
 import io.ipfs.format.Block;
 
 public interface Fetcher {
-    Block getBlock(@NonNull Closeable closeable, @NonNull Cid cid) throws ClosedException;
+    Block getBlock(@NonNull Closeable closeable, @NonNull Cid cid, boolean root) throws ClosedException;
 
-    void loadBlocks(@NonNull Closeable closeable, @NonNull List<Cid> cids);
+    void preload(@NonNull Closeable closeable, @NonNull List<Cid> cids);
 }

@@ -12,9 +12,7 @@ import io.LogUtils;
 import io.ipfs.IPFS;
 import io.ipfs.utils.DataHandler;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import io.netty.incubator.codec.quic.QuicChannel;
-import io.netty.incubator.codec.quic.Quiche;
 import io.netty.util.ReferenceCountUtil;
 import io.quic.QuicheWrapper;
 
@@ -73,18 +71,6 @@ public class StreamHandler {
     }
 
 
-    protected void doClose(long connection) {
-        try {
-            final ByteBuf reason = Unpooled.EMPTY_BUFFER;
-            Quiche.throwIfError(Quiche.quiche_conn_close(connection, false, 0,
-                    Quiche.memoryAddress(reason) + reason.readerIndex(), reason.readableBytes()));
-
-            Quiche.quiche_conn_free(connection); // ???
-            LogUtils.error(TAG, "success closing ?");
-        } catch (Throwable throwable) {
-            LogUtils.error(TAG, throwable);
-        }
-    }
 
     protected void channelRead0(QuicChannel quicChannel, long streamId, ByteBuf msg) throws Exception {
 
@@ -149,7 +135,8 @@ public class StreamHandler {
                             host.forwardMessage(
                                     quicChannel.attr(LiteHost.PEER_KEY).get(),
                                     MessageOuterClass.Message.parseFrom(message));
-                            LogUtils.error(TAG, "Time " + (System.currentTimeMillis() - time) +
+
+                            LogUtils.debug(TAG, "Time " + (System.currentTimeMillis() - time) +
                                     " Connection " + connection + " StreamId " + streamId +
                                     " PeerId " + quicChannel.attr(LiteHost.PEER_KEY).get() +
                                     " Protected " + host.isProtected(quicChannel.attr(LiteHost.PEER_KEY).get()));

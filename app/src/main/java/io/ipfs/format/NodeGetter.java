@@ -11,7 +11,7 @@ import io.ipfs.core.ClosedException;
 
 public interface NodeGetter {
     @Nullable
-    Node Get(@NonNull Closeable closeable, @NonNull Cid cid) throws ClosedException;
+    Node getNode(@NonNull Closeable closeable, @NonNull Cid cid, boolean root) throws ClosedException;
 
-    void Load(@NonNull Closeable ctx, @NonNull List<Cid> cids);
+    void preload(@NonNull Closeable ctx, @NonNull List<Cid> cids);
 }

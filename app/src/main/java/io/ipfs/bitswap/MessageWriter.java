@@ -48,7 +48,7 @@ public class MessageWriter {
             return;
         }
         LogUtils.debug(TAG, "send HAVE Message " + peer.toBase58());
-        network.writeMessage(closeable, peer, message, IPFS.PRIORITY_HIGH);
+        network.writeMessage(closeable, peer, message, IPFS.PRIORITY_URGENT);
 
 
     }

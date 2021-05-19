@@ -33,7 +33,7 @@ public class ContentManager {
 
     private final ConcurrentSkipListSet<PeerId> whitelist = new ConcurrentSkipListSet<>();
     private final ConcurrentSkipListSet<PeerId> priority = new ConcurrentSkipListSet<>();
-
+    private final ConcurrentSkipListSet<Cid> loads = new ConcurrentSkipListSet<>();
     private final ConcurrentHashMap<Cid, ConcurrentLinkedDeque<PeerId>> matches = new ConcurrentHashMap<>();
     private final Blocker blocker = new Blocker();
     private final BitSwap bitSwap;
@@ -71,6 +71,7 @@ public class ContentManager {
 
         LogUtils.verbose(TAG, "Reset");
         try {
+            loads.clear();
             priority.clear();
             whitelist.clear();
             matches.clear();
@@ -140,7 +141,7 @@ public class ContentManager {
                         } catch (ClosedException closedException) {
                             // ignore
                         } catch (ProtocolIssue ignore) {
-                            LogUtils.error(TAG, ignore);
+                            LogUtils.error(TAG, peer.toBase58() + " " + ignore);
                             whitelist.remove(peer);
                         } catch (Throwable throwable) {
                             whitelist.remove(peer);
@@ -160,28 +161,6 @@ public class ContentManager {
         return blockStore.Get(cid);
     }
 
-    public Block getBlock(@NonNull Closeable closeable, @NonNull Cid cid) throws ClosedException {
-        try {
-            synchronized (cid.String().intern()) {
-                Block block = blockStore.Get(cid);
-                if (block == null) {
-                    loadProvider(closeable, cid); // todo
-                    createMatch(cid);
-                    AtomicBoolean done = new AtomicBoolean(false);
-                    LogUtils.info(TAG, "Block Get " + cid.String());
-                    try {
-                        return runWantHaves(() -> closeable.isClosed() || done.get(), cid);
-                    } finally {
-                        done.set(true);
-                    }
-                }
-                return block;
-            }
-        } finally {
-            blocker.Release(cid);
-            LogUtils.info(TAG, "Block Release  " + cid.String());
-        }
-    }
 
     public void BlockReceived(@NonNull PeerId peer, @NonNull Block block) {
 
@@ -229,10 +208,38 @@ public class ContentManager {
         }
     }
 
+    public Block getBlock(@NonNull Closeable closeable, @NonNull Cid cid, boolean root) throws ClosedException {
+        try {
+            synchronized (cid.String().intern()) {
+                Block block = blockStore.Get(cid);
+                if (block == null) {
+                    if (root) {
+                        loadProvider(closeable, cid);
+                    }
+                    createMatch(cid);
+                    AtomicBoolean done = new AtomicBoolean(false);
+                    LogUtils.info(TAG, "Block Get " + cid.String());
+                    try {
+                        return runWantHaves(() -> closeable.isClosed() || done.get(), cid);
+                    } finally {
+                        done.set(true);
+                    }
+                }
+                return block;
+            }
+        } finally {
+            blocker.Release(cid);
+            LogUtils.info(TAG, "Block Release  " + cid.String());
+        }
+    }
+
     public void loadProvider(@NonNull Closeable closeable, @NonNull Cid cid) {
 
-        LogUtils.info(TAG, "Load Provider Start " + cid.String());
-
+        if (loads.contains(cid)) {
+            return;
+        }
+        loads.add(cid);
+        LogUtils.verbose(TAG, "Load Provider Start " + cid.String());
         new Thread(() -> {
             long start = System.currentTimeMillis();
             try {

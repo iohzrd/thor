@@ -149,6 +149,20 @@ public class QuicheWrapper {
         return res;
     }
 
+
+    public static void close(long connection) {
+        try {
+            final ByteBuf reason = Unpooled.EMPTY_BUFFER;
+            Quiche.throwIfError(Quiche.quiche_conn_close(connection, false, 0,
+                    Quiche.memoryAddress(reason) + reason.readerIndex(), reason.readableBytes()));
+
+            Quiche.quiche_conn_free(connection); // ???
+            LogUtils.error(TAG, "success closing ?");
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable);
+        }
+    }
+
     public static void streamShutdown(long connection, long streamId, boolean read, boolean write, int err) {
 
         Quiche.quiche_conn_stream_finished(connection, streamId);

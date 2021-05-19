@@ -74,7 +74,7 @@ public class NavigableIPLDNode implements NavigableNode {
 
 
     private Node getPromiseValue(Closeable ctx, int childIndex) throws ClosedException {
-        return nodeGetter.Get(ctx, cids.get(childIndex));
+        return nodeGetter.getNode(ctx, cids.get(childIndex), false);
 
     }
 

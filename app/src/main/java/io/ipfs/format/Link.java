@@ -60,8 +60,8 @@ public class Link {
                 '}';
     }
 
-    public Node GetNode(@NonNull Closeable ctx, @NonNull NodeGetter serv) throws ClosedException {
-        return serv.Get(ctx, getCid());
+    public Node getNode(@NonNull Closeable ctx, @NonNull NodeGetter nodeGetter) throws ClosedException {
+        return nodeGetter.getNode(ctx, getCid(), true);
     }
 
 }

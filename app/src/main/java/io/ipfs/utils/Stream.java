@@ -44,9 +44,9 @@ public class Stream {
 
     public static Adder getFileAdder(@NonNull Storage storage) {
 
-        BlockStore bs = BlockStore.NewBlockstore(storage);
+        BlockStore bs = BlockStore.createBlockstore(storage);
         Interface exchange = new Exchange(bs);
-        BlockService blockservice = BlockService.New(bs, exchange);
+        BlockService blockservice = BlockService.createBlockService(bs, exchange);
         DagService dagService = DagService.createDagService(blockservice);
         Adder fileAdder = Adder.NewAdder(dagService);
 
@@ -66,9 +66,9 @@ public class Stream {
     public static void Rm(@NonNull Closeable closeable, @NonNull Storage storage,
                           @NonNull Cid cid, boolean recursively) throws ClosedException {
 
-        BlockStore bs = BlockStore.NewBlockstore(storage);
+        BlockStore bs = BlockStore.createBlockstore(storage);
         Interface exchange = new Exchange(bs);
-        BlockService blockservice = BlockService.New(bs, exchange);
+        BlockService blockservice = BlockService.createBlockService(bs, exchange);
         DagService dags = DagService.createDagService(blockservice);
         io.ipfs.format.Node top = Resolver.ResolveNode(closeable, dags, cid);
         Objects.requireNonNull(top);
@@ -91,7 +91,7 @@ public class Stream {
                                 @NonNull Cid cid) throws ClosedException {
 
 
-        BlockService blockservice = BlockService.New(blockstore, exchange);
+        BlockService blockservice = BlockService.createBlockService(blockstore, exchange);
         DagService dagService = DagService.createDagService(blockservice);
 
         io.ipfs.format.Node node = Resolver.ResolveNode(closeable, dagService, cid);
@@ -114,9 +114,9 @@ public class Stream {
 
         Adder fileAdder = getFileAdder(storage);
 
-        BlockStore bs = BlockStore.NewBlockstore(storage);
+        BlockStore bs = BlockStore.createBlockstore(storage);
         Interface exchange = new Exchange(bs);
-        BlockService blockservice = BlockService.New(bs, exchange);
+        BlockService blockservice = BlockService.createBlockService(bs, exchange);
         DagService dagService = DagService.createDagService(blockservice);
 
         io.ipfs.format.Node dirNode = Resolver.ResolveNode(closeable, dagService, dir);
@@ -133,9 +133,9 @@ public class Stream {
 
         Adder fileAdder = getFileAdder(storage);
 
-        BlockStore bs = BlockStore.NewBlockstore(storage);
+        BlockStore bs = BlockStore.createBlockstore(storage);
         Interface exchange = new Exchange(bs);
-        BlockService blockservice = BlockService.New(bs, exchange);
+        BlockService blockservice = BlockService.createBlockService(bs, exchange);
         DagService dagService = DagService.createDagService(blockservice);
 
         io.ipfs.format.Node dirNode = Resolver.ResolveNode(closeable, dagService, dir);
@@ -149,7 +149,7 @@ public class Stream {
                           @NonNull Interface exchange,
                           @NonNull Cid cid, boolean resolveChildren) throws ClosedException {
 
-        BlockService blockservice = BlockService.New(blockstore, exchange);
+        BlockService blockservice = BlockService.createBlockService(blockstore, exchange);
         DagService dagService = DagService.createDagService(blockservice);
 
 
@@ -211,7 +211,7 @@ public class Stream {
                 closeable.info(io.ipfs.utils.Link.create(name, hash, size, io.ipfs.utils.Link.NotKnown));
             } else {
 
-                Node linkNode = link.GetNode(closeable, dagService);
+                Node linkNode = link.getNode(closeable, dagService);
                 if (linkNode instanceof ProtoNode) {
                     ProtoNode pn = (ProtoNode) linkNode;
                     FSNode d = FSNode.FSNodeFromBytes(pn.getData());

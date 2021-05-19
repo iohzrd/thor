@@ -12,9 +12,9 @@ import io.ipfs.format.Block;
 
 public interface BlockGetter {
     @Nullable
-    Block GetBlock(@NonNull Closeable closeable, @NonNull Cid cid) throws ClosedException;
+    Block getBlock(@NonNull Closeable closeable, @NonNull Cid cid, boolean root) throws ClosedException;
 
-    void AddBlock(@NonNull Block block);
+    void addBlock(@NonNull Block block);
 
-    void LoadBlocks(@NonNull Closeable closeable, @NonNull List<Cid> cids);
+    void preload(@NonNull Closeable closeable, @NonNull List<Cid> cids);
 }

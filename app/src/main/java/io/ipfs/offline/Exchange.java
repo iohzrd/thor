@@ -20,12 +20,12 @@ public class Exchange implements Interface {
     }
 
     @Override
-    public Block getBlock(@NonNull Closeable closeable, @NonNull Cid cid) {
+    public Block getBlock(@NonNull Closeable closeable, @NonNull Cid cid, boolean root) {
         return blockstore.Get(cid);
     }
 
     @Override
-    public void loadBlocks(@NonNull Closeable closeable, @NonNull List<Cid> preload) {
+    public void preload(@NonNull Closeable closeable, @NonNull List<Cid> preload) {
         // nothing to do here
     }
 

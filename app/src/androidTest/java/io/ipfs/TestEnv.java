@@ -30,7 +30,7 @@ class TestEnv {
         IPFS ipfs = IPFS.getInstance(context);
         ipfs.clearDatabase();
         ipfs.bootstrap();
-
+        ipfs.reset();
         return ipfs;
     }
 

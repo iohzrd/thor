@@ -36,7 +36,7 @@ public class BitSwapSend extends SimpleChannelInboundHandler<ByteBuf> {
 
     @Override
     public void channelUnregistered(ChannelHandlerContext ctx) {
-        LogUtils.error(TAG, "channelUnregistered ");
+        LogUtils.debug(TAG, "channelUnregistered ");
 
         QuicChannel quicChannel = (QuicChannel) ctx.channel().parent();
 
@@ -65,6 +65,7 @@ public class BitSwapSend extends SimpleChannelInboundHandler<ByteBuf> {
                 if (Objects.equals(received, IPFS.BIT_SWAP_PROTOCOL)) {
                     stream.complete((QuicStreamChannel) ctx.channel());
                 } else if (!Objects.equals(received, IPFS.STREAM_PROTOCOL)) {
+                    LogUtils.error(TAG, received);
                     throw new ProtocolIssue();
                 }
             }

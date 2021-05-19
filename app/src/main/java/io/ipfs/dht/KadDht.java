@@ -360,7 +360,7 @@ public class KadDht implements Routing {
             QuicChannel quicChannel = conn.channel();
 
             CompletableFuture<Dht.Message> request = request(quicChannel,
-                    message, IPFS.PRIORITY_HIGH);
+                    message, IPFS.PRIORITY_NORMAL);
 
             while (!request.isDone()) {
                 if (closeable.isClosed()) {
@@ -395,7 +395,7 @@ public class KadDht implements Routing {
                     throw new TimeoutIssue();
                 }
             }
-            LogUtils.error(TAG, throwable);
+            LogUtils.error(TAG, p.toBase58() + " ERROR " + throwable);
             throw new RuntimeException(throwable);
         } finally {
             LogUtils.debug(TAG, "Request took " + (System.currentTimeMillis() - time));

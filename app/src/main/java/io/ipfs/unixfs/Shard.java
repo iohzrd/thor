@@ -206,7 +206,7 @@ public class Shard {
 
             Shard c;
             if (lnkLinkType == SHARED_LINK) {
-                Node nd = lnk.GetNode(ctx, dserv);
+                Node nd = lnk.getNode(ctx, dserv);
                 c = Hamt.NewHamtFromDag(dserv, nd);
             } else {
                 c = sd.makeShardValue(lnk);

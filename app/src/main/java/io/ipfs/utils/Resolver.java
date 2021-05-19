@@ -30,8 +30,8 @@ public class Resolver {
 
     public static Node resolveNode(@NonNull Closeable closeable, @NonNull Storage storage,
                                    @NonNull Interface exchange, @NonNull String path) throws ClosedException {
-        BlockStore bs = BlockStore.NewBlockstore(storage);
-        BlockService blockservice = BlockService.New(bs, exchange);
+        BlockStore bs = BlockStore.createBlockstore(storage);
+        BlockService blockservice = BlockService.createBlockService(bs, exchange);
         DagService dags = DagService.createDagService(blockservice);
         return Resolver.ResolveNode(closeable, dags, Path.New(path));
     }
@@ -65,7 +65,7 @@ public class Resolver {
     public static Node ResolveNode(@NonNull Closeable closeable,
                                    @NonNull NodeGetter nodeGetter,
                                    @NonNull Cid cid) throws ClosedException {
-        return nodeGetter.Get(closeable, cid);
+        return nodeGetter.getNode(closeable, cid, true);
     }
 
     public static Pair<Cid, List<String>> ResolveToLastNode(@NonNull Closeable ctx,
@@ -79,7 +79,7 @@ public class Resolver {
             return Pair.create(c, Collections.emptyList());
         }
 
-        Node nd = dag.Get(ctx, c);
+        Node nd = dag.getNode(ctx, c, true);
         Objects.requireNonNull(nd);
 
         while (p.size() > 0) {
@@ -99,7 +99,7 @@ public class Resolver {
                 return Pair.create(lnk.getCid(), Collections.emptyList());
             }
 
-            nd = lnk.GetNode(ctx, dag);
+            nd = lnk.getNode(ctx, dag);
             p = rest;
         }
 

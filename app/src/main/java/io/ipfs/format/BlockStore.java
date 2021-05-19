@@ -11,7 +11,7 @@ import io.ipfs.datastore.Storage;
 public interface BlockStore {
 
 
-    static BlockStore NewBlockstore(@NonNull final Storage storage) {
+    static BlockStore createBlockstore(@NonNull final Storage storage) {
         return new BlockStore() {
             @Override
             public boolean Has(@NonNull Cid cid) {

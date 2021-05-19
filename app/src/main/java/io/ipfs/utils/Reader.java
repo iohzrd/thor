@@ -26,7 +26,7 @@ public class Reader {
 
     public static Reader getReader(@NonNull Closeable closeable, @NonNull BlockStore blockstore,
                                    @NonNull Interface exchange, @NonNull Cid cid) throws ClosedException {
-        BlockService blockservice = BlockService.New(blockstore, exchange);
+        BlockService blockservice = BlockService.createBlockService(blockstore, exchange);
         DagService dags = DagService.createDagService(blockservice);
         io.ipfs.format.Node top = Resolver.ResolveNode(closeable, dags, cid);
         Objects.requireNonNull(top);

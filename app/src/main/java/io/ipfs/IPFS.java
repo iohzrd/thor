@@ -33,7 +33,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
@@ -65,9 +64,8 @@ import io.ipfs.multiaddr.Protocol;
 import io.ipfs.multibase.Base58;
 import io.ipfs.multibase.Multibase;
 import io.ipfs.multihash.Multihash;
-import io.ipfs.push.PushSend;
-import io.ipfs.push.Pusher;
-import io.ipfs.utils.DataHandler;
+import io.ipfs.push.Push;
+import io.ipfs.push.PushService;
 import io.ipfs.utils.Link;
 import io.ipfs.utils.LinkCloseable;
 import io.ipfs.utils.Progress;
@@ -79,10 +77,6 @@ import io.ipfs.utils.ReaderStream;
 import io.ipfs.utils.Resolver;
 import io.ipfs.utils.Stream;
 import io.ipfs.utils.WriterStream;
-import io.netty.incubator.codec.quic.QuicChannel;
-import io.netty.incubator.codec.quic.QuicStreamChannel;
-import io.netty.incubator.codec.quic.QuicStreamPriority;
-import io.netty.incubator.codec.quic.QuicStreamType;
 import threads.thor.core.blocks.BLOCKS;
 
 public class IPFS {
@@ -116,8 +110,7 @@ public class IPFS {
     public static final boolean BITSWAP_ENGINE_ACTIVE = false;
     public static final int PROTOCOL_READER_LIMIT = 1000;
     public static final int TIMEOUT_BOOTSTRAP = 10;
-    public static final int LOW_WATER = 50;
-    public static final int HIGH_WATER = 150;
+    public static final int HIGH_WATER = 1000;
     public static final int GRACE_PERIOD = 10;
     public static final int MIN_PEERS = 10;
     private static final String SWARM_PORT_KEY = "swarmPortKey";
@@ -207,7 +200,7 @@ public class IPFS {
         int alpha = getConcurrencyValue(context);
 
 
-        BlockStore blockstore = BlockStore.NewBlockstore(blocks);
+        BlockStore blockstore = BlockStore.createBlockstore(blocks);
         this.host = new LiteHost(selfSignedCertificate, privateKey, blockstore, port, alpha);
 
         HOST = host; // shitty hack
@@ -897,7 +890,7 @@ public class IPFS {
 
         boolean result;
         try {
-            BlockStore blockstore = BlockStore.NewBlockstore(blocks);
+            BlockStore blockstore = BlockStore.createBlockstore(blocks);
             result = Stream.IsDir(closeable, blockstore, host.getExchange(), cid);
         } catch (ClosedException closedException) {
             throw closedException;
@@ -961,7 +954,7 @@ public class IPFS {
 
         List<Link> infoList = new ArrayList<>();
         try {
-            BlockStore blockstore = BlockStore.NewBlockstore(blocks);
+            BlockStore blockstore = BlockStore.createBlockstore(blocks);
             Stream.Ls(new LinkCloseable() {
 
                 @Override
@@ -985,7 +978,7 @@ public class IPFS {
 
     @NonNull
     public Reader getReader(@NonNull Cid cid, @NonNull Closeable closeable) throws ClosedException {
-        BlockStore blockstore = BlockStore.NewBlockstore(blocks);
+        BlockStore blockstore = BlockStore.createBlockstore(blocks);
         return Reader.getReader(closeable, blockstore, host.getExchange(), cid);
     }
 
@@ -996,8 +989,8 @@ public class IPFS {
         }
     }
 
-    public void setPusher(@Nullable Pusher pusher) {
-        this.host.setPusher(pusher);
+    public void setPusher(@Nullable Push push) {
+        this.host.setPush(push);
     }
 
     @NonNull
@@ -1116,24 +1109,7 @@ public class IPFS {
             Connection conn = host.connect(new TimeoutCloseable(CONNECT_TIMEOUT), peerId,
                     CONNECT_TIMEOUT);
 
-
-            QuicChannel quicChannel = conn.channel();
-
-            CompletableFuture<QuicStreamChannel> stream = new CompletableFuture<>();
-            QuicStreamChannel streamChannel = quicChannel.createStream(QuicStreamType.BIDIRECTIONAL,
-                    new PushSend(stream)).sync().get();
-
-            streamChannel.updatePriority(new QuicStreamPriority(IPFS.PRIORITY_HIGH, false));
-
-            streamChannel.writeAndFlush(DataHandler.writeToken(IPFS.STREAM_PROTOCOL));
-            streamChannel.writeAndFlush(DataHandler.writeToken(IPFS.PUSH_PROTOCOL));
-
-
-            QuicStreamChannel channel = stream.get(CONNECT_TIMEOUT, TimeUnit.SECONDS);
-
-            channel.writeAndFlush(DataHandler.encode(content.getBytes())).addListener(
-                    future -> channel.close().get());
-
+            PushService.notify(conn, content);
 
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);

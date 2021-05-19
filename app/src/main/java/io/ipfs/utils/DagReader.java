@@ -138,7 +138,7 @@ public class DagReader {
 
         if (preloads.size() >= IPFS.PRELOAD_DIST) {
             cids.addAll(preloads);
-            nodeGetter.Load(closeable, preloads);
+            nodeGetter.preload(closeable, preloads);
         }
 
     }

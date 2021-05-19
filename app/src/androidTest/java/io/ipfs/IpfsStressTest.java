@@ -18,6 +18,7 @@ import io.LogUtils;
 import io.ipfs.cid.Cid;
 import io.ipfs.core.ClosedException;
 import io.ipfs.core.TimeoutCloseable;
+import io.ipfs.core.TimeoutProgress;
 import io.ipfs.host.PeerId;
 import io.ipfs.multiaddr.Multiaddr;
 import io.ipfs.utils.Progress;
@@ -49,7 +50,7 @@ public class IpfsStressTest {
 
 
         byte[] data = ipfs.getData(Cid.Decode("QmcniBv7UQ4gGPQQW2BwbD4ZZHzN3o3tPuNLZCbBchd1zh"),
-                new Progress() {
+                new TimeoutProgress(180){
                     @Override
                     public void setProgress(int progress) {
                         LogUtils.error(TAG, "Progress " + progress);
@@ -58,11 +59,6 @@ public class IpfsStressTest {
                     @Override
                     public boolean doProgress() {
                         return true;
-                    }
-
-                    @Override
-                    public boolean isClosed() {
-                        return false;
                     }
                 });
         assertNotNull(data);

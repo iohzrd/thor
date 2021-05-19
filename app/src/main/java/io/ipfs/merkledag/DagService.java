@@ -22,12 +22,12 @@ public interface DagService extends NodeGetter, NodeAdder {
             @Nullable
 
             @Override
-            public Node Get(@NonNull Closeable closeable, @NonNull Cid cid) throws ClosedException {
-                return nodeGetter.Get(closeable, cid);
+            public Node getNode(@NonNull Closeable closeable, @NonNull Cid cid, boolean root) throws ClosedException {
+                return nodeGetter.getNode(closeable, cid, root);
             }
 
             @Override
-            public void Load(@NonNull Closeable ctx, @NonNull List<Cid> cids) {
+            public void preload(@NonNull Closeable ctx, @NonNull List<Cid> cids) {
                 // nothing to do here
             }
 
@@ -43,9 +43,9 @@ public interface DagService extends NodeGetter, NodeAdder {
 
             @Override
             @Nullable
-            public Node Get(@NonNull Closeable closeable, @NonNull Cid cid) throws ClosedException {
+            public Node getNode(@NonNull Closeable closeable, @NonNull Cid cid, boolean root) throws ClosedException {
 
-                Block b = blockService.GetBlock(closeable, cid);
+                Block b = blockService.getBlock(closeable, cid, root);
                 if (b == null) {
                     return null;
                 }
@@ -53,12 +53,12 @@ public interface DagService extends NodeGetter, NodeAdder {
             }
 
             @Override
-            public void Load(@NonNull Closeable closeable, @NonNull List<Cid> cids) {
-                blockService.LoadBlocks(closeable, cids);
+            public void preload(@NonNull Closeable closeable, @NonNull List<Cid> cids) {
+                blockService.preload(closeable, cids);
             }
 
             public void Add(@NonNull Node nd) {
-                blockService.AddBlock(nd);
+                blockService.addBlock(nd);
             }
         };
     }
