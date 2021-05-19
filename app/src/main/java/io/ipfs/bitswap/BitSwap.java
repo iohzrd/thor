@@ -59,12 +59,12 @@ public class BitSwap implements Interface {
     @Nullable
     @Override
     public Block getBlock(@NonNull Closeable closeable, @NonNull Cid cid) throws ClosedException {
-        return contentManager.GetBlock(closeable, cid);
+        return contentManager.getBlock(closeable, cid);
     }
 
     @Override
     public void loadBlocks(@NonNull Closeable closeable, @NonNull List<Cid> cids) {
-        contentManager.LoadBlocks(closeable, cids);
+        contentManager.loadBlocks(closeable, cids);
     }
 
     @Override
@@ -73,20 +73,19 @@ public class BitSwap implements Interface {
     }
 
     @Override
-    public void load(@NonNull Closeable closeable, @NonNull Cid cid) {
-        contentManager.Load(closeable, cid);
+    public void loadProvider(@NonNull Closeable closeable, @NonNull Cid cid) {
+        contentManager.loadProvider(closeable, cid);
     }
 
     @Override
-    public boolean ReceiveMessage(@NonNull PeerId peer, @NonNull BitSwapMessage incoming) {
+    public void receiveMessage(@NonNull PeerId peer, @NonNull BitSwapMessage incoming) {
 
         LogUtils.info(TAG, "ReceiveMessage " + peer.toBase58());
-        boolean abort = true;
+
         List<Block> blocks = incoming.Blocks();
         List<Cid> haves = incoming.Haves();
         if (blocks.size() > 0 || haves.size() > 0) {
             try {
-                abort = false;
                 LogUtils.debug(TAG, "ReceiveMessage " + peer.toBase58());
                 receiveBlocksFrom(peer, blocks, haves);
             } catch (Throwable throwable) {
@@ -97,7 +96,7 @@ public class BitSwap implements Interface {
         if (IPFS.BITSWAP_ENGINE_ACTIVE) {
             engine.MessageReceived(peer, incoming);
         }
-        return abort;
+
     }
 
 
@@ -119,7 +118,7 @@ public class BitSwap implements Interface {
 
 
     @Override
-    public boolean GatePeer(@NonNull PeerId peerID) {
+    public boolean gatePeer(@NonNull PeerId peerID) {
         return contentManager.GatePeer(peerID);
     }
 

@@ -112,7 +112,7 @@ public class DataHandler {
 
         temp.write(data);
 
-        // shorcut
+        // shortcut
         if (temp.size() < expectedLength) {
             // no reading required
             return;

@@ -66,13 +66,14 @@ public class KadDht implements Routing {
     public final RoutingTable routingTable;
     private final Validator validator;
 
+
     public KadDht(@NonNull LiteHost host, @NonNull Validator validator,
                   int alpha, int beta, int bucketSize) {
         this.host = host;
         this.validator = validator;
         this.self = host.Self();
         this.bucketSize = bucketSize;
-        this.routingTable = new RoutingTable(host, bucketSize, Util.ConvertPeerID(self));
+        this.routingTable = new RoutingTable(bucketSize, Util.ConvertPeerID(self));
         this.beta = beta;
         this.alpha = alpha;
     }
@@ -344,6 +345,7 @@ public class KadDht implements Routing {
         }
     }
 
+
     private Dht.Message sendRequest(@NonNull Closeable closeable, @NonNull PeerId p,
                                     @NonNull Dht.Message message)
             throws ClosedException, ProtocolIssue, TimeoutIssue, ConnectionIssue {
@@ -372,6 +374,9 @@ public class KadDht implements Routing {
 
             Dht.Message msg = request.get();
             Objects.requireNonNull(msg);
+
+            p.setLatency(host.getLatency(p));
+
             return msg;
 
         } catch (ClosedException | ConnectionIssue exception) {
@@ -396,7 +401,7 @@ public class KadDht implements Routing {
             LogUtils.debug(TAG, "Request took " + (System.currentTimeMillis() - time));
 
             if (conn != null) {
-                conn.disconnect();
+               conn.disconnect();
             }
         }
     }
@@ -673,7 +678,6 @@ public class KadDht implements Routing {
         }), key, () -> numResponses.get() == quorum);
 
     }
-
 
     public interface StopFunc {
         boolean stop();

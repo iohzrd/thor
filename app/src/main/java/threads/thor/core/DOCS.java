@@ -83,7 +83,7 @@ public class DOCS {
     }
 
     private void pageProvider(@NonNull Cid cid, @NonNull Closeable closeable) {
-        ipfs.load(cid, closeable);
+        ipfs.loadProvider(cid, closeable);
     }
 
     private void pageConnect(@NonNull PeerId peerId, @NonNull Closeable closeable) {

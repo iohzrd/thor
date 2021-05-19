@@ -85,11 +85,12 @@ import io.quic.QuicheWrapper;
 import relay.pb.Relay;
 
 
-public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
+public class LiteHost implements BitSwapReceiver, BitSwapNetwork {
     @NonNull
     public static final AttributeKey<PeerId> PEER_KEY = AttributeKey.newInstance("PEER_KEY");
     @NonNull
     public static final ConcurrentHashMap<PeerId, PubKey> remotes = new ConcurrentHashMap<>();
+    @NonNull
     private static final String TAG = LiteHost.class.getSimpleName();
     @NonNull
     private static final Duration DefaultRecordEOL = Duration.ofHours(24);
@@ -233,13 +234,13 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
     }
 
     @Override
-    public boolean GatePeer(@NonNull PeerId peerID) {
-        return exchange.GatePeer(peerID);
+    public boolean gatePeer(@NonNull PeerId peerID) {
+        return exchange.gatePeer(peerID);
     }
 
     @Override
-    public boolean ReceiveMessage(@NonNull PeerId peer, @NonNull BitSwapMessage incoming) {
-        return exchange.ReceiveMessage(peer, incoming);
+    public void receiveMessage(@NonNull PeerId peer, @NonNull BitSwapMessage incoming) {
+        exchange.receiveMessage(peer, incoming);
     }
 
 
@@ -266,17 +267,16 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
         return conns;
     }
 
-    public boolean forwardMessage(@NonNull PeerId peerId, @NonNull MessageLite msg) {
+    public void forwardMessage(@NonNull PeerId peerId, @NonNull MessageLite msg) {
         if (msg instanceof MessageOuterClass.Message) {
             try {
                 BitSwapMessage message = BitSwapMessage.newMessageFromProto(
                         (MessageOuterClass.Message) msg);
-                return ReceiveMessage(peerId, message);
+                receiveMessage(peerId, message);
             } catch (Throwable throwable) {
                 LogUtils.error(TAG, throwable.getMessage());
             }
         }
-        return false;
     }
 
     @Override
@@ -300,7 +300,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
     }
 
     @NonNull
-    private List<Multiaddr> prepareAddresses(@NonNull PeerId peerId) {
+    private List<Multiaddr> prepareAddresses(@NonNull PeerId peerId, boolean ipv6) {
         List<Multiaddr> all = new ArrayList<>();
         for (Multiaddr ma : getAddresses(peerId)) {
             try {
@@ -314,10 +314,22 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
                     all.add(ma);
                 }
             } catch (Throwable throwable) {
-                LogUtils.verbose(TAG, throwable.getClass().getSimpleName());
+                LogUtils.error(TAG, throwable.getClass().getSimpleName());
             }
         }
-        return all;
+        List<Multiaddr> result = new ArrayList<>();
+        for (Multiaddr addr:all) {
+            if(AddrInfo.isSupported(addr)){
+                if(ipv6 && addr.has(Protocol.Type.IP6)) {
+                    result.add(addr);
+                } else if(!ipv6 && addr.has(Protocol.Type.IP4)){
+                    result.add(addr);
+                } else {
+                    LogUtils.verbose(TAG, "Ignore " + addr.toString());
+                }
+            }
+        }
+        return result;
     }
 
     public void start() {
@@ -570,6 +582,15 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
 
     }
 
+
+    // TODO improve (check network configuration or so)
+    private boolean inet6(){
+        if(localAddress != null){
+            return localAddress instanceof Inet6Address;
+        }
+        return false;
+    }
+
     @NonNull
     public Connection connect(@NonNull Closeable closeable, @NonNull PeerId peerId, int timeout)
             throws ConnectionIssue, ClosedException {
@@ -580,7 +601,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork, Metrics {
             return connection;
         }
 
-        List<Multiaddr> addrInfo = prepareAddresses(peerId);
+        List<Multiaddr> addrInfo = prepareAddresses(peerId, inet6());
 
         if (!addrInfo.isEmpty()) {
 

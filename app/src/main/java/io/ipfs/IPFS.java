@@ -123,7 +123,7 @@ public class IPFS {
     private static final String SWARM_PORT_KEY = "swarmPortKey";
     private static final String PRIVATE_KEY = "privateKey";
     public static final int RESOLVE_TIMEOUT = 1000; // 1 sec
-    public static final long WANTS_WAIT_TIMEOUT = 2000; // 2 sec
+    public static final long WANTS_WAIT_TIMEOUT = 500; // 500 ms
     private static final String PUBLIC_KEY = "publicKey";
     public static final boolean EVALUATE_PEER = false;
     private static final String CONCURRENCY_KEY = "concurrencyKey";
@@ -796,10 +796,10 @@ public class IPFS {
                 for (PeerId peerId : peers) {
                     executor.execute(() -> {
                         try {
-                            host.connectTo(new TimeoutCloseable(TIMEOUT_BOOTSTRAP), peerId,
+                            host.connect(new TimeoutCloseable(TIMEOUT_BOOTSTRAP), peerId,
                                     TIMEOUT_BOOTSTRAP);
-                        } catch (ClosedException | ConnectionIssue exception) {
-                            LogUtils.error(TAG, exception.getMessage());
+                        } catch (Throwable throwable) {
+                            LogUtils.error(TAG, throwable.getMessage());
                         }
                     });
                 }
@@ -1096,9 +1096,9 @@ public class IPFS {
         }
     }
 
-    public void load(@NonNull Cid cid, @NonNull Closeable closeable) {
+    public void loadProvider(@NonNull Cid cid, @NonNull Closeable closeable) {
         try {
-            host.getExchange().load(closeable, cid);
+            host.getExchange().loadProvider(closeable, cid);
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         }
@@ -1109,6 +1109,7 @@ public class IPFS {
     }
 
 
+    @SuppressWarnings("unused")
     public boolean notify(@NonNull PeerId peerId, @NonNull String content) {
 
         try {
@@ -1191,13 +1192,13 @@ public class IPFS {
                 if (addrInfo.isEmpty()) {
                     return host.getRouting().FindPeer(closeable, peerId);
                 } else {
-                    host.connectTo(closeable, peerId, timeout);
+                    host.connect(closeable, peerId, timeout);
                     return true;
                 }
             } else {
                 AddrInfo addrInfo = AddrInfo.create(peerId, multiaddr);
                 host.addAddrs(addrInfo);
-                host.connectTo(closeable, peerId, timeout);
+                host.connect(closeable, peerId, timeout);
                 return true;
             }
 

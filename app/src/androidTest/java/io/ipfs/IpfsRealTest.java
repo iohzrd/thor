@@ -39,21 +39,17 @@ public class IpfsRealTest {
     }
 
     @Test
-    public void test_1() {
+    public void test_corbett() {
 
         IPFS ipfs = TestEnv.getTestInstance(context);
 
+        //CorbettReport ipns://k2k4r8jllj4k33jxoa4vaeleqkrwu8b7tqz7tgczhptbfkhqr2i280fm
         String key = "k2k4r8jllj4k33jxoa4vaeleqkrwu8b7tqz7tgczhptbfkhqr2i280fm";
 
         IPFS.ResolvedName res = ipfs.resolveName(key, 0, new TimeoutCloseable(30));
         assertNotNull(res);
 
         LogUtils.debug(TAG, res.toString());
-
-
-        boolean result = ipfs.swarmConnect(IPFS.P2P_PATH + res.getPeerId().toBase58(),
-                IPFS.CONNECT_TIMEOUT);
-        LogUtils.debug(TAG, res.getPeerId().toBase58() + " " + result);
 
 
         AtomicBoolean atomicBoolean = new AtomicBoolean(false);
@@ -70,7 +66,7 @@ public class IpfsRealTest {
     }
 
     @Test
-    public void test_2() throws ClosedException, IOException {
+    public void test_blog_ipfs_io() throws ClosedException, IOException {
 
         IPFS ipfs = TestEnv.getTestInstance(context);
 
@@ -87,12 +83,12 @@ public class IpfsRealTest {
 
         assertNotNull(text);
         assertFalse(text.isEmpty());
-        LogUtils.debug(TAG, text);
+
 
     }
 
     @Test
-    public void test_3() throws ClosedException {
+    public void test_unknown() throws ClosedException {
 
         IPFS ipfs = TestEnv.getTestInstance(context);
 
@@ -108,7 +104,7 @@ public class IpfsRealTest {
     }
 
     @Test
-    public void test_4() throws ClosedException {
+    public void test_unknown_2() throws ClosedException {
 
         IPFS ipfs = TestEnv.getTestInstance(context);
 
@@ -123,9 +119,11 @@ public class IpfsRealTest {
 
 
     @Test
-    public void test_5() {
+    public void test_mike() {
 
         IPFS ipfs = TestEnv.getTestInstance(context);
+
+        //Mike ipns://k2k4r8n098cwalcc7rdntd19nsjyzh6rku1hvgsmkjzvnw582mncc4b4
 
         String key = "k2k4r8n098cwalcc7rdntd19nsjyzh6rku1hvgsmkjzvnw582mncc4b4";
 

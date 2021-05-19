@@ -9,5 +9,6 @@ import io.ipfs.core.Closeable;
 public interface Interface extends Fetcher, BitSwapReceiver {
     void reset();
 
-    void load(@NonNull Closeable closeable, @NonNull Cid cid);
+    void loadProvider(@NonNull Closeable closeable, @NonNull Cid cid);
+
 }

@@ -36,19 +36,18 @@ public class Exchange implements Interface {
     }
 
     @Override
-    public void load(@NonNull Closeable closeable, @NonNull Cid cid) {
+    public void loadProvider(@NonNull Closeable closeable, @NonNull Cid cid) {
         // nothing to do here
     }
 
     @Override
-    public boolean GatePeer(@NonNull PeerId peerID) {
+    public boolean gatePeer(@NonNull PeerId peerID) {
         // nothing to do here
         return false;
     }
 
     @Override
-    public boolean ReceiveMessage(@NonNull PeerId peer, @NonNull BitSwapMessage incoming) {
+    public void receiveMessage(@NonNull PeerId peer, @NonNull BitSwapMessage incoming) {
         // nothing to do here
-        return false;
     }
 }

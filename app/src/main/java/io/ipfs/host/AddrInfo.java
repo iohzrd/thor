@@ -39,6 +39,35 @@ public class AddrInfo {
         return addrInfo;
     }
 
+    public static boolean isSupported(@NonNull Multiaddr address) {
+
+        if( address.has(Protocol.Type.DNSADDR)){
+            return true;
+        }
+        if (address.has(Protocol.Type.DNS4)) {
+            return true;
+        }
+        if (address.has(Protocol.Type.DNS6)) {
+            return true;
+        }
+        if (address.has(Protocol.Type.IP4)) {
+            if (Objects.equals(address.getStringComponent(Protocol.Type.IP4), "127.0.0.1")) {
+                return false;
+            }
+        }
+        if (address.has(Protocol.Type.IP6)) {
+            if (Objects.equals(address.getStringComponent(Protocol.Type.IP6), "::1")) {
+                return false;
+            }
+        }
+        if (address.has(Protocol.Type.QUIC)) {
+            return true;
+        } else {
+            LogUtils.info(TAG, "Not supported " + address.toString());
+            return false;
+        }
+    }
+
     @NonNull
     @Override
     public String toString() {
@@ -63,48 +92,9 @@ public class AddrInfo {
 
 
     private void addAddress(@NonNull Multiaddr address) {
-        if (address.has(Protocol.Type.WS)) {
-            LogUtils.info(TAG, "WS " + address.toString()); // maybe TODO
-            return;
+        if(isSupported(address)){
+            addresses.add(address);
         }
-        if (address.has(Protocol.Type.WSS)) {
-            LogUtils.info(TAG, "WSS " + address.toString()); // maybe TODO
-            return;
-        }
-        if (address.has(Protocol.Type.DNS4)) {
-            LogUtils.info(TAG, "DNS4 " + address.toString()); // maybe TODO
-            this.addresses.add(address); // TODO
-            return;
-        }
-        if (address.has(Protocol.Type.DNS6)) {
-            LogUtils.info(TAG, "DNS6 " + address.toString()); // maybe TODO
-            //this.addresses.add(address); // TODO
-            return;
-        }
-        if (address.has(Protocol.Type.P2PCIRCUIT)) { // TODO SUPPORT THIS
-            LogUtils.info(TAG, "P2PCIRCUIT " + address.toString());
-            return;
-        }
-
-
-        if (address.has(Protocol.Type.IP4)) {
-            if (Objects.equals(address.getStringComponent(Protocol.Type.IP4), "127.0.0.1")) { // TODO
-                return;
-            }
-        }
-        if (address.has(Protocol.Type.IP6)) {
-            if (Objects.equals(address.getStringComponent(Protocol.Type.IP6), "::1")) { // TODO
-                return;
-            }
-        }
-        if (address.has(Protocol.Type.QUIC) && address.has(Protocol.Type.IP4)) { // TODO SUPPORT THIS
-            //LogUtils.error(TAG, "QUIC " + address.toString());
-            this.addresses.add(address); // TODO
-        } else {
-            LogUtils.info(TAG, address.toString());
-        }
-
-        /*this.addresses.add(address);*/
     }
 
     public boolean hasAddresses() {

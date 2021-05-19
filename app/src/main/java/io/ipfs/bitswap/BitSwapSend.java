@@ -69,7 +69,7 @@ public class BitSwapSend extends SimpleChannelInboundHandler<ByteBuf> {
                 }
             }
         } else {
-            LogUtils.debug(TAG, "iteration " + data.length + " "
+            LogUtils.error(TAG, "iteration " + data.length + " "
                     + reader.expectedBytes() + " " + ctx.name() + " "
                     + ctx.channel().remoteAddress());
         }

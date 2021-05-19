@@ -24,6 +24,7 @@ public class StreamHandler {
     private static final ConcurrentHashMap<Long, StreamHandler> streams = new ConcurrentHashMap<>();
     private final long connection;
     private final LiteHost host;
+    private long time = System.currentTimeMillis();
     private final HashMap<Long, DataHandler> handlers = new HashMap<>();
     private final HashMap<Long, String> protocols = new HashMap<>();
 
@@ -112,13 +113,14 @@ public class StreamHandler {
                         QuicheWrapper.write(connection, streamId, DataHandler.writeToken(IPFS.PUSH_PROTOCOL));
                         break;
                     case IPFS.BIT_SWAP_PROTOCOL:
-                        if (host.GatePeer(quicChannel.attr(LiteHost.PEER_KEY).get())) {
+                        if (host.gatePeer(quicChannel.attr(LiteHost.PEER_KEY).get())) {
                             QuicheWrapper.writeAndFin(connection, streamId, DataHandler.writeToken(IPFS.NA));
                             close(streamId);
                             return;
                         } else {
                             QuicheWrapper.write(connection, streamId, DataHandler.writeToken(IPFS.BIT_SWAP_PROTOCOL));
                         }
+                        time = System.currentTimeMillis();
                         break;
                     case IPFS.IDENTITY_PROTOCOL:
                         QuicheWrapper.write(connection, streamId, DataHandler.writeToken(IPFS.IDENTITY_PROTOCOL));
@@ -130,8 +132,8 @@ public class StreamHandler {
                     default:
                         LogUtils.debug(TAG, "Ignore " + token + " Connection " + connection +
                                 " StreamId " + streamId);
-                        QuicheWrapper.writeAndFin(connection, streamId, DataHandler.writeToken(IPFS.NA));
-                        close(streamId);
+                        QuicheWrapper.write(connection, streamId, DataHandler.writeToken(IPFS.NA));
+                        //close(streamId);
                         return;
                 }
             }
@@ -144,13 +146,13 @@ public class StreamHandler {
                 if (lastProtocol != null) {
                     switch (lastProtocol) {
                         case IPFS.BIT_SWAP_PROTOCOL:
-                            boolean abort = host.forwardMessage(
+                            host.forwardMessage(
                                     quicChannel.attr(LiteHost.PEER_KEY).get(),
                                     MessageOuterClass.Message.parseFrom(message));
-                            if (abort) {
-                                QuicheWrapper.streamSendFin(connection, streamId);
-                                close(streamId);
-                            }
+                            LogUtils.error(TAG, "Time " + (System.currentTimeMillis() - time) +
+                                    " Connection " + connection + " StreamId " + streamId +
+                                    " PeerId " + quicChannel.attr(LiteHost.PEER_KEY).get() +
+                                    " Protected " + host.isProtected(quicChannel.attr(LiteHost.PEER_KEY).get()));
                             break;
                         case IPFS.PUSH_PROTOCOL:
                             host.push(quicChannel.attr(LiteHost.PEER_KEY).get(), message);

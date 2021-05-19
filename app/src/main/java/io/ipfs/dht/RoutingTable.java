@@ -9,7 +9,6 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 import io.LogUtils;
-import io.ipfs.host.Metrics;
 import io.ipfs.host.PeerId;
 
 public class RoutingTable {
@@ -18,11 +17,10 @@ public class RoutingTable {
     private final ID local;  // ID of the local peer
     private final ConcurrentHashMap<Integer, Bucket> buckets = new ConcurrentHashMap<>();
     private final int bucketSize;
-    private final Metrics metrics;
 
 
-    public RoutingTable(@NonNull Metrics metrics, int bucketSize, @NonNull ID local) {
-        this.metrics = metrics;
+
+    public RoutingTable(int bucketSize, @NonNull ID local) {
         this.bucketSize = bucketSize;
         this.local = local;
     }
@@ -137,7 +135,7 @@ public class RoutingTable {
             // in that bucket which is replaceable.
             // we don't really need a stable sort here as it doesn't matter which peer we evict
             // as long as it's a replaceable peer.
-            PeerId replaceablePeer = bucket.weakest(metrics);
+            PeerId replaceablePeer = bucket.weakest();
 
             if (replaceablePeer != null) {
                 // let's evict it and add the new peer
