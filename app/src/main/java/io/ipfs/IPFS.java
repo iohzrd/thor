@@ -774,7 +774,7 @@ public class IPFS {
                         if (addrInfo.hasAddresses()) {
                             peers.add(peerId);
                             host.protectPeer(peerId);
-                            host.addAddrs(addrInfo);
+                            host.addToAddressBook(addrInfo);
                         }
                     } catch (Throwable throwable) {
                         LogUtils.error(TAG, throwable);
@@ -1171,7 +1171,7 @@ public class IPFS {
                 }
             } else {
                 AddrInfo addrInfo = AddrInfo.create(peerId, multiaddr);
-                host.addAddrs(addrInfo);
+                host.addToAddressBook(addrInfo);
                 host.connect(closeable, peerId, timeout);
                 return true;
             }

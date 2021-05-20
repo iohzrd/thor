@@ -121,7 +121,7 @@ public class KadDht implements Routing {
             AddrInfo addrInfo = AddrInfo.create(peerId, multiAddresses);
             if (addrInfo.hasAddresses()) {
                 peers.add(addrInfo);
-                host.addAddrs(addrInfo);
+                host.addToAddressBook(addrInfo);
             }
         }
         return peers;
@@ -241,7 +241,7 @@ public class KadDht implements Routing {
 
                 if (addrInfo.hasAddresses()) {
                     provs.add(addrInfo);
-                    host.addAddrs(addrInfo);
+                    host.addToAddressBook(addrInfo);
                 }
             }
 

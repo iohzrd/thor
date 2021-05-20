@@ -459,7 +459,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork {
         swarm.remove(peerId);
     }
 
-    public void addAddrs(@NonNull AddrInfo addrInfo) {
+    public void addToAddressBook(@NonNull AddrInfo addrInfo) {
 
         try {
             PeerId peerId = addrInfo.getPeerId();
