@@ -505,12 +505,6 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork {
     @NonNull
     @Override
     public Set<PeerId> getPeers() {
-
-        /* TODO
-        for (Connection connection : getConnections()) {
-            peerIds.add(connection.remoteId());
-        }*/
-
         return new HashSet<>(swarm);
     }
 
