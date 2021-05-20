@@ -400,7 +400,7 @@ public class KadDht implements Routing {
             Dht.Message msg = request.get();
             Objects.requireNonNull(msg);
 
-            p.setLatency(System.currentTimeMillis()-time);
+            p.setLatency(System.currentTimeMillis() - time);
 
             return msg;
 
