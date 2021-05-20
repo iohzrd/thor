@@ -9,21 +9,21 @@ import io.ipfs.host.PeerId;
 import io.ipfs.ipns.Ipns;
 
 public interface Routing {
-    void PutValue(@NonNull Closeable closable, @NonNull byte[] key,
+    void putValue(@NonNull Closeable closable, @NonNull byte[] key,
                   @NonNull byte[] data) throws ClosedException;
 
 
-    boolean FindPeer(@NonNull Closeable closeable, @NonNull PeerId peerID) throws ClosedException;
+    boolean findPeer(@NonNull Closeable closeable, @NonNull PeerId peerID) throws ClosedException;
 
 
-    void SearchValue(@NonNull Closeable closeable, @NonNull ResolveInfo resolveInfo,
+    void searchValue(@NonNull Closeable closeable, @NonNull ResolveInfo resolveInfo,
                      @NonNull byte[] key, int quorum) throws ClosedException;
 
 
-    void FindProviders(@NonNull Closeable closeable, @NonNull Providers providers,
+    void findProviders(@NonNull Closeable closeable, @NonNull Providers providers,
                        @NonNull Cid cid) throws ClosedException;
 
-    void Provide(@NonNull Closeable closeable, @NonNull Cid cid) throws ClosedException;
+    void provide(@NonNull Closeable closeable, @NonNull Cid cid) throws ClosedException;
 
 
     void bootstrap();

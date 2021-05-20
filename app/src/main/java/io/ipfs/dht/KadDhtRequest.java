@@ -58,7 +58,7 @@ public class KadDhtRequest extends SimpleChannelInboundHandler<ByteBuf> {
 
             for (String token : reader.getTokens()) {
                 LogUtils.verbose(TAG, "request " + token);
-                if (Objects.equals(token, IPFS.KAD_DHT_PROTOCOL)) {
+                if (Objects.equals(token, IPFS.DHT_PROTOCOL)) {
                     activation.complete(
                             ctx.writeAndFlush(DataHandler.encode(messageLite))
                                     .addListener(QuicStreamChannel.SHUTDOWN_OUTPUT).get());

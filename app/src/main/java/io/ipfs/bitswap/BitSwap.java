@@ -73,8 +73,8 @@ public class BitSwap implements Interface {
     }
 
     @Override
-    public void loadProvider(@NonNull Closeable closeable, @NonNull Cid cid) {
-        contentManager.loadProvider(closeable, cid);
+    public void loadProviders(@NonNull Closeable closeable, @NonNull Cid cid) {
+        contentManager.loadProviders(closeable, cid);
     }
 
     @Override
@@ -108,10 +108,10 @@ public class BitSwap implements Interface {
         for (Block block : wanted) {
             LogUtils.verbose(TAG, "ReceiveBlock " + peer.toBase58() +
                     " " + block.Cid().String());
-            contentManager.BlockReceived(peer, block);
+            contentManager.blockReceived(peer, block);
         }
 
-        contentManager.HaveReceived(peer, haves);
+        contentManager.haveReceived(peer, haves);
 
 
     }
@@ -119,7 +119,7 @@ public class BitSwap implements Interface {
 
     @Override
     public boolean gatePeer(@NonNull PeerId peerID) {
-        return contentManager.GatePeer(peerID);
+        return contentManager.gatePeer(peerID);
     }
 
 
@@ -176,7 +176,7 @@ public class BitSwap implements Interface {
 
 
             streamChannel.writeAndFlush(DataHandler.writeToken(IPFS.STREAM_PROTOCOL));
-            streamChannel.writeAndFlush(DataHandler.writeToken(IPFS.BIT_SWAP_PROTOCOL));
+            streamChannel.writeAndFlush(DataHandler.writeToken(IPFS.BITSWAP_PROTOCOL));
 
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);

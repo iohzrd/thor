@@ -13,6 +13,7 @@ import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.LogUtils;
+import io.ipfs.IPFS;
 import io.ipfs.cid.Cid;
 import io.ipfs.core.Closeable;
 import io.ipfs.core.ClosedException;
@@ -45,7 +46,7 @@ public class ContentManager {
     }
 
 
-    public void HaveReceived(@NonNull PeerId peer, @NonNull List<Cid> cids) {
+    public void haveReceived(@NonNull PeerId peer, @NonNull List<Cid> cids) {
 
         for (Cid cid : cids) {
 
@@ -58,12 +59,6 @@ public class ContentManager {
                 priority.add(peer);
 
             }
-        }
-    }
-
-    private void createMatch(@NonNull Cid cid) {
-        if (!matches.containsKey(cid)) {
-            matches.put(cid, new ConcurrentLinkedDeque<>());
         }
     }
 
@@ -80,7 +75,8 @@ public class ContentManager {
         }
     }
 
-    public void runHaveMessage(@NonNull Closeable closeable, @NonNull PeerId peer, @NonNull List<Cid> cids) {
+    public void runHaveMessage(@NonNull Closeable closeable, @NonNull PeerId peer,
+                               @NonNull List<Cid> cids, boolean rerun) {
         new Thread(() -> {
             long start = System.currentTimeMillis();
             try {
@@ -91,9 +87,16 @@ public class ContentManager {
                 whitelist.add(peer);
             } catch (ClosedException ignore) {
                 // ignore
-            } catch (ProtocolIssue | ConnectionIssue | TimeoutIssue ignore) {
-                LogUtils.error(TAG, peer.toBase58() + " " + ignore);
+            } catch (ProtocolIssue protocolIssue) {
+                LogUtils.error(TAG, peer.toBase58() + " " + protocolIssue);
                 priority.remove(peer);
+            } catch (ConnectionIssue | TimeoutIssue issue) {
+                LogUtils.error(TAG, peer.toBase58() + " " + issue);
+                if (rerun) {
+                    runHaveMessage(closeable, peer, cids, false);
+                } else {
+                    priority.remove(peer);
+                }
             } catch (Throwable throwable) {
                 priority.remove(peer);
                 LogUtils.error(TAG, throwable);
@@ -104,8 +107,13 @@ public class ContentManager {
         }).start();
     }
 
+
     public Block runWantHaves(@NonNull Closeable closeable, @NonNull Cid cid) throws ClosedException {
 
+        matches.put(cid, new ConcurrentLinkedDeque<>());
+
+        long enter = System.currentTimeMillis();
+        boolean runLoadProviders = true;
         Set<PeerId> haves = new HashSet<>();
         Set<PeerId> wants = new HashSet<>();
         priority.addAll(network.getPeers());
@@ -118,7 +126,7 @@ public class ContentManager {
             for (PeerId peer : priority) {
                 if (!haves.contains(peer)) {
                     haves.add(peer);
-                    runHaveMessage(closeable, peer, Collections.singletonList(cid));
+                    runHaveMessage(closeable, peer, Collections.singletonList(cid), true);
                 }
             }
 
@@ -140,8 +148,8 @@ public class ContentManager {
                             }
                         } catch (ClosedException closedException) {
                             // ignore
-                        } catch (ProtocolIssue ignore) {
-                            LogUtils.error(TAG, peer.toBase58() + " " + ignore);
+                        } catch (ProtocolIssue issue) {
+                            LogUtils.error(TAG, peer.toBase58() + " " + issue);
                             whitelist.remove(peer);
                         } catch (Throwable throwable) {
                             whitelist.remove(peer);
@@ -157,12 +165,19 @@ public class ContentManager {
             if (closeable.isClosed()) {
                 throw new ClosedException();
             }
+
+            if (runLoadProviders && System.currentTimeMillis()
+                    > (enter + IPFS.BITSWAP_LOAD_PROVIDERS_REFRESH)) {
+                runLoadProviders = false;
+                loadProviders(closeable, cid);
+            }
+
         }
         return blockStore.Get(cid);
     }
 
 
-    public void BlockReceived(@NonNull PeerId peer, @NonNull Block block) {
+    public void blockReceived(@NonNull PeerId peer, @NonNull Block block) {
 
         try {
             Cid cid = block.Cid();
@@ -180,7 +195,7 @@ public class ContentManager {
         }
     }
 
-    public boolean GatePeer(PeerId peerID) {
+    public boolean gatePeer(PeerId peerID) {
         return !whitelist.contains(peerID);
     }
 
@@ -194,16 +209,10 @@ public class ContentManager {
         for (PeerId peer : priority) {
             if (!handled.contains(peer)) {
                 handled.add(peer);
-                List<Cid> loads = new ArrayList<>();
-                for (Cid cid : cids) {
-                    if (!matches.containsKey(cid)) {
-                        loads.add(cid);
-                        createMatch(cid);
-                    }
-                }
+
                 LogUtils.verbose(TAG, "LoadBlocks " + peer.toBase58());
 
-                runHaveMessage(closeable, peer, loads);
+                runHaveMessage(closeable, peer, cids, true);
             }
         }
     }
@@ -213,12 +222,12 @@ public class ContentManager {
             synchronized (cid.String().intern()) {
                 Block block = blockStore.Get(cid);
                 if (block == null) {
-                    if (root) {
-                        loadProvider(closeable, cid);
-                    }
-                    createMatch(cid);
                     AtomicBoolean done = new AtomicBoolean(false);
                     LogUtils.info(TAG, "Block Get " + cid.String());
+
+                    if (root) {
+                        loadProviders(() -> closeable.isClosed() || done.get(), cid);
+                    }
                     try {
                         return runWantHaves(() -> closeable.isClosed() || done.get(), cid);
                     } finally {
@@ -233,13 +242,13 @@ public class ContentManager {
         }
     }
 
-    public void loadProvider(@NonNull Closeable closeable, @NonNull Cid cid) {
+    public void loadProviders(@NonNull Closeable closeable, @NonNull Cid cid) {
 
         if (loads.contains(cid)) {
             return;
         }
         loads.add(cid);
-        LogUtils.verbose(TAG, "Load Provider Start " + cid.String());
+        LogUtils.error(TAG, "Load Provider Start " + cid.String());
         new Thread(() -> {
             long start = System.currentTimeMillis();
             try {

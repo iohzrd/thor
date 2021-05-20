@@ -59,6 +59,26 @@ public class IpfsFindPeer {
 
 
     }
+    @Test
+    public void find_peer_test1() {
+
+        IPFS ipfs = TestEnv.getTestInstance(context);
+
+        PeerId relay = PeerId.fromBase58("QmV8P1n7qS8ozMGNkE8cAkgvVeB2PY2tXUvQgWkAgL2uke");
+
+        boolean result = ipfs.swarmConnect(IPFS.P2P_PATH + relay.toBase58(),
+                30);
+        LogUtils.debug(TAG, relay.toBase58() + " " + result);
+
+        Set<Multiaddr> addresses = ipfs.getAddresses(relay);
+        assertFalse(addresses.isEmpty());
+
+        for (Multiaddr addr:addresses) {
+            LogUtils.debug(TAG, addr.toString());
+        }
+
+
+    }
 
     @Test
     public void find_peer_mike() {

@@ -75,12 +75,10 @@ import io.netty.incubator.codec.quic.QuicClientCodecBuilder;
 import io.netty.incubator.codec.quic.QuicServerCodecBuilder;
 import io.netty.incubator.codec.quic.QuicSslContext;
 import io.netty.incubator.codec.quic.QuicSslContextBuilder;
-import io.netty.incubator.codec.quic.QuicheQuicConnectionStats;
 import io.netty.util.AttributeKey;
 import io.netty.util.NetUtil;
 import io.netty.util.concurrent.Promise;
 import io.netty.util.internal.EmptyArrays;
-import io.quic.QuicheWrapper;
 import relay.pb.Relay;
 
 
@@ -282,7 +280,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork {
     @Override
     public void findProviders(@NonNull Closeable closeable, @NonNull Routing.Providers providers,
                               @NonNull Cid cid) throws ClosedException {
-        routing.FindProviders(closeable, providers, cid);
+        routing.findProviders(closeable, providers, cid);
     }
 
     @NonNull
@@ -423,7 +421,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork {
 
         byte[] ipns = IPFS.IPNS_PATH.getBytes();
         byte[] ipnsKey = Bytes.concat(ipns, id.getBytes());
-        routing.PutValue(closable, ipnsKey, bytes);
+        routing.putValue(closable, ipnsKey, bytes);
     }
 
     public boolean isConnected(@NonNull PeerId id) {
@@ -508,14 +506,12 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork {
     @Override
     public Set<PeerId> getPeers() {
 
-        Set<PeerId> peerIds = new HashSet<>(swarm);
-
         /* TODO
         for (Connection connection : getConnections()) {
             peerIds.add(connection.remoteId());
         }*/
 
-        return peerIds;
+        return new HashSet<>(swarm);
     }
 
     public boolean canHop(@NonNull Closeable closeable, @NonNull PeerId peerId)
@@ -724,7 +720,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork {
 
 
     private List<String> getProtocols() {
-        return Arrays.asList(IPFS.STREAM_PROTOCOL, IPFS.IDENTITY_PROTOCOL, IPFS.BIT_SWAP_PROTOCOL);
+        return Arrays.asList(IPFS.STREAM_PROTOCOL, IPFS.IDENTITY_PROTOCOL, IPFS.BITSWAP_PROTOCOL);
     }
 
 
@@ -760,7 +756,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork {
 
 
     public Promise<QuicChannel> dial(@NonNull Multiaddr multiaddr,
-                                     @NonNull PeerId peerId) throws UnknownHostException, InterruptedException {
+                                     @NonNull PeerId peerId) throws UnknownHostException {
 
         InetAddress inetAddress;
         if (multiaddr.has(Protocol.Type.IP4)) {

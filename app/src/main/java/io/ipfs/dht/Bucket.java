@@ -39,6 +39,7 @@ public class Bucket {
                 }
 
                 // shortcut
+                //break; // TODO rethink
                 if (tmp == Long.MAX_VALUE) {
                     break;
                 }

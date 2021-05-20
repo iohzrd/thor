@@ -51,7 +51,7 @@ public class KadDhtSend extends SimpleChannelInboundHandler<ByteBuf> {
 
         if (reader.isDone()) {
             for (String received : reader.getTokens()) {
-                if (Objects.equals(received, IPFS.KAD_DHT_PROTOCOL)) {
+                if (Objects.equals(received, IPFS.DHT_PROTOCOL)) {
                     stream.complete(ctx.writeAndFlush(DataHandler.encode(message.toByteArray())).get());
                 } else if (!Objects.equals(received, IPFS.STREAM_PROTOCOL)) {
                     throw new ProtocolIssue();

@@ -128,7 +128,7 @@ public class KadDht implements Routing {
     }
 
 
-    private void GetClosestPeers(@NonNull Closeable closeable, @NonNull byte[] key,
+    private void getClosestPeers(@NonNull Closeable closeable, @NonNull byte[] key,
                                  @NonNull Channel channel) throws ClosedException {
         if (key.length == 0) {
             throw new RuntimeException("can't lookup empty key");
@@ -151,7 +151,7 @@ public class KadDht implements Routing {
     }
 
     @Override
-    public void PutValue(@NonNull Closeable ctx, @NonNull byte[] key, @NonNull byte[] value) throws ClosedException {
+    public void putValue(@NonNull Closeable ctx, @NonNull byte[] key, @NonNull byte[] value) throws ClosedException {
 
 
         // don't allow local users to put bad values.
@@ -169,7 +169,7 @@ public class KadDht implements Routing {
                 .setTimeReceived(format).build();
 
         ConcurrentSkipListSet<PeerId> handled = new ConcurrentSkipListSet<>();
-        GetClosestPeers(ctx, key, addrInfo -> {
+        getClosestPeers(ctx, key, addrInfo -> {
             PeerId peerId = addrInfo.getPeerId();
             if (!handled.contains(peerId)) {
                 handled.add(peerId);
@@ -206,7 +206,7 @@ public class KadDht implements Routing {
     }
 
     @Override
-    public void FindProviders(@NonNull Closeable closeable, @NonNull Providers providers,
+    public void findProviders(@NonNull Closeable closeable, @NonNull Providers providers,
                               @NonNull Cid cid) throws ClosedException {
         if (!cid.Defined()) {
             throw new RuntimeException("Cid invalid");
@@ -233,9 +233,11 @@ public class KadDht implements Routing {
                         multiAddresses.add(multiaddr);
                     }
                 }
-                AddrInfo addrInfo = AddrInfo.create(peerId, multiAddresses);
 
-                LogUtils.info(TAG, "got provider before filter : " + addrInfo.toString());
+                LogUtils.info(TAG, "got provider before filter " + peerId.toBase58() + " "
+                        + multiAddresses.toString());
+
+                AddrInfo addrInfo = AddrInfo.create(peerId, multiAddresses);
 
                 if (addrInfo.hasAddresses()) {
                     provs.add(addrInfo);
@@ -287,7 +289,7 @@ public class KadDht implements Routing {
     }
 
     @Override
-    public void Provide(@NonNull Closeable closeable, @NonNull Cid cid) throws ClosedException {
+    public void provide(@NonNull Closeable closeable, @NonNull Cid cid) throws ClosedException {
 
         if (!cid.Defined()) {
             throw new RuntimeException("invalid cid: undefined");
@@ -298,7 +300,7 @@ public class KadDht implements Routing {
         final Dht.Message mes = makeProvRecord(key);
 
         ConcurrentSkipListSet<PeerId> handled = new ConcurrentSkipListSet<>();
-        GetClosestPeers(closeable, key, addrInfo -> {
+        getClosestPeers(closeable, key, addrInfo -> {
             PeerId peerId = addrInfo.getPeerId();
             if (!handled.contains(peerId)) {
                 handled.add(peerId);
@@ -328,7 +330,7 @@ public class KadDht implements Routing {
 
             streamChannel.updatePriority(new QuicStreamPriority(IPFS.PRIORITY_HIGH, false));
             streamChannel.writeAndFlush(DataHandler.writeToken(IPFS.STREAM_PROTOCOL));
-            streamChannel.writeAndFlush(DataHandler.writeToken(IPFS.KAD_DHT_PROTOCOL));
+            streamChannel.writeAndFlush(DataHandler.writeToken(IPFS.DHT_PROTOCOL));
 
             stream.get(IPFS.CONNECT_TIMEOUT, TimeUnit.SECONDS);
             streamChannel.close().get();
@@ -424,7 +426,7 @@ public class KadDht implements Routing {
 
 
             streamChannel.writeAndFlush(DataHandler.writeToken(IPFS.STREAM_PROTOCOL));
-            streamChannel.writeAndFlush(DataHandler.writeToken(IPFS.KAD_DHT_PROTOCOL));
+            streamChannel.writeAndFlush(DataHandler.writeToken(IPFS.DHT_PROTOCOL));
 
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
@@ -476,7 +478,7 @@ public class KadDht implements Routing {
     }
 
     @Override
-    public boolean FindPeer(@NonNull Closeable closeable, @NonNull PeerId id) throws ClosedException {
+    public boolean findPeer(@NonNull Closeable closeable, @NonNull PeerId id) throws ClosedException {
 
         boolean connected = host.isConnected(id);
         if (connected) {
@@ -664,7 +666,7 @@ public class KadDht implements Routing {
 
 
     @Override
-    public void SearchValue(@NonNull Closeable ctx, @NonNull ResolveInfo resolveInfo,
+    public void searchValue(@NonNull Closeable ctx, @NonNull ResolveInfo resolveInfo,
                             @NonNull byte[] key, final int quorum) throws ClosedException {
 
         AtomicInteger numResponses = new AtomicInteger(0);

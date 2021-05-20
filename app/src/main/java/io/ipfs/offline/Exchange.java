@@ -36,7 +36,7 @@ public class Exchange implements Interface {
     }
 
     @Override
-    public void loadProvider(@NonNull Closeable closeable, @NonNull Cid cid) {
+    public void loadProviders(@NonNull Closeable closeable, @NonNull Cid cid) {
         // nothing to do here
     }
 

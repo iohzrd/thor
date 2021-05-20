@@ -84,10 +84,10 @@ public class IPFS {
     public static final String TimeFormatIpfs = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSS'Z'";  // RFC3339Nano = "2006-01-02T15:04:05.999999999Z07:00"
     public static final String RELAY_RENDEZVOUS = "/libp2p/relay";
     public static final String RELAY_PROTOCOL = "/libp2p/circuit/relay/0.1.0";
-    public static final String KAD_DHT_PROTOCOL = "/ipfs/kad/1.0.0";
+    public static final String DHT_PROTOCOL = "/ipfs/kad/1.0.0";
     public static final String PUSH_PROTOCOL = "/ipfs/push/1.0.0";
     public static final String STREAM_PROTOCOL = "/multistream/1.0.0";
-    public static final String BIT_SWAP_PROTOCOL = "/ipfs/bitswap/1.2.0";
+    public static final String BITSWAP_PROTOCOL = "/ipfs/bitswap/1.2.0";
     public static final String IDENTITY_PROTOCOL = "/ipfs/id/1.0.0";
     public static final String INDEX_HTML = "index.html";
     public static final String AGENT = "/go-ipfs/0.9.0/thor"; // todo rename
@@ -136,6 +136,7 @@ public class IPFS {
     public static final int KAD_DHT_BUCKET_SIZE = 20;
     public static final int KAD_DHT_BETA = 20;
     public static final int CONNECT_TIMEOUT = 5;
+    public static final int BITSWAP_LOAD_PROVIDERS_REFRESH = 10000;
     private static final String SWARM_PORT_KEY = "swarmPortKey";
     private static final String PRIVATE_KEY = "privateKey";
     private static final String PUBLIC_KEY = "publicKey";
@@ -484,7 +485,7 @@ public class IPFS {
 
     public void provide(@NonNull Cid cid, @NonNull Closeable closable) throws ClosedException {
         try {
-            host.getRouting().Provide(closable, cid);
+            host.getRouting().provide(closable, cid);
         } catch (ClosedException closedException) {
             throw closedException;
         } catch (Throwable throwable) {
@@ -1018,7 +1019,7 @@ public class IPFS {
             byte[] ipns = IPFS.IPNS_PATH.getBytes();
             byte[] ipnsKey = Bytes.concat(ipns, id.getBytes());
 
-            host.getRouting().SearchValue(
+            host.getRouting().searchValue(
                     () -> (timeout.get() < System.currentTimeMillis()) || closeable.isClosed(),
                     entry -> {
 
@@ -1087,7 +1088,7 @@ public class IPFS {
 
     public void loadProvider(@NonNull Cid cid, @NonNull Closeable closeable) {
         try {
-            host.getExchange().loadProvider(closeable, cid);
+            host.getExchange().loadProviders(closeable, cid);
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         }
@@ -1163,7 +1164,7 @@ public class IPFS {
             if (multiAddress.startsWith(IPFS.P2P_PATH)) {
                 Set<Multiaddr> addrInfo = getAddresses(peerId);
                 if (addrInfo.isEmpty()) {
-                    return host.getRouting().FindPeer(closeable, peerId);
+                    return host.getRouting().findPeer(closeable, peerId);
                 } else {
                     host.connect(closeable, peerId, timeout);
                     return true;
