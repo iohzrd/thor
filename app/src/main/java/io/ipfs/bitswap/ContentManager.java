@@ -248,7 +248,7 @@ public class ContentManager {
             return;
         }
         loads.add(cid);
-        LogUtils.error(TAG, "Load Provider Start " + cid.String());
+        LogUtils.debug(TAG, "Load Provider Start " + cid.String());
         new Thread(() -> {
             long start = System.currentTimeMillis();
             try {

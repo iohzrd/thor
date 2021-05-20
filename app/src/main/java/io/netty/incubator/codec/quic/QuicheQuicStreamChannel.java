@@ -17,6 +17,7 @@ package io.netty.incubator.codec.quic;
 
 import androidx.annotation.NonNull;
 
+import io.LogUtils;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
@@ -403,6 +404,8 @@ final class QuicheQuicStreamChannel extends DefaultAttributeMap implements QuicS
         readable = true;
         if (readPending) {
             ((QuicStreamChannelUnsafe) unsafe()).recv();
+        } else {
+            LogUtils.error(getClass().getSimpleName(), "stream not read " + streamId());
         }
     }
 

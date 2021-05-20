@@ -804,7 +804,7 @@ public class IPFS {
                 } catch (Throwable throwable) {
                     LogUtils.error(TAG, throwable);
                 } finally {
-                    LogUtils.error(TAG, "NumPeers " + numConnections());
+                    LogUtils.debug(TAG, "NumPeers " + numConnections());
                 }
             }
         }
@@ -1034,15 +1034,15 @@ public class IPFS {
 
                         if (sequence < last) {
                             // newest value already available
+                            LogUtils.debug(TAG, "newest value " + sequence);
                             timeout.set(System.currentTimeMillis());
                             return;
                         }
 
                         if (value.startsWith(IPFS_PATH)) {
-                            timeout.set(System.currentTimeMillis() + RESOLVE_TIMEOUT);
-
                             resolvedName.set(new ResolvedName(entry.getPeerId(),
                                     sequence, value.replaceFirst(IPFS_PATH, "")));
+                            timeout.set(System.currentTimeMillis() + RESOLVE_TIMEOUT);
                         } else {
                             LogUtils.error(TAG, "invalid value " + value);
                         }
@@ -1056,7 +1056,7 @@ public class IPFS {
         }
 
 
-        LogUtils.info(TAG, "Finished resolve name " + name + " " +
+        LogUtils.debug(TAG, "Finished resolve name " + name + " " +
                 (System.currentTimeMillis() - time));
 
 

@@ -1336,7 +1336,7 @@ final class QuicheQuicChannel extends AbstractChannel implements QuicChannel {
                                 QuicheQuicStreamChannel streamChannel = streams.get(streamId);
                                 if (streamChannel == null) {
 
-                                    if (server || streamId == 1) {
+                                    if (server /*|| streamId == 1*/) {
                                         recvStreamPending = false;
                                         fireChannelReadCompletePending = true;
                                         streamChannel = addNewStreamChannel(streamId);
@@ -1345,9 +1345,7 @@ final class QuicheQuicChannel extends AbstractChannel implements QuicChannel {
                                     } else {
                                         StreamHandler streamHandler =
                                                 StreamHandler.getInstance(connAddr);
-                                        if(streamHandler != null) {
-                                            readStream(streamHandler, streamId);
-                                        }
+                                        readStream(streamHandler, streamId);
                                     }
                                 } else {
                                     streamChannel.readable();
