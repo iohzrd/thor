@@ -298,7 +298,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork {
     }
 
     @NonNull
-    private List<Multiaddr> prepareAddresses(@NonNull PeerId peerId, boolean ipv6) {
+    private List<Multiaddr> prepareAddresses(@NonNull PeerId peerId) {
         List<Multiaddr> all = new ArrayList<>();
         for (Multiaddr ma : getAddresses(peerId)) {
             try {
@@ -318,13 +318,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork {
         List<Multiaddr> result = new ArrayList<>();
         for (Multiaddr addr : all) {
             if (AddrInfo.isSupported(addr)) {
-                if (ipv6 && addr.has(Protocol.Type.IP6)) {
-                    result.add(addr);
-                } else if (!ipv6 && addr.has(Protocol.Type.IP4)) {
-                    result.add(addr);
-                } else {
-                    LogUtils.verbose(TAG, "Ignore " + addr.toString());
-                }
+                result.add(addr);
             }
         }
         return result;
@@ -586,43 +580,52 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork {
             throws ConnectionIssue, ClosedException {
 
 
-        Connection connection = connections.get(peerId);
-        if (connection != null) {
-            return connection;
-        }
+        synchronized (peerId.toBase58().intern()) {
+            Connection connection = connections.get(peerId);
+            if (connection != null) {
+                return connection;
+            }
 
-        List<Multiaddr> addrInfo = prepareAddresses(peerId, inet6());
+            boolean ipv6 = inet6();
+            List<Multiaddr> addrInfo = prepareAddresses(peerId);
 
-        if (!addrInfo.isEmpty()) {
+            if (!addrInfo.isEmpty()) {
 
-            for (Multiaddr address : addrInfo) {
+                for (Multiaddr address : addrInfo) {
 
-                if (closeable.isClosed()) {
-                    throw new ClosedException();
-                }
+                    if (ipv6 && !address.has(Protocol.Type.IP6)) {
+                        continue;
+                    }
+                    if (!ipv6 && address.has(Protocol.Type.IP6)) {
+                        continue;
+                    }
+                    if (closeable.isClosed()) {
+                        throw new ClosedException();
+                    }
 
-                try {
-                    long start = System.currentTimeMillis();
-                    Promise<QuicChannel> future = dial(address, peerId);
+                    try {
+                        long start = System.currentTimeMillis();
+                        Promise<QuicChannel> future = dial(address, peerId);
 
 
-                    QuicChannel quic = future.get(timeout, TimeUnit.SECONDS);
-                    Objects.requireNonNull(quic);
-                    LogUtils.verbose(TAG, "Success " + address + " " + (System.currentTimeMillis() - start));
+                        QuicChannel quic = future.get(timeout, TimeUnit.SECONDS);
+                        Objects.requireNonNull(quic);
+                        LogUtils.verbose(TAG, "Success " + address + " " + (System.currentTimeMillis() - start));
 
-                    Connection conn = new LiteConnection(quic, transform(quic.remoteAddress()));
-                    quic.closeFuture().addListener(future1 -> removeConnection(conn));
-                    addConnection(conn);
+                        Connection conn = new LiteConnection(quic, transform(quic.remoteAddress()));
+                        quic.closeFuture().addListener(future1 -> removeConnection(conn));
+                        addConnection(conn);
 
-                    return conn;
-                } catch (Throwable throwable) {
-                    LogUtils.debug(TAG, address + " " +
-                            throwable.getClass().getSimpleName());
+                        return conn;
+                    } catch (Throwable throwable) {
+                        LogUtils.debug(TAG, address + " " +
+                                throwable.getClass().getSimpleName());
+                    }
+
                 }
             }
+            throw new ConnectionIssue();
         }
-        throw new ConnectionIssue();
-
     }
 
     private void removeConnection(@NonNull Connection conn) {

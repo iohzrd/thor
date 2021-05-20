@@ -112,25 +112,29 @@ public class IPFS {
     public static final int TIMEOUT_BOOTSTRAP = 10;
     public static final int HIGH_WATER = 1000;
     public static final int GRACE_PERIOD = 10;
-    public static final int MIN_PEERS = 10;
+    public static final int MIN_PEERS = 5;
     public static final int RESOLVE_TIMEOUT = 1000; // 1 sec
     public static final long WANTS_WAIT_TIMEOUT = 500; // 500 ms
     public static final boolean EVALUATE_PEER = false;
     public static final short PRIORITY_URGENT = 1;
     public static final short PRIORITY_HIGH = 5;
     public static final short PRIORITY_NORMAL = 10;
+
+    @NonNull
+    public static final List<String> DHT_BOOTSTRAP_NODES = new ArrayList<>(Arrays.asList(
+            "/dnsaddr/bootstrap.libp2p.io/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN", // default dht peer
+            "/dnsaddr/bootstrap.libp2p.io/p2p/QmQCU2EcMqAqQPR2i9bChDtGNJchTbq5TbXJJ16u19uLTa", // default dht peer
+            "/dnsaddr/bootstrap.libp2p.io/p2p/QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb", // default dht peer
+            "/dnsaddr/bootstrap.libp2p.io/p2p/QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt" // default dht peer
+
+    ));
     // IPFS BOOTSTRAP
     @NonNull
     public static final List<String> IPFS_BOOTSTRAP_NODES = new ArrayList<>(Arrays.asList(
             "/ip4/147.75.195.153/tcp/4001/p2p/QmW9m57aiBDHAkKj9nmFSEn7ZqrcF1fZS4bipsTCHburei",// default relay  libp2p
             "/ip4/147.75.70.221/tcp/4001/p2p/Qme8g49gm3q4Acp7xWBKg3nAa9fxZ1YmyDJdyGgoG6LsXh",// default relay  libp2p
 
-            "/ip4/104.131.131.82/tcp/4001/p2p/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ", // mars.i.ipfs.io
-
-            "/dnsaddr/bootstrap.libp2p.io/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN", // default dht peer
-            "/dnsaddr/bootstrap.libp2p.io/p2p/QmQCU2EcMqAqQPR2i9bChDtGNJchTbq5TbXJJ16u19uLTa", // default dht peer
-            "/dnsaddr/bootstrap.libp2p.io/p2p/QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb", // default dht peer
-            "/dnsaddr/bootstrap.libp2p.io/p2p/QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt" // default dht peer
+            "/ip4/104.131.131.82/tcp/4001/p2p/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ" // mars.i.ipfs.io
 
     ));
     public static final int KAD_DHT_BUCKET_SIZE = 20;
@@ -209,7 +213,6 @@ public class IPFS {
         if (IPFS.CONNECTION_SERVICE_ENABLED) {
             host.addConnectionHandler(conn -> connected(conn.remoteId()));
         }
-
     }
 
     private static void setPublicKey(@NonNull Context context, @NonNull String key) {
@@ -754,57 +757,57 @@ public class IPFS {
     }
 
     public void bootstrap() {
+        synchronized (IPFS.TAG.intern()) {
+            if (numConnections() < MIN_PEERS) {
+                try {
+                    this.host.getRouting().bootstrap();
 
-        if (numConnections() < MIN_PEERS) {
+                    Set<String> addresses = DnsResolver.resolveDnsAddress(LIB2P_DNS);
+                    addresses.addAll(IPFS.DHT_BOOTSTRAP_NODES);
+                    addresses.addAll(IPFS.IPFS_BOOTSTRAP_NODES);
 
-            try {
-                Set<String> addresses = DnsResolver.resolveDnsAddress(LIB2P_DNS);
-                addresses.addAll(IPFS.IPFS_BOOTSTRAP_NODES);
-
-                Set<PeerId> peers = new HashSet<>();
-                for (String multiAddress : addresses) {
-                    try {
-                        Multiaddr multiaddr = new Multiaddr(multiAddress);
-                        String name = multiaddr.getStringComponent(Protocol.Type.P2P);
-                        Objects.requireNonNull(name);
-                        PeerId peerId = decode(name);
-                        Objects.requireNonNull(peerId);
-
-                        AddrInfo addrInfo = AddrInfo.create(peerId, multiaddr);
-                        if (addrInfo.hasAddresses()) {
-                            peers.add(peerId);
-                            host.protectPeer(peerId);
-                            host.addToAddressBook(addrInfo);
-                        }
-                    } catch (Throwable throwable) {
-                        LogUtils.error(TAG, throwable);
-                    }
-                }
-
-
-                ExecutorService executor = Executors.newFixedThreadPool(TIMEOUT_BOOTSTRAP);
-                for (PeerId peerId : peers) {
-                    executor.execute(() -> {
+                    Set<PeerId> peers = new HashSet<>();
+                    for (String multiAddress : addresses) {
                         try {
-                            host.connect(new TimeoutCloseable(TIMEOUT_BOOTSTRAP), peerId,
-                                    TIMEOUT_BOOTSTRAP);
+                            Multiaddr multiaddr = new Multiaddr(multiAddress);
+                            String name = multiaddr.getStringComponent(Protocol.Type.P2P);
+                            Objects.requireNonNull(name);
+                            PeerId peerId = decode(name);
+                            Objects.requireNonNull(peerId);
+
+                            AddrInfo addrInfo = AddrInfo.create(peerId, multiaddr);
+                            if (addrInfo.hasAddresses()) {
+                                peers.add(peerId);
+                                host.protectPeer(peerId);
+                                host.addToAddressBook(addrInfo);
+                            }
                         } catch (Throwable throwable) {
-                            LogUtils.error(TAG, throwable.getMessage());
+                            LogUtils.error(TAG, throwable);
                         }
-                    });
+                    }
+
+
+                    ExecutorService executor = Executors.newFixedThreadPool(TIMEOUT_BOOTSTRAP);
+                    for (PeerId peerId : peers) {
+                        executor.execute(() -> {
+                            try {
+                                host.connect(new TimeoutCloseable(TIMEOUT_BOOTSTRAP), peerId,
+                                        TIMEOUT_BOOTSTRAP);
+                            } catch (Throwable throwable) {
+                                LogUtils.error(TAG, throwable.getMessage());
+                            }
+                        });
+                    }
+                    executor.awaitTermination(TIMEOUT_BOOTSTRAP, TimeUnit.SECONDS);
+
+
+                } catch (Throwable throwable) {
+                    LogUtils.error(TAG, throwable);
+                } finally {
+                    LogUtils.error(TAG, "NumPeers " + numConnections());
                 }
-                executor.awaitTermination(TIMEOUT_BOOTSTRAP, TimeUnit.SECONDS);
-
-                host.getRouting().bootstrap();
-            } catch (Throwable throwable) {
-                LogUtils.error(TAG, throwable);
-            } finally {
-                LogUtils.verbose(TAG, "NumPeers " + numConnections());
             }
-
-
         }
-
     }
 
     @NonNull
@@ -1146,6 +1149,23 @@ public class IPFS {
                 executor.submit(() -> connector.connected(peerId));
             }
         }
+    }
+
+    public boolean swarmConnect(@NonNull PeerId peerId, @NonNull Closeable closeable) {
+        try {
+            host.protectPeer(peerId);
+            Set<Multiaddr> addrInfo = getAddresses(peerId);
+            if (addrInfo.isEmpty()) {
+                return host.getRouting().findPeer(closeable, peerId);
+            } else {
+                host.connect(closeable, peerId, IPFS.CONNECT_TIMEOUT);
+                return true;
+            }
+        } catch (Throwable e) {
+            LogUtils.error(TAG, " " + e.getClass().getName());
+        }
+
+        return false;
     }
 
     private boolean swarmConnect(@NonNull Closeable closeable,

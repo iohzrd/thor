@@ -12,6 +12,7 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.LogUtils;
@@ -20,6 +21,7 @@ import io.ipfs.core.ClosedException;
 import io.ipfs.core.TimeoutCloseable;
 import io.ipfs.format.Node;
 import io.ipfs.host.DnsResolver;
+import io.ipfs.host.PeerId;
 import io.ipfs.utils.Link;
 
 import static junit.framework.TestCase.assertFalse;
@@ -136,17 +138,20 @@ public class IpfsRealTest {
                 IPFS.CONNECT_TIMEOUT);
         LogUtils.debug(TAG, res.getPeerId().toBase58() + " " + result);
 
-        AtomicBoolean atomicBoolean = new AtomicBoolean(false);
 
+
+        ConcurrentSkipListSet<PeerId> peers = new ConcurrentSkipListSet<>();
         try {
-            ipfs.findProviders(addrInfo -> {
-                LogUtils.debug(TAG, addrInfo.toString());
-                atomicBoolean.set(true);
-            }, Cid.Decode(res.getHash()), new TimeoutCloseable(30));
-
+            ipfs.findProviders(peers::add, Cid.Decode(res.getHash()), new TimeoutCloseable(30));
         } catch (ClosedException ignore) {
         }
-        assertTrue(atomicBoolean.get());
+
+        assertFalse(peers.isEmpty());
+
+        for (PeerId peerId:peers) {
+            LogUtils.error(TAG, "connect " + peerId.toBase58() + " " +
+                    ipfs.swarmConnect(peerId, new TimeoutCloseable(15)));
+        }
 
     }
 }

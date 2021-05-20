@@ -14,9 +14,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentSkipListSet;
@@ -35,16 +37,18 @@ import io.ipfs.cid.Cid;
 import io.ipfs.core.Closeable;
 import io.ipfs.core.ClosedException;
 import io.ipfs.core.ConnectionIssue;
-import io.ipfs.core.InvalidRecord;
 import io.ipfs.core.ProtocolIssue;
+import io.ipfs.core.RecordIssue;
 import io.ipfs.core.TimeoutIssue;
 import io.ipfs.core.Validator;
 import io.ipfs.host.AddrInfo;
 import io.ipfs.host.Connection;
+import io.ipfs.host.DnsResolver;
 import io.ipfs.host.LiteHost;
 import io.ipfs.host.PeerId;
 import io.ipfs.ipns.Ipns;
 import io.ipfs.multiaddr.Multiaddr;
+import io.ipfs.multiaddr.Protocol;
 import io.ipfs.utils.DataHandler;
 import io.netty.handler.timeout.ReadTimeoutException;
 import io.netty.handler.timeout.ReadTimeoutHandler;
@@ -81,14 +85,34 @@ public class KadDht implements Routing {
     @Override
     public void bootstrap() {
         // Fill routing table with currently connected peers that are DHT servers
-        try {
-            for (Connection conn : host.getConnections()) {
-                PeerId peerId = conn.remoteId();
-                boolean isReplaceable = !host.isProtected(peerId);
-                peerFound(peerId, isReplaceable);
+        synchronized (TAG.intern()) {
+            try {
+                Set<String> addresses = new HashSet<>(IPFS.DHT_BOOTSTRAP_NODES);
+
+                for (String multiAddress : addresses) {
+                    try {
+                        Multiaddr multiaddr = new Multiaddr(multiAddress);
+                        String name = multiaddr.getStringComponent(Protocol.Type.P2P);
+                        Objects.requireNonNull(name);
+                        PeerId peerId = PeerId.fromBase58(name);
+                        Objects.requireNonNull(peerId);
+
+                        List<Multiaddr> result = DnsResolver.resolveDnsAddress(multiaddr);
+
+                        AddrInfo addrInfo = AddrInfo.create(peerId, result);
+
+                        if (addrInfo.hasAddresses()) {
+                            host.protectPeer(peerId);
+                            host.addToAddressBook(addrInfo);
+                            peerFound(peerId, false);
+                        }
+                    } catch (Throwable throwable) {
+                        LogUtils.error(TAG, throwable);
+                    }
+                }
+            } catch (Throwable throwable) {
+                LogUtils.error(TAG, throwable);
             }
-        } catch (Throwable throwable) {
-            LogUtils.error(TAG, throwable);
         }
     }
 
@@ -98,7 +122,6 @@ public class KadDht implements Routing {
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         }
-
     }
 
 
@@ -615,6 +638,8 @@ public class KadDht implements Routing {
                     Ipns.Entry entry = validator.validate(rec.getKey().toByteArray(), record);
                     return Pair.create(entry, peers);
                 }
+            } catch (RecordIssue issue) {
+                LogUtils.debug(TAG, issue.getMessage());
             } catch (Throwable throwable) {
                 LogUtils.error(TAG, throwable);
             }
@@ -688,7 +713,7 @@ public class KadDht implements Routing {
     public interface QueryFunc {
         @NonNull
         List<AddrInfo> query(@NonNull Closeable ctx, @NonNull PeerId peerId)
-                throws ClosedException, ProtocolIssue, TimeoutIssue, InvalidRecord, ConnectionIssue;
+                throws ClosedException, ProtocolIssue, TimeoutIssue, RecordIssue, ConnectionIssue;
     }
 
 

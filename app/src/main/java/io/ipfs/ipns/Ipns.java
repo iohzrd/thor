@@ -21,7 +21,7 @@ import java.util.Objects;
 import crypto.pb.Crypto;
 import io.ipfs.IPFS;
 import io.ipfs.cid.Cid;
-import io.ipfs.core.InvalidRecord;
+import io.ipfs.core.RecordIssue;
 import io.ipfs.core.Validator;
 import io.ipfs.crypto.Ecdsa;
 import io.ipfs.crypto.Ed25519;
@@ -129,12 +129,12 @@ public class Ipns implements Validator {
 
     @NonNull
     @Override
-    public Entry validate(@NonNull byte[] key, byte[] value) throws InvalidRecord {
+    public Entry validate(@NonNull byte[] key, byte[] value) throws RecordIssue {
 
         byte[] ipns = IPFS.IPNS_PATH.getBytes();
         int index = Bytes.indexOf(key, ipns);
         if (index != 0) {
-            throw new InvalidRecord();
+            throw new RecordIssue("parsing issue");
         }
 
         ipns.pb.Ipns.IpnsEntry entry;
@@ -142,7 +142,7 @@ public class Ipns implements Validator {
             entry = IpnsEntry.parseFrom(value);
             Objects.requireNonNull(entry);
         } catch (Throwable throwable) {
-            throw new InvalidRecord();
+            throw new RecordIssue("parsing issue");
         }
 
         byte[] pid = Arrays.copyOfRange(key, ipns.length, key.length);
@@ -151,7 +151,7 @@ public class Ipns implements Validator {
             Multihash mh = Multihash.deserialize(pid);
             peerId = PeerId.fromBase58(mh.toBase58());
         } catch (Throwable throwable) {
-            throw new InvalidRecord();
+            throw new RecordIssue("peer issue");
         }
 
         PubKey pubKey;
@@ -159,12 +159,12 @@ public class Ipns implements Validator {
             pubKey = getPublicKey(peerId, entry);
             Objects.requireNonNull(pubKey);
         } catch (Throwable throwable) {
-            throw new InvalidRecord();
+            throw new RecordIssue("pubkey issue");
         }
-        Validate(pubKey, entry);
+        validate(pubKey, entry);
 
 
-        return new Entry(peerId, GetEOL(entry), entry.getValue().toStringUtf8(), entry.getSequence());
+        return new Entry(peerId, getEOL(entry), entry.getValue().toStringUtf8(), entry.getSequence());
     }
 
     private int Compare(@NonNull Ipns.Entry a, @NonNull Ipns.Entry b) {
@@ -196,15 +196,15 @@ public class Ipns implements Validator {
     }
 
     @NonNull
-    private Date GetEOL(@NonNull ipns.pb.Ipns.IpnsEntry entry) throws InvalidRecord {
+    private Date getEOL(@NonNull ipns.pb.Ipns.IpnsEntry entry) throws RecordIssue {
         try {
             if (entry.getValidityType() != ipns.pb.Ipns.IpnsEntry.ValidityType.EOL) {
-                throw new InvalidRecord();
+                throw new RecordIssue("validity type");
             }
             String date = new String(entry.getValidity().toByteArray());
             return getDate(date);
         } catch (Throwable throwable) {
-            throw new InvalidRecord();
+            throw new RecordIssue("data issue");
         }
     }
 
@@ -215,7 +215,7 @@ public class Ipns implements Validator {
     // nothing is malformed.
     @NonNull
     private PubKey ExtractPublicKey(@NonNull PeerId pid, @NonNull ipns.pb.Ipns.IpnsEntry entry)
-            throws InvalidRecord, IOException {
+            throws RecordIssue, IOException {
 
 
         if (entry.hasPubKey()) {
@@ -226,7 +226,7 @@ public class Ipns implements Validator {
             PeerId expPid = PeerId.fromPubKey(pk);
 
             if (!Objects.equals(pid, expPid)) {
-                throw new InvalidRecord();
+                throw new RecordIssue("invalid peer");
             }
             return pk;
         }
@@ -236,25 +236,23 @@ public class Ipns implements Validator {
 
     @NonNull
     private PubKey getPublicKey(@NonNull PeerId pid, @NonNull ipns.pb.Ipns.IpnsEntry entry)
-            throws IOException, InvalidRecord {
+            throws IOException, RecordIssue {
         return ExtractPublicKey(pid, entry);
     }
 
-    private void Validate(@NonNull PubKey pk, @NonNull ipns.pb.Ipns.IpnsEntry entry) throws InvalidRecord {
+    private void validate(@NonNull PubKey pk, @NonNull ipns.pb.Ipns.IpnsEntry entry) throws RecordIssue {
 
         if (!pk.verify(Ipns.ipnsEntryDataForSig(entry), entry.getSignature().toByteArray())) {
-            throw new InvalidRecord();
+            throw new RecordIssue("signature wrong");
         }
 
-        try {
-            Date eol = GetEOL(entry);
 
-            if (new Date().after(eol)) {
-                throw new InvalidRecord();
-            }
-        } catch (Throwable throwable) {
-            throw new InvalidRecord();
+        Date eol = getEOL(entry);
+
+        if (new Date().after(eol)) {
+            throw new RecordIssue("outdated");
         }
+
     }
 
     public static class Entry {
