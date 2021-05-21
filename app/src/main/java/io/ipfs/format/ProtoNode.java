@@ -25,7 +25,7 @@ public class ProtoNode implements Node {
     public Cid cached;
     private byte[] data;
     private byte[] encoded;
-    private Builder mBuilder;
+    private Builder builder;
 
     public ProtoNode() {
     }
@@ -36,9 +36,9 @@ public class ProtoNode implements Node {
 
     public void SetCidBuilder(@Nullable Builder builder) {
         if (builder == null) {
-            this.mBuilder = v0CidPrefix;
+            this.builder = v0CidPrefix;
         } else {
-            this.mBuilder = builder.WithCodec(Cid.DagProtobuf);
+            this.builder = builder.WithCodec(Cid.DagProtobuf);
             this.cached = Cid.Undef();
         }
     }
@@ -114,7 +114,7 @@ public class ProtoNode implements Node {
         if (encoded != null && cached.Defined()) {
             return cached;
         }
-        cached = CidBuilder().Sum(data);
+        cached = getCidBuilder().Sum(data);
         return cached;
     }
 
@@ -168,38 +168,38 @@ public class ProtoNode implements Node {
         }
 
         if (!cached.Defined()) {
-            cached = CidBuilder().Sum(encoded);
+            cached = getCidBuilder().Sum(encoded);
         }
 
         return encoded;
     }
 
-    public Builder CidBuilder() {
-        if (mBuilder == null) {
-            mBuilder = v0CidPrefix;
+    public Builder getCidBuilder() {
+        if (builder == null) {
+            builder = v0CidPrefix;
         }
-        return mBuilder;
+        return builder;
     }
 
     public Node Copy() {
 
 
-// Copy returns a copy of the node.
-// NOTE: Does not make copies of Node objects in the links.
+        // Copy returns a copy of the node.
+        // NOTE: Does not make copies of Node objects in the links.
 
-        ProtoNode nnode = new ProtoNode();
+        ProtoNode protoNode = new ProtoNode();
 
-        nnode.data = Arrays.copyOf(getData(), getData().length);
+        protoNode.data = Arrays.copyOf(getData(), getData().length);
 
 
         synchronized (links) {
             if (links.size() > 0) {
-                nnode.links.addAll(links);
+                protoNode.links.addAll(links);
             }
         }
-        nnode.mBuilder = mBuilder;
+        protoNode.builder = builder;
 
-        return nnode;
+        return protoNode;
 
 
     }

@@ -39,15 +39,14 @@ public class Decoder {
             throw new RuntimeException("this function can only decode protobuf nodes");
         }
 
-        ProtoNode protoNode = DecodeProtobuf(b.getRawData());
+        ProtoNode protoNode = decodeProtobuf(b.getRawData());
         protoNode.cached = c;
-        // TODO decnd.builder = c.Prefix();
         return protoNode;
     }
 
-    public static ProtoNode DecodeProtobuf(byte[] encoded) {
-        ProtoNode n = new ProtoNode();
-        n.unmarshal(encoded);
-        return n;
+    public static ProtoNode decodeProtobuf(byte[] encoded) {
+        ProtoNode protoNode = new ProtoNode();
+        protoNode.unmarshal(encoded);
+        return protoNode;
     }
 }
