@@ -60,7 +60,7 @@ public class IpfsAddTest {
         Cid text = ipfs.storeText(content);
         assertNotNull(text);
 
-        ipfs.rm(text, true);
+        ipfs.rm(text);
 
 
         ipfs.getText(text, new TimeoutCloseable(10)); // closed exception expected

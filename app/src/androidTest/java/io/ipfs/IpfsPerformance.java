@@ -94,7 +94,7 @@ public class IpfsPerformance {
         assertTrue(inputFile.delete());
 
 
-        ipfs.rm(cid, true);
+        ipfs.rm(cid);
 
 
     }
@@ -132,7 +132,7 @@ public class IpfsPerformance {
         assertTrue(inputFile.delete());
 
 
-        ipfs.rm(cid, true);
+        ipfs.rm(cid);
 
 
     }
@@ -244,7 +244,7 @@ public class IpfsPerformance {
         assertTrue(outputFile1.delete());
         assertTrue(inputFile.delete());
 
-        ipfs.rm(cid, true);
+        ipfs.rm(cid);
 
 
     }

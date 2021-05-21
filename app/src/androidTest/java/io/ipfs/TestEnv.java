@@ -7,7 +7,6 @@ import android.net.NetworkCapabilities;
 import androidx.annotation.NonNull;
 
 class TestEnv {
-    private static final String TAG = TestEnv.class.getSimpleName();
 
     static boolean isConnected(@NonNull Context context) {
 

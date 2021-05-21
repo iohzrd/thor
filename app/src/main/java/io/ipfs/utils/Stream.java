@@ -42,29 +42,27 @@ public class Stream {
         prefix.MhLength = -1;
 
         fileAdder.RawLeaves = false;
-        fileAdder.CidBuilder = prefix;
+        fileAdder.builder = prefix;
 
 
         return fileAdder;
     }
 
 
-    public static void Rm(@NonNull Closeable closeable, @NonNull Storage storage,
-                          @NonNull Cid cid, boolean recursively) throws ClosedException {
+    public static void removeCid(@NonNull Closeable closeable,
+                                 @NonNull Storage storage,
+                                 @NonNull Cid cid) throws ClosedException {
 
         BlockStore bs = BlockStore.createBlockstore(storage);
         Interface exchange = new Exchange(bs);
         BlockService blockservice = BlockService.createBlockService(bs, exchange);
         DagService dags = DagService.createDagService(blockservice);
-        io.ipfs.format.Node top = Resolver.ResolveNode(closeable, dags, cid);
+        Node top = Resolver.ResolveNode(closeable, dags, cid);
         Objects.requireNonNull(top);
-        List<Cid> cids = new ArrayList<>();
-        if (recursively) {
-            RefWriter rw = new RefWriter(true, -1);
 
-            rw.EvalRefs(top);
-            cids.addAll(rw.getCids());
-        }
+        RefWriter rw = new RefWriter(true, -1);
+        rw.EvalRefs(top);
+        List<Cid> cids = new ArrayList<>(rw.getCids());
 
         cids.add(top.getCid());
         bs.DeleteBlocks(cids);

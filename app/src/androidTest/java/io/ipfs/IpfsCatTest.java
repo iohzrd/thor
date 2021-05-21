@@ -94,7 +94,7 @@ public class IpfsCatTest {
 
 
         time = System.currentTimeMillis();
-        ipfs.rm(cid, true);
+        ipfs.rm(cid);
         LogUtils.debug(TAG, "Time : " + (System.currentTimeMillis() - time) + " [ms]");
 
     }
@@ -152,7 +152,7 @@ public class IpfsCatTest {
             //
         }
 
-        ipfs.rm(cid, true);
+        ipfs.rm(cid);
 
     }
 }

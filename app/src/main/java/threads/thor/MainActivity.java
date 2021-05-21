@@ -1323,7 +1323,7 @@ public class MainActivity extends AppCompatActivity implements
 
                 try {
                     Uri uri = request.getUrl();
-                    LogUtils.error(TAG, "shouldOverrideUrlLoading : " + uri);
+                    LogUtils.info(TAG, "shouldOverrideUrlLoading : " + uri);
 
                     if (Objects.equals(uri.getScheme(), Content.ABOUT)) {
                         return true;
@@ -1406,7 +1406,7 @@ public class MainActivity extends AppCompatActivity implements
             public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
 
                 Uri uri = request.getUrl();
-                LogUtils.error(TAG, "shouldInterceptRequest : " + uri.toString());
+                LogUtils.info(TAG, "shouldInterceptRequest : " + uri.toString());
 
                 if (Objects.equals(uri.getScheme(), Content.HTTP) ||
                         Objects.equals(uri.getScheme(), Content.HTTPS)) {

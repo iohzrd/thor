@@ -11,30 +11,31 @@ import java.util.Objects;
 import io.ipfs.cid.Cid;
 
 public class Path {
+    @NonNull
     private final String path;
 
     public Path(@NonNull String path) {
         this.path = path;
     }
 
-    public static Path New(@NonNull String p) {
-        return ParsePath(p);
+    public static Path create(@NonNull String p) {
+        return parsePath(p);
     }
 
 
-    public static Path ParseCidToPath(String txt) {
+    public static Path parseCidToPath(String txt) {
         if (txt.isEmpty()) {
             throw new RuntimeException("path is empty");
         }
 
         Cid c = Cid.Decode(txt);
 
-        return FromCid(c);
+        return fromCid(c);
     }
 
 
-    public static Pair<Cid, List<String>> SplitAbsPath(Path fpath) {
-        List<String> parts = fpath.Segments();
+    public static Pair<Cid, List<String>> splitAbsPath(Path fpath) {
+        List<String> parts = fpath.segments();
         String ident = parts.get(0);
         if (Objects.equals(ident, "ipfs") || (Objects.equals(ident, "ipld"))) {
             parts.remove(ident);
@@ -55,15 +56,15 @@ public class Path {
 
 
     // FromCid safely converts a cid.Cid type to a Path type.
-    public static Path FromCid(@NonNull Cid cid) {
+    public static Path fromCid(@NonNull Cid cid) {
         return new Path("/ipfs/" + cid.String());
     }
 
-    public static Path ParsePath(@NonNull String txt) {
+    public static Path parsePath(@NonNull String txt) {
         String[] parts = txt.split("/");
 
         if (parts.length == 1) {
-            return ParseCidToPath(txt);
+            return parseCidToPath(txt);
         }
 
         // if the path doesnt begin with a '/'
@@ -78,7 +79,6 @@ public class Path {
             throw new RuntimeException("path does not begin with '/'");
         }
 
-        //TODO: make this smarter
         String token = parts[1];
         if (Objects.equals(token, "ipfs") || Objects.equals(token, "ipld")) {
             if (Objects.equals(parts[2], "")) {
@@ -103,7 +103,7 @@ public class Path {
         return c;
     }
 
-    public List<String> Segments() {
+    public List<String> segments() {
         String[] spits = path.split("/");
         List<String> result = new ArrayList<>();
         for (String split : spits) {
@@ -114,7 +114,8 @@ public class Path {
         return result;
     }
 
-    public String String() {
+    @NonNull
+    public String getString() {
         return path;
     }
 }

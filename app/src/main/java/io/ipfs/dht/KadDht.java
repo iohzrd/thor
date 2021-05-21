@@ -260,8 +260,9 @@ public class KadDht implements Routing {
                 LogUtils.info(TAG, "got provider before filter " + peerId.toBase58() + " "
                         + multiAddresses.toString());
 
-                AddrInfo addrInfo = AddrInfo.create(peerId, multiAddresses, false);
+                AddrInfo addrInfo = AddrInfo.create(peerId, multiAddresses, true);
 
+                // todo maybe except empty addresses
                 if (addrInfo.hasAddresses()) {
                     provs.add(addrInfo);
                     host.addToAddressBook(addrInfo);

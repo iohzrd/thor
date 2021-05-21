@@ -19,7 +19,7 @@ public class Adder {
     @NonNull
     private final DagService dagService;
     public boolean RawLeaves;
-    public Builder CidBuilder;
+    public Builder builder;
 
     private Adder(@NonNull DagService dagService) {
         this.dagService = dagService;
@@ -32,7 +32,7 @@ public class Adder {
 
     public Node CreateEmptyDir() {
         Directory dir = Directory.NewDirectory();
-        dir.SetCidBuilder(CidBuilder);
+        dir.SetCidBuilder(builder);
         Node fnd = dir.GetNode();
         dagService.Add(fnd);
         return fnd;
@@ -41,7 +41,7 @@ public class Adder {
     public Node AddLinkToDir(@NonNull Node dirNode, @NonNull String name, @NonNull Node link) {
         Directory dir = Directory.NewDirectoryFromNode(dirNode);
         Objects.requireNonNull(dir);
-        dir.SetCidBuilder(CidBuilder);
+        dir.SetCidBuilder(builder);
         dir.AddChild(name, link);
         Node fnd = dir.GetNode();
         dagService.Add(fnd);
@@ -51,7 +51,7 @@ public class Adder {
     public Node RemoveChild(@NonNull Node dirNode, @NonNull String name) {
         Directory dir = Directory.NewDirectoryFromNode(dirNode);
         Objects.requireNonNull(dir);
-        dir.SetCidBuilder(CidBuilder);
+        dir.SetCidBuilder(builder);
         dir.RemoveChild(name);
         Node fnd = dir.GetNode();
         dagService.Add(fnd);
@@ -91,7 +91,7 @@ public class Adder {
         };
 
         DagBuilderHelper db = new DagBuilderHelper(
-                dagService, CidBuilder, splitter, RawLeaves);
+                dagService, builder, splitter, RawLeaves);
 
         return Trickle.Layout(db);
     }

@@ -33,14 +33,14 @@ public class Resolver {
         BlockStore bs = BlockStore.createBlockstore(storage);
         BlockService blockservice = BlockService.createBlockService(bs, exchange);
         DagService dags = DagService.createDagService(blockservice);
-        return Resolver.ResolveNode(closeable, dags, Path.New(path));
+        return Resolver.ResolveNode(closeable, dags, Path.create(path));
     }
 
 
     public static Cid ResolvePath(@NonNull Closeable ctx, @NonNull NodeGetter dag, @NonNull Path p) throws ClosedException {
-        Path ipa = new Path(p.String());
+        Path ipa = new Path(p.getString());
 
-        List<String> paths = ipa.Segments();
+        List<String> paths = ipa.segments();
         String ident = paths.get(0);
         if (!Objects.equals(ident, "ipfs")) {
             throw new RuntimeException("todo not resolved");
@@ -71,7 +71,7 @@ public class Resolver {
     public static Pair<Cid, List<String>> ResolveToLastNode(@NonNull Closeable ctx,
                                                             @NonNull NodeGetter dag,
                                                             @NonNull Path path) throws ClosedException {
-        Pair<Cid, List<String>> result = Path.SplitAbsPath(path);
+        Pair<Cid, List<String>> result = Path.splitAbsPath(path);
         Cid c = result.first;
         List<String> p = result.second;
 

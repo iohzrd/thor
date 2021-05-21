@@ -594,7 +594,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork {
 
             if (addrInfo.isEmpty()) {
                 failure++;
-                LogUtils.error(TAG, "Run false" + " Success " + success + " " +
+                LogUtils.debug(TAG, "Run false" + " Success " + success + " " +
                         "Failure " + failure + " " + "/p2p/" + peerId.toBase58() + " " +
                         "No address");
                 throw new ConnectionIssue();

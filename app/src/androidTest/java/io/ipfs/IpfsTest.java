@@ -48,7 +48,7 @@ public class IpfsTest {
             LogUtils.debug(TAG, "Listen Address : " + ma.toString());
         }
 
-        assertEquals(result.size(), 1); // TODO test is not correct (listen addresses should be improved)
+        assertEquals(result.size(), 1);
 
     }
 
@@ -82,7 +82,7 @@ public class IpfsTest {
 
 
         try {
-            Cid fault = Cid.Decode(ipfs.getPeerID().toBase58()); // maybe todo
+            Cid fault = Cid.Decode(ipfs.getPeerID().toBase58());
             ipfs.getData(fault, new TimeoutCloseable(10));
             fail();
         } catch (Exception ignore) {
@@ -127,7 +127,7 @@ public class IpfsTest {
         assertEquals(content.length, fileContents.length);
         assertEquals(new String(content), new String(fileContents));
 
-        ipfs.rm(hash58Base, true);
+        ipfs.rm(hash58Base);
 
     }
 

@@ -35,11 +35,11 @@ public class RefWriter {
     }
 
 
-    public int evalRefsRecursive(@NonNull Node n, int depth) {
+    public int evalRefsRecursive(@NonNull Node node, int depth) {
         // TODO Cid nc = n.Cid();
 
         int count = 0;
-        List<Link> links = n.getLinks();
+        List<Link> links = node.getLinks();
         for (Link link : links) {
             Cid lc = link.getCid();
             Pair<Boolean, Boolean> visited = visit(lc, depth + 1); // The children are at depth+1
@@ -81,22 +81,18 @@ public class RefWriter {
            }*/
         }
 
-        /* // TODO
-        for i, ng := range .GetDAG(rw.Ctx, rw.DAG, n) {
-
-        }*/
         return count;
     }
 
     // visit returns two values:
-// - the first boolean is true if we should keep traversing the DAG
-// - the second boolean is true if we should print the CID
-//
-// visit will do branch pruning depending on rw.MaxDepth, previously visited
-// cids and whether rw.Unique is set. i.e. rw.Unique = false and
-// rw.MaxDepth = -1 disables any pruning. But setting rw.Unique to true will
-// prune already visited branches at the cost of keeping as set of visited
-// CIDs in memory.
+    // - the first boolean is true if we should keep traversing the DAG
+    // - the second boolean is true if we should print the CID
+    //
+    // visit will do branch pruning depending on rw.MaxDepth, previously visited
+    // cids and whether rw.Unique is set. i.e. rw.Unique = false and
+    // rw.MaxDepth = -1 disables any pruning. But setting rw.Unique to true will
+    // prune already visited branches at the cost of keeping as set of visited
+    // CIDs in memory.
 
     public Pair<Boolean, Boolean> visit(Cid c, int depth) {
         boolean atMaxDepth = maxDepth >= 0 && depth == maxDepth;

@@ -465,9 +465,9 @@ public class IPFS {
         }
     }
 
-    public void rm(@NonNull Cid cid, boolean recursively) {
+    public void rm(@NonNull Cid cid) {
         try {
-            Stream.Rm(() -> false, blocks, cid, recursively);
+            Stream.removeCid(() -> false, blocks, cid);
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         }
