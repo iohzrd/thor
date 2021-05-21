@@ -69,7 +69,7 @@ public class DnsResolver {
                 }
             }
         } catch (Throwable throwable) {
-            LogUtils.error(TAG, throwable);
+            LogUtils.debug(TAG, "" + throwable.getClass().getName());
         }
         return txtRecords;
     }

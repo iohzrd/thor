@@ -99,7 +99,7 @@ public class KadDht implements Routing {
 
                         List<Multiaddr> result = DnsResolver.resolveDnsAddress(multiaddr);
 
-                        AddrInfo addrInfo = AddrInfo.create(peerId, result);
+                        AddrInfo addrInfo = AddrInfo.create(peerId, result, false);
 
                         if (addrInfo.hasAddresses()) {
                             host.protectPeer(peerId);
@@ -141,7 +141,7 @@ public class KadDht implements Routing {
                     multiAddresses.add(multiaddr);
                 }
             }
-            AddrInfo addrInfo = AddrInfo.create(peerId, multiAddresses);
+            AddrInfo addrInfo = AddrInfo.create(peerId, multiAddresses, false);
             if (addrInfo.hasAddresses()) {
                 peers.add(addrInfo);
                 host.addToAddressBook(addrInfo);
@@ -260,7 +260,7 @@ public class KadDht implements Routing {
                 LogUtils.info(TAG, "got provider before filter " + peerId.toBase58() + " "
                         + multiAddresses.toString());
 
-                AddrInfo addrInfo = AddrInfo.create(peerId, multiAddresses);
+                AddrInfo addrInfo = AddrInfo.create(peerId, multiAddresses, false);
 
                 if (addrInfo.hasAddresses()) {
                     provs.add(addrInfo);

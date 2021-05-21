@@ -714,10 +714,10 @@ public class IPFS {
     public boolean swarmConnect(@NonNull String multiAddress, int timeout) {
         try {
             return swarmConnect(new TimeoutCloseable(timeout), multiAddress, timeout);
-        } catch (ClosedException ignore) {
+        } catch (ClosedException | ConnectionIssue ignore) {
             // ignore
         } catch (Throwable throwable) {
-            LogUtils.error(TAG, throwable.getClass().getSimpleName());
+            LogUtils.error(TAG, "dfas " + throwable.getClass().getSimpleName());
         }
         return false;
     }
@@ -767,15 +767,15 @@ public class IPFS {
                     addresses.addAll(IPFS.IPFS_BOOTSTRAP_NODES);
 
                     Set<PeerId> peers = new HashSet<>();
-                    for (String multiAddress : addresses) {
+                    for (String address : addresses) {
                         try {
-                            Multiaddr multiaddr = new Multiaddr(multiAddress);
+                            Multiaddr multiaddr = new Multiaddr(address);
                             String name = multiaddr.getStringComponent(Protocol.Type.P2P);
                             Objects.requireNonNull(name);
                             PeerId peerId = decode(name);
                             Objects.requireNonNull(peerId);
 
-                            AddrInfo addrInfo = AddrInfo.create(peerId, multiaddr);
+                            AddrInfo addrInfo = AddrInfo.create(peerId, multiaddr, false);
                             if (addrInfo.hasAddresses()) {
                                 peers.add(peerId);
                                 host.protectPeer(peerId);
@@ -793,8 +793,10 @@ public class IPFS {
                             try {
                                 host.connect(new TimeoutCloseable(TIMEOUT_BOOTSTRAP), peerId,
                                         TIMEOUT_BOOTSTRAP);
+                            } catch (ConnectionIssue ignore) {
+                               // ignore
                             } catch (Throwable throwable) {
-                                LogUtils.error(TAG, throwable.getMessage());
+                                LogUtils.error(TAG,  throwable);
                             }
                         });
                     }
@@ -1161,8 +1163,10 @@ public class IPFS {
                 host.connect(closeable, peerId, IPFS.CONNECT_TIMEOUT);
                 return true;
             }
-        } catch (Throwable e) {
-            LogUtils.error(TAG, " " + e.getClass().getName());
+        } catch (ClosedException | ConnectionIssue ignore) {
+            // ignore
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable);
         }
 
         return false;
@@ -1170,7 +1174,7 @@ public class IPFS {
 
     private boolean swarmConnect(@NonNull Closeable closeable,
                                  @NonNull String multiAddress,
-                                 int timeout) throws ClosedException {
+                                 int timeout) throws ClosedException, ConnectionIssue {
 
 
         Multiaddr multiaddr = new Multiaddr(multiAddress);
@@ -1190,16 +1194,16 @@ public class IPFS {
                     return true;
                 }
             } else {
-                AddrInfo addrInfo = AddrInfo.create(peerId, multiaddr);
+                AddrInfo addrInfo = AddrInfo.create(peerId, multiaddr, true);
                 host.addToAddressBook(addrInfo);
                 host.connect(closeable, peerId, timeout);
                 return true;
             }
 
-        } catch (ClosedException closedException) {
-            throw closedException;
-        } catch (Throwable e) {
-            LogUtils.error(TAG, multiaddr + " " + e.getClass().getName());
+        } catch (ClosedException | ConnectionIssue exception) {
+            throw exception;
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, "fdasdf " + multiaddr + " " + throwable);
         }
 
         return false;

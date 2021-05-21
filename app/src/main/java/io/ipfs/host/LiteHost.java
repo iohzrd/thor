@@ -317,7 +317,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork {
         }
         List<Multiaddr> result = new ArrayList<>();
         for (Multiaddr addr : all) {
-            if (AddrInfo.isSupported(addr)) {
+            if (AddrInfo.isSupported(addr, true)) {
                 result.add(addr);
             }
         }
@@ -575,6 +575,9 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork {
         return false;
     }
 
+    private static int failure = 0;
+    private static int success = 0;
+
     @NonNull
     public Connection connect(@NonNull Closeable closeable, @NonNull PeerId peerId, int timeout)
             throws ConnectionIssue, ClosedException {
@@ -589,21 +592,27 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork {
             boolean ipv6 = inet6();
             List<Multiaddr> addrInfo = prepareAddresses(peerId);
 
-            if (!addrInfo.isEmpty()) {
+            if (addrInfo.isEmpty()) {
+                failure++;
+                LogUtils.error(TAG, "Run false" + " Success " + success + " " +
+                        "Failure " + failure + " " + "/p2p/" + peerId.toBase58() + " " +
+                        "No address");
+                throw new ConnectionIssue();
+            }
 
-                for (Multiaddr address : addrInfo) {
+            for (Multiaddr address : addrInfo) {
 
-                    if (ipv6 && !address.has(Protocol.Type.IP6)) {
-                        continue;
-                    }
-                    if (!ipv6 && address.has(Protocol.Type.IP6)) {
-                        continue;
-                    }
-                    if (closeable.isClosed()) {
-                        throw new ClosedException();
-                    }
-                    long start = System.currentTimeMillis();
-                    boolean success = false;
+                if (ipv6 && !address.has(Protocol.Type.IP6)) {
+                    continue;
+                }
+                if (!ipv6 && address.has(Protocol.Type.IP6)) {
+                    continue;
+                }
+                if (closeable.isClosed()) {
+                    throw new ClosedException();
+                }
+                long start = System.currentTimeMillis();
+                boolean run = false;
                     try {
                         Promise<QuicChannel> future = dial(address, peerId);
 
@@ -614,20 +623,26 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork {
                         Connection conn = new LiteConnection(quic, transform(quic.remoteAddress()));
                         quic.closeFuture().addListener(future1 -> removeConnection(conn));
                         addConnection(conn);
-                        success = true;
+                        run = true;
                         return conn;
-                    } catch (Throwable throwable) {
-                        LogUtils.info(TAG, address + "/p2p/" + peerId.toBase58() + " " +
-                                throwable.getClass().getSimpleName());
+                    } catch (Throwable ignore) {
+                        // nothing to do here
                     } finally {
-                        LogUtils.info(TAG, "Success " + success + " " +
+                        if (run) {
+                            success++;
+                        } else {
+                            failure++;
+                        }
+
+                        LogUtils.error(TAG, "Run " + run + " Success " + success + " " +
+                                "Failure " + failure + " " +
                                 address + "/p2p/" + peerId.toBase58() + " " +
                                 (System.currentTimeMillis() - start));
 
                     }
 
-                }
             }
+
             throw new ConnectionIssue();
         }
     }

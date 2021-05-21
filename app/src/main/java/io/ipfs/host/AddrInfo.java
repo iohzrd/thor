@@ -4,9 +4,9 @@ import androidx.annotation.NonNull;
 
 import com.google.common.collect.Iterables;
 
+import java.net.InetAddress;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Objects;
 import java.util.Set;
 
 import io.LogUtils;
@@ -25,21 +25,23 @@ public class AddrInfo {
 
     }
 
-    public static AddrInfo create(@NonNull PeerId id, @NonNull Collection<Multiaddr> addresses) {
+    public static AddrInfo create(@NonNull PeerId id, @NonNull Collection<Multiaddr> addresses,
+                                  boolean acceptSiteLocal) {
         AddrInfo addrInfo = new AddrInfo(id);
         for (Multiaddr ma : addresses) {
-            addrInfo.addAddress(ma);
+            addrInfo.addAddress(ma, acceptSiteLocal);
         }
         return addrInfo;
     }
 
-    public static AddrInfo create(@NonNull PeerId id, @NonNull Multiaddr address) {
+    public static AddrInfo create(@NonNull PeerId id, @NonNull Multiaddr address,
+                                  boolean acceptSiteLocal) {
         AddrInfo addrInfo = new AddrInfo(id);
-        addrInfo.addAddress(address);
+        addrInfo.addAddress(address, acceptSiteLocal);
         return addrInfo;
     }
 
-    public static boolean isSupported(@NonNull Multiaddr address) {
+    public static boolean isSupported(@NonNull Multiaddr address, boolean acceptSiteLocal) {
 
         if (address.has(Protocol.Type.DNSADDR)) {
             return true;
@@ -50,16 +52,20 @@ public class AddrInfo {
         if (address.has(Protocol.Type.DNS6)) {
             return true;
         }
-        if (address.has(Protocol.Type.IP4)) {
-            if (Objects.equals(address.getStringComponent(Protocol.Type.IP4), "127.0.0.1")) {
+
+        try {
+            InetAddress inetAddress = InetAddress.getByName(address.getHost());
+            if(inetAddress.isAnyLocalAddress() || inetAddress.isLinkLocalAddress()
+            || inetAddress.isLoopbackAddress() || (!acceptSiteLocal &&
+                    inetAddress.isSiteLocalAddress())){
+                LogUtils.info(TAG, "Not supported " + address.toString());
                 return false;
             }
+        } catch (Throwable throwable){
+            LogUtils.debug(TAG, "" + throwable);
+            return false;
         }
-        if (address.has(Protocol.Type.IP6)) {
-            if (Objects.equals(address.getStringComponent(Protocol.Type.IP6), "::1")) {
-                return false;
-            }
-        }
+
         if (address.has(Protocol.Type.QUIC)) {
             return true;
         } else {
@@ -91,8 +97,8 @@ public class AddrInfo {
     }
 
 
-    private void addAddress(@NonNull Multiaddr address) {
-        if (isSupported(address)) {
+    private void addAddress(@NonNull Multiaddr address, boolean acceptSiteLocal) {
+        if (isSupported(address, acceptSiteLocal)) {
             addresses.add(address);
         }
     }
