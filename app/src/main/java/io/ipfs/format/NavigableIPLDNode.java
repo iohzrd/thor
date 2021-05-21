@@ -64,7 +64,7 @@ public class NavigableIPLDNode implements NavigableNode {
 
     @Override
     public Cid Cid() {
-        return node.Cid();
+        return node.getCid();
     }
 
     @Override

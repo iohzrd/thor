@@ -61,9 +61,6 @@ import io.ipfs.host.PeerId;
 import io.ipfs.host.PeerInfo;
 import io.ipfs.multiaddr.Multiaddr;
 import io.ipfs.multiaddr.Protocol;
-import io.ipfs.multibase.Base58;
-import io.ipfs.multibase.Multibase;
-import io.ipfs.multihash.Multihash;
 import io.ipfs.push.Push;
 import io.ipfs.push.PushService;
 import io.ipfs.utils.Link;
@@ -141,6 +138,7 @@ public class IPFS {
     public static final int KAD_DHT_BETA = 20;
     public static final int CONNECT_TIMEOUT = 5;
     public static final int BITSWAP_LOAD_PROVIDERS_REFRESH = 10000;
+    public static final long DHT_REQUEST_READ_TIMEOUT = 10;
     private static final String SWARM_PORT_KEY = "swarmPortKey";
     private static final String PRIVATE_KEY = "privateKey";
     private static final String PUBLIC_KEY = "publicKey";
@@ -224,36 +222,7 @@ public class IPFS {
     }
 
     // todo invoke this function not very often, try to work with PeerId
-    @NonNull
-    public static PeerId decode(@NonNull String name) {
 
-        if (name.startsWith("Qm") || name.startsWith("1")) {
-            // base58 encoded sha256 or identity multihash
-            return PeerId.fromBase58(name);
-        }
-        byte[] data = Multibase.decode(name);
-
-        if (data[0] == 0) {
-            Multihash mh = new Multihash(Multihash.Type.id, data); // TODO simply data to encode
-            return PeerId.fromBase58(Base58.encode(mh.getHash()));
-        } else {
-            try (InputStream inputStream = new ByteArrayInputStream(data)) {
-                long version = Multihash.readVarint(inputStream);
-                if (version != 1) {
-                    throw new Exception("invalid version");
-                }
-                long codecType = Multihash.readVarint(inputStream);
-                if (!(codecType == Cid.DagProtobuf || codecType == Cid.Raw || codecType == Cid.Libp2pKey)) {
-                    throw new Exception("not supported codec");
-                }
-                Multihash mh = Multihash.deserialize(inputStream);
-                return PeerId.fromBase58(mh.toBase58());
-
-            } catch (Throwable throwable) {
-                throw new RuntimeException(throwable);
-            }
-        }
-    }
 
     public static int getConcurrencyValue(@NonNull Context context) {
         Objects.requireNonNull(context);
@@ -417,7 +386,7 @@ public class IPFS {
 
     @NonNull
     public PeerId getPeerId(@NonNull String name) {
-        return decode(name);
+        return PeerId.decodeName(name);
     }
 
 
@@ -665,7 +634,7 @@ public class IPFS {
     @NonNull
     public String decodeName(@NonNull String name) {
         try {
-            PeerId peerId = decode(name);
+            PeerId peerId = PeerId.decodeName(name);
             return peerId.toBase58();
         } catch (Throwable ignore) {
             // common use case to fail
@@ -699,7 +668,6 @@ public class IPFS {
     public Set<PeerId> connectedPeers() {
 
         Set<PeerId> peers = new HashSet<>();
-
         try {
             for (Connection connection : host.getConnections()) {
                 peers.add(connection.remoteId());
@@ -750,7 +718,7 @@ public class IPFS {
     @NonNull
     public String base32(@NonNull PeerId peerId) {
         try {
-            return Stream.base32(peerId);
+            return peerId.toBase32();
         } catch (Throwable e) {
             throw new RuntimeException(e);
         }
@@ -772,7 +740,7 @@ public class IPFS {
                             Multiaddr multiaddr = new Multiaddr(address);
                             String name = multiaddr.getStringComponent(Protocol.Type.P2P);
                             Objects.requireNonNull(name);
-                            PeerId peerId = decode(name);
+                            PeerId peerId = PeerId.fromBase58(name);
                             Objects.requireNonNull(peerId);
 
                             AddrInfo addrInfo = AddrInfo.create(peerId, multiaddr, false);
@@ -872,7 +840,7 @@ public class IPFS {
         try {
             Node node = Resolver.resolveNode(closeable, blocks, host.getExchange(), path);
             if (node != null) {
-                return node.Cid();
+                return node.getCid();
             }
         } catch (ClosedException closedException) {
             throw closedException;
@@ -1020,7 +988,7 @@ public class IPFS {
         try {
             AtomicLong timeout = new AtomicLong(System.currentTimeMillis() + RESOLVE_MAX_TIME);
 
-            PeerId id = decode(name);
+            PeerId id = PeerId.decodeName(name);
             byte[] ipns = IPFS.IPNS_PATH.getBytes();
             byte[] ipnsKey = Bytes.concat(ipns, id.getBytes());
 
@@ -1180,7 +1148,7 @@ public class IPFS {
         Multiaddr multiaddr = new Multiaddr(multiAddress);
         String name = multiaddr.getStringComponent(Protocol.Type.P2P);
         Objects.requireNonNull(name);
-        PeerId peerId = decode(name);
+        PeerId peerId = PeerId.fromBase58(name);
         Objects.requireNonNull(peerId);
 
         try {

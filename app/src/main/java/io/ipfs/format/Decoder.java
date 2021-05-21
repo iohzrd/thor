@@ -12,7 +12,7 @@ public class Decoder {
             return (Node) block;
         }
 
-        long type = block.Cid().Type();
+        long type = block.getCid().Type();
 
         if (type == Cid.DagProtobuf) {
             return DecodeProtobufBlock(block);
@@ -27,22 +27,22 @@ public class Decoder {
 
 
     public static Node DecodeRawBlock(@NonNull Block block) {
-        if (block.Cid().Type() != Cid.Raw) {
+        if (block.getCid().Type() != Cid.Raw) {
             throw new RuntimeException("raw nodes cannot be decoded from non-raw blocks");
         }
         return new RawNode(block);
     }
 
     public static Node DecodeProtobufBlock(@NonNull Block b) {
-        Cid c = b.Cid();
+        Cid c = b.getCid();
         if (c.Type() != Cid.DagProtobuf) {
             throw new RuntimeException("this function can only decode protobuf nodes");
         }
 
-        ProtoNode decnd = DecodeProtobuf(b.RawData());
-        decnd.cached = c;
+        ProtoNode protoNode = DecodeProtobuf(b.getRawData());
+        protoNode.cached = c;
         // TODO decnd.builder = c.Prefix();
-        return decnd;
+        return protoNode;
     }
 
     public static ProtoNode DecodeProtobuf(byte[] encoded) {

@@ -27,7 +27,7 @@ public class Hamt {
         int size = (int) fsn.Fanout();
         Shard ds = Shard.makeShard(dagService, size);
         ds.childer.makeChilder(fsn.Data(), pn.Links());
-        ds.cid = pn.Cid();
+        ds.cid = pn.getCid();
         ds.builder = pn.CidBuilder();
 
         return ds;

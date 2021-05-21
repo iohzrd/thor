@@ -43,7 +43,7 @@ public class BitSwap implements Interface {
     private final LiteHost network;
 
     @NonNull
-    public ConcurrentHashMap<QuicChannel, QuicStreamChannel> bitSwaps = new ConcurrentHashMap<>();
+    public final ConcurrentHashMap<QuicChannel, QuicStreamChannel> bitSwaps = new ConcurrentHashMap<>();
 
     public BitSwap(@NonNull BlockStore blockstore, @NonNull LiteHost network) {
         this.network = network;
@@ -107,7 +107,7 @@ public class BitSwap implements Interface {
 
         for (Block block : wanted) {
             LogUtils.verbose(TAG, "ReceiveBlock " + peer.toBase58() +
-                    " " + block.Cid().String());
+                    " " + block.getCid().String());
             contentManager.blockReceived(peer, block);
         }
 

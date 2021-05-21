@@ -5,7 +5,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import io.ipfs.host.PeerId;
 
 public class LookupWithFollowupResult {
-    ConcurrentHashMap<PeerId, PeerState> peers = new ConcurrentHashMap<>();
+    final ConcurrentHashMap<PeerId, PeerState> peers = new ConcurrentHashMap<>();
     // the top K not unreachable peers at the end of the query
     // the peer states at the end of the query
 

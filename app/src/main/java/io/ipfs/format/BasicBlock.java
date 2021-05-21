@@ -16,28 +16,28 @@ public class BasicBlock implements Block {
         this.data = data;
     }
 
-    public static Block NewBlockWithCid(@NonNull Cid cid, @NonNull byte[] data) {
+    public static Block createBlockWithCid(@NonNull Cid cid, @NonNull byte[] data) {
         return new BasicBlock(cid, data);
     }
 
-    public static Block NewBlock(@NonNull byte[] data) {
+    public static Block createBlock(@NonNull byte[] data) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             byte[] hash = digest.digest(data);
-            Cid cid = Cid.NewCidV0(hash); // TODO why
-            return NewBlockWithCid(cid, data);
+            Cid cid = Cid.NewCidV0(hash);
+            return createBlockWithCid(cid, data);
         } catch (Throwable throwable) {
             throw new RuntimeException(throwable);
         }
     }
 
     @Override
-    public byte[] RawData() {
+    public byte[] getRawData() {
         return data;
     }
 
     @Override
-    public Cid Cid() {
+    public Cid getCid() {
         return cid;
     }
 

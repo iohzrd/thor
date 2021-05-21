@@ -182,7 +182,7 @@ public class ContentManager {
     public void blockReceived(@NonNull PeerId peer, @NonNull Block block) {
 
         try {
-            Cid cid = block.Cid();
+            Cid cid = block.getCid();
             LogUtils.info(TAG, "Block Received " + cid.String() + " " + peer.toBase58());
             blockStore.Put(block);
 

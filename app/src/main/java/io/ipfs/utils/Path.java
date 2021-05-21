@@ -79,13 +79,13 @@ public class Path {
         }
 
         //TODO: make this smarter
-        String ident = parts[1];
-        if (Objects.equals(ident, "ipfs") || Objects.equals(ident, "ipld")) {
+        String token = parts[1];
+        if (Objects.equals(token, "ipfs") || Objects.equals(token, "ipld")) {
             if (Objects.equals(parts[2], "")) {
                 throw new RuntimeException("not enough path components");
             }
             decodeCid(parts[2]);
-        } else if (Objects.equals(ident, "ipns")) {
+        } else if (Objects.equals(token, "ipns")) {
             if (Objects.equals(parts[2], "")) {
                 throw new RuntimeException("not enough path components");
             }

@@ -277,9 +277,9 @@ public class Query {
 
     public static class QueryUpdate {
 
-        public List<PeerId> queried = new ArrayList<>();
-        public List<PeerId> heard = new ArrayList<>();
-        public List<PeerId> unreachable = new ArrayList<>();
+        public final List<PeerId> queried = new ArrayList<>();
+        public final List<PeerId> heard = new ArrayList<>();
+        public final List<PeerId> unreachable = new ArrayList<>();
     }
 
 }

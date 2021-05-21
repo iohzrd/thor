@@ -28,7 +28,7 @@ public class MetricsBlockStore implements BlockStore {
     public Block Get(@NonNull Cid cid) {
         Block block = blockstore.Get(cid);
         if (block != null) {
-            metrics.seeding(block.RawData().length);
+            metrics.seeding(block.getRawData().length);
         }
         return block;
     }
@@ -45,7 +45,7 @@ public class MetricsBlockStore implements BlockStore {
 
     @Override
     public void Put(@NonNull Block block) {
-        metrics.leeching(block.RawData().length);
+        metrics.leeching(block.getRawData().length);
         blockstore.Put(block);
     }
 

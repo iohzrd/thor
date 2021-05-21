@@ -55,7 +55,7 @@ public class IpfsLoadContent {
         Node node = ipfs.resolveNode(link, new TimeoutCloseable(60));
         assertNotNull(node);
 
-        String text = ipfs.getText(node.Cid(), new TimeoutCloseable(30));
+        String text = ipfs.getText(node.getCid(), new TimeoutCloseable(30));
 
         assertNotNull(text);
         TestCase.assertFalse(text.isEmpty());
@@ -81,7 +81,7 @@ public class IpfsLoadContent {
         Node node = ipfs.resolveNode(link, new TimeoutCloseable(30));
         assertNotNull(node);
 
-        String text = ipfs.getText(node.Cid(), new TimeoutCloseable(30));
+        String text = ipfs.getText(node.getCid(), new TimeoutCloseable(30));
 
         assertNotNull(text);
         TestCase.assertFalse(text.isEmpty());
@@ -106,7 +106,7 @@ public class IpfsLoadContent {
         Node node = ipfs.resolveNode(link, new TimeoutCloseable(30));
         assertNotNull(node);
 
-        String text = ipfs.getText(node.Cid(), new TimeoutCloseable(30));
+        String text = ipfs.getText(node.getCid(), new TimeoutCloseable(30));
 
         assertNotNull(text);
         TestCase.assertFalse(text.isEmpty());
@@ -132,7 +132,7 @@ public class IpfsLoadContent {
         Node node = ipfs.resolveNode(link, new TimeoutCloseable(30));
         assertNotNull(node);
 
-        String text = ipfs.getText(node.Cid(), new TimeoutCloseable(30));
+        String text = ipfs.getText(node.getCid(), new TimeoutCloseable(30));
 
         assertNotNull(text);
         TestCase.assertFalse(text.isEmpty());

@@ -84,7 +84,7 @@ public class BitSwapEngine {
                     msg.AddDontHave(entry.getKey());
                 }
             } else {
-                LogUtils.error(TAG, "Block added to message " + blk.Cid().String());
+                LogUtils.error(TAG, "Block added to message " + blk.getCid().String());
                 msg.AddBlock(blk);
             }
         }

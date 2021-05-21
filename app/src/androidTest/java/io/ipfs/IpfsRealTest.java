@@ -81,7 +81,7 @@ public class IpfsRealTest {
                 new TimeoutCloseable(60));
         assertNotNull(node);
 
-        String text = ipfs.getText(node.Cid(), new TimeoutCloseable(30));
+        String text = ipfs.getText(node.getCid(), new TimeoutCloseable(30));
 
         assertNotNull(text);
         assertFalse(text.isEmpty());
@@ -98,7 +98,7 @@ public class IpfsRealTest {
                 new TimeoutCloseable(30));
         assertNotNull(node);
 
-        List<Link> links = ipfs.links(node.Cid(), new TimeoutCloseable(1));
+        List<Link> links = ipfs.links(node.getCid(), new TimeoutCloseable(1));
         assertNotNull(links);
         assertFalse(links.isEmpty());
 
@@ -114,7 +114,7 @@ public class IpfsRealTest {
                 new TimeoutCloseable(30));
         assertNotNull(node);
 
-        List<Link> links = ipfs.links(node.Cid(), new TimeoutCloseable(1));
+        List<Link> links = ipfs.links(node.getCid(), new TimeoutCloseable(1));
         assertNotNull(links);
         assertFalse(links.isEmpty());
     }

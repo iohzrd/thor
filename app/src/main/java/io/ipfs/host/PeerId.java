@@ -4,6 +4,8 @@ import androidx.annotation.NonNull;
 
 import com.google.common.primitives.UnsignedBytes;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.Random;
@@ -12,6 +14,8 @@ import io.ipfs.cid.Cid;
 import io.ipfs.crypto.Key;
 import io.ipfs.crypto.PubKey;
 import io.ipfs.multibase.Base58;
+import io.ipfs.multibase.Multibase;
+import io.ipfs.multihash.Multihash;
 
 
 public class PeerId implements Comparable<PeerId> {
@@ -30,6 +34,46 @@ public class PeerId implements Comparable<PeerId> {
         byte[] bytes = new byte[32];
         new Random().nextBytes(bytes);
         return new PeerId(bytes);
+    }
+
+
+    @NonNull
+    public static PeerId decodeName(@NonNull String name) {
+
+        if (name.startsWith("Qm") || name.startsWith("1")) {
+            // base58 encoded sha256 or identity multihash
+            return PeerId.fromBase58(name);
+        }
+        byte[] data = Multibase.decode(name);
+
+        if (data[0] == 0) {
+            Multihash mh = new Multihash(Multihash.Type.id, data); // TODO simply data to encode
+            return PeerId.fromBase58(Base58.encode(mh.getHash()));
+        } else {
+            try (InputStream inputStream = new ByteArrayInputStream(data)) {
+                long version = Multihash.readVarint(inputStream);
+                if (version != 1) {
+                    throw new Exception("invalid version");
+                }
+                long codecType = Multihash.readVarint(inputStream);
+                if (!(codecType == Cid.DagProtobuf || codecType == Cid.Raw || codecType == Cid.Libp2pKey)) {
+                    throw new Exception("not supported codec");
+                }
+                Multihash mh = Multihash.deserialize(inputStream);
+                return PeerId.fromBase58(mh.toBase58());
+
+            } catch (Throwable throwable) {
+                throw new RuntimeException(throwable);
+            }
+        }
+    }
+
+    public String toBase32() {
+        try {
+            return Cid.NewCidV1(Cid.Libp2pKey, bytes).String();
+        } catch (Throwable throwable) {
+            throw new RuntimeException(throwable);
+        }
     }
 
     public static PeerId fromBase58(String str) {

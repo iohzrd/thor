@@ -5,9 +5,9 @@ import androidx.annotation.NonNull;
 import io.ipfs.cid.Cid;
 
 public interface Block {
-    byte[] RawData();
+    byte[] getRawData();
 
-    Cid Cid();
+    Cid getCid();
 
     @NonNull
     String toString();

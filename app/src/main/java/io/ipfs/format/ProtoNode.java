@@ -105,11 +105,11 @@ public class ProtoNode implements Node {
     }
 
     @Override
-    public Cid Cid() {
+    public Cid getCid() {
         if (encoded != null && cached.Defined()) {
             return cached;
         }
-        byte[] data = RawData();
+        byte[] data = getRawData();
 
         if (encoded != null && cached.Defined()) {
             return cached;
@@ -125,7 +125,7 @@ public class ProtoNode implements Node {
     }
 
     @Override
-    public byte[] RawData() {
+    public byte[] getRawData() {
         return EncodeProtobuf();
     }
 

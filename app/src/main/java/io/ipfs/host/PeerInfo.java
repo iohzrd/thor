@@ -23,7 +23,6 @@ public class PeerInfo {
         this.observed = observed;
     }
 
-    // TODO this is probably not useful
     @Nullable
     public Multiaddr getObserved() {
         return observed;

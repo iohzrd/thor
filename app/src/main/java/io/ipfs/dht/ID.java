@@ -5,7 +5,7 @@ import androidx.annotation.NonNull;
 import com.google.common.primitives.UnsignedBytes;
 
 public class ID implements Comparable<ID> {
-    public byte[] data;
+    public final byte[] data;
 
     public ID(@NonNull byte[] data) {
         this.data = data;

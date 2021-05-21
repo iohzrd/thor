@@ -36,11 +36,11 @@ public interface Node extends Block, Resolver {
 
     List<Link> getLinks();
 
-    Cid Cid();
+    Cid getCid();
 
     byte[] getData();
 
-    byte[] RawData();
+    byte[] getRawData();
 
     void SetCidBuilder(@Nullable Builder builder);
 

@@ -442,8 +442,9 @@ public class KadDht implements Routing {
             QuicStreamChannel streamChannel = quicChannel.createStream(QuicStreamType.BIDIRECTIONAL,
                     new KadDhtRequest(activation, request, messageLite)).sync().get();
 
-            // TODO find right value
-            streamChannel.pipeline().addFirst(new ReadTimeoutHandler(10, TimeUnit.SECONDS));
+
+            streamChannel.pipeline().addFirst(new ReadTimeoutHandler(
+                    IPFS.DHT_REQUEST_READ_TIMEOUT, TimeUnit.SECONDS));
 
             streamChannel.updatePriority(new QuicStreamPriority(priority, false));
 

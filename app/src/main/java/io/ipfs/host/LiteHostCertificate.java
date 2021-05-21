@@ -76,8 +76,8 @@ import io.netty.util.internal.logging.InternalLoggerFactory;
  */
 public final class LiteHostCertificate {
     public static final String certificatePrefix = "libp2p-tls-handshake:";
-    private static final String TAG = LiteHostCertificate.class.getSimpleName();
-    private static final InternalLogger logger = InternalLoggerFactory.getInstance(io.netty.handler.ssl.util.SelfSignedCertificate.class);
+    private static final InternalLogger logger = InternalLoggerFactory.getInstance(
+            io.netty.handler.ssl.util.SelfSignedCertificate.class);
     /**
      * Current time minus 1 year, just in case software clock goes back due to time synchronization
      */
@@ -89,27 +89,14 @@ public final class LiteHostCertificate {
     private static final Date DEFAULT_NOT_AFTER = new Date(SystemPropertyUtil.getLong(
             "io.netty.selfSignedCertificate.defaultNotAfter", 253402300799000L));
     private static final int[] extensionPrefix = new int[]{1, 3, 6, 1, 4, 1, 53594};
-    // extensionIDEqual compares two extension IDs.
-    /*
-    func extensionIDEqual(a, b []int) bool {
-        if len(a) != len(b) {
-            return false
-        }
-        for i := range a {
-            if a[i] != b[i] {
-                return false
-            }
-        }
-        return true
-    }*/
     public static final int[] extensionID = getPrefixedExtensionID(new int[]{1, 1});
     private static final Provider PROVIDER = new BouncyCastleProvider();
+
     /**
      * FIPS 140-2 encryption requires the RSA key length to be 2048 bits or greater.
      * Let's use that as a sane default but allow the default to be set dynamically
      * for those that need more stringent security requirements.
      */
-
     private final File certificate;
     private final File privateKey;
     private final X509Certificate cert;
@@ -160,7 +147,8 @@ public final class LiteHostCertificate {
      * @param notBefore Certificate is not valid before this time
      * @param notAfter  Certificate is not valid after this time
      */
-    public LiteHostCertificate(PrivKey privKey, KeyPair keypair, String fqdn, SecureRandom random, Date notBefore, Date notAfter)
+    public LiteHostCertificate(PrivKey privKey, KeyPair keypair, String fqdn,
+                               SecureRandom random, Date notBefore, Date notAfter)
             throws Exception {
 
 
@@ -196,7 +184,8 @@ public final class LiteHostCertificate {
         return Ints.concat(extensionPrefix, suffix);
     }
 
-    static String[] generate(PrivKey privKey, String fqdn, KeyPair keypair, SecureRandom random, Date notBefore, Date notAfter,
+    static String[] generate(PrivKey privKey, String fqdn, KeyPair keypair,
+                             SecureRandom random, Date notBefore, Date notAfter,
                              String algorithm) throws Exception {
         PrivateKey key = keypair.getPrivate();
 
@@ -220,62 +209,17 @@ public final class LiteHostCertificate {
 
         SignedKey signedKey = new SignedKey(keyBytes, signature);
 
-        ASN1ObjectIdentifier ident = new ASN1ObjectIdentifier(getLiteExtension());
-        builder.addExtension(ident, false, signedKey);
+        ASN1ObjectIdentifier indent = new ASN1ObjectIdentifier(getLiteExtension());
+        builder.addExtension(indent, false, signedKey);
 
 
         ContentSigner signer = new JcaContentSignerBuilder(
-                algorithm.equalsIgnoreCase("EC") ? "SHA256withECDSA" : "SHA256WithRSAEncryption").build(key);
+                algorithm.equalsIgnoreCase("EC") ? "SHA256withECDSA" :
+                        "SHA256WithRSAEncryption").build(key);
         X509CertificateHolder certHolder = builder.build(signer);
-        X509Certificate cert = new JcaX509CertificateConverter().setProvider(PROVIDER).getCertificate(certHolder);
+        X509Certificate cert = new JcaX509CertificateConverter().
+                setProvider(PROVIDER).getCertificate(certHolder);
         cert.verify(keypair.getPublic());
-
-
-
-
-
-        /*
-        ASN1StreamParser parser = new ASN1StreamParser(new InputStream() {
-            int pos = -1;
-
-
-            @Override
-            public int read() throws IOException {
-                pos++;
-                if(pos > extensionID.length){
-                    return -1;
-                }
-                int val = extensionID[pos];
-                return val;
-            }
-        });
-
-       // ASN1Primitive dasf = ASN1Primitive.fromByteArray(integersToBytes(extensionID));
-        //
-        ASN1ObjectIdentifier identifier = ASN1ObjectIdentifier.getInstance(parser.readObject());*/
-
-        /*
-        ASN1EncodableVector purposes = new ASN1EncodableVector();
-        purposes.add(KeyPurposeId.id_kp_serverAuth);
-        purposes.add(KeyPurposeId.id_kp_clientAuth);
-        purposes.add(KeyPurposeId.anyExtendedKeyUsage);*/
-
-        /*
-        AuthorityKeyIdentifier authorityKeyIdentifier = new JcaX509ExtensionUtils().createAuthorityKeyIdentifier(res);
-        builder.addExtension(Extension.authorityKeyIdentifier, false, authorityKeyIdentifier);
-        SubjectKeyIdentifier subjectKeyIdentifier = new JcaX509ExtensionUtils().createSubjectKeyIdentifier(res);
-        builder.addExtension(Extension.subjectKeyIdentifier, false, subjectKeyIdentifier);*/
-
-
-
-
-
-        /*
-        builder.addExtension(Extension.extendedKeyUsage, false, ASN1ObjectIdentifier.getInstance(signedKey).
-                toASN1Primitive());*/
-        /*
-        builder.addExtension(Extension.subjectKeyIdentifier, false, ASN1ObjectIdentifier.getInstance(signedKey).
-                toASN1Primitive());*/
 
         return newSelfSignedCertificate(fqdn, key, cert);
     }
@@ -403,7 +347,6 @@ public final class LiteHostCertificate {
 
         DEROctetString signature = (DEROctetString) sequence.getObjectAt(1);
         byte[] skSignature = signature.getOctets();
-
 
         byte[] certKeyPub = cert.getPublicKey().getEncoded();
 

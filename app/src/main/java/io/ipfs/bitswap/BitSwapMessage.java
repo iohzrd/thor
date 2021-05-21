@@ -45,14 +45,14 @@ public interface BitSwapMessage {
         // deprecated
         for (ByteString data : pbm.getBlocksList()) {
             // CIDv0, sha256, protobuf only (TODO check again)
-            Block block = BasicBlock.NewBlock(data.toByteArray());
+            Block block = BasicBlock.createBlock(data.toByteArray());
             m.AddBlock(block);
         }
         for (MessageOuterClass.Message.Block b : pbm.getPayloadList()) {
             ByteString prefix = b.getPrefix();
             Prefix pref = Prefix.PrefixFromBytes(prefix.toByteArray());
             Cid cid = pref.Sum(b.getData().toByteArray());
-            Block block = BasicBlock.NewBlockWithCid(cid, b.getData().toByteArray());
+            Block block = BasicBlock.createBlockWithCid(cid, b.getData().toByteArray());
             m.AddBlock(block);
         }
 
@@ -317,7 +317,7 @@ public interface BitSwapMessage {
             int size = 0;
 
             for (Block b : blocks.values()) {
-                size += b.RawData().length;
+                size += b.getRawData().length;
             }
             for (Cid c : blockPresences.keySet()) {
                 size += BlockPresenceSize(c);
@@ -335,8 +335,8 @@ public interface BitSwapMessage {
 
         @Override
         public void AddBlock(@NonNull Block block) {
-            blockPresences.remove(block.Cid());
-            blocks.put(block.Cid(), block);
+            blockPresences.remove(block.getCid());
+            blocks.put(block.getCid(), block);
         }
 
         @Override
@@ -384,8 +384,8 @@ public interface BitSwapMessage {
 
             for (Block block : Blocks()) {
                 builder.addPayload(MessageOuterClass.Message.Block.newBuilder()
-                        .setData(ByteString.copyFrom(block.RawData()))
-                        .setPrefix(ByteString.copyFrom(block.Cid().Prefix().Bytes())).build());
+                        .setData(ByteString.copyFrom(block.getRawData()))
+                        .setPrefix(ByteString.copyFrom(block.getCid().Prefix().Bytes())).build());
             }
 
 
@@ -429,7 +429,7 @@ public interface BitSwapMessage {
 
 
             for (Block block : Blocks()) {
-                builder.addBlocks(ByteString.copyFrom(block.RawData()));
+                builder.addBlocks(ByteString.copyFrom(block.getRawData()));
             }
 
             return builder.build();

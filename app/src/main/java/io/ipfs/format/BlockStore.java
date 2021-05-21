@@ -27,13 +27,13 @@ public interface BlockStore {
                 if (data == null) {
                     return null;
                 }
-                return BasicBlock.NewBlockWithCid(cid, data);
+                return BasicBlock.createBlockWithCid(cid, data);
             }
 
             @Override
             public void Put(@NonNull Block block) {
-                String key = Dshelp.CidToDsKey(block.Cid()).String();
-                storage.insertBlock(key, block.RawData());
+                String key = Dshelp.CidToDsKey(block.getCid()).String();
+                storage.insertBlock(key, block.getRawData());
             }
 
             @Override

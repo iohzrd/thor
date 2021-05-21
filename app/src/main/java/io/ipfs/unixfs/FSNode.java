@@ -47,7 +47,7 @@ public class FSNode {
                             fsNode.Type().name());
             }
         } else if (node instanceof RawNode) {
-            return node.RawData();
+            return node.getRawData();
         } else {
             throw new RuntimeException("not supported type");
         }

@@ -154,7 +154,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork {
     @NonNull
     private final Set<PeerId> swarm = ConcurrentHashMap.newKeySet();
     @NonNull
-    public List<ConnectionHandler> handlers = new ArrayList<>();
+    public final List<ConnectionHandler> handlers = new ArrayList<>();
     @Nullable
     private Push push;
     @Nullable
@@ -634,7 +634,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork {
                             failure++;
                         }
 
-                        LogUtils.error(TAG, "Run " + run + " Success " + success + " " +
+                        LogUtils.debug(TAG, "Run " + run + " Success " + success + " " +
                                 "Failure " + failure + " " +
                                 address + "/p2p/" + peerId.toBase58() + " " +
                                 (System.currentTimeMillis() - start));

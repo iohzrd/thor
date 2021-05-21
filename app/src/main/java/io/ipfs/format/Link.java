@@ -33,7 +33,7 @@ public class Link {
     public static Link MakeLink(@NonNull Node node, @NonNull String name) {
         long size = node.Size();
 
-        return new Link(node.Cid(), name, size);
+        return new Link(node.getCid(), name, size);
     }
 
     @NonNull

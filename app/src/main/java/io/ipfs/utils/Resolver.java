@@ -104,7 +104,7 @@ public class Resolver {
         }
 
         if (p.size() == 0) {
-            return Pair.create(nd.Cid(), Collections.emptyList());
+            return Pair.create(nd.getCid(), Collections.emptyList());
         }
 
         // Confirm the path exists within the object
@@ -119,7 +119,7 @@ public class Resolver {
             throw new RuntimeException("inconsistent ResolveOnce / nd.Resolve");
         }
 
-        return Pair.create(nd.Cid(), p);
+        return Pair.create(nd.getCid(), p);
 
     }
 

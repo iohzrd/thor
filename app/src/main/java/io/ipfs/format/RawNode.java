@@ -28,7 +28,7 @@ public class RawNode implements Node {
             byte[] hash = digest.digest(data);
 
             Cid cid = Cid.NewCidV1(Cid.Raw, hash);
-            Block blk = BasicBlock.NewBlockWithCid(cid, data);
+            Block blk = BasicBlock.createBlockWithCid(cid, data);
 
             return new RawNode(blk);
         } catch (Throwable throwable) {
@@ -42,7 +42,7 @@ public class RawNode implements Node {
         builder = builder.WithCodec(Cid.Raw);
         Cid cid = builder.Sum(data);
 
-        Block blk = BasicBlock.NewBlockWithCid(cid, data);
+        Block blk = BasicBlock.createBlockWithCid(cid, data);
 
         return new RawNode(blk);
 
@@ -69,18 +69,18 @@ public class RawNode implements Node {
     }
 
     @Override
-    public Cid Cid() {
-        return block.Cid();
+    public Cid getCid() {
+        return block.getCid();
     }
 
     @Override
     public byte[] getData() {
-        return block.RawData();
+        return block.getRawData();
     }
 
     @Override
-    public byte[] RawData() {
-        return block.RawData();
+    public byte[] getRawData() {
+        return block.getRawData();
     }
 
     @Override

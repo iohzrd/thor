@@ -18,7 +18,6 @@ import io.ipfs.format.BlockStore;
 import io.ipfs.format.Link;
 import io.ipfs.format.Node;
 import io.ipfs.format.ProtoNode;
-import io.ipfs.host.PeerId;
 import io.ipfs.merkledag.DagService;
 import io.ipfs.multihash.Multihash;
 import io.ipfs.offline.Exchange;
@@ -27,19 +26,6 @@ import io.ipfs.unixfs.FSNode;
 
 
 public class Stream {
-
-    private static final String TAG = Stream.class.getSimpleName();
-
-
-    public static String base32(@NonNull PeerId peerId) {
-        try {
-            // only support fromBase58
-            Multihash multihash = Multihash.fromBase58(peerId.toBase58());
-            return Cid.NewCidV1(Cid.Libp2pKey, multihash.toBytes()).String();
-        } catch (Throwable throwable) {
-            throw new RuntimeException(throwable);
-        }
-    }
 
 
     public static Adder getFileAdder(@NonNull Storage storage) {
@@ -80,7 +66,7 @@ public class Stream {
             cids.addAll(rw.getCids());
         }
 
-        cids.add(top.Cid());
+        cids.add(top.getCid());
         bs.DeleteBlocks(cids);
 
     }
@@ -105,7 +91,7 @@ public class Stream {
         Adder fileAdder = getFileAdder(storage);
 
         Node nd = fileAdder.CreateEmptyDir();
-        return nd.Cid();
+        return nd.getCid();
     }
 
 
@@ -124,7 +110,7 @@ public class Stream {
         io.ipfs.format.Node linkNode = Resolver.ResolveNode(closeable, dagService, link);
         Objects.requireNonNull(linkNode);
         Node nd = fileAdder.AddLinkToDir(dirNode, name, linkNode);
-        return nd.Cid();
+        return nd.getCid();
 
     }
 
@@ -141,7 +127,7 @@ public class Stream {
         io.ipfs.format.Node dirNode = Resolver.ResolveNode(closeable, dagService, dir);
         Objects.requireNonNull(dirNode);
         Node nd = fileAdder.RemoveChild(dirNode, name);
-        return nd.Cid();
+        return nd.getCid();
 
     }
 
@@ -171,7 +157,7 @@ public class Stream {
 
         Adder fileAdder = getFileAdder(storage);
         Node node = fileAdder.AddReader(writerStream);
-        return node.Cid();
+        return node.getCid();
     }
 
     private static void lsFromLinksAsync(@NonNull LinkCloseable closeable,
