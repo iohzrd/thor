@@ -220,7 +220,7 @@ public class ProtoNode implements Node {
 
         encoded = null;
 
-        Link lnk = Link.MakeLink(link, name);
+        Link lnk = Link.createLink(link, name);
 
         AddRawLink(lnk);
 

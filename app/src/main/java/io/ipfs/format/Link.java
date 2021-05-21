@@ -30,9 +30,8 @@ public class Link {
         return new Link(cid, name, size);
     }
 
-    public static Link MakeLink(@NonNull Node node, @NonNull String name) {
+    public static Link createLink(@NonNull Node node, @NonNull String name) {
         long size = node.Size();
-
         return new Link(node.getCid(), name, size);
     }
 
