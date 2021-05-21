@@ -78,7 +78,7 @@ public class IpfsRealTest {
         assertFalse(link.isEmpty());
 
         Node node = ipfs.resolveNode(link.concat("/").concat(IPFS.INDEX_HTML),
-                new TimeoutCloseable(60));
+                new TimeoutCloseable(30));
         assertNotNull(node);
 
         String text = ipfs.getText(node.getCid(), new TimeoutCloseable(30));

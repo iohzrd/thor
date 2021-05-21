@@ -262,7 +262,8 @@ public class KadDht implements Routing {
 
                 AddrInfo addrInfo = AddrInfo.create(peerId, multiAddresses, true);
 
-                // todo maybe except empty addresses
+                // maybe in the future empty addresses will also reported
+                // but an adequate searching should be provided
                 if (addrInfo.hasAddresses()) {
                     provs.add(addrInfo);
                     host.addToAddressBook(addrInfo);

@@ -47,8 +47,8 @@ public class PeerId implements Comparable<PeerId> {
         byte[] data = Multibase.decode(name);
 
         if (data[0] == 0) {
-            Multihash mh = new Multihash(Multihash.Type.id, data); // TODO simply data to encode
-            return PeerId.fromBase58(Base58.encode(mh.getHash()));
+            Multihash mh = new Multihash(Multihash.Type.id, data);
+            return new PeerId(mh.getHash());
         } else {
             try (InputStream inputStream = new ByteArrayInputStream(data)) {
                 long version = Multihash.readVarint(inputStream);

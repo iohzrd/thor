@@ -36,7 +36,6 @@ public class RefWriter {
 
 
     public int evalRefsRecursive(@NonNull Node node, int depth) {
-        // TODO Cid nc = n.Cid();
 
         int count = 0;
         List<Link> links = node.getLinks();

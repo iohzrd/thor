@@ -87,7 +87,7 @@ public class IPFS {
     public static final String BITSWAP_PROTOCOL = "/ipfs/bitswap/1.2.0";
     public static final String IDENTITY_PROTOCOL = "/ipfs/id/1.0.0";
     public static final String INDEX_HTML = "index.html";
-    public static final String AGENT = "/go-ipfs/0.9.0/thor"; // todo rename
+    public static final String AGENT = "/thor/0.7.4";
     public static final String PROTOCOL_VERSION = "ipfs/0.1.0";
     public static final String IPFS_PATH = "/ipfs/";
     public static final String IPNS_PATH = "/ipns/";
@@ -220,9 +220,6 @@ public class IPFS {
         editor.putString(PUBLIC_KEY, key);
         editor.apply();
     }
-
-    // todo invoke this function not very often, try to work with PeerId
-
 
     public static int getConcurrencyValue(@NonNull Context context) {
         Objects.requireNonNull(context);
@@ -567,8 +564,6 @@ public class IPFS {
             buf = reader.loadNextData();
 
         }
-
-
     }
 
     public void storeToOutputStream(@NonNull OutputStream os, @NonNull Cid cid,

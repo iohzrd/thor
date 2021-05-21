@@ -198,40 +198,7 @@ public class Protocol {
                     dout.flush();
                     return b.toByteArray();
                 }
-                case GARLIC32: {
-                    // an i2p base32 address with a length of greater than 55 characters is
-                    // using an Encrypted Leaseset v2. all other base32 addresses will always be
-                    // exactly 52 characters
-                    if (addr.length() < 55 && addr.length() != 52 || addr.contains(":")) {
-                        throw new IllegalStateException(String.format("Invalid garlic addr: %s not a i2p base32 address. len: %d", addr, addr.length()));
-                    }
 
-                    while (addr.length() % 8 != 0) {
-                        addr += "=";
-                    }
-
-                    ByteArrayOutputStream bout = new ByteArrayOutputStream();
-                    byte[] hashBytes = Multibase.decode(Multibase.Base.Base32.prefix + addr);
-                    byte[] varint = new byte[(32 - Integer.numberOfLeadingZeros(hashBytes.length) + 6) / 7];
-                    putUvarint(varint, hashBytes.length);
-                    bout.write(varint);
-                    bout.write(hashBytes);
-                    return bout.toByteArray();
-                }
-                case GARLIC64: {
-                    // i2p base64 address will be between 516 and 616 characters long, depending on certificate type
-                    if (addr.length() < 516 || addr.length() > 616 || addr.contains(":")) {
-                        throw new IllegalStateException(String.format("Invalid garlic addr: %s not a i2p base64 address. len: %d", addr, addr.length()));
-                    }
-
-                    ByteArrayOutputStream bout = new ByteArrayOutputStream();
-                    byte[] hashBytes = Multibase.decode(Multibase.Base.Base64.prefix + addr.replaceAll("-", "+").replaceAll("~", "/"));
-                    byte[] varint = new byte[(32 - Integer.numberOfLeadingZeros(hashBytes.length) + 6) / 7];
-                    putUvarint(varint, hashBytes.length);
-                    bout.write(varint);
-                    bout.write(hashBytes);
-                    return bout.toByteArray();
-                }
                 case UNIX: {
                     if (addr.startsWith("/"))
                         addr = addr.substring(1);
@@ -298,25 +265,6 @@ public class Protocol {
                 String port = Integer.toString((in.read() << 8) | (in.read()));
                 return Multibase.encode(Multibase.Base.Base32, host).substring(1) + ":" + port;
             }
-            case GARLIC32: {
-                buf = new byte[sizeForAddress];
-                read(in, buf);
-                // an i2p base32 for an Encrypted Leaseset v2 will be at least 35 bytes
-                // long other than that, they will be exactly 32 bytes
-                if (buf.length < 35 && buf.length != 32) {
-                    throw new IllegalStateException("Invalid garlic addr length: " + buf.length);
-                }
-                return Multibase.encode(Multibase.Base.Base32, buf).substring(1);
-            }
-            case GARLIC64: {
-                buf = new byte[sizeForAddress];
-                read(in, buf);
-                // A garlic64 address will always be greater than 386 bytes
-                if (buf.length < 386) {
-                    throw new IllegalStateException("Invalid garlic64 addr length: " + buf.length);
-                }
-                return Multibase.encode(Multibase.Base.Base64, buf).substring(1).replaceAll("\\+", "-").replaceAll("/", "~");
-            }
             case UNIX:
             case DNS4:
             case DNS6:
@@ -355,8 +303,6 @@ public class Protocol {
         HTTPS(443, 0, "https"),
         ONION(444, 80, "onion"),
         ONION3(445, 296, "onion3"),
-        GARLIC64(446, LENGTH_PREFIXED_VAR_SIZE, "garlic64"),
-        GARLIC32(447, LENGTH_PREFIXED_VAR_SIZE, "garlic32"),
         QUIC(460, 0, "quic"),
         WS(477, 0, "ws"),
         WSS(478, 0, "wss"),

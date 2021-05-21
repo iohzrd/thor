@@ -4,7 +4,6 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import io.ipfs.multibase.binary.Base32;
-import io.ipfs.multibase.binary.Base64;
 
 public class Multibase {
 
@@ -24,10 +23,6 @@ public class Multibase {
                 return b.prefix + new String(new Base32(true).encode(data)).replaceAll("=", "");
             case Base36:
                 return b.prefix + Base36.encode(data);
-            case Base64:
-                return b.prefix + Base64.encodeBase64String(data).replaceAll("=", "");
-            case Base64Pad:
-                return b.prefix + Base64.encodeBase64String(data);
             default:
                 throw new IllegalStateException("Unsupported base encoding: " + b.name());
         }
@@ -55,9 +50,6 @@ public class Multibase {
                 return new Base32(true).decode(rest.toLowerCase());
             case Base36:
                 return Base36.decode(rest);
-            case Base64Pad:
-            case Base64:
-                return Base64.decodeBase64(rest);
             default:
                 throw new IllegalStateException("Unsupported base encoding: " + b.name());
         }
@@ -75,9 +67,7 @@ public class Multibase {
         Base32HexUpper('V'),
         Base36('k'),
         Base58Flickr('Z'),
-        Base58BTC('z'),
-        Base64('m'),
-        Base64Pad('M');
+        Base58BTC('z');
 
         private static final Map<Character, Base> lookup = new TreeMap<>();
 

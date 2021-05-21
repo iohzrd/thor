@@ -202,9 +202,10 @@ public final class LiteHostCertificate {
                 .setData(ByteString.copyFrom(pubKey.raw())).build().toByteArray();
 
 
-        SubjectPublicKeyInfo res = SubjectPublicKeyInfo.getInstance(keypair.getPublic().getEncoded());
-        byte[] certKeyPub = res.getEncoded(); // TODO x509.MarshalPKIXPublicKey(certKey.Public());
-        byte[] signature = privKey.sign(Bytes.concat(certificatePrefix.getBytes(), certKeyPub));
+        SubjectPublicKeyInfo subjectPublicKeyInfo = SubjectPublicKeyInfo.
+                getInstance(keypair.getPublic().getEncoded());
+        byte[] signature = privKey.sign(Bytes.concat(
+                certificatePrefix.getBytes(), subjectPublicKeyInfo.getEncoded()));
 
 
         SignedKey signedKey = new SignedKey(keyBytes, signature);

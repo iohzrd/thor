@@ -44,7 +44,7 @@ public interface BitSwapMessage {
         }
         // deprecated
         for (ByteString data : pbm.getBlocksList()) {
-            // CIDv0, sha256, protobuf only (TODO check again)
+            // CIDv0, sha256, protobuf only
             Block block = BasicBlock.createBlock(data.toByteArray());
             m.AddBlock(block);
         }
@@ -218,7 +218,7 @@ public interface BitSwapMessage {
                         && entry.WantType == MessageOuterClass.Message.Wantlist.WantType.Have) {
                     entry.WantType = wantType;
                 }
-                wantlist.put(c, entry); // TODO why (not really needed)
+                wantlist.put(c, entry);
                 return 0;
             }
 
@@ -340,14 +340,11 @@ public interface BitSwapMessage {
         }
 
         @Override
-        public void AddBlockPresence(@NonNull Cid cid, @NonNull MessageOuterClass.Message.BlockPresenceType type) {
+        public void AddBlockPresence(@NonNull Cid cid,
+                                     @NonNull MessageOuterClass.Message.BlockPresenceType type) {
             if (blocks.containsKey(cid)) {
                 return;
             }
-            /* TODO check
-            if _, ok := m.blocks[c]; ok {
-                return
-            }*/
             blockPresences.put(cid, type);
         }
 
