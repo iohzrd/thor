@@ -13,6 +13,7 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 
 import io.LogUtils;
 import io.ipfs.cid.Cid;
@@ -48,12 +49,18 @@ public class IpfsStressTest {
 
         IPFS ipfs = TestEnv.getTestInstance(context);
 
-
+        AtomicLong time = new AtomicLong(System.currentTimeMillis());
         byte[] data = ipfs.getData(Cid.Decode("QmcniBv7UQ4gGPQQW2BwbD4ZZHzN3o3tPuNLZCbBchd1zh"),
-                new TimeoutProgress(210){
+                new Progress(){
+                    @Override
+                    public boolean isClosed() {
+                        return time.get() < (System.currentTimeMillis() - 20000);
+                    }
+
                     @Override
                     public void setProgress(int progress) {
                         LogUtils.error(TAG, "Progress " + progress);
+                        time.set(System.currentTimeMillis());
                     }
 
                     @Override

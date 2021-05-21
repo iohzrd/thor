@@ -39,7 +39,6 @@ public class KadDhtRequest extends SimpleChannelInboundHandler<ByteBuf> {
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
             throws Exception {
-        LogUtils.error(TAG, " " + cause);
         request.completeExceptionally(cause);
         activation.completeExceptionally(cause);
         ctx.close().get();

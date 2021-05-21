@@ -10,6 +10,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.LogUtils;
@@ -31,7 +33,7 @@ public class ContentManager {
 
     private final BitSwapNetwork network;
     private final BlockStore blockStore;
-
+    private final ExecutorService providers = Executors.newFixedThreadPool(8);
     private final ConcurrentSkipListSet<PeerId> whitelist = new ConcurrentSkipListSet<>();
     private final ConcurrentSkipListSet<PeerId> priority = new ConcurrentSkipListSet<>();
     private final ConcurrentSkipListSet<Cid> loads = new ConcurrentSkipListSet<>();
@@ -249,7 +251,7 @@ public class ContentManager {
         }
         loads.add(cid);
         LogUtils.debug(TAG, "Load Provider Start " + cid.String());
-        new Thread(() -> {
+        providers.execute(() -> {
             long start = System.currentTimeMillis();
             try {
                 if (closeable.isClosed()) {
@@ -260,10 +262,10 @@ public class ContentManager {
             } catch (Throwable throwable) {
                 LogUtils.error(TAG, throwable.getMessage());
             } finally {
-                LogUtils.info(TAG, "Finish " + cid.String() +
+                LogUtils.info(TAG, "Load Provider Finish " + cid.String() +
                         " onStart [" + (System.currentTimeMillis() - start) + "]...");
             }
-        }).start();
+        });
     }
 
 }

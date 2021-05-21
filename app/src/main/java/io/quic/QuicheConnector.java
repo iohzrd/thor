@@ -3,7 +3,10 @@ package io.quic;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.nio.ByteBuffer;
 
 import io.netty.buffer.ByteBuf;
@@ -24,7 +27,7 @@ public class QuicheConnector {
     @Nullable
     public static QuicheQuicConnection connect(@NonNull QuicSslContext sslContext,
                                                @NonNull QuicheConfig config,
-                                               @NonNull InetSocketAddress remote) {
+                                               @NonNull InetSocketAddress remote) throws IOException {
 
         QuicheQuicSslEngine engine = (QuicheQuicSslEngine) sslContext.newEngine(null);
 
@@ -91,7 +94,7 @@ public class QuicheConnector {
             inConnectionSend = false;
         }
     }*/
-    private static boolean connectionSendSimple(long connection, InetSocketAddress remote) {
+    private static boolean connectionSendSimple(long connection, InetSocketAddress remote) throws IOException {
 
         boolean packetWasWritten = false;
         for (; ; ) {
@@ -117,8 +120,14 @@ public class QuicheConnector {
                 continue;
             }
             out.writerIndex(writerIndex + written);
+            Socket socket = new Socket(remote.getAddress(), remote.getPort());
             // TODO write on socket
-            //parent().write(new DatagramPacket(out, remote));
+            //socket.getOutputStream().write(out.array());
+            InputStream inputStream = socket.getInputStream();
+
+            //while
+
+            //socket.write(new DatagramPacket(out, remote));
             packetWasWritten = true;
         }
         return packetWasWritten;

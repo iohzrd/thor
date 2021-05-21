@@ -602,24 +602,28 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork {
                     if (closeable.isClosed()) {
                         throw new ClosedException();
                     }
-
+                    long start = System.currentTimeMillis();
+                    boolean success = false;
                     try {
-                        long start = System.currentTimeMillis();
                         Promise<QuicChannel> future = dial(address, peerId);
 
 
                         QuicChannel quic = future.get(timeout, TimeUnit.SECONDS);
                         Objects.requireNonNull(quic);
-                        LogUtils.verbose(TAG, "Success " + address + " " + (System.currentTimeMillis() - start));
 
                         Connection conn = new LiteConnection(quic, transform(quic.remoteAddress()));
                         quic.closeFuture().addListener(future1 -> removeConnection(conn));
                         addConnection(conn);
-
+                        success = true;
                         return conn;
                     } catch (Throwable throwable) {
-                        LogUtils.debug(TAG, address + " " +
+                        LogUtils.info(TAG, address + "/p2p/" + peerId.toBase58() + " " +
                                 throwable.getClass().getSimpleName());
+                    } finally {
+                        LogUtils.info(TAG, "Success " + success + " " +
+                                address + "/p2p/" + peerId.toBase58() + " " +
+                                (System.currentTimeMillis() - start));
+
                     }
 
                 }
