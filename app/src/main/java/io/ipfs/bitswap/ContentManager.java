@@ -91,14 +91,14 @@ public class ContentManager {
                 success = true;
                 whitelist.add(peer);
             } catch (ProtocolIssue | ConnectionIssue | TimeoutIssue | ClosedException exception) {
-                LogUtils.debug(TAG, "Priority Peer " + peer.toBase58() + " " +
+                LogUtils.error(TAG, "Priority Peer " + peer.toBase58() + " " +
                         exception.getClass().getName());
                 // ignore
             } catch (Throwable throwable) {
                 priority.remove(peer);
                 LogUtils.error(TAG, throwable);
             } finally {
-                LogUtils.debug(TAG, "Priority Peer " + success + " " +
+                LogUtils.error(TAG, "Priority Peer " + success + " " +
                         peer.toBase58() + " took " + (System.currentTimeMillis() - start));
             }
         }).start();
@@ -151,7 +151,7 @@ public class ContentManager {
                             whitelist.remove(peer);
                             LogUtils.error(TAG, throwable);
                         } finally {
-                            LogUtils.info(TAG, "Match Peer " +
+                            LogUtils.error(TAG, "Match Peer " +
                                     peer.toBase58() + " took " + (System.currentTimeMillis() - start));
                         }
                     }
@@ -205,7 +205,7 @@ public class ContentManager {
         for (PeerId peer : priority) {
             if (!handled.contains(peer)) {
                 handled.add(peer);
-                LogUtils.verbose(TAG, "LoadBlocks " + peer.toBase58());
+                LogUtils.error(TAG, "LoadBlocks " + peer.toBase58());
                 runHaveMessage(closeable, peer, cids);
             }
         }
@@ -249,8 +249,7 @@ public class ContentManager {
                 if (closeable.isClosed()) {
                     return;
                 }
-                host.findProviders(closeable, peerId -> runHaveMessage(closeable, peerId,
-                        Collections.singletonList(cid)), cid);
+                host.findProviders(closeable, priority::add, cid);
             } catch (ClosedException ignore) {
             } catch (Throwable throwable) {
                 LogUtils.error(TAG, throwable.getMessage());
