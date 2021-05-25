@@ -9,11 +9,10 @@ import io.ipfs.host.PeerId;
 import io.ipfs.ipns.Ipns;
 
 public interface Routing {
-    void putValue(@NonNull Closeable closable, @NonNull byte[] key,
-                  @NonNull byte[] data) throws ClosedException;
+    void putValue(@NonNull Closeable closable, @NonNull byte[] key, @NonNull byte[] data);
 
 
-    boolean findPeer(@NonNull Closeable closeable, @NonNull PeerId peerID) throws ClosedException;
+    void findPeer(@NonNull Closeable closeable, @NonNull Updater updater, @NonNull PeerId peerID);
 
 
     void searchValue(@NonNull Closeable closeable, @NonNull ResolveInfo resolveInfo,
@@ -30,10 +29,15 @@ public interface Routing {
 
 
     interface Providers {
-        void peer(@NonNull PeerId peerId) throws ClosedException;
+        void peer(@NonNull PeerId peerId);
+    }
+
+    interface Updater {
+        void peer(@NonNull PeerId peerId);
     }
 
     interface ResolveInfo {
         void resolved(@NonNull Ipns.Entry entry);
     }
+
 }

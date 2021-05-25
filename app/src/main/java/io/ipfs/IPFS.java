@@ -7,6 +7,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.google.common.primitives.Bytes;
+import com.google.protobuf.ByteString;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -29,6 +30,7 @@ import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -41,6 +43,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
+import identify.pb.IdentifyOuterClass;
 import io.LogUtils;
 import io.ipfs.cid.Cid;
 import io.ipfs.core.Closeable;
@@ -87,7 +90,7 @@ public class IPFS {
     public static final String BITSWAP_PROTOCOL = "/ipfs/bitswap/1.2.0";
     public static final String IDENTITY_PROTOCOL = "/ipfs/id/1.0.0";
     public static final String INDEX_HTML = "index.html";
-    public static final String AGENT = "/thor/0.7.4";
+    public static final String AGENT = "thor/0.7.4/";
     public static final String PROTOCOL_VERSION = "ipfs/0.1.0";
     public static final String IPFS_PATH = "/ipfs/";
     public static final String IPNS_PATH = "/ipns/";
@@ -127,15 +130,17 @@ public class IPFS {
     ));
     // IPFS BOOTSTRAP
     @NonNull
-    public static final List<String> IPFS_BOOTSTRAP_NODES = new ArrayList<>(Arrays.asList(
-            "/ip4/147.75.195.153/tcp/4001/p2p/QmW9m57aiBDHAkKj9nmFSEn7ZqrcF1fZS4bipsTCHburei",// default relay  libp2p
-            "/ip4/147.75.70.221/tcp/4001/p2p/Qme8g49gm3q4Acp7xWBKg3nAa9fxZ1YmyDJdyGgoG6LsXh",// default relay  libp2p
-
+    public static final List<String> IPFS_BOOTSTRAP_NODES = new ArrayList<>(Collections.singletonList(
             "/ip4/104.131.131.82/tcp/4001/p2p/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ" // mars.i.ipfs.io
-
     ));
+    @NonNull
+    public static final List<String> IPFS_RELAYS_NODES = new ArrayList<>(Arrays.asList(
+            "/ip4/147.75.195.153/tcp/4001/p2p/QmW9m57aiBDHAkKj9nmFSEn7ZqrcF1fZS4bipsTCHburei",// default relay  libp2p
+            "/ip4/147.75.70.221/tcp/4001/p2p/Qme8g49gm3q4Acp7xWBKg3nAa9fxZ1YmyDJdyGgoG6LsXh"// default relay  libp2p
+    ));
+
     public static final int KAD_DHT_BUCKET_SIZE = 20;
-    public static final int KAD_DHT_BETA = 20;
+    public static final int KAD_DHT_BETA = 30;
     public static final int CONNECT_TIMEOUT = 5;
     public static final int BITSWAP_LOAD_PROVIDERS_REFRESH = 10000;
     public static final long DHT_REQUEST_READ_TIMEOUT = 10;
@@ -212,6 +217,7 @@ public class IPFS {
             host.addConnectionHandler(conn -> connected(conn.remoteId()));
         }
     }
+
 
     private static void setPublicKey(@NonNull Context context, @NonNull String key) {
         SharedPreferences sharedPref = context.getSharedPreferences(
@@ -386,6 +392,34 @@ public class IPFS {
         return PeerId.decodeName(name);
     }
 
+
+    @NonNull
+    public PeerInfo getIdentity() {
+
+        IdentifyOuterClass.Identify identity = host.createIdentity(null);
+
+
+        String agent = identity.getAgentVersion();
+        String version = identity.getProtocolVersion();
+        Multiaddr observedAddr = null;
+        if (identity.hasObservedAddr()) {
+            observedAddr = new Multiaddr(identity.getObservedAddr().toByteArray());
+        }
+
+        List<String> protocols = new ArrayList<>();
+        List<Multiaddr> addresses = new ArrayList<>();
+        List<ByteString> entries = identity.getProtocolsList().asByteStringList();
+        for (ByteString entry : entries) {
+            protocols.add(entry.toStringUtf8());
+        }
+        entries = identity.getListenAddrsList();
+        for (ByteString entry : entries) {
+            addresses.add(new Multiaddr(entry.toByteArray()));
+        }
+
+        return new PeerInfo(getPeerID(), agent, version, addresses, protocols, observedAddr);
+
+    }
 
     @NonNull
     public List<Multiaddr> listenAddresses() {
@@ -639,7 +673,7 @@ public class IPFS {
 
     @NonNull
     public PeerId getPeerID() {
-        return host.Self();
+        return host.self();
     }
 
     @NonNull
@@ -724,6 +758,7 @@ public class IPFS {
             if (numConnections() < MIN_PEERS) {
                 try {
                     this.host.getRouting().bootstrap();
+                    this.host.relays();
 
                     Set<String> addresses = DnsResolver.resolveDnsAddress(LIB2P_DNS);
                     addresses.addAll(IPFS.DHT_BOOTSTRAP_NODES);
@@ -1118,21 +1153,13 @@ public class IPFS {
 
     public boolean swarmConnect(@NonNull PeerId peerId, @NonNull Closeable closeable) {
         try {
-            host.protectPeer(peerId);
-            Set<Multiaddr> addrInfo = getAddresses(peerId);
-            if (addrInfo.isEmpty()) {
-                return host.getRouting().findPeer(closeable, peerId);
-            } else {
-                host.connect(closeable, peerId, IPFS.CONNECT_TIMEOUT);
-                return true;
-            }
-        } catch (ClosedException | ConnectionIssue ignore) {
+            host.connectTo(closeable, peerId, IPFS.CONNECT_TIMEOUT);
+        } catch (ClosedException ignore) {
             // ignore
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         }
-
-        return false;
+        return host.isConnected(peerId);
     }
 
     private boolean swarmConnect(@NonNull Closeable closeable,
@@ -1149,13 +1176,7 @@ public class IPFS {
         try {
             host.protectPeer(peerId);
             if (multiAddress.startsWith(IPFS.P2P_PATH)) {
-                Set<Multiaddr> addrInfo = getAddresses(peerId);
-                if (addrInfo.isEmpty()) {
-                    return host.getRouting().findPeer(closeable, peerId);
-                } else {
-                    host.connect(closeable, peerId, timeout);
-                    return true;
-                }
+                swarmConnect(peerId, closeable);
             } else {
                 AddrInfo addrInfo = AddrInfo.create(peerId, multiaddr, true);
                 host.addToAddressBook(addrInfo);
@@ -1169,7 +1190,7 @@ public class IPFS {
             LogUtils.error(TAG, "fdasdf " + multiaddr + " " + throwable);
         }
 
-        return false;
+        return host.isConnected(peerId);
     }
 
     @NonNull

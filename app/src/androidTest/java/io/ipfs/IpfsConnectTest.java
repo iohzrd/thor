@@ -96,7 +96,7 @@ public class IpfsConnectTest {
 
 
                 LogUtils.debug(TAG, peerInfo.toString());
-                assertNotNull(peerInfo.getAddress());
+                assertNotNull(peerInfo.getAddresses());
                 assertNotNull(peerInfo.getAgent());
                 assertNotNull(peerInfo.getPeerId());
 

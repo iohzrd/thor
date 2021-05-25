@@ -51,9 +51,6 @@ public class IpfsRealTest {
         IPFS.ResolvedName res = ipfs.resolveName(key, 0, new TimeoutCloseable(30));
         assertNotNull(res);
 
-        LogUtils.debug(TAG, res.toString());
-
-
         AtomicBoolean atomicBoolean = new AtomicBoolean(false);
 
         try {
@@ -132,14 +129,6 @@ public class IpfsRealTest {
         IPFS.ResolvedName res = ipfs.resolveName(key, 0, new TimeoutCloseable(30));
         assertNotNull(res);
 
-        LogUtils.debug(TAG, res.toString());
-
-        boolean result = ipfs.swarmConnect(IPFS.P2P_PATH + res.getPeerId().toBase58(),
-                IPFS.CONNECT_TIMEOUT);
-        LogUtils.debug(TAG, res.getPeerId().toBase58() + " " + result);
-
-
-
         ConcurrentSkipListSet<PeerId> peers = new ConcurrentSkipListSet<>();
         try {
             ipfs.findProviders(peers::add, Cid.Decode(res.getHash()), new TimeoutCloseable(30));
@@ -149,7 +138,7 @@ public class IpfsRealTest {
         assertFalse(peers.isEmpty());
 
         for (PeerId peerId:peers) {
-            LogUtils.error(TAG, "connect " + peerId.toBase58() + " " +
+            LogUtils.debug(TAG, "connect " + peerId.toBase58() + " " +
                     ipfs.swarmConnect(peerId, new TimeoutCloseable(15)));
         }
 

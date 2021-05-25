@@ -11,21 +11,14 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
 import io.LogUtils;
 import io.ipfs.cid.Cid;
 import io.ipfs.core.ClosedException;
-import io.ipfs.core.TimeoutCloseable;
-import io.ipfs.core.TimeoutProgress;
-import io.ipfs.host.PeerId;
-import io.ipfs.multiaddr.Multiaddr;
 import io.ipfs.utils.Progress;
 
 import static junit.framework.TestCase.assertNotNull;
-import static org.junit.Assert.assertFalse;
 
 
 @SuppressWarnings("SpellCheckingInspection")
@@ -54,7 +47,7 @@ public class IpfsStressTest {
                 new Progress(){
                     @Override
                     public boolean isClosed() {
-                        return time.get() < (System.currentTimeMillis() - 20000);
+                        return time.get() < (System.currentTimeMillis() - 30000);
                     }
 
                     @Override

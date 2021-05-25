@@ -40,15 +40,15 @@ public class BitSwap implements Interface {
     @NonNull
     private final BitSwapEngine engine;
     @NonNull
-    private final LiteHost network;
+    private final LiteHost host;
 
     @NonNull
     public final ConcurrentHashMap<QuicChannel, QuicStreamChannel> bitSwaps = new ConcurrentHashMap<>();
 
-    public BitSwap(@NonNull BlockStore blockstore, @NonNull LiteHost network) {
-        this.network = network;
-        contentManager = new ContentManager(this, blockstore, network);
-        engine = new BitSwapEngine(this, blockstore, network.Self());
+    public BitSwap(@NonNull BlockStore blockstore, @NonNull LiteHost host) {
+        this.host = host;
+        contentManager = new ContentManager(this, blockstore, host);
+        engine = new BitSwapEngine(this, blockstore, host.self());
     }
 
     public static Interface create(@NonNull LiteHost bitSwapNetwork,
@@ -129,9 +129,9 @@ public class BitSwap implements Interface {
 
         long time = System.currentTimeMillis();
         boolean success = false;
-        network.protectPeer(peer);
+        host.protectPeer(peer);
         try {
-            Connection conn = network.connect(closeable, peer, IPFS.CONNECT_TIMEOUT);
+            Connection conn = host.connect(closeable, peer, IPFS.CONNECT_TIMEOUT);
 
             if (closeable.isClosed()) {
                 throw new ClosedException();
@@ -143,7 +143,7 @@ public class BitSwap implements Interface {
         } catch (ClosedException | ConnectionIssue exception) {
             throw exception;
         } catch (Throwable throwable) {
-            network.unprotectPeer(peer);
+            host.unprotectPeer(peer);
             Throwable cause = throwable.getCause();
             if (cause != null) {
                 if (cause instanceof ProtocolIssue) {
@@ -158,7 +158,8 @@ public class BitSwap implements Interface {
             }
             throw new RuntimeException(throwable);
         } finally {
-            LogUtils.info(TAG, "Send took " + success + " " + (System.currentTimeMillis() - time));
+            LogUtils.debug(TAG, "Send took " + success + " " +
+                    peer.toBase58() + " " + (System.currentTimeMillis() - time));
         }
     }
 

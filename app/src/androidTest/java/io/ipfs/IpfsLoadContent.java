@@ -45,8 +45,10 @@ public class IpfsLoadContent {
 
         String key = "k2k4r8n098cwalcc7rdntd19nsjyzh6rku1hvgsmkjzvnw582mncc4b4";
 
-        IPFS.ResolvedName res = ipfs.resolveName(key, 0, new TimeoutCloseable(60));
+        IPFS.ResolvedName res = ipfs.resolveName(key, 0, new TimeoutCloseable(30));
         assertNotNull(res);
+
+        LogUtils.debug(TAG, "Resolved Peer " + res.getPeerId().toBase58());
 
         LogUtils.debug(TAG, res.toString());
 
@@ -75,10 +77,12 @@ public class IpfsLoadContent {
         IPFS.ResolvedName res = ipfs.resolveName(key, 0, new TimeoutCloseable(30));
         assertNotNull(res);
 
+        LogUtils.debug(TAG, "Resolved Peer " + res.getPeerId().toBase58());
+
         LogUtils.debug(TAG, res.toString());
         String link = IPFS.IPFS_PATH.concat(res.getHash().concat("/").concat(IPFS.INDEX_HTML));
         LogUtils.debug(TAG, link);
-        Node node = ipfs.resolveNode(link, new TimeoutCloseable(30));
+        Node node = ipfs.resolveNode(link, new TimeoutCloseable(60));
         assertNotNull(node);
 
         String text = ipfs.getText(node.getCid(), new TimeoutCloseable(30));
@@ -99,11 +103,13 @@ public class IpfsLoadContent {
         IPFS.ResolvedName res = ipfs.resolveName(key, 0, new TimeoutCloseable(30));
         assertNotNull(res);
 
+        LogUtils.debug(TAG, "Resolved Peer " + res.getPeerId().toBase58());
+
         LogUtils.debug(TAG, res.toString());
 
         String link = IPFS.IPFS_PATH.concat(res.getHash().concat("/").concat(IPFS.INDEX_HTML));
         LogUtils.debug(TAG, link);
-        Node node = ipfs.resolveNode(link, new TimeoutCloseable(30));
+        Node node = ipfs.resolveNode(link, new TimeoutCloseable(60));
         assertNotNull(node);
 
         String text = ipfs.getText(node.getCid(), new TimeoutCloseable(30));
@@ -125,11 +131,13 @@ public class IpfsLoadContent {
         IPFS.ResolvedName res = ipfs.resolveName(key, 0, new TimeoutCloseable(30));
         assertNotNull(res);
 
+        LogUtils.debug(TAG, "Resolved Peer " + res.getPeerId().toBase58());
+
         LogUtils.debug(TAG, res.toString());
 
         String link = IPFS.IPFS_PATH.concat(res.getHash().concat("/").concat(IPFS.INDEX_HTML));
         LogUtils.debug(TAG, link);
-        Node node = ipfs.resolveNode(link, new TimeoutCloseable(30));
+        Node node = ipfs.resolveNode(link, new TimeoutCloseable(60));
         assertNotNull(node);
 
         String text = ipfs.getText(node.getCid(), new TimeoutCloseable(30));

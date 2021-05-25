@@ -28,9 +28,11 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.net.ssl.ManagerFactoryParameters;
 import javax.net.ssl.TrustManager;
@@ -42,12 +44,12 @@ import io.LogUtils;
 import io.ipfs.IPFS;
 import io.ipfs.bitswap.BitSwap;
 import io.ipfs.bitswap.BitSwapMessage;
-import io.ipfs.bitswap.BitSwapNetwork;
 import io.ipfs.bitswap.BitSwapReceiver;
 import io.ipfs.cid.Cid;
 import io.ipfs.core.Closeable;
 import io.ipfs.core.ClosedException;
 import io.ipfs.core.ConnectionIssue;
+import io.ipfs.core.TimeoutCloseable;
 import io.ipfs.crypto.PrivKey;
 import io.ipfs.crypto.PubKey;
 import io.ipfs.dht.KadDht;
@@ -75,14 +77,14 @@ import io.netty.incubator.codec.quic.QuicClientCodecBuilder;
 import io.netty.incubator.codec.quic.QuicServerCodecBuilder;
 import io.netty.incubator.codec.quic.QuicSslContext;
 import io.netty.incubator.codec.quic.QuicSslContextBuilder;
+import io.netty.incubator.codec.quic.QuicStreamChannel;
 import io.netty.util.AttributeKey;
 import io.netty.util.NetUtil;
 import io.netty.util.concurrent.Promise;
 import io.netty.util.internal.EmptyArrays;
-import relay.pb.Relay;
 
 
-public class LiteHost implements BitSwapReceiver, BitSwapNetwork {
+public class LiteHost implements BitSwapReceiver {
     @NonNull
     public static final AttributeKey<PeerId> PEER_KEY = AttributeKey.newInstance("PEER_KEY");
     @NonNull
@@ -137,6 +139,8 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork {
     @NonNull
     private final Set<PeerId> tags = ConcurrentHashMap.newKeySet();
     @NonNull
+    private final ConcurrentSkipListSet<PeerId> relays = new ConcurrentSkipListSet<>();
+    @NonNull
     private final ConcurrentHashMap<PeerId, Set<Multiaddr>> addressBook = new ConcurrentHashMap<>();
     @NonNull
     private final ConcurrentHashMap<PeerId, Connection> connections = new ConcurrentHashMap<>();
@@ -162,8 +166,10 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork {
     private InetAddress localAddress;
     private Channel client;
 
-    public LiteHost(@NonNull LiteHostCertificate selfSignedCertificate, @NonNull PrivKey privKey,
-                    @NonNull BlockStore blockstore, int port, int alpha) {
+    public LiteHost(@NonNull LiteHostCertificate selfSignedCertificate,
+                    @NonNull PrivKey privKey,
+                    @NonNull BlockStore blockstore,
+                    int port, int alpha) {
         this.selfSignedCertificate = selfSignedCertificate;
         this.privKey = privKey;
         this.port = port;
@@ -221,6 +227,39 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork {
 
     }
 
+    public void relays() {
+        Set<String> addresses = new HashSet<>(IPFS.IPFS_RELAYS_NODES);
+
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        for (String address : addresses) {
+            try {
+                Multiaddr multiaddr = new Multiaddr(address);
+                String name = multiaddr.getStringComponent(Protocol.Type.P2P);
+                Objects.requireNonNull(name);
+                PeerId peerId = PeerId.fromBase58(name);
+                if (!relays.contains(peerId)) {
+                    Objects.requireNonNull(peerId);
+                }
+                executor.execute(() -> prepareRelay(peerId));
+            } catch (Throwable throwable) {
+                LogUtils.error(TAG, throwable);
+            }
+        }
+    }
+
+    private void prepareRelay(@NonNull PeerId relay) {
+        try {
+            LogUtils.debug(TAG, "Find Relay " + relay.toBase58());
+            protectPeer(relay);
+            connectTo(new TimeoutCloseable(15), relay, IPFS.CONNECT_TIMEOUT);
+            relays.add(relay);
+            LogUtils.debug(TAG, "Found Relay " + relay.toBase58());
+        } catch (Throwable throwable) {
+            unprotectPeer(relay);
+            LogUtils.error(TAG, throwable);
+        }
+    }
+
     @NonNull
     public Routing getRouting() {
         return routing;
@@ -242,8 +281,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork {
     }
 
 
-    @Override
-    public PeerId Self() {
+    public PeerId self() {
         return PeerId.fromPubKey(privKey.publicKey());
     }
 
@@ -277,7 +315,6 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork {
         }
     }
 
-    @Override
     public void findProviders(@NonNull Closeable closeable, @NonNull Routing.Providers providers,
                               @NonNull Cid cid) throws ClosedException {
         routing.findProviders(closeable, providers, cid);
@@ -389,10 +426,24 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork {
 
     }
 
-    @Override
     public void connectTo(@NonNull Closeable closeable, @NonNull PeerId peerId, int timeout)
-            throws ClosedException, ConnectionIssue {
-        connect(closeable, peerId, timeout);
+            throws ClosedException {
+
+        try {
+            connect(closeable, peerId, timeout);
+
+        } catch (ConnectionIssue ignore) {
+
+            AtomicBoolean done = new AtomicBoolean(false);
+            routing.findPeer(() -> closeable.isClosed() || done.get(), peerId1 -> {
+                try {
+                    connect(closeable, peerId1, timeout);
+                    done.set(true);
+                } catch (Throwable throwable) {
+                    LogUtils.error(TAG, throwable);
+                }
+            }, peerId);
+        }
 
     }
 
@@ -429,46 +480,31 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork {
     @NonNull
     public PeerInfo getPeerInfo(@NonNull Closeable closeable,
                                 @NonNull Connection conn) throws ClosedException {
-
-        try {
-            IdentifyOuterClass.Identify identify = IdentityService.getIdentity(closeable, conn);
-            Objects.requireNonNull(identify);
-
-
-            String agent = identify.getAgentVersion();
-            Multiaddr observedAddr = null;
-            if (identify.hasObservedAddr()) {
-                observedAddr = new Multiaddr(identify.getObservedAddr().toByteArray());
-            }
-
-            return new PeerInfo(conn.remoteId(), agent, conn.remoteAddress(), observedAddr);
-        } catch (ClosedException closedException) {
-            throw closedException;
-        } catch (Throwable throwable) {
-            throw new RuntimeException(throwable);
-        }
+        return IdentityService.getPeerInfo(closeable, conn);
     }
 
     public void swarmReduce(@NonNull PeerId peerId) {
         swarm.remove(peerId);
     }
 
-    public void addToAddressBook(@NonNull AddrInfo addrInfo) {
-
+    public boolean addToAddressBook(@NonNull AddrInfo addrInfo) {
+        boolean result = false;
         try {
             PeerId peerId = addrInfo.getPeerId();
             Set<Multiaddr> info = addressBook.get(peerId);
 
             if (addrInfo.hasAddresses()) {
                 if (info != null) {
-                    info.addAll(addrInfo.asSet());
+                    result = info.addAll(addrInfo.asSet());
                 } else {
                     addressBook.put(peerId, addrInfo.asSet());
+                    result = true;
                 }
             }
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         }
+        return result;
     }
 
     private void addConnection(@NonNull Connection connection) {
@@ -497,9 +533,27 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork {
     }
 
     @NonNull
-    @Override
     public Set<PeerId> getPeers() {
         return new HashSet<>(swarm);
+    }
+
+    public void dialPeer(@NonNull Closeable closeable, @NonNull PeerId relay, @NonNull PeerId peerId)
+            throws ConnectionIssue, ClosedException {
+
+        try {
+            Connection conn = connect(closeable, relay, IPFS.CONNECT_TIMEOUT);
+
+            QuicStreamChannel stream = RelayService.dialPeer(conn, self(), peerId, 30);
+            Objects.requireNonNull(stream);
+            LogUtils.error(TAG, "dialPeer ");
+
+        } catch (ClosedException | ConnectionIssue exception) {
+            LogUtils.error(TAG, exception);
+            throw exception;
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable);
+            throw new RuntimeException(throwable);
+        }
     }
 
     public boolean canHop(@NonNull Closeable closeable, @NonNull PeerId peerId)
@@ -508,11 +562,7 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork {
         try {
             Connection conn = connect(closeable, peerId, IPFS.CONNECT_TIMEOUT);
 
-            Relay.CircuitRelay msg = RelayService.getRelay(closeable, conn);
-
-            Objects.requireNonNull(msg);
-
-            return msg.getType() == relay.pb.Relay.CircuitRelay.Type.STATUS;
+            return RelayService.canHop(conn, IPFS.CONNECT_TIMEOUT);
 
         } catch (ClosedException | ConnectionIssue exception) {
             throw exception;
@@ -709,15 +759,15 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork {
 
     }
 
-    IdentifyOuterClass.Identify createIdentity(@NonNull SocketAddress socketAddress) {
+    public IdentifyOuterClass.Identify createIdentity(@Nullable SocketAddress socketAddress) {
 
         IdentifyOuterClass.Identify.Builder builder = IdentifyOuterClass.Identify.newBuilder()
                 .setAgentVersion(IPFS.AGENT)
                 .setPublicKey(ByteString.copyFrom(privKey.publicKey().bytes()))
                 .setProtocolVersion(IPFS.PROTOCOL_VERSION);
 
-        List<Multiaddr> multiaddrs = listenAddresses();
-        for (Multiaddr addr : multiaddrs) {
+        List<Multiaddr> addresses = listenAddresses();
+        for (Multiaddr addr : addresses) {
             builder.addListenAddrs(ByteString.copyFrom(addr.getBytes()));
         }
 
@@ -725,9 +775,12 @@ public class LiteHost implements BitSwapReceiver, BitSwapNetwork {
         for (String protocol : protocols) {
             builder.addProtocols(protocol);
         }
+
         try {
-            Multiaddr observed = transform(socketAddress);
-            builder.setObservedAddr(ByteString.copyFrom(observed.getBytes()));
+            if (socketAddress != null) {
+                Multiaddr observed = transform(socketAddress);
+                builder.setObservedAddr(ByteString.copyFrom(observed.getBytes()));
+            }
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         }

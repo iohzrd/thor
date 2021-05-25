@@ -3,6 +3,8 @@ package io.ipfs.host;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import java.util.List;
+
 import io.ipfs.multiaddr.Multiaddr;
 
 public class PeerInfo {
@@ -10,17 +12,36 @@ public class PeerInfo {
     private final PeerId peerId;
     @NonNull
     private final String agent;
+
     @NonNull
-    private final Multiaddr address;
+    private final String version;
+    @NonNull
+    private final List<Multiaddr> addresses;
+    @NonNull
+    private final List<String> protocols;
     @Nullable
     private final Multiaddr observed;
 
-    public PeerInfo(@NonNull PeerId peerId, @NonNull String agent, @NonNull Multiaddr address,
+    public PeerInfo(@NonNull PeerId peerId, @NonNull String agent, @NonNull String version,
+                    @NonNull List<Multiaddr> addresses,
+                    @NonNull List<String> protocols,
                     @Nullable Multiaddr observed) {
         this.peerId = peerId;
         this.agent = agent;
-        this.address = address;
+        this.version = version;
+        this.addresses = addresses;
+        this.protocols = protocols;
         this.observed = observed;
+    }
+
+    @NonNull
+    public String getVersion() {
+        return version;
+    }
+
+    @NonNull
+    public List<String> getProtocols() {
+        return protocols;
     }
 
     @Nullable
@@ -29,8 +50,8 @@ public class PeerInfo {
     }
 
     @NonNull
-    public Multiaddr getAddress() {
-        return address;
+    public List<Multiaddr> getAddresses() {
+        return addresses;
     }
 
     @NonNull
@@ -39,7 +60,9 @@ public class PeerInfo {
         return "PeerInfo{" +
                 "peerId=" + peerId +
                 ", agent='" + agent + '\'' +
-                ", address=" + address +
+                ", version='" + version + '\'' +
+                ", addresses=" + addresses +
+                ", protocols=" + protocols +
                 ", observed=" + observed +
                 '}';
     }

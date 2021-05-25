@@ -208,7 +208,7 @@ public class Query {
         } catch (ClosedException closedException) {
             throw closedException;
         } catch (ProtocolIssue | ConnectionIssue ignore) {
-            dht.removePeerFromDht(queryPeer);
+            dht.removeFromRouting(queryPeer);
             QueryUpdate update = new QueryUpdate();
             update.unreachable.add(queryPeer);
             queue.offer(update);
@@ -219,7 +219,7 @@ public class Query {
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
 
-            dht.removePeerFromDht(queryPeer);
+            dht.removeFromRouting(queryPeer);
             QueryUpdate update = new QueryUpdate();
             update.unreachable.add(queryPeer);
             queue.offer(update);
@@ -239,11 +239,16 @@ public class Query {
                 return false;
             }
         }
+        LogUtils.debug(TAG, "Lookup Termination " + peers.size() + " " + queryPeers.size());
         return true;
     }
 
     private boolean isStarvationTermination() {
-        return queryPeers.NumHeard() == 0 && queryPeers.NumWaiting() == 0;
+        boolean result = queryPeers.NumHeard() == 0 && queryPeers.NumWaiting() == 0;
+        if (result) {
+            LogUtils.debug(TAG, "Starvation Termination " + queryPeers.size());
+        }
+        return result;
     }
 
 

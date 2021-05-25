@@ -24,6 +24,7 @@ import io.ipfs.core.ProtocolIssue;
 import io.ipfs.core.TimeoutIssue;
 import io.ipfs.format.Block;
 import io.ipfs.format.BlockStore;
+import io.ipfs.host.LiteHost;
 import io.ipfs.host.PeerId;
 
 
@@ -31,7 +32,7 @@ public class ContentManager {
 
     private static final String TAG = ContentManager.class.getSimpleName();
 
-    private final BitSwapNetwork network;
+    private final LiteHost host;
     private final BlockStore blockStore;
     private final ExecutorService providers = Executors.newFixedThreadPool(8);
     private final ConcurrentSkipListSet<PeerId> whitelist = new ConcurrentSkipListSet<>();
@@ -41,10 +42,10 @@ public class ContentManager {
     private final Blocker blocker = new Blocker();
     private final BitSwap bitSwap;
 
-    public ContentManager(@NonNull BitSwap bitSwap, @NonNull BlockStore blockStore, @NonNull BitSwapNetwork network) {
+    public ContentManager(@NonNull BitSwap bitSwap, @NonNull BlockStore blockStore, @NonNull LiteHost host) {
         this.bitSwap = bitSwap;
         this.blockStore = blockStore;
-        this.network = network;
+        this.host = host;
     }
 
 
@@ -78,32 +79,26 @@ public class ContentManager {
     }
 
     public void runHaveMessage(@NonNull Closeable closeable, @NonNull PeerId peer,
-                               @NonNull List<Cid> cids, boolean rerun) {
+                               @NonNull List<Cid> cids) {
         new Thread(() -> {
             long start = System.currentTimeMillis();
+            boolean success = false;
             try {
                 if (closeable.isClosed()) {
                     return;
                 }
                 MessageWriter.sendHaveMessage(closeable, bitSwap, peer, cids);
+                success = true;
                 whitelist.add(peer);
-            } catch (ClosedException ignore) {
+            } catch (ProtocolIssue | ConnectionIssue | TimeoutIssue | ClosedException exception) {
+                LogUtils.debug(TAG, "Priority Peer " + peer.toBase58() + " " +
+                        exception.getClass().getName());
                 // ignore
-            } catch (ProtocolIssue protocolIssue) {
-                LogUtils.error(TAG, peer.toBase58() + " " + protocolIssue);
-                priority.remove(peer);
-            } catch (ConnectionIssue | TimeoutIssue issue) {
-                LogUtils.error(TAG, peer.toBase58() + " " + issue);
-                if (rerun) {
-                    runHaveMessage(closeable, peer, cids, false);
-                } else {
-                    priority.remove(peer);
-                }
             } catch (Throwable throwable) {
                 priority.remove(peer);
                 LogUtils.error(TAG, throwable);
             } finally {
-                LogUtils.info(TAG, "Priority Peer " +
+                LogUtils.debug(TAG, "Priority Peer " + success + " " +
                         peer.toBase58() + " took " + (System.currentTimeMillis() - start));
             }
         }).start();
@@ -115,10 +110,10 @@ public class ContentManager {
         matches.put(cid, new ConcurrentLinkedDeque<>());
 
         long enter = System.currentTimeMillis();
-        boolean runLoadProviders = true;
+
         Set<PeerId> haves = new HashSet<>();
         Set<PeerId> wants = new HashSet<>();
-        priority.addAll(network.getPeers());
+        priority.addAll(host.getPeers());
         while (matches.containsKey(cid)) {
 
             if (closeable.isClosed()) {
@@ -128,10 +123,9 @@ public class ContentManager {
             for (PeerId peer : priority) {
                 if (!haves.contains(peer)) {
                     haves.add(peer);
-                    runHaveMessage(closeable, peer, Collections.singletonList(cid), true);
+                    runHaveMessage(closeable, peer, Collections.singletonList(cid));
                 }
             }
-
 
             ConcurrentLinkedDeque<PeerId> set = matches.get(cid);
             if (set != null) {
@@ -168,10 +162,10 @@ public class ContentManager {
                 throw new ClosedException();
             }
 
-            if (runLoadProviders && System.currentTimeMillis()
+            if (System.currentTimeMillis()
                     > (enter + IPFS.BITSWAP_LOAD_PROVIDERS_REFRESH)) {
-                runLoadProviders = false;
                 loadProviders(closeable, cid);
+                enter = System.currentTimeMillis();
             }
 
         }
@@ -211,10 +205,8 @@ public class ContentManager {
         for (PeerId peer : priority) {
             if (!handled.contains(peer)) {
                 handled.add(peer);
-
                 LogUtils.verbose(TAG, "LoadBlocks " + peer.toBase58());
-
-                runHaveMessage(closeable, peer, cids, true);
+                runHaveMessage(closeable, peer, cids);
             }
         }
     }
@@ -257,13 +249,15 @@ public class ContentManager {
                 if (closeable.isClosed()) {
                     return;
                 }
-                network.findProviders(closeable, priority::add, cid);
+                host.findProviders(closeable, peerId -> runHaveMessage(closeable, peerId,
+                        Collections.singletonList(cid)), cid);
             } catch (ClosedException ignore) {
             } catch (Throwable throwable) {
                 LogUtils.error(TAG, throwable.getMessage());
             } finally {
                 LogUtils.info(TAG, "Load Provider Finish " + cid.String() +
                         " onStart [" + (System.currentTimeMillis() - start) + "]...");
+                loads.remove(cid);
             }
         });
     }

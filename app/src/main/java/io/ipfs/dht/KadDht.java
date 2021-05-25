@@ -75,7 +75,7 @@ public class KadDht implements Routing {
                   int alpha, int beta, int bucketSize) {
         this.host = host;
         this.validator = validator;
-        this.self = host.Self();
+        this.self = host.self();
         this.bucketSize = bucketSize;
         this.routingTable = new RoutingTable(bucketSize, Util.ConvertPeerID(self));
         this.beta = beta;
@@ -125,6 +125,7 @@ public class KadDht implements Routing {
     }
 
 
+
     @NonNull
     private List<AddrInfo> evalClosestPeers(@NonNull Dht.Message pms) {
         List<AddrInfo> peers = new ArrayList<>();
@@ -145,6 +146,9 @@ public class KadDht implements Routing {
             if (addrInfo.hasAddresses()) {
                 peers.add(addrInfo);
                 host.addToAddressBook(addrInfo);
+            } else {
+                LogUtils.debug(TAG, "Ignore evalClosestPeers : " +
+                        peerId.toBase58() + " " + multiAddresses.toString());
             }
         }
         return peers;
@@ -174,7 +178,7 @@ public class KadDht implements Routing {
     }
 
     @Override
-    public void putValue(@NonNull Closeable ctx, @NonNull byte[] key, @NonNull byte[] value) throws ClosedException {
+    public void putValue(@NonNull Closeable ctx, @NonNull byte[] key, @NonNull byte[] value) {
 
 
         // don't allow local users to put bad values.
@@ -185,6 +189,8 @@ public class KadDht implements Routing {
             throw new RuntimeException(throwable);
         }
 
+        long start = System.currentTimeMillis();
+
         @SuppressLint("SimpleDateFormat") String format = new SimpleDateFormat(
                 IPFS.TimeFormatIpfs).format(new Date());
         RecordOuterClass.Record rec = RecordOuterClass.Record.newBuilder().setKey(ByteString.copyFrom(key))
@@ -192,14 +198,19 @@ public class KadDht implements Routing {
                 .setTimeReceived(format).build();
 
         ConcurrentSkipListSet<PeerId> handled = new ConcurrentSkipListSet<>();
-        getClosestPeers(ctx, key, addrInfo -> {
-            PeerId peerId = addrInfo.getPeerId();
-            if (!handled.contains(peerId)) {
-                handled.add(peerId);
-                ExecutorService service = Executors.newSingleThreadExecutor();
-                service.execute(() -> putValueToPeer(ctx, addrInfo.getPeerId(), rec));
-            }
-        });
+        try {
+            getClosestPeers(ctx, key, addrInfo -> {
+                PeerId peerId = addrInfo.getPeerId();
+                if (!handled.contains(peerId)) {
+                    handled.add(peerId);
+                    ExecutorService service = Executors.newSingleThreadExecutor();
+                    service.execute(() -> putValueToPeer(ctx, addrInfo.getPeerId(), rec));
+                }
+            });
+        } catch (Throwable ignore) {
+        } finally {
+            LogUtils.verbose(TAG, "Finish putValue at " + (System.currentTimeMillis() - start));
+        }
 
     }
 
@@ -237,57 +248,67 @@ public class KadDht implements Routing {
 
         byte[] key = cid.Hash();
 
-        ConcurrentSkipListSet<PeerId> handled = new ConcurrentSkipListSet<>();
-        runLookupWithFollowup(closeable, key, (ctx, p) -> {
+        long start = System.currentTimeMillis();
 
-            Dht.Message pms = findProvidersSingle(ctx, p, key);
+        try {
+            ConcurrentSkipListSet<PeerId> handled = new ConcurrentSkipListSet<>();
+            runLookupWithFollowup(closeable, key, (ctx, p) -> {
 
-            List<AddrInfo> provs = new ArrayList<>();
-            List<Dht.Message.Peer> list = pms.getProviderPeersList();
-            for (Dht.Message.Peer entry : list) {
+                Dht.Message pms = findProvidersSingle(ctx, p, key);
 
-                PeerId peerId = new PeerId(entry.getId().toByteArray());
+                List<AddrInfo> provs = new ArrayList<>();
+                List<Dht.Message.Peer> list = pms.getProviderPeersList();
+                for (Dht.Message.Peer entry : list) {
 
-                List<Multiaddr> multiAddresses = new ArrayList<>();
-                List<ByteString> addresses = entry.getAddrsList();
-                for (ByteString address : addresses) {
-                    Multiaddr multiaddr = preFilter(address);
-                    if (multiaddr != null) {
-                        multiAddresses.add(multiaddr);
+                    PeerId peerId = new PeerId(entry.getId().toByteArray());
+
+                    List<Multiaddr> multiAddresses = new ArrayList<>();
+                    List<ByteString> addresses = entry.getAddrsList();
+                    for (ByteString address : addresses) {
+                        Multiaddr multiaddr = preFilter(address);
+                        if (multiaddr != null) {
+                            multiAddresses.add(multiaddr);
+                        }
+                    }
+
+                    LogUtils.debug(TAG, "got provider before filter " + peerId.toBase58() + " "
+                            + multiAddresses.toString());
+
+                    AddrInfo addrInfo = AddrInfo.create(peerId, multiAddresses, false);
+
+                    // maybe in the future empty addresses will also reported
+                    // but an adequate searching should be provided
+                    if (addrInfo.hasAddresses()) {
+                        provs.add(addrInfo);
+                        host.addToAddressBook(addrInfo);
                     }
                 }
 
-                LogUtils.info(TAG, "got provider before filter " + peerId.toBase58() + " "
-                        + multiAddresses.toString());
 
-                AddrInfo addrInfo = AddrInfo.create(peerId, multiAddresses, true);
-
-                // maybe in the future empty addresses will also reported
-                // but an adequate searching should be provided
-                if (addrInfo.hasAddresses()) {
-                    provs.add(addrInfo);
-                    host.addToAddressBook(addrInfo);
+                for (AddrInfo prov : provs) {
+                    LogUtils.debug(TAG, "got provider : " + prov.getPeerId());
+                    PeerId peerId = prov.getPeerId();
+                    if (!handled.contains(peerId)) {
+                        handled.add(peerId);
+                        LogUtils.info(TAG, "got provider using: " + prov.getPeerId());
+                        providers.peer(peerId);
+                    }
                 }
-            }
+                return evalClosestPeers(pms);
 
-
-            for (AddrInfo prov : provs) {
-                LogUtils.info(TAG, "got provider : " + prov.getPeerId());
-                PeerId peerId = prov.getPeerId();
-                if (!handled.contains(peerId)) {
-                    handled.add(peerId);
-                    LogUtils.info(TAG, "got provider using: " + prov.getPeerId());
-                    providers.peer(peerId);
-                }
-            }
-            return evalClosestPeers(pms);
-
-        }, closeable::isClosed);
+            }, closeable::isClosed);
+        } finally {
+            LogUtils.debug(TAG, "Finished findProviders at " +
+                    (System.currentTimeMillis() - start));
+        }
     }
 
 
-    public void removePeerFromDht(PeerId p) {
-        routingTable.RemovePeer(p);
+    public void removeFromRouting(PeerId p) {
+        boolean result = routingTable.removePeer(p);
+        if (result) {
+            LogUtils.debug(TAG, "Remove from routing " + p.toBase58());
+        }
     }
 
 
@@ -504,42 +525,56 @@ public class KadDht implements Routing {
     }
 
     @Override
-    public boolean findPeer(@NonNull Closeable closeable, @NonNull PeerId id) throws ClosedException {
+    public void findPeer(@NonNull Closeable closeable, @NonNull Updater updater, @NonNull PeerId id) {
 
-        boolean connected = host.isConnected(id);
-        if (connected) {
-            return true;
-        }
 
         byte[] key = id.getBytes();
+        long start = System.currentTimeMillis();
+        try {
+            runLookupWithFollowup(closeable, key, (ctx, p) -> {
+                Dht.Message pms = findPeerSingle(ctx, p, id.getBytes());
 
-        LookupWithFollowupResult lookupRes = runLookupWithFollowup(closeable, key,
-                (ctx, p) -> {
-                    Dht.Message pms = findPeerSingle(ctx, p, id.getBytes());
-
-                    return evalClosestPeers(pms);
-                }, () -> closeable.isClosed() || host.isConnected(id));
+                List<AddrInfo> peers = new ArrayList<>();
+                List<Dht.Message.Peer> list = pms.getCloserPeersList();
+                for (Dht.Message.Peer entry : list) {
+                    PeerId peerId = new PeerId(entry.getId().toByteArray());
 
 
-        if (closeable.isClosed()) {
-            throw new ClosedException();
+                    List<Multiaddr> multiAddresses = new ArrayList<>();
+                    List<ByteString> addresses = entry.getAddrsList();
+                    for (ByteString address : addresses) {
+                        Multiaddr multiaddr = preFilter(address);
+                        if (multiaddr != null) {
+                            multiAddresses.add(multiaddr);
+                        }
+                    }
+
+                    AddrInfo addrInfo = AddrInfo.create(peerId, multiAddresses, false);
+                    if (addrInfo.hasAddresses()) {
+                        peers.add(addrInfo);
+                        boolean update = host.addToAddressBook(addrInfo);
+                        if (update) {
+                            if (Objects.equals(peerId, id)) {
+                                LogUtils.debug(TAG, "findPeer " + addrInfo.toString());
+                                updater.peer(peerId);
+                            }
+                        }
+                    } else {
+                        LogUtils.debug(TAG, "Ignore evalClosestPeers : " +
+                                peerId.toBase58() + " " + multiAddresses.toString());
+                    }
+                }
+
+                if (ctx.isClosed()) {
+                    return Collections.emptyList();
+                }
+                return peers;
+
+            }, closeable::isClosed);
+        } catch (Throwable ignore) {
+        } finally {
+            LogUtils.verbose(TAG, "Finish findPeer at " + (System.currentTimeMillis() - start));
         }
-
-        boolean dialedPeerDuringQuery = false;
-        Objects.requireNonNull(lookupRes);
-        PeerState state = lookupRes.peers.get(id);
-        if (state != null) {
-
-            // Note: we consider PeerUnreachable to be a valid state because the peer may not support the DHT protocol
-            // and therefore the peer would fail the query. The fact that a peer that is returned can be a non-DHT
-            // server peer and is not identified as such is a bug.
-            dialedPeerDuringQuery = (state == PeerState.PeerQueried ||
-                    state == PeerState.PeerUnreachable || state == PeerState.PeerWaiting);
-
-        }
-
-        boolean connectedness = host.isConnected(id);
-        return dialedPeerDuringQuery || connectedness;
     }
 
     private LookupWithFollowupResult runQuery(@NonNull Closeable ctx, @NonNull byte[] target,
@@ -595,6 +630,7 @@ public class KadDht implements Routing {
                 lookupRes.completed = false;
                 return lookupRes;
             }
+
 
             List<Callable<List<AddrInfo>>> tasks = new ArrayList<>();
             for (PeerId p : queryPeers) {
@@ -728,7 +764,8 @@ public class KadDht implements Routing {
         void report(@NonNull Closeable ctx, @NonNull Ipns.Entry entry, boolean better);
     }
 
-    public interface Channel {
+
+    interface Channel {
         void peer(@NonNull AddrInfo addrInfo) throws ClosedException;
     }
 

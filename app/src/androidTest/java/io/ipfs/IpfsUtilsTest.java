@@ -19,12 +19,13 @@ import io.ipfs.dht.Util;
 import io.ipfs.host.PeerId;
 
 import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertTrue;
+import static org.junit.Assert.assertNotEquals;
+
 
 @SuppressWarnings("SpellCheckingInspection")
 @RunWith(AndroidJUnit4.class)
 public class IpfsUtilsTest {
-    private static final String TAG = IpfsCatTest.class.getSimpleName();
+
     private static Context context;
 
     @BeforeClass
@@ -58,7 +59,7 @@ public class IpfsUtilsTest {
         ID r2 = Util.ConvertPeerID(randrom);
 
         BigInteger distCmp = Util.Distance(a, r1);
-        assertTrue(distCmp.longValue() != 0L);
+        assertNotEquals(distCmp.longValue(), 0L);
 
         int rres = Util.CommonPrefixLen(r1, r2);
         assertEquals(rres, (r1.data.length * 8));

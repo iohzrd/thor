@@ -12,6 +12,7 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 import io.LogUtils;
@@ -19,6 +20,7 @@ import io.ipfs.cid.Cid;
 import io.ipfs.core.ClosedException;
 import io.ipfs.core.TimeoutCloseable;
 import io.ipfs.host.DnsResolver;
+import io.ipfs.host.PeerInfo;
 import io.ipfs.multiaddr.Multiaddr;
 import io.ipfs.utils.Link;
 
@@ -50,6 +52,13 @@ public class IpfsTest {
 
         assertEquals(result.size(), 1);
 
+
+        PeerInfo info = ipfs.getIdentity();
+        Objects.requireNonNull(info);
+
+        assertEquals(info.getAgent(), IPFS.AGENT);
+
+        LogUtils.error(TAG, info.toString());
     }
 
 

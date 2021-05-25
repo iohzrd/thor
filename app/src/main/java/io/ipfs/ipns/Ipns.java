@@ -6,7 +6,6 @@ import androidx.annotation.NonNull;
 
 import com.google.common.primitives.Bytes;
 import com.google.protobuf.ByteString;
-import com.google.protobuf.InvalidProtocolBufferException;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -18,17 +17,13 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.Objects;
 
-import crypto.pb.Crypto;
 import io.ipfs.IPFS;
 import io.ipfs.cid.Cid;
 import io.ipfs.core.RecordIssue;
 import io.ipfs.core.Validator;
-import io.ipfs.crypto.Ecdsa;
-import io.ipfs.crypto.Ed25519;
+import io.ipfs.crypto.Key;
 import io.ipfs.crypto.PrivKey;
 import io.ipfs.crypto.PubKey;
-import io.ipfs.crypto.Rsa;
-import io.ipfs.crypto.Secp256k1;
 import io.ipfs.host.PeerId;
 import io.ipfs.multihash.Multihash;
 import ipns.pb.Ipns.IpnsEntry;
@@ -50,31 +45,12 @@ public class Ipns implements Validator {
             if (read != length) {
                 throw new RuntimeException("Key to short");
             }
-            return unmarshalPublicKey(data);
+            return Key.unmarshalPublicKey(data);
         } catch (Throwable throwable) {
             throw new RuntimeException(throwable);
         }
     }
 
-    private static PubKey unmarshalPublicKey(byte[] data) throws InvalidProtocolBufferException {
-
-        Crypto.PublicKey pmes = Crypto.PublicKey.parseFrom(data);
-
-        byte[] pubKeyData = pmes.getData().toByteArray();
-
-        switch (pmes.getType()) {
-            case RSA:
-                return Rsa.unmarshalRsaPublicKey(pubKeyData);
-            case ECDSA:
-                return Ecdsa.unmarshalEcdsaPublicKey(pubKeyData);
-            case Secp256k1:
-                return Secp256k1.unmarshalSecp256k1PublicKey(pubKeyData);
-            case Ed25519:
-                return Ed25519.unmarshalEd25519PublicKey(pubKeyData);
-            default:
-                throw new RuntimeException("BadKeyTypeException");
-        }
-    }
 
     @SuppressLint("SimpleDateFormat")
     @NonNull
@@ -221,7 +197,7 @@ public class Ipns implements Validator {
         if (entry.hasPubKey()) {
             byte[] pubKey = entry.getPubKey().toByteArray();
 
-            PubKey pk = unmarshalPublicKey(pubKey);
+            PubKey pk = Key.unmarshalPublicKey(pubKey);
 
             PeerId expPid = PeerId.fromPubKey(pk);
 

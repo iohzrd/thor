@@ -18,6 +18,10 @@ public class QueryPeerSet {
     private final ConcurrentHashMap<PeerId, QueryPeerState> all = new ConcurrentHashMap<>();
 
 
+    int size() {
+        return all.size();
+    }
+
     private QueryPeerSet(@NonNull ID key) {
         this.key = key;
     }
@@ -27,7 +31,7 @@ public class QueryPeerSet {
     }
 
     private BigInteger distanceToKey(@NonNull PeerId p) {
-        return Util.Distance(Util.ConvertKey(p.getBytes()), key);
+        return Util.Distance(Util.ConvertPeerID(p), key);
     }
 
     // TryAdd adds the peer p to the peer set.
@@ -57,7 +61,7 @@ public class QueryPeerSet {
     // GetClosestNInStates returns the closest to the key peers, which are in one of the given states.
     // It returns n peers or less, if fewer peers meet the condition.
     // The returned peers are sorted in ascending order by their distance to the key.
-    public List<QueryPeerState> GetClosestNInStates(int maxLength, List<PeerState> states) {
+    public List<QueryPeerState> GetClosestNInStates(int maxLength, @NonNull List<PeerState> states) {
         if (LogUtils.isDebug()) {
             if (maxLength < 0) {
                 throw new RuntimeException("internal state error");

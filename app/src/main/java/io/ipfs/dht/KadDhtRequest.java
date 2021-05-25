@@ -12,6 +12,7 @@ import dht.pb.Dht;
 import io.LogUtils;
 import io.ipfs.IPFS;
 import io.ipfs.core.ProtocolIssue;
+import io.ipfs.host.LiteHost;
 import io.ipfs.utils.DataHandler;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
@@ -26,6 +27,7 @@ public class KadDhtRequest extends SimpleChannelInboundHandler<ByteBuf> {
     private final CompletableFuture<Void> activation;
     @NonNull
     private final MessageLite messageLite;
+    private long start = System.currentTimeMillis();
     private DataHandler reader = new DataHandler(IPFS.PROTOCOL_READER_LIMIT);
 
     public KadDhtRequest(@NonNull CompletableFuture<Void> activation,
@@ -39,6 +41,7 @@ public class KadDhtRequest extends SimpleChannelInboundHandler<ByteBuf> {
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
             throws Exception {
+        LogUtils.debug(TAG, ctx.channel().parent().attr(LiteHost.PEER_KEY).get() + " " + cause);
         request.completeExceptionally(cause);
         activation.completeExceptionally(cause);
         ctx.close().get();
@@ -58,6 +61,7 @@ public class KadDhtRequest extends SimpleChannelInboundHandler<ByteBuf> {
             for (String token : reader.getTokens()) {
                 LogUtils.verbose(TAG, "request " + token);
                 if (Objects.equals(token, IPFS.DHT_PROTOCOL)) {
+                    start = System.currentTimeMillis();
                     activation.complete(
                             ctx.writeAndFlush(DataHandler.encode(messageLite))
                                     .addListener(QuicStreamChannel.SHUTDOWN_OUTPUT).get());
@@ -71,12 +75,15 @@ public class KadDhtRequest extends SimpleChannelInboundHandler<ByteBuf> {
             if (message != null) {
                 request.complete(Dht.Message.parseFrom(message));
                 ctx.close().get();
+                LogUtils.debug(TAG, "done " + (System.currentTimeMillis() - start) + " "
+                        + ctx.channel().parent().attr(LiteHost.PEER_KEY).get());
+                return;
             }
             reader = new DataHandler(IPFS.CHUNK_SIZE);
         } else {
             LogUtils.debug(TAG, "iteration " + reader.hasRead() + " "
                     + reader.expectedBytes() + " " + ctx.name() + " "
-                    + ctx.channel().remoteAddress());
+                    + ctx.channel().parent().attr(LiteHost.PEER_KEY).get());
         }
     }
 }

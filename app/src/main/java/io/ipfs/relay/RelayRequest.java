@@ -15,7 +15,6 @@ import io.ipfs.utils.DataHandler;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.incubator.codec.quic.QuicStreamChannel;
 import relay.pb.Relay;
 
 public class RelayRequest extends SimpleChannelInboundHandler<ByteBuf> {
@@ -26,7 +25,7 @@ public class RelayRequest extends SimpleChannelInboundHandler<ByteBuf> {
     private final CompletableFuture<Void> activation;
     @NonNull
     private final MessageLite messageLite;
-    private DataHandler reader = new DataHandler(25000);
+    private DataHandler reader = new DataHandler(4096);
 
     public RelayRequest(@NonNull CompletableFuture<Void> activation,
                         @NonNull CompletableFuture<relay.pb.Relay.CircuitRelay> request,
@@ -59,9 +58,7 @@ public class RelayRequest extends SimpleChannelInboundHandler<ByteBuf> {
             for (String token : reader.getTokens()) {
                 LogUtils.verbose(TAG, "request " + token);
                 if (Objects.equals(token, IPFS.RELAY_PROTOCOL)) {
-                    activation.complete(
-                            ctx.writeAndFlush(DataHandler.encode(messageLite))
-                                    .addListener(QuicStreamChannel.SHUTDOWN_OUTPUT).get());
+                    activation.complete(ctx.writeAndFlush(DataHandler.encode(messageLite)).get());
                 } else if (!Objects.equals(token, IPFS.STREAM_PROTOCOL)) {
                     throw new ProtocolIssue();
                 }
@@ -71,9 +68,8 @@ public class RelayRequest extends SimpleChannelInboundHandler<ByteBuf> {
 
             if (message != null) {
                 request.complete(Relay.CircuitRelay.parseFrom(message));
-                ctx.close().get();
             }
-            reader = new DataHandler(25000);
+            reader = new DataHandler(4096);
         } else {
             LogUtils.debug(TAG, "iteration " + reader.hasRead() + " "
                     + reader.expectedBytes() + " " + ctx.name() + " "

@@ -50,6 +50,8 @@ public class StreamHandler {
             }
 
             if (fin) {
+                LogUtils.debug(TAG, "Fin Received PeerId " +
+                        quicChannel.attr(LiteHost.PEER_KEY).get());
                 QuicheWrapper.streamShutdown(connection,
                         streamId, true, true, 0);
                 close(streamId);
@@ -88,7 +90,8 @@ public class StreamHandler {
         if (reader.isDone()) {
             for (String token : reader.getTokens()) {
 
-                LogUtils.debug(TAG, "Token " + token + " Connection " + connection + " StreamId " + streamId);
+                LogUtils.debug(TAG, "Token " + token + " Connection " + connection + " StreamId " + streamId
+                        + " PeerId " + quicChannel.attr(LiteHost.PEER_KEY).get());
                 protocols.put(streamId, token);
                 switch (token) {
                     case IPFS.STREAM_PROTOCOL:
@@ -116,9 +119,9 @@ public class StreamHandler {
                         return;
                     default:
                         LogUtils.debug(TAG, "Ignore " + token + " Connection " + connection +
-                                " StreamId " + streamId);
-                        QuicheWrapper.write(connection, streamId, DataHandler.writeToken(IPFS.NA));
-                        //close(streamId);
+                                " StreamId " + streamId + " PeerId " + quicChannel.attr(LiteHost.PEER_KEY).get());
+                        QuicheWrapper.writeAndFin(connection, streamId, DataHandler.writeToken(IPFS.NA));
+                        close(streamId);
                         return;
                 }
             }
@@ -151,7 +154,9 @@ public class StreamHandler {
             handlers.remove(streamId);
         } else {
             LogUtils.debug(TAG, "Iteration  " + reader.hasRead() + " "
-                    + reader.expectedBytes() + " Connection " + connection + " StreamId " + streamId);
+                    + reader.expectedBytes() +
+                    " PeerId " + quicChannel.attr(LiteHost.PEER_KEY).get() +
+                    " Connection " + connection + " StreamId " + streamId);
         }
     }
 

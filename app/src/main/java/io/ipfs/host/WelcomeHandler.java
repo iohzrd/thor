@@ -35,7 +35,7 @@ public class WelcomeHandler extends SimpleChannelInboundHandler<ByteBuf> {
     protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
 
         QuicChannel quicChannel = (QuicChannel) ctx.channel().parent();
-
+        LogUtils.error(TAG, "PeerId " + quicChannel.attr(LiteHost.PEER_KEY).get());
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         msg.readBytes(out, msg.readableBytes());

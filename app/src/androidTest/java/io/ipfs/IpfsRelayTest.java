@@ -14,7 +14,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.LogUtils;
 import io.ipfs.cid.Cid;
-import io.ipfs.core.ClosedException;
 import io.ipfs.core.TimeoutCloseable;
 import io.ipfs.host.PeerId;
 
@@ -80,10 +79,8 @@ public class IpfsRelayTest {
         try {
             AtomicBoolean find = new AtomicBoolean(false);
 
-            ipfs.findProviders(peerId -> {
-                find.set(true);
-                throw new ClosedException();
-            }, Cid.nsToCid(IPFS.RELAY_RENDEZVOUS), new TimeoutCloseable(120));
+            ipfs.findProviders(peerId -> find.set(true), Cid.nsToCid(IPFS.RELAY_RENDEZVOUS),
+                    new TimeoutCloseable(120));
 
             LogUtils.info(TAG, "NumSwarmPeers " + ipfs.numConnections());
 

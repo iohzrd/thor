@@ -150,7 +150,7 @@ public class RoutingTable {
 
     }
 
-    private boolean removePeer(@NonNull PeerId p) {
+    boolean removePeer(@NonNull PeerId p) {
         int bucketID = bucketIdForPeer(p);
         Bucket bucket = getBucket(bucketID);
         Objects.requireNonNull(bucket);
@@ -158,7 +158,4 @@ public class RoutingTable {
     }
 
 
-    public void RemovePeer(@NonNull PeerId p) {
-        removePeer(p);
-    }
 }

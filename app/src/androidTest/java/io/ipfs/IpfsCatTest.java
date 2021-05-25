@@ -59,14 +59,6 @@ public class IpfsCatTest {
         LogUtils.debug(TAG, "Time Providers : " + (System.currentTimeMillis() - time) + " [ms]");
 
 
-        for (PeerId peerId : provs) {
-            try {
-                ipfs.swarmConnect(IPFS.P2P_PATH + peerId.toBase58(), IPFS.CONNECT_TIMEOUT);
-            } catch (Throwable throwable) {
-                LogUtils.verbose(TAG, throwable.getClass().getSimpleName());
-            }
-        }
-
         time = System.currentTimeMillis();
 
 

@@ -21,7 +21,7 @@ public class BitSwapSend extends SimpleChannelInboundHandler<ByteBuf> {
     private static final String TAG = BitSwapSend.class.getSimpleName();
 
     @NonNull
-    private final DataHandler reader = new DataHandler(1000);
+    private final DataHandler reader = new DataHandler(IPFS.PROTOCOL_READER_LIMIT);
 
     @NonNull
     private final BitSwap bitSwap;

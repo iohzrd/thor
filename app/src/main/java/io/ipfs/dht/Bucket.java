@@ -81,7 +81,13 @@ public class Bucket {
     }
 
     public boolean removePeer(@NonNull PeerId p) {
-        return peers.remove(p) != null;
+        PeerInfo peerInfo = peers.get(p);
+        if (peerInfo != null) {
+            if (peerInfo.isReplaceable()) {
+                return peers.remove(p) != null;
+            }
+        }
+        return false;
     }
 
     public int size() {
