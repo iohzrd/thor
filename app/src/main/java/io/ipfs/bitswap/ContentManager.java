@@ -114,6 +114,8 @@ public class ContentManager {
         Set<PeerId> haves = new HashSet<>();
         Set<PeerId> wants = new HashSet<>();
         priority.addAll(host.getPeers());
+        whitelist.addAll(host.getRelays());
+
         while (matches.containsKey(cid)) {
 
             if (closeable.isClosed()) {

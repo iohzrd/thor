@@ -1198,6 +1198,10 @@ public class IPFS {
         return host;
     }
 
+    public List<PeerId> getRelays() {
+        return host.getRelays();
+    }
+
     public interface Connector {
         void connected(@NonNull PeerId peerId);
     }

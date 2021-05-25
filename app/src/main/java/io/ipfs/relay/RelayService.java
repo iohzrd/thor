@@ -69,8 +69,8 @@ public class RelayService {
 
 
     @Nullable
-    public static QuicStreamChannel dialPeer(@NonNull Connection conn, @NonNull PeerId self,
-                                             @NonNull PeerId peerId, int timeout) {
+    public static QuicStreamChannel getStream(@NonNull Connection conn, @NonNull PeerId self,
+                                              @NonNull PeerId peerId, int timeout) {
 
         Relay.CircuitRelay.Peer src = Relay.CircuitRelay.Peer.newBuilder()
                 .setId(ByteString.copyFrom(self.getBytes())).build();
@@ -93,7 +93,6 @@ public class RelayService {
             QuicStreamChannel streamChannel = quicChannel.createStream(QuicStreamType.BIDIRECTIONAL,
                     new RelayRequest(activation, request, message)).sync().get();
 
-            streamChannel.pipeline().addFirst(new ReadTimeoutHandler(timeout, TimeUnit.SECONDS));
 
             streamChannel.updatePriority(new QuicStreamPriority(IPFS.PRIORITY_URGENT, false));
 

@@ -82,6 +82,7 @@ public class DataHandler {
             buf.write('\n');
             return Unpooled.buffer().writeBytes(buf.toByteArray());
         } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable);
             throw new RuntimeException(throwable);
         }
     }
@@ -158,6 +159,9 @@ public class DataHandler {
                     this.merge(sub);
                 }
             }
+        } catch (Throwable throwable){
+            LogUtils.error(TAG, throwable);
+            throw throwable;
         }
 
     }

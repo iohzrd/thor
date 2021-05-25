@@ -56,7 +56,7 @@ public class RelayRequest extends SimpleChannelInboundHandler<ByteBuf> {
         if (reader.isDone()) {
 
             for (String token : reader.getTokens()) {
-                LogUtils.verbose(TAG, "request " + token);
+                LogUtils.error(TAG, "request " + token);
                 if (Objects.equals(token, IPFS.RELAY_PROTOCOL)) {
                     activation.complete(ctx.writeAndFlush(DataHandler.encode(messageLite)).get());
                 } else if (!Objects.equals(token, IPFS.STREAM_PROTOCOL)) {

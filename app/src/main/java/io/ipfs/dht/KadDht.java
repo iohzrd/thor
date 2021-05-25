@@ -125,7 +125,6 @@ public class KadDht implements Routing {
     }
 
 
-
     @NonNull
     private List<AddrInfo> evalClosestPeers(@NonNull Dht.Message pms) {
         List<AddrInfo> peers = new ArrayList<>();
@@ -142,6 +141,7 @@ public class KadDht implements Routing {
                     multiAddresses.add(multiaddr);
                 }
             }
+
             AddrInfo addrInfo = AddrInfo.create(peerId, multiAddresses, false);
             if (addrInfo.hasAddresses()) {
                 peers.add(addrInfo);
@@ -207,7 +207,7 @@ public class KadDht implements Routing {
                     service.execute(() -> putValueToPeer(ctx, addrInfo.getPeerId(), rec));
                 }
             });
-        } catch (Throwable ignore) {
+        } catch (ClosedException ignore) {
         } finally {
             LogUtils.verbose(TAG, "Finish putValue at " + (System.currentTimeMillis() - start));
         }
@@ -271,7 +271,7 @@ public class KadDht implements Routing {
                         }
                     }
 
-                    LogUtils.debug(TAG, "got provider before filter " + peerId.toBase58() + " "
+                    LogUtils.error(TAG, "got provider before filter " + peerId.toBase58() + " "
                             + multiAddresses.toString());
 
                     AddrInfo addrInfo = AddrInfo.create(peerId, multiAddresses, false);

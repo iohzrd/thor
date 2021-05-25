@@ -65,7 +65,7 @@ public class BitSwapSend extends SimpleChannelInboundHandler<ByteBuf> {
                 if (Objects.equals(received, IPFS.BITSWAP_PROTOCOL)) {
                     stream.complete((QuicStreamChannel) ctx.channel());
                 } else if (!Objects.equals(received, IPFS.STREAM_PROTOCOL)) {
-                    LogUtils.error(TAG, received);
+                    LogUtils.error(TAG, "NOT SUPPORTED " + received);
                     throw new ProtocolIssue();
                 }
             }

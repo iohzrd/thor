@@ -123,15 +123,24 @@ public class BitSwap implements Interface {
     }
 
 
-    public void writeMessage(@NonNull Closeable closeable, @NonNull PeerId peer,
+    public void writeMessage(@NonNull Closeable closeable, @NonNull PeerId peerId,
                              @NonNull BitSwapMessage message, short priority)
             throws ClosedException, ProtocolIssue, TimeoutIssue, ConnectionIssue {
 
         long time = System.currentTimeMillis();
         boolean success = false;
-        host.protectPeer(peer);
+        host.protectPeer(peerId);
         try {
-            Connection conn = host.connect(closeable, peer, IPFS.CONNECT_TIMEOUT);
+             /* TODO implement
+            if(!host.hasAddresses(peerId)) {
+
+                QuicStreamChannel streamChannel = host.getRelayStream(closeable, peerId);
+                if(streamChannel != null) {
+                    streamChannel.writeAndFlush(DataHandler.encode(message.ToProtoV1().toByteArray()));
+                    streamChannel.close().get();
+                }
+            } else { */
+            Connection conn = host.connect(closeable, peerId, IPFS.CONNECT_TIMEOUT);
 
             if (closeable.isClosed()) {
                 throw new ClosedException();
@@ -139,11 +148,12 @@ public class BitSwap implements Interface {
 
             QuicStreamChannel stream = getStream(closeable, conn, priority);
             stream.writeAndFlush(DataHandler.encode(message.ToProtoV1().toByteArray()));
+            //}
             success = true;
         } catch (ClosedException | ConnectionIssue exception) {
             throw exception;
         } catch (Throwable throwable) {
-            host.unprotectPeer(peer);
+            host.unprotectPeer(peerId);
             Throwable cause = throwable.getCause();
             if (cause != null) {
                 if (cause instanceof ProtocolIssue) {
@@ -159,7 +169,7 @@ public class BitSwap implements Interface {
             throw new RuntimeException(throwable);
         } finally {
             LogUtils.debug(TAG, "Send took " + success + " " +
-                    peer.toBase58() + " " + (System.currentTimeMillis() - time));
+                    peerId.toBase58() + " " + (System.currentTimeMillis() - time));
         }
     }
 

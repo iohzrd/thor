@@ -320,6 +320,13 @@ public class LiteHost implements BitSwapReceiver {
         routing.findProviders(closeable, providers, cid);
     }
 
+    public boolean hasAddresses(@NonNull PeerId peerId){
+        Collection<Multiaddr> addrInfo = addressBook.get(peerId);
+        if (addrInfo != null) {
+            return !addrInfo.isEmpty();
+        }
+        return false;
+    }
     @NonNull
     public Set<Multiaddr> getAddresses(@NonNull PeerId peerId) {
         Set<Multiaddr> all = new HashSet<>();
@@ -537,15 +544,29 @@ public class LiteHost implements BitSwapReceiver {
         return new HashSet<>(swarm);
     }
 
-    public void dialPeer(@NonNull Closeable closeable, @NonNull PeerId relay, @NonNull PeerId peerId)
+    @Nullable
+    public QuicStreamChannel getRelayStream(
+            @NonNull Closeable closeable, @NonNull PeerId peerId) {
+
+        for (PeerId relay:relays) {
+            try {
+                return getStream(closeable, relay, peerId);
+            } catch (Throwable throwable) {
+                LogUtils.error(TAG, throwable);
+            }
+        }
+        return null;
+    }
+
+    @Nullable
+    private QuicStreamChannel getStream(@NonNull Closeable closeable, @NonNull PeerId relay,
+                                       @NonNull PeerId peerId)
             throws ConnectionIssue, ClosedException {
 
         try {
             Connection conn = connect(closeable, relay, IPFS.CONNECT_TIMEOUT);
 
-            QuicStreamChannel stream = RelayService.dialPeer(conn, self(), peerId, 30);
-            Objects.requireNonNull(stream);
-            LogUtils.error(TAG, "dialPeer ");
+            return RelayService.getStream(conn, self(), peerId, IPFS.CONNECT_TIMEOUT);
 
         } catch (ClosedException | ConnectionIssue exception) {
             LogUtils.error(TAG, exception);
@@ -849,6 +870,10 @@ public class LiteHost implements BitSwapReceiver {
 
     public boolean swarmContains(@NonNull PeerId peerId) {
         return swarm.contains(peerId);
+    }
+
+    public List<PeerId> getRelays() {
+        return new ArrayList<>(relays);
     }
 
     public class LiteConnection implements Connection {

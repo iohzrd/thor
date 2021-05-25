@@ -10,13 +10,17 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.LogUtils;
 import io.ipfs.cid.Cid;
 import io.ipfs.core.TimeoutCloseable;
 import io.ipfs.host.PeerId;
+import io.ipfs.utils.DataHandler;
+import io.netty.incubator.codec.quic.QuicStreamChannel;
 
+import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
 import static junit.framework.TestCase.fail;
 
@@ -90,5 +94,34 @@ public class IpfsRelayTest {
         } finally {
             LogUtils.info(TAG, "Time " + (System.currentTimeMillis() - start));
         }
+    }
+
+    // TODO @Test
+    public void test_relay_dialPeer() {
+        IPFS ipfs = TestEnv.getTestInstance(context);
+
+        PeerId peerId = PeerId.fromBase58("12D3KooWLfmzMdAje4F6F6q68jYRatu1JQaz2KB4j8ambYahd1xh");
+
+
+        AtomicBoolean succes = new AtomicBoolean(false);
+
+        try {
+            QuicStreamChannel stream = ipfs.getHost().getRelayStream(new TimeoutCloseable(15),
+                    peerId);
+            if (stream != null) {
+                succes.set(true);
+
+
+                stream.writeAndFlush(DataHandler.writeToken(IPFS.STREAM_PROTOCOL));
+                stream.writeAndFlush(DataHandler.writeToken(IPFS.IDENTITY_PROTOCOL));
+
+                Thread.sleep(500);
+            }
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable);
+        }
+
+        assertTrue(succes.get());
+
     }
 }
