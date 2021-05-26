@@ -62,6 +62,7 @@ import io.ipfs.host.LiteHost;
 import io.ipfs.host.LiteHostCertificate;
 import io.ipfs.host.PeerId;
 import io.ipfs.host.PeerInfo;
+import io.ipfs.ipns.Ipns;
 import io.ipfs.multiaddr.Multiaddr;
 import io.ipfs.multiaddr.Protocol;
 import io.ipfs.push.Push;
@@ -119,6 +120,14 @@ public class IPFS {
     public static final short PRIORITY_URGENT = 1;
     public static final short PRIORITY_HIGH = 5;
     public static final short PRIORITY_NORMAL = 10;
+
+
+    // MessageSizeMax is a soft (recommended) maximum for network messages.
+    // One can write more, as the interface is a stream. But it is useful
+    // to bunch it up into multiple read/writes when the whole message is
+    // a single, large serialized object.
+    public static final int MESSAGE_SIZE_MAX = 1 << 22; // 4 MB
+
 
     @NonNull
     public static final List<String> DHT_BOOTSTRAP_NODES = new ArrayList<>(Arrays.asList(
@@ -773,7 +782,7 @@ public class IPFS {
                             AddrInfo addrInfo = AddrInfo.create(peerId, multiaddr, false);
                             if (addrInfo.hasAddresses()) {
                                 peers.add(peerId);
-                                host.protectPeer(peerId);
+                                host.protectPeer(peerId, host.getMaxTime());
                                 host.addToAddressBook(addrInfo);
                             }
                         } catch (Throwable throwable) {
@@ -1005,13 +1014,13 @@ public class IPFS {
 
 
     @Nullable
-    public ResolvedName resolveName(@NonNull String name, long last,
-                                    @NonNull Closeable closeable) {
+    public Ipns.Entry resolveName(@NonNull String name, long last,
+                                  @NonNull Closeable closeable) {
 
 
         long time = System.currentTimeMillis();
 
-        AtomicReference<ResolvedName> resolvedName = new AtomicReference<>(null);
+        AtomicReference<Ipns.Entry> resolvedName = new AtomicReference<>(null);
         try {
             AtomicLong timeout = new AtomicLong(System.currentTimeMillis() + RESOLVE_MAX_TIME);
 
@@ -1026,7 +1035,7 @@ public class IPFS {
                         String value = entry.getValue();
                         long sequence = entry.getSequence();
 
-                        LogUtils.info(TAG, "IpnsEntry : " + sequence + " " + value + " " +
+                        LogUtils.info(TAG, "IpnsEntry : " + entry.toString() +
                                 (System.currentTimeMillis() - time));
 
                         if (sequence < last) {
@@ -1037,8 +1046,7 @@ public class IPFS {
                         }
 
                         if (value.startsWith(IPFS_PATH)) {
-                            resolvedName.set(new ResolvedName(entry.getPeerId(),
-                                    sequence, value.replaceFirst(IPFS_PATH, "")));
+                            resolvedName.set(entry);
                             timeout.set(System.currentTimeMillis() + RESOLVE_TIMEOUT);
                         } else {
                             LogUtils.error(TAG, "invalid value " + value);
@@ -1163,7 +1171,7 @@ public class IPFS {
         Objects.requireNonNull(peerId);
 
         try {
-            host.protectPeer(peerId);
+            host.protectPeer(peerId, host.getMaxTime());
             if (multiAddress.startsWith(IPFS.P2P_PATH)) {
                 swarmConnect(peerId, closeable);
             } else {
@@ -1195,43 +1203,6 @@ public class IPFS {
         void connected(@NonNull PeerId peerId);
     }
 
-    public static class ResolvedName {
-        private final long sequence;
-        @NonNull
-        private final String hash;
 
-        @NonNull
-        private final PeerId peerId;
-
-        public ResolvedName(@NonNull PeerId peerId, long sequence, @NonNull String hash) {
-            this.peerId = peerId;
-            this.sequence = sequence;
-            this.hash = hash;
-        }
-
-        @NonNull
-        @Override
-        public String toString() {
-            return "ResolvedName{" +
-                    "sequence=" + sequence +
-                    ", hash='" + hash + '\'' +
-                    ", peerId=" + peerId.toBase58() +
-                    '}';
-        }
-
-        @NonNull
-        public PeerId getPeerId() {
-            return peerId;
-        }
-
-        public long getSequence() {
-            return sequence;
-        }
-
-        @NonNull
-        public String getHash() {
-            return hash;
-        }
-    }
 
 }

@@ -17,6 +17,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.Objects;
 
+import crypto.pb.Crypto;
 import io.ipfs.IPFS;
 import io.ipfs.cid.Cid;
 import io.ipfs.core.RecordIssue;
@@ -139,8 +140,10 @@ public class Ipns implements Validator {
         }
         validate(pubKey, entry);
 
+        Crypto.KeyType keyType = pubKey.getKeyType();
 
-        return new Entry(peerId, getEOL(entry), entry.getValue().toStringUtf8(), entry.getSequence());
+        return new Entry(peerId, keyType, getEOL(entry),
+                entry.getValue().toStringUtf8(), entry.getSequence());
     }
 
     private int Compare(@NonNull Ipns.Entry a, @NonNull Ipns.Entry b) {
@@ -232,23 +235,46 @@ public class Ipns implements Validator {
     }
 
     public static class Entry {
+        @NonNull
         private final PeerId peerId;
+        @NonNull
+        private final Crypto.KeyType keyType;
         private final long sequence;
+        @NonNull
         private final String value;
+        @NonNull
         private final Date eol;
 
-        public Entry(@NonNull PeerId peerId, @NonNull Date eol,
+        public Entry(@NonNull PeerId peerId, @NonNull Crypto.KeyType keyType, @NonNull Date eol,
                      @NonNull String value, long sequence) {
             this.peerId = peerId;
+            this.keyType = keyType;
             this.eol = eol;
             this.sequence = sequence;
             this.value = value;
+        }
+
+        public Crypto.KeyType getKeyType() {
+            return keyType;
+        }
+
+        @NonNull
+        @Override
+        public String toString() {
+            return "Entry{" +
+                    "peerId=" + peerId +
+                    ", keyType=" + keyType +
+                    ", sequence=" + sequence +
+                    ", value='" + value + '\'' +
+                    ", eol=" + eol +
+                    '}';
         }
 
         public Date getEol() {
             return eol;
         }
 
+        @NonNull
         public PeerId getPeerId() {
             return peerId;
         }
@@ -257,8 +283,14 @@ public class Ipns implements Validator {
             return sequence;
         }
 
+        @NonNull
         public String getValue() {
             return value;
+        }
+
+        @NonNull
+        public String getHash() {
+            return value.replaceFirst(IPFS.IPFS_PATH, "");
         }
     }
 }

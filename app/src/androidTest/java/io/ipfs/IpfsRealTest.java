@@ -22,6 +22,7 @@ import io.ipfs.core.TimeoutCloseable;
 import io.ipfs.format.Node;
 import io.ipfs.host.DnsResolver;
 import io.ipfs.host.PeerId;
+import io.ipfs.ipns.Ipns;
 import io.ipfs.utils.Link;
 
 import static junit.framework.TestCase.assertFalse;
@@ -48,7 +49,7 @@ public class IpfsRealTest {
         //CorbettReport ipns://k2k4r8jllj4k33jxoa4vaeleqkrwu8b7tqz7tgczhptbfkhqr2i280fm
         String key = "k2k4r8jllj4k33jxoa4vaeleqkrwu8b7tqz7tgczhptbfkhqr2i280fm";
 
-        IPFS.ResolvedName res = ipfs.resolveName(key, 0, new TimeoutCloseable(30));
+        Ipns.Entry res = ipfs.resolveName(key, 0, new TimeoutCloseable(30));
         assertNotNull(res);
 
         AtomicBoolean atomicBoolean = new AtomicBoolean(false);
@@ -126,7 +127,7 @@ public class IpfsRealTest {
 
         String key = "k2k4r8n098cwalcc7rdntd19nsjyzh6rku1hvgsmkjzvnw582mncc4b4";
 
-        IPFS.ResolvedName res = ipfs.resolveName(key, 0, new TimeoutCloseable(30));
+        Ipns.Entry res = ipfs.resolveName(key, 0, new TimeoutCloseable(30));
         assertNotNull(res);
 
         ConcurrentSkipListSet<PeerId> peers = new ConcurrentSkipListSet<>();

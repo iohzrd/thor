@@ -124,7 +124,7 @@ public class BitSwap implements Interface {
 
         long time = System.currentTimeMillis();
         boolean success = false;
-        host.protectPeer(peerId);
+        host.protectPeer(peerId, host.getShortTime());
         try {
              /* TODO implement
             if(!host.hasAddresses(peerId)) {
@@ -148,7 +148,6 @@ public class BitSwap implements Interface {
         } catch (ClosedException | ConnectionIssue exception) {
             throw exception;
         } catch (Throwable throwable) {
-            host.unprotectPeer(peerId);
             Throwable cause = throwable.getCause();
             if (cause != null) {
                 if (cause instanceof ProtocolIssue) {

@@ -20,6 +20,8 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.incubator.codec.quic.QuicStreamChannel;
 
 public class KadDhtRequest extends SimpleChannelInboundHandler<ByteBuf> {
+
+
     private static final String TAG = KadDhtRequest.class.getSimpleName();
     @NonNull
     private final CompletableFuture<Dht.Message> request;
@@ -79,7 +81,7 @@ public class KadDhtRequest extends SimpleChannelInboundHandler<ByteBuf> {
                         + ctx.channel().parent().attr(LiteHost.PEER_KEY).get());
                 return;
             }
-            reader = new DataHandler(IPFS.CHUNK_SIZE);
+            reader = new DataHandler(IPFS.MESSAGE_SIZE_MAX);
         } else {
             LogUtils.debug(TAG, "iteration " + reader.hasRead() + " "
                     + reader.expectedBytes() + " " + ctx.name() + " "

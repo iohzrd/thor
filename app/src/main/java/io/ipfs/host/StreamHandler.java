@@ -26,6 +26,7 @@ public class StreamHandler {
     private final HashMap<Long, String> protocols = new HashMap<>();
     private long time = System.currentTimeMillis();
 
+
     public StreamHandler(@NonNull LiteHost host, long connection) {
         this.host = host;
         this.connection = connection;
@@ -78,7 +79,7 @@ public class StreamHandler {
 
         DataHandler reader = handlers.get(streamId);
         if (reader == null) {
-            reader = new DataHandler(IPFS.BLOCK_SIZE_LIMIT);
+            reader = new DataHandler(IPFS.MESSAGE_SIZE_MAX);
             handlers.put(streamId, reader);
         }
 

@@ -61,7 +61,7 @@ public class IpfsResolveTest {
 
         String key = ipfs.getBase32PeerId();
 
-        IPFS.ResolvedName res = ipfs.resolveName(key, random, () -> false);
+        Ipns.Entry res = ipfs.resolveName(key, random, () -> false);
         assertNotNull(res);
 
         LogUtils.error(TAG, res.toString());

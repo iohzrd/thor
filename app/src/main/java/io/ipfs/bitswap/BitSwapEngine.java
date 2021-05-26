@@ -219,14 +219,14 @@ public class BitSwapEngine {
 
     public HashMap<Cid, Integer> getBlockSizes(@NonNull Set<Cid> wantKs) {
 
-        HashMap<Cid, Integer> blocksizes = new HashMap<>();
+        HashMap<Cid, Integer> sizes = new HashMap<>();
         for (Cid cid : wantKs) {
             int size = blockstore.GetSize(cid);
             if (size > 0) {
-                blocksizes.put(cid, size);
+                sizes.put(cid, size);
             }
         }
-        return blocksizes;
+        return sizes;
     }
 
 

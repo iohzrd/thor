@@ -137,7 +137,7 @@ public class LiteHost implements BitSwapReceiver {
     };
 
     @NonNull
-    private final Set<PeerId> tags = ConcurrentHashMap.newKeySet();
+    private final ConcurrentHashMap<PeerId, Long> tags = new ConcurrentHashMap<>();
     @NonNull
     private final ConcurrentSkipListSet<PeerId> relays = new ConcurrentSkipListSet<>();
     @NonNull
@@ -206,9 +206,9 @@ public class LiteHost implements BitSwapReceiver {
         ChannelHandler codec = new QuicClientCodecBuilder()
                 .sslContext(sslClientContext)
                 .maxIdleTimeout(IPFS.GRACE_PERIOD, TimeUnit.SECONDS)
-                .initialMaxData(IPFS.BLOCK_SIZE_LIMIT)
-                .initialMaxStreamDataBidirectionalLocal(IPFS.BLOCK_SIZE_LIMIT)
-                .initialMaxStreamDataBidirectionalRemote(IPFS.BLOCK_SIZE_LIMIT)
+                .initialMaxData(IPFS.MESSAGE_SIZE_MAX)
+                .initialMaxStreamDataBidirectionalLocal(IPFS.MESSAGE_SIZE_MAX)
+                .initialMaxStreamDataBidirectionalRemote(IPFS.MESSAGE_SIZE_MAX)
                 .initialMaxStreamsBidirectional(IPFS.HIGH_WATER)
                 .initialMaxStreamsUnidirectional(IPFS.HIGH_WATER)
                 .build();
@@ -247,15 +247,18 @@ public class LiteHost implements BitSwapReceiver {
         }
     }
 
+    public long getMaxTime() {
+        return System.currentTimeMillis() + TimeUnit.HOURS.toMillis(1);
+    }
+
     private void prepareRelay(@NonNull PeerId relay) {
         try {
             LogUtils.debug(TAG, "Find Relay " + relay.toBase58());
-            protectPeer(relay);
+            protectPeer(relay, getMaxTime());
             connectTo(new TimeoutCloseable(15), relay, IPFS.CONNECT_TIMEOUT);
             relays.add(relay);
             LogUtils.debug(TAG, "Found Relay " + relay.toBase58());
         } catch (Throwable throwable) {
-            unprotectPeer(relay);
             LogUtils.error(TAG, throwable);
         }
     }
@@ -329,16 +332,15 @@ public class LiteHost implements BitSwapReceiver {
     }
     @NonNull
     public Set<Multiaddr> getAddresses(@NonNull PeerId peerId) {
-        Set<Multiaddr> all = new HashSet<>();
         try {
             Collection<Multiaddr> addrInfo = addressBook.get(peerId);
             if (addrInfo != null) {
-                all.addAll(addrInfo);
+                return new HashSet<>(addrInfo);
             }
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         }
-        return all;
+        return Collections.emptySet();
     }
 
     @NonNull
@@ -738,14 +740,6 @@ public class LiteHost implements BitSwapReceiver {
 
             connections.remove(conn.remoteId());
 
-            /* sometimes it worked
-             long addr = conn.channel().connection();
-            if(QuicheWrapper.isClosed(addr)){
-                LogUtils.error(TAG, "Connection closed !!!");
-            } else {
-                LogUtils.error(TAG, "Connection not closed !!!");
-            }*/
-
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         } finally {
@@ -842,16 +836,16 @@ public class LiteHost implements BitSwapReceiver {
     }
 
 
-    public void protectPeer(@NonNull PeerId peerId) {
-        tags.add(peerId);
-    }
-
-    public void unprotectPeer(@NonNull PeerId peerId) {
-        tags.remove(peerId);
+    public void protectPeer(@NonNull PeerId peerId, long time) {
+        tags.put(peerId, time);
     }
 
     public boolean isProtected(@NonNull PeerId peerId) {
-        return tags.contains(peerId);
+        Long time = tags.get(peerId);
+        if (time != null) {
+            return time > System.currentTimeMillis();
+        }
+        return false;
     }
 
     public int numConnections() {
@@ -888,6 +882,18 @@ public class LiteHost implements BitSwapReceiver {
 
     public List<PeerId> getRelays() {
         return new ArrayList<>(relays);
+    }
+
+    public long getShortTime() {
+        return System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(10);
+    }
+
+    public void disconnect(@NonNull PeerId peerId) {
+        Connection connection = connections.get(peerId);
+        if (connection != null) {
+            connection.disconnect();
+        }
+
     }
 
     public class LiteConnection implements Connection {

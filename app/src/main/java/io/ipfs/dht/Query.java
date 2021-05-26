@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
 
 import io.LogUtils;
 import io.ipfs.core.Closeable;
@@ -53,7 +54,7 @@ public class Query {
     }
 
 
-    public LookupWithFollowupResult constructLookupResult(@NonNull ID target) {
+    public ConcurrentHashMap<PeerId, PeerState> constructLookupResult(@NonNull ID target) {
 
         // determine if the query terminated early
         boolean completed = true;
@@ -69,14 +70,14 @@ public class Query {
         List<QueryPeerState> qp = queryPeers.GetClosestNInStates(dht.bucketSize,
                 Arrays.asList(PeerState.PeerHeard, PeerState.PeerWaiting, PeerState.PeerQueried));
 
-        LookupWithFollowupResult res = new LookupWithFollowupResult();
+        ConcurrentHashMap<PeerId, PeerState> res = new ConcurrentHashMap<>();
         List<PeerId> peers = new ArrayList<>();
         Map<PeerId, PeerState> map = new HashMap<>();
         for (QueryPeerState p : qp) {
             peers.add(p.id);
             map.put(p.id, p.getState());
         }
-        res.completed = completed;
+
 
         PeerDistanceSorter pds = new PeerDistanceSorter(target);
         for (PeerId p : peers) {
@@ -88,7 +89,7 @@ public class Query {
         for (PeerId peerId : sorted) {
             PeerState peerState = map.get(peerId);
             Objects.requireNonNull(peerState);
-            res.peers.put(peerId, peerState);
+            res.put(peerId, peerState);
         }
 
         return res;
@@ -96,7 +97,6 @@ public class Query {
 
 
     private void updateState(@NonNull QueryUpdate up) {
-
 
         for (PeerId p : up.heard) {
             if (Objects.equals(p, dht.self)) { // don't add self.

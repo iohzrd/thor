@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -101,7 +102,7 @@ public class KadDht implements Routing {
                         AddrInfo addrInfo = AddrInfo.create(peerId, result, false);
 
                         if (addrInfo.hasAddresses()) {
-                            host.protectPeer(peerId);
+                            host.protectPeer(peerId, host.getMaxTime());
                             host.addToAddressBook(addrInfo);
                             peerFound(peerId, false);
                         }
@@ -427,7 +428,7 @@ public class KadDht implements Routing {
                     throw new ClosedException();
                 }*/
 
-            Dht.Message msg = request.get(IPFS.CONNECT_TIMEOUT, TimeUnit.SECONDS);
+            Dht.Message msg = request.get(IPFS.DHT_REQUEST_READ_TIMEOUT, TimeUnit.SECONDS);
             Objects.requireNonNull(msg);
             success = true;
             p.setLatency(System.currentTimeMillis() - time);
@@ -590,8 +591,8 @@ public class KadDht implements Routing {
         }
     }
 
-    private LookupWithFollowupResult runQuery(@NonNull Closeable ctx, @NonNull byte[] target,
-                                              @NonNull QueryFunc queryFn, @NonNull StopFunc stopFn)
+    private ConcurrentHashMap<PeerId, PeerState> runQuery(@NonNull Closeable ctx, @NonNull byte[] target,
+                                                          @NonNull QueryFunc queryFn, @NonNull StopFunc stopFn)
             throws ClosedException, InterruptedException {
         // pick the K closest peers to the key in our Routing table.
         ID targetKadID = Util.ConvertKey(target);
@@ -614,17 +615,17 @@ public class KadDht implements Routing {
     //
     // After the lookup is complete the query function is run (unless stopped) against all of the top K peers from the
     // lookup that have not already been successfully queried.
-    private LookupWithFollowupResult runLookupWithFollowup(@NonNull Closeable ctx, @NonNull byte[] target,
-                                                           @NonNull QueryFunc queryFn, @NonNull StopFunc stopFn)
+    private void runLookupWithFollowup(@NonNull Closeable ctx, @NonNull byte[] target,
+                                       @NonNull QueryFunc queryFn, @NonNull StopFunc stopFn)
             throws ClosedException {
 
         try {
 
             if (ctx.isClosed()) {
-                return null;
+                return;
             }
 
-            LookupWithFollowupResult lookupRes = runQuery(ctx, target, queryFn, stopFn);
+            ConcurrentHashMap<PeerId, PeerState> lookupRes = runQuery(ctx, target, queryFn, stopFn);
 
 
             // query all of the top K peers we've either Heard about or have outstanding queries we're Waiting on.
@@ -633,7 +634,7 @@ public class KadDht implements Routing {
             // by stateless query functions (e.g. GetClosestPeers and therefore Provide and PutValue)
 
             List<PeerId> queryPeers = new ArrayList<>();
-            for (Map.Entry<PeerId, PeerState> entry : lookupRes.peers.entrySet()) {
+            for (Map.Entry<PeerId, PeerState> entry : lookupRes.entrySet()) {
                 PeerState state = entry.getValue();
                 if (state == PeerState.PeerHeard || state == PeerState.PeerWaiting) {
                     queryPeers.add(entry.getKey());
@@ -641,35 +642,31 @@ public class KadDht implements Routing {
             }
 
             if (queryPeers.size() == 0) {
-                return lookupRes;
+                return;
             }
 
             if (stopFn.stop()) {
-                lookupRes.completed = false;
-                return lookupRes;
+                return;
             }
 
-            /*
-            List<Callable<List<AddrInfo>>> tasks = new ArrayList<>();
-            for (PeerId p : queryPeers) {
-                tasks.add(() -> queryFn.query(ctx, p));
-            }
+            // TODO still check if necessary
             ExecutorService executor = Executors.newFixedThreadPool(4);
-            int followupsCompleted = 0;
-            List<Future<List<AddrInfo>>> futures = executor.invokeAll(tasks);
-            for (Future<List<AddrInfo>> future : futures) {
-                try {
-                    future.get();
-                    followupsCompleted++;
-                } catch (Throwable throwable) {
-                    LogUtils.info(TAG, throwable.getClass().getSimpleName());
-                }
-            }
-            if (!lookupRes.completed) {
-                lookupRes.completed = followupsCompleted == queryPeers.size();
-            }*/
+            for (PeerId p : queryPeers) {
 
-            return lookupRes;
+                executor.execute(() -> {
+                    if (ctx.isClosed()) {
+                        return;
+                    }
+
+                    try {
+                        queryFn.query(ctx, p);
+                    } catch (Throwable ignore) {
+                        // ignore
+                    }
+
+                });
+            }
+
         } catch (InterruptedException ignore) {
             throw new ClosedException();
         }

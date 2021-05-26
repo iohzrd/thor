@@ -18,6 +18,7 @@ import io.LogUtils;
 import io.ipfs.core.ClosedException;
 import io.ipfs.core.TimeoutCloseable;
 import io.ipfs.format.Node;
+import io.ipfs.ipns.Ipns;
 
 import static junit.framework.TestCase.assertNotNull;
 
@@ -45,11 +46,8 @@ public class IpfsLoadContent {
 
         String key = "k2k4r8n098cwalcc7rdntd19nsjyzh6rku1hvgsmkjzvnw582mncc4b4";
 
-        IPFS.ResolvedName res = ipfs.resolveName(key, 0, new TimeoutCloseable(30));
+        Ipns.Entry res = ipfs.resolveName(key, 0, new TimeoutCloseable(30));
         assertNotNull(res);
-
-        LogUtils.debug(TAG, "Resolved Peer " + res.getPeerId().toBase58());
-
         LogUtils.debug(TAG, res.toString());
 
         String link = IPFS.IPFS_PATH.concat(res.getHash().concat("/").concat(IPFS.INDEX_HTML));
@@ -69,17 +67,14 @@ public class IpfsLoadContent {
 
         IPFS ipfs = TestEnv.getTestInstance(context);
 
-
         //CorbettReport ipns://k2k4r8jllj4k33jxoa4vaeleqkrwu8b7tqz7tgczhptbfkhqr2i280fm
 
         String key = "k2k4r8jllj4k33jxoa4vaeleqkrwu8b7tqz7tgczhptbfkhqr2i280fm";
 
-        IPFS.ResolvedName res = ipfs.resolveName(key, 0, new TimeoutCloseable(30));
+        Ipns.Entry res = ipfs.resolveName(key, 0, new TimeoutCloseable(30));
         assertNotNull(res);
-
-        LogUtils.debug(TAG, "Resolved Peer " + res.getPeerId().toBase58());
-
         LogUtils.debug(TAG, res.toString());
+
         String link = IPFS.IPFS_PATH.concat(res.getHash().concat("/").concat(IPFS.INDEX_HTML));
         LogUtils.debug(TAG, link);
         Node node = ipfs.resolveNode(link, new TimeoutCloseable(60));
@@ -100,11 +95,8 @@ public class IpfsLoadContent {
 
         String key = "k2k4r8magsykrprepvtuvd1h8wonxy7rbdkxd09aalsvclqh7wpb28m1";
 
-        IPFS.ResolvedName res = ipfs.resolveName(key, 0, new TimeoutCloseable(30));
+        Ipns.Entry res = ipfs.resolveName(key, 0, new TimeoutCloseable(30));
         assertNotNull(res);
-
-        LogUtils.debug(TAG, "Resolved Peer " + res.getPeerId().toBase58());
-
         LogUtils.debug(TAG, res.toString());
 
         String link = IPFS.IPFS_PATH.concat(res.getHash().concat("/").concat(IPFS.INDEX_HTML));
@@ -128,11 +120,8 @@ public class IpfsLoadContent {
 
         String key = "k2k4r8l8zgv45qm2sjt7p16l7pvy69l4jr1o50cld4s98wbnanl0zn6t";
 
-        IPFS.ResolvedName res = ipfs.resolveName(key, 0, new TimeoutCloseable(30));
+        Ipns.Entry res = ipfs.resolveName(key, 0, new TimeoutCloseable(30));
         assertNotNull(res);
-
-        LogUtils.debug(TAG, "Resolved Peer " + res.getPeerId().toBase58());
-
         LogUtils.debug(TAG, res.toString());
 
         String link = IPFS.IPFS_PATH.concat(res.getHash().concat("/").concat(IPFS.INDEX_HTML));

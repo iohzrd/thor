@@ -16,6 +16,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import io.LogUtils;
 import io.ipfs.cid.Cid;
 import io.ipfs.core.ClosedException;
+import io.ipfs.core.TimeoutProgress;
 import io.ipfs.utils.Progress;
 
 import static junit.framework.TestCase.assertNotNull;
@@ -42,18 +43,12 @@ public class IpfsStressTest {
 
         IPFS ipfs = TestEnv.getTestInstance(context);
 
-        AtomicLong time = new AtomicLong(System.currentTimeMillis());
-        byte[] data = ipfs.getData(Cid.Decode("QmcniBv7UQ4gGPQQW2BwbD4ZZHzN3o3tPuNLZCbBchd1zh"),
-                new Progress(){
-                    @Override
-                    public boolean isClosed() {
-                        return time.get() < (System.currentTimeMillis() - 30000);
-                    }
 
+        byte[] data = ipfs.getData(Cid.Decode("QmcniBv7UQ4gGPQQW2BwbD4ZZHzN3o3tPuNLZCbBchd1zh"),
+                new TimeoutProgress(360){
                     @Override
                     public void setProgress(int progress) {
                         LogUtils.error(TAG, "Progress " + progress);
-                        time.set(System.currentTimeMillis());
                     }
 
                     @Override

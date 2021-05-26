@@ -24,6 +24,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import crypto.pb.Crypto;
 import io.ipfs.IPFS;
 import io.ipfs.cid.Cid;
 import io.ipfs.core.Closeable;
@@ -31,6 +32,7 @@ import io.ipfs.core.ClosedException;
 import io.ipfs.format.Node;
 import io.ipfs.host.DnsResolver;
 import io.ipfs.host.PeerId;
+import io.ipfs.ipns.Ipns;
 import io.ipfs.multiaddr.Multiaddr;
 import io.ipfs.utils.Link;
 import threads.LogUtils;
@@ -263,8 +265,8 @@ public class DOCS {
         }
 
 
-        IPFS.ResolvedName resolvedName = ipfs.resolveName(name, sequence, closeable);
-        if (resolvedName == null) {
+        Ipns.Entry entry = ipfs.resolveName(name, sequence, closeable);
+        if (entry == null) {
 
             if (cid != null) {
                 resolves.put(pid, cid);
@@ -274,12 +276,15 @@ public class DOCS {
             throw new ResolveNameException(uri.toString());
         }
 
-        pageConnect(resolvedName.getPeerId(), closeable);
+        // todo not sure it this makes sense at all
+        if(entry.getKeyType().equals(Crypto.KeyType.Ed25519)) {
+            pageConnect(entry.getPeerId(), closeable);
+        }
 
-        resolves.put(pid, resolvedName.getHash());
-        pages.setPageContent(pid, resolvedName.getHash());
-        pages.setPageSequence(pid, resolvedName.getSequence());
-        return resolvedName.getHash();
+        resolves.put(pid, entry.getHash());
+        pages.setPageContent(pid, entry.getHash());
+        pages.setPageSequence(pid, entry.getSequence());
+        return entry.getHash();
     }
 
 

@@ -70,6 +70,16 @@ public class ContentManager {
 
         LogUtils.verbose(TAG, "Reset");
         try {
+            ExecutorService service = Executors.newFixedThreadPool(4);
+            for (PeerId peerId : priority) {
+                service.execute(() -> {
+                    try {
+                        host.disconnect(peerId);
+                    } catch (Throwable throwable) {
+                        LogUtils.error(TAG, throwable);
+                    }
+                });
+            }
             loads.clear();
             priority.clear();
             whitelist.clear();
@@ -91,15 +101,14 @@ public class ContentManager {
                 sendHaveMessage(closeable, peer, cids);
                 success = true;
                 whitelist.add(peer);
-            } catch (ProtocolIssue | ConnectionIssue | TimeoutIssue | ClosedException exception) {
-                LogUtils.error(TAG, "Priority Peer " + peer.toBase58() + " " +
-                        exception.getClass().getName());
+            } catch (ClosedException | TimeoutIssue ignore) {
                 // ignore
             } catch (Throwable throwable) {
                 priority.remove(peer);
-                LogUtils.error(TAG, throwable);
+                LogUtils.debug(TAG, "Priority Peer " + peer.toBase58() + " " +
+                        throwable.getClass().getName());
             } finally {
-                LogUtils.error(TAG, "Priority Peer " + success + " " +
+                LogUtils.debug(TAG, "Priority Peer " + success + " " +
                         peer.toBase58() + " took " + (System.currentTimeMillis() - start));
             }
         }).start();
@@ -147,8 +156,7 @@ public class ContentManager {
                         } catch (ClosedException closedException) {
                             // ignore
                         } catch (ProtocolIssue issue) {
-                            LogUtils.error(TAG, peer.toBase58() + " " + issue);
-                            whitelist.remove(peer);
+                            LogUtils.debug(TAG, peer.toBase58() + " " + issue);
                         } catch (Throwable throwable) {
                             whitelist.remove(peer);
                             LogUtils.error(TAG, throwable);
@@ -207,7 +215,6 @@ public class ContentManager {
         for (PeerId peer : priority) {
             if (!handled.contains(peer)) {
                 handled.add(peer);
-                LogUtils.error(TAG, "LoadBlocks " + peer.toBase58());
                 runHaveMessage(closeable, peer, cids);
             }
         }

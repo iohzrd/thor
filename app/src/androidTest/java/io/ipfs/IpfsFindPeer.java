@@ -15,6 +15,7 @@ import java.util.Set;
 import io.LogUtils;
 import io.ipfs.core.TimeoutCloseable;
 import io.ipfs.host.PeerId;
+import io.ipfs.ipns.Ipns;
 import io.ipfs.multiaddr.Multiaddr;
 
 import static junit.framework.TestCase.assertNotNull;
@@ -69,10 +70,8 @@ public class IpfsFindPeer {
         //Mike ipns://k2k4r8n098cwalcc7rdntd19nsjyzh6rku1hvgsmkjzvnw582mncc4b4
 
         String key = "k2k4r8n098cwalcc7rdntd19nsjyzh6rku1hvgsmkjzvnw582mncc4b4";
-
-        IPFS.ResolvedName res = ipfs.resolveName(key, 0, new TimeoutCloseable(30));
+        Ipns.Entry res = ipfs.resolveName(key, 0, new TimeoutCloseable(30));
         assertNotNull(res);
-
         LogUtils.debug(TAG, res.toString());
 
 
@@ -98,10 +97,8 @@ public class IpfsFindPeer {
         //CorbettReport ipns://k2k4r8jllj4k33jxoa4vaeleqkrwu8b7tqz7tgczhptbfkhqr2i280fm
 
         String key = "k2k4r8jllj4k33jxoa4vaeleqkrwu8b7tqz7tgczhptbfkhqr2i280fm";
-
-        IPFS.ResolvedName res = ipfs.resolveName(key, 0, new TimeoutCloseable(30));
+        Ipns.Entry res = ipfs.resolveName(key, 0, new TimeoutCloseable(30));
         assertNotNull(res);
-
         LogUtils.debug(TAG, res.toString());
 
 
@@ -126,10 +123,8 @@ public class IpfsFindPeer {
         //FreedomsPhoenix.com ipns://k2k4r8magsykrprepvtuvd1h8wonxy7rbdkxd09aalsvclqh7wpb28m1
 
         String key = "k2k4r8magsykrprepvtuvd1h8wonxy7rbdkxd09aalsvclqh7wpb28m1";
-
-        IPFS.ResolvedName res = ipfs.resolveName(key, 0, new TimeoutCloseable(30));
+        Ipns.Entry res = ipfs.resolveName(key, 0, new TimeoutCloseable(30));
         assertNotNull(res);
-
         LogUtils.debug(TAG, res.toString());
 
 
@@ -155,10 +150,8 @@ public class IpfsFindPeer {
         //PiratesWithoutBorders.com ipns://k2k4r8l8zgv45qm2sjt7p16l7pvy69l4jr1o50cld4s98wbnanl0zn6t
 
         String key = "k2k4r8l8zgv45qm2sjt7p16l7pvy69l4jr1o50cld4s98wbnanl0zn6t";
-
-        IPFS.ResolvedName res = ipfs.resolveName(key, 0, new TimeoutCloseable(30));
+        Ipns.Entry res = ipfs.resolveName(key, 0, new TimeoutCloseable(30));
         assertNotNull(res);
-
         LogUtils.debug(TAG, res.toString());
 
 
