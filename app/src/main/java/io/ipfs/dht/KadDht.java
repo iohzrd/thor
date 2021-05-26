@@ -400,7 +400,6 @@ public class KadDht implements Routing {
         long time = System.currentTimeMillis();
         boolean success = false;
 
-
         Connection conn = null;
 
         try {
@@ -409,6 +408,8 @@ public class KadDht implements Routing {
             if (closeable.isClosed()) {
                 throw new ClosedException();
             }
+
+            time = System.currentTimeMillis();
 
             QuicChannel quicChannel = conn.channel();
 
@@ -435,6 +436,8 @@ public class KadDht implements Routing {
 
         } catch (ClosedException | ConnectionIssue exception) {
             throw exception;
+        } catch (TimeoutException exception) {
+            throw new TimeoutIssue();
         } catch (Throwable throwable) {
             Throwable cause = throwable.getCause();
             if (cause != null) {
@@ -452,11 +455,11 @@ public class KadDht implements Routing {
                     throw new TimeoutIssue();
                 }
             }
-            LogUtils.error(TAG, p.toBase58() + " ERROR " + throwable);
+            LogUtils.error(TAG, throwable);
             throw new ConnectionIssue();
         } finally {
-            LogUtils.error(TAG, "Request " + success + " took " + (System.currentTimeMillis() - time));
-
+            LogUtils.debug(TAG, "Request " + success + " took " +
+                    (System.currentTimeMillis() - time));
             if (conn != null) {
                 conn.disconnect();
             }
