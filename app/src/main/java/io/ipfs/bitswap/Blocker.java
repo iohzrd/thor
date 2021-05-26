@@ -11,7 +11,7 @@ public class Blocker {
     private static final String TAG = Blocker.class.getSimpleName();
 
 
-    public void Subscribe(@NonNull Cid cid, @NonNull Closeable closeable) {
+    public void subscribe(@NonNull Cid cid, @NonNull Closeable closeable) {
 
         String key = "B" + cid.String();
         long start = System.currentTimeMillis();
@@ -24,13 +24,13 @@ public class Blocker {
                     try {
                         while (true) {
                             if (closeable.isClosed()) {
-                                Release(cid);
+                                release(cid);
                                 break;
                             }
                             Thread.sleep(25);
                         }
                     } catch (InterruptedException e) {
-                        Release(cid);
+                        release(cid);
                     }
                 });
                 thread.start();
@@ -45,7 +45,7 @@ public class Blocker {
         }
     }
 
-    public void Release(@NonNull Cid cid) {
+    public void release(@NonNull Cid cid) {
         try {
             String key = "B" + cid.String();
             synchronized (key.intern()) {

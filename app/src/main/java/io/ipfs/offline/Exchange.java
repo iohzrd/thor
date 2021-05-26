@@ -35,10 +35,6 @@ public class Exchange implements Interface {
         // nothing to do here
     }
 
-    @Override
-    public void loadProviders(@NonNull Closeable closeable, @NonNull Cid cid) {
-        // nothing to do here
-    }
 
     @Override
     public boolean gatePeer(@NonNull PeerId peerID) {

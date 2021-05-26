@@ -82,9 +82,6 @@ public class DOCS {
         return INSTANCE;
     }
 
-    private void pageProvider(@NonNull Cid cid, @NonNull Closeable closeable) {
-        ipfs.loadProvider(cid, closeable);
-    }
 
     private void pageConnect(@NonNull PeerId peerId, @NonNull Closeable closeable) {
         Executors.newSingleThreadExecutor().execute(() -> {
@@ -277,6 +274,8 @@ public class DOCS {
             throw new ResolveNameException(uri.toString());
         }
 
+        pageConnect(resolvedName.getPeerId(), closeable);
+
         resolves.put(pid, resolvedName.getHash());
         pages.setPageContent(pid, resolvedName.getHash());
         pages.setPageSequence(pid, resolvedName.getSequence());
@@ -376,21 +375,6 @@ public class DOCS {
         }
     }
 
-    public void connectUri(@NonNull Uri uri, @NonNull Closeable closeable) {
-        try {
-            String host = getHost(uri);
-            if (host != null) {
-                try {
-                    PeerId peerId = ipfs.getPeerId(host);
-                    pageConnect(peerId, closeable);
-                } catch (Throwable ignore) {
-                    // ignore common use case
-                }
-            }
-        } catch (Throwable throwable) {
-            LogUtils.error(TAG, throwable);
-        }
-    }
 
 
     @NonNull
@@ -561,8 +545,6 @@ public class DOCS {
 
         Cid root = getRoot(uri, closeable);
         Objects.requireNonNull(root);
-
-        pageProvider(root, closeable);
 
         return getResponse(context, uri, root, paths, closeable);
 

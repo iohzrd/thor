@@ -19,12 +19,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -80,6 +78,7 @@ public class KadDht implements Routing {
         this.routingTable = new RoutingTable(bucketSize, Util.ConvertPeerID(self));
         this.beta = beta;
         this.alpha = alpha;
+
     }
 
     @Override
@@ -271,7 +270,7 @@ public class KadDht implements Routing {
                         }
                     }
 
-                    LogUtils.error(TAG, "got provider before filter " + peerId.toBase58() + " "
+                    LogUtils.debug(TAG, "got provider before filter " + peerId.toBase58() + " "
                             + multiAddresses.toString());
 
                     AddrInfo addrInfo = AddrInfo.create(peerId, multiAddresses, false);
@@ -398,31 +397,38 @@ public class KadDht implements Routing {
                                     @NonNull Dht.Message message)
             throws ClosedException, ProtocolIssue, TimeoutIssue, ConnectionIssue {
 
-
         long time = System.currentTimeMillis();
+        boolean success = false;
+
+
         Connection conn = null;
 
         try {
             conn = host.connect(closeable, p, IPFS.CONNECT_TIMEOUT);
+
+            if (closeable.isClosed()) {
+                throw new ClosedException();
+            }
 
             QuicChannel quicChannel = conn.channel();
 
             CompletableFuture<Dht.Message> request = request(quicChannel,
                     message, IPFS.PRIORITY_NORMAL);
 
-            while (!request.isDone()) {
-                if (closeable.isClosed()) {
-                    request.cancel(true);
+                /*
+                while (!request.isDone()) {
+                    if (closeable.isClosed()) {
+                        request.cancel(true);
+                    }
                 }
-            }
 
-            if (closeable.isClosed()) {
-                throw new ClosedException();
-            }
+                if (closeable.isClosed()) {
+                    throw new ClosedException();
+                }*/
 
-            Dht.Message msg = request.get();
+            Dht.Message msg = request.get(IPFS.CONNECT_TIMEOUT, TimeUnit.SECONDS);
             Objects.requireNonNull(msg);
-
+            success = true;
             p.setLatency(System.currentTimeMillis() - time);
 
             return msg;
@@ -439,19 +445,23 @@ public class KadDht implements Routing {
                 if (cause instanceof ConnectionIssue) {
                     throw new ConnectionIssue();
                 }
+                if (cause instanceof TimeoutException) {
+                    throw new TimeoutIssue();
+                }
                 if (cause instanceof ReadTimeoutException) {
                     throw new TimeoutIssue();
                 }
             }
             LogUtils.error(TAG, p.toBase58() + " ERROR " + throwable);
-            throw new RuntimeException(throwable);
+            throw new ConnectionIssue();
         } finally {
-            LogUtils.debug(TAG, "Request took " + (System.currentTimeMillis() - time));
+            LogUtils.error(TAG, "Request " + success + " took " + (System.currentTimeMillis() - time));
 
             if (conn != null) {
                 conn.disconnect();
             }
         }
+
     }
 
     public CompletableFuture<Dht.Message> request(@NonNull QuicChannel quicChannel,
@@ -606,6 +616,11 @@ public class KadDht implements Routing {
             throws ClosedException {
 
         try {
+
+            if (ctx.isClosed()) {
+                return null;
+            }
+
             LookupWithFollowupResult lookupRes = runQuery(ctx, target, queryFn, stopFn);
 
 
@@ -631,7 +646,7 @@ public class KadDht implements Routing {
                 return lookupRes;
             }
 
-
+            /*
             List<Callable<List<AddrInfo>>> tasks = new ArrayList<>();
             for (PeerId p : queryPeers) {
                 tasks.add(() -> queryFn.query(ctx, p));
@@ -649,7 +664,7 @@ public class KadDht implements Routing {
             }
             if (!lookupRes.completed) {
                 lookupRes.completed = followupsCompleted == queryPeers.size();
-            }
+            }*/
 
             return lookupRes;
         } catch (InterruptedException ignore) {

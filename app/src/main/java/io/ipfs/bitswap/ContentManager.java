@@ -14,6 +14,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import bitswap.pb.MessageOuterClass;
 import io.LogUtils;
 import io.ipfs.IPFS;
 import io.ipfs.cid.Cid;
@@ -87,7 +88,7 @@ public class ContentManager {
                 if (closeable.isClosed()) {
                     return;
                 }
-                MessageWriter.sendHaveMessage(closeable, bitSwap, peer, cids);
+                sendHaveMessage(closeable, peer, cids);
                 success = true;
                 whitelist.add(peer);
             } catch (ProtocolIssue | ConnectionIssue | TimeoutIssue | ClosedException exception) {
@@ -137,12 +138,11 @@ public class ContentManager {
                         long start = System.currentTimeMillis();
                         try {
                             if (matches.containsKey(cid)) {
-                                MessageWriter.sendWantsMessage(closeable, bitSwap, peer,
-                                        Collections.singletonList(cid));
+                                sendWantsMessage(closeable, peer, Collections.singletonList(cid));
                                 whitelist.add(peer);
                                 wants.add(peer);
                                 haves.add(peer);
-                                blocker.Subscribe(cid, closeable);
+                                blocker.subscribe(cid, closeable);
                             }
                         } catch (ClosedException closedException) {
                             // ignore
@@ -187,7 +187,7 @@ public class ContentManager {
             }
 
             matches.remove(cid);
-            blocker.Release(cid);
+            blocker.release(cid);
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         }
@@ -233,12 +233,12 @@ public class ContentManager {
                 return block;
             }
         } finally {
-            blocker.Release(cid);
+            blocker.release(cid);
             LogUtils.info(TAG, "Block Release  " + cid.String());
         }
     }
 
-    public void loadProviders(@NonNull Closeable closeable, @NonNull Cid cid) {
+    private void loadProviders(@NonNull Closeable closeable, @NonNull Cid cid) {
 
         if (loads.contains(cid)) {
             return;
@@ -263,4 +263,65 @@ public class ContentManager {
         });
     }
 
+
+    private void sendHaveMessage(@NonNull Closeable closeable,
+                                 @NonNull PeerId peer,
+                                 @NonNull List<Cid> wantHaves)
+            throws ClosedException, ProtocolIssue, TimeoutIssue, ConnectionIssue {
+        if (wantHaves.size() == 0) {
+            return;
+        }
+
+        int priority = Integer.MAX_VALUE;
+
+        BitSwapMessage message = BitSwapMessage.New(false);
+
+        for (Cid c : wantHaves) {
+
+            // Broadcast wants are sent as want-have
+            MessageOuterClass.Message.Wantlist.WantType wantType =
+                    MessageOuterClass.Message.Wantlist.WantType.Have;
+
+            message.AddEntry(c, priority, wantType, false);
+
+            priority--;
+        }
+
+        if (message.Empty()) {
+            return;
+        }
+        LogUtils.debug(TAG, "send HAVE Message " + peer.toBase58());
+        bitSwap.writeMessage(closeable, peer, message, IPFS.PRIORITY_URGENT);
+
+
+    }
+
+    private void sendWantsMessage(@NonNull Closeable closeable,
+                                  @NonNull PeerId peer,
+                                  @NonNull List<Cid> wantBlocks)
+            throws ClosedException, ProtocolIssue, TimeoutIssue, ConnectionIssue {
+
+        if (wantBlocks.size() == 0) {
+            return;
+        }
+        BitSwapMessage message = BitSwapMessage.New(false);
+
+        int priority = Integer.MAX_VALUE;
+
+        for (Cid c : wantBlocks) {
+
+            message.AddEntry(c, priority,
+                    MessageOuterClass.Message.Wantlist.WantType.Block, true);
+
+            priority--;
+        }
+
+        if (message.Empty()) {
+            return;
+        }
+
+        LogUtils.debug(TAG, "send WANT Message " + peer.toBase58());
+        bitSwap.writeMessage(closeable, peer, message, IPFS.PRIORITY_URGENT);
+
+    }
 }

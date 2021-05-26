@@ -140,7 +140,7 @@ public class IPFS {
     ));
 
     public static final int KAD_DHT_BUCKET_SIZE = 20;
-    public static final int KAD_DHT_BETA = 30;
+    public static final int KAD_DHT_BETA = 25;
     public static final int CONNECT_TIMEOUT = 5;
     public static final int BITSWAP_LOAD_PROVIDERS_REFRESH = 10000;
     public static final long DHT_REQUEST_READ_TIMEOUT = 10;
@@ -679,10 +679,7 @@ public class IPFS {
     @NonNull
     public PeerInfo getPeerInfo(@NonNull PeerId peerId, @NonNull Closeable closeable)
             throws ClosedException, ConnectionIssue {
-
-        Connection conn = host.connect(closeable, peerId, IPFS.CONNECT_TIMEOUT);
-
-        return host.getPeerInfo(closeable, conn);
+        return host.getPeerInfo(closeable, peerId);
     }
 
     public void shutdown() {
@@ -1084,14 +1081,6 @@ public class IPFS {
     public void reset() {
         try {
             host.getExchange().reset();
-        } catch (Throwable throwable) {
-            LogUtils.error(TAG, throwable);
-        }
-    }
-
-    public void loadProvider(@NonNull Cid cid, @NonNull Closeable closeable) {
-        try {
-            host.getExchange().loadProviders(closeable, cid);
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         }

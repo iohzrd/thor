@@ -77,6 +77,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import io.ipfs.IPFS;
 import io.ipfs.core.Closeable;
@@ -1183,6 +1184,7 @@ public class MainActivity extends AppCompatActivity implements
         mWebView.setWebViewClient(new WebViewClient() {
 
             private final Map<Uri, Boolean> loadedUrls = new HashMap<>();
+            private final AtomicReference<String> host = new AtomicReference<>();
             private final AtomicBoolean firstRun = new AtomicBoolean(true);
 
             @Override
@@ -1323,7 +1325,13 @@ public class MainActivity extends AppCompatActivity implements
 
                 try {
                     Uri uri = request.getUrl();
-                    LogUtils.info(TAG, "shouldOverrideUrlLoading : " + uri);
+                    LogUtils.debug(TAG, "shouldOverrideUrlLoading : " + uri);
+
+                    if (!Objects.equals(host.get(), uri.getHost())) {
+                        docs.releaseThreads();
+                        docs.releaseContent();
+                    }
+
 
                     if (Objects.equals(uri.getScheme(), Content.ABOUT)) {
                         return true;
@@ -1347,7 +1355,6 @@ public class MainActivity extends AppCompatActivity implements
                             contentDownloader(uri);
                             return true;
                         }
-                        docs.releaseThreads();
 
                         mProgressBar.setVisibility(View.VISIBLE);
                         return false;
@@ -1406,8 +1413,8 @@ public class MainActivity extends AppCompatActivity implements
             public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
 
                 Uri uri = request.getUrl();
-                LogUtils.info(TAG, "shouldInterceptRequest : " + uri.toString());
-
+                LogUtils.debug(TAG, "shouldInterceptRequest : " + uri.toString());
+                host.set(uri.getHost());
                 if (Objects.equals(uri.getScheme(), Content.HTTP) ||
                         Objects.equals(uri.getScheme(), Content.HTTPS)) {
                     boolean ad;
@@ -1445,15 +1452,12 @@ public class MainActivity extends AppCompatActivity implements
 
                     Closeable closeable = () -> !docs.shouldRun(thread.getId());
 
-                    docs.connectUri(uri, closeable);
-
                     try {
 
                         Uri redirectUri = docs.redirectUri(uri, closeable);
                         if (!Objects.equals(uri, redirectUri)) {
                             return createRedirectMessage(redirectUri);
                         }
-                        docs.connectUri(redirectUri, closeable);
 
                         return docs.getResponse(getApplicationContext(), redirectUri, closeable);
 

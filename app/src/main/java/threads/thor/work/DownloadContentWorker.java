@@ -117,12 +117,6 @@ public class DownloadContentWorker extends Worker {
                 setForegroundAsync(foregroundInfo);
             }
 
-            if (Objects.equals(uri.getScheme(), Content.IPFS) ||
-                    Objects.equals(uri.getScheme(), Content.IPNS)) {
-                if (!isStopped()) {
-                    docs.connectUri(uri, this::isStopped);
-                }
-            }
 
             if (Objects.equals(uri.getScheme(), Content.IPNS) ||
                     Objects.equals(uri.getScheme(), Content.IPFS)) {

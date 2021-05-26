@@ -73,11 +73,6 @@ public class BitSwap implements Interface {
     }
 
     @Override
-    public void loadProviders(@NonNull Closeable closeable, @NonNull Cid cid) {
-        contentManager.loadProviders(closeable, cid);
-    }
-
-    @Override
     public void receiveMessage(@NonNull PeerId peer, @NonNull BitSwapMessage incoming) {
 
         LogUtils.info(TAG, "ReceiveMessage " + peer.toBase58());

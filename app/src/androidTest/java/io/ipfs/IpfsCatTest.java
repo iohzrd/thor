@@ -62,7 +62,7 @@ public class IpfsCatTest {
         time = System.currentTimeMillis();
 
 
-        List<Link> res = ipfs.getLinks(cid, new TimeoutCloseable(15));
+        List<Link> res = ipfs.getLinks(cid, new TimeoutCloseable(30));
         LogUtils.debug(TAG, "Time : " + (System.currentTimeMillis() - time) + " [ms]");
         assertNotNull(res);
         assertTrue(res.isEmpty());
@@ -133,7 +133,7 @@ public class IpfsCatTest {
 
 
         Cid cid = Cid.Decode("QmUNLLsPACCz1vLxQVkXqqLX5R1X345qqfHbsf67hvA3Nn");
-        List<Link> res = ipfs.getLinks(cid, new TimeoutCloseable(10));
+        List<Link> res = ipfs.getLinks(cid, new TimeoutCloseable(30));
         assertNotNull(res);
 
         assertTrue(res.isEmpty());

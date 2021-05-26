@@ -485,6 +485,15 @@ public class LiteHost implements BitSwapReceiver {
     }
 
     @NonNull
+    public PeerInfo getPeerInfo(@NonNull Closeable closeable, @NonNull PeerId peerId)
+            throws ClosedException, ConnectionIssue {
+
+        Connection conn = connect(closeable, peerId, IPFS.CONNECT_TIMEOUT);
+
+        return getPeerInfo(closeable, conn);
+    }
+
+    @NonNull
     public PeerInfo getPeerInfo(@NonNull Closeable closeable,
                                 @NonNull Connection conn) throws ClosedException {
         return IdentityService.getPeerInfo(closeable, conn);
@@ -655,6 +664,11 @@ public class LiteHost implements BitSwapReceiver {
 
 
         synchronized (peerId.toBase58().intern()) {
+
+            if (closeable.isClosed()) {
+                throw new ClosedException();
+            }
+
             Connection connection = connections.get(peerId);
             if (connection != null) {
                 return connection;
