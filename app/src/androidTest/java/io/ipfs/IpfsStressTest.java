@@ -11,13 +11,11 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
-import java.util.concurrent.atomic.AtomicLong;
 
 import io.LogUtils;
 import io.ipfs.cid.Cid;
 import io.ipfs.core.ClosedException;
 import io.ipfs.core.TimeoutProgress;
-import io.ipfs.utils.Progress;
 
 import static junit.framework.TestCase.assertNotNull;
 
@@ -28,14 +26,12 @@ public class IpfsStressTest {
     private static final String TAG = IpfsStressTest.class.getSimpleName();
 
 
-
     private static Context context;
 
     @BeforeClass
     public static void setup() {
         context = ApplicationProvider.getApplicationContext();
     }
-
 
 
     @Test
@@ -45,7 +41,7 @@ public class IpfsStressTest {
 
 
         byte[] data = ipfs.getData(Cid.Decode("QmcniBv7UQ4gGPQQW2BwbD4ZZHzN3o3tPuNLZCbBchd1zh"),
-                new TimeoutProgress(360){
+                new TimeoutProgress(360) {
                     @Override
                     public void setProgress(int progress) {
                         LogUtils.error(TAG, "Progress " + progress);

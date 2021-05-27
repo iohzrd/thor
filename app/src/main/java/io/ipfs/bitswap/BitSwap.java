@@ -34,16 +34,14 @@ import io.netty.incubator.codec.quic.QuicStreamType;
 public class BitSwap implements Interface {
 
     private static final String TAG = BitSwap.class.getSimpleName();
-
+    @NonNull
+    public final ConcurrentHashMap<QuicChannel, QuicStreamChannel> bitSwaps = new ConcurrentHashMap<>();
     @NonNull
     private final ContentManager contentManager;
     @NonNull
     private final BitSwapEngine engine;
     @NonNull
     private final LiteHost host;
-
-    @NonNull
-    public final ConcurrentHashMap<QuicChannel, QuicStreamChannel> bitSwaps = new ConcurrentHashMap<>();
 
     public BitSwap(@NonNull BlockStore blockstore, @NonNull LiteHost host) {
         this.host = host;

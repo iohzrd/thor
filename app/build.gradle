@@ -22,7 +22,7 @@ android {
         buildConfigField "String",
                 "DOCUMENTS_AUTHORITY",
                 "\"${documentsAuthorityValue}\""
-        // 'x86_64',
+
         ndk {
             abiFilters 'x86_64','arm64-v8a', 'armeabi-v7a'
         }

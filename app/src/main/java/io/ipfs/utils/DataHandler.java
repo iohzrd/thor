@@ -159,7 +159,7 @@ public class DataHandler {
                     this.merge(sub);
                 }
             }
-        } catch (Throwable throwable){
+        } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
             throw throwable;
         }

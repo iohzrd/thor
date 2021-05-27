@@ -55,13 +55,13 @@ public class AddrInfo {
 
         try {
             InetAddress inetAddress = InetAddress.getByName(address.getHost());
-            if(inetAddress.isAnyLocalAddress() || inetAddress.isLinkLocalAddress()
-            || inetAddress.isLoopbackAddress() || (!acceptSiteLocal &&
-                    inetAddress.isSiteLocalAddress())){
+            if (inetAddress.isAnyLocalAddress() || inetAddress.isLinkLocalAddress()
+                    || inetAddress.isLoopbackAddress() || (!acceptSiteLocal &&
+                    inetAddress.isSiteLocalAddress())) {
                 LogUtils.info(TAG, "Not supported " + address.toString());
                 return false;
             }
-        } catch (Throwable throwable){
+        } catch (Throwable throwable) {
             LogUtils.debug(TAG, "" + throwable);
             return false;
         }

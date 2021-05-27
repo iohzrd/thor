@@ -798,9 +798,9 @@ public class IPFS {
                                 host.connect(new TimeoutCloseable(TIMEOUT_BOOTSTRAP), peerId,
                                         TIMEOUT_BOOTSTRAP);
                             } catch (ConnectionIssue ignore) {
-                               // ignore
+                                // ignore
                             } catch (Throwable throwable) {
-                                LogUtils.error(TAG,  throwable);
+                                LogUtils.error(TAG, throwable);
                             }
                         });
                     }
@@ -1202,7 +1202,6 @@ public class IPFS {
     public interface Connector {
         void connected(@NonNull PeerId peerId);
     }
-
 
 
 }

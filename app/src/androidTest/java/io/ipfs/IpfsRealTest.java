@@ -138,7 +138,7 @@ public class IpfsRealTest {
 
         assertFalse(peers.isEmpty());
 
-        for (PeerId peerId:peers) {
+        for (PeerId peerId : peers) {
             LogUtils.debug(TAG, "connect " + peerId.toBase58() + " " +
                     ipfs.swarmConnect(peerId, new TimeoutCloseable(15)));
         }

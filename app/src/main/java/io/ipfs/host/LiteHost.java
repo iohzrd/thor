@@ -135,7 +135,10 @@ public class LiteHost implements BitSwapReceiver {
             return EmptyArrays.EMPTY_X509_CERTIFICATES;
         }
     };
-
+    private static int failure = 0;
+    private static int success = 0;
+    @NonNull
+    public final List<ConnectionHandler> handlers = new ArrayList<>();
     @NonNull
     private final ConcurrentHashMap<PeerId, Long> tags = new ConcurrentHashMap<>();
     @NonNull
@@ -157,8 +160,6 @@ public class LiteHost implements BitSwapReceiver {
     private final LiteHostCertificate selfSignedCertificate;
     @NonNull
     private final Set<PeerId> swarm = ConcurrentHashMap.newKeySet();
-    @NonNull
-    public final List<ConnectionHandler> handlers = new ArrayList<>();
     @Nullable
     private Push push;
     @Nullable
@@ -283,7 +284,6 @@ public class LiteHost implements BitSwapReceiver {
         exchange.receiveMessage(peer, incoming);
     }
 
-
     public PeerId self() {
         return PeerId.fromPubKey(privKey.publicKey());
     }
@@ -323,13 +323,14 @@ public class LiteHost implements BitSwapReceiver {
         routing.findProviders(closeable, providers, cid);
     }
 
-    public boolean hasAddresses(@NonNull PeerId peerId){
+    public boolean hasAddresses(@NonNull PeerId peerId) {
         Collection<Multiaddr> addrInfo = addressBook.get(peerId);
         if (addrInfo != null) {
             return !addrInfo.isEmpty();
         }
         return false;
     }
+
     @NonNull
     public Set<Multiaddr> getAddresses(@NonNull PeerId peerId) {
         try {
@@ -559,7 +560,7 @@ public class LiteHost implements BitSwapReceiver {
     public QuicStreamChannel getRelayStream(
             @NonNull Closeable closeable, @NonNull PeerId peerId) {
 
-        for (PeerId relay:relays) {
+        for (PeerId relay : relays) {
             try {
                 return getStream(closeable, relay, peerId);
             } catch (Throwable throwable) {
@@ -571,7 +572,7 @@ public class LiteHost implements BitSwapReceiver {
 
     @Nullable
     private QuicStreamChannel getStream(@NonNull Closeable closeable, @NonNull PeerId relay,
-                                       @NonNull PeerId peerId)
+                                        @NonNull PeerId peerId)
             throws ConnectionIssue, ClosedException {
 
         try {
@@ -648,7 +649,6 @@ public class LiteHost implements BitSwapReceiver {
 
     }
 
-
     // TODO improve (check network configuration or so)
     private boolean inet6() {
         if (localAddress != null) {
@@ -656,9 +656,6 @@ public class LiteHost implements BitSwapReceiver {
         }
         return false;
     }
-
-    private static int failure = 0;
-    private static int success = 0;
 
     @NonNull
     public Connection connect(@NonNull Closeable closeable, @NonNull PeerId peerId, int timeout)
@@ -700,33 +697,33 @@ public class LiteHost implements BitSwapReceiver {
                 }
                 long start = System.currentTimeMillis();
                 boolean run = false;
-                    try {
-                        Promise<QuicChannel> future = dial(address, peerId);
+                try {
+                    Promise<QuicChannel> future = dial(address, peerId);
 
 
-                        QuicChannel quic = future.get(timeout, TimeUnit.SECONDS);
-                        Objects.requireNonNull(quic);
+                    QuicChannel quic = future.get(timeout, TimeUnit.SECONDS);
+                    Objects.requireNonNull(quic);
 
-                        Connection conn = new LiteConnection(quic, transform(quic.remoteAddress()));
-                        quic.closeFuture().addListener(future1 -> removeConnection(conn));
-                        addConnection(conn);
-                        run = true;
-                        return conn;
-                    } catch (Throwable ignore) {
-                        // nothing to do here
-                    } finally {
-                        if (run) {
-                            success++;
-                        } else {
-                            failure++;
-                        }
-
-                        LogUtils.debug(TAG, "Run " + run + " Success " + success + " " +
-                                "Failure " + failure + " " +
-                                address + "/p2p/" + peerId.toBase58() + " " +
-                                (System.currentTimeMillis() - start));
-
+                    Connection conn = new LiteConnection(quic, transform(quic.remoteAddress()));
+                    quic.closeFuture().addListener(future1 -> removeConnection(conn));
+                    addConnection(conn);
+                    run = true;
+                    return conn;
+                } catch (Throwable ignore) {
+                    // nothing to do here
+                } finally {
+                    if (run) {
+                        success++;
+                    } else {
+                        failure++;
                     }
+
+                    LogUtils.debug(TAG, "Run " + run + " Success " + success + " " +
+                            "Failure " + failure + " " +
+                            address + "/p2p/" + peerId.toBase58() + " " +
+                            (System.currentTimeMillis() - start));
+
+                }
 
             }
 

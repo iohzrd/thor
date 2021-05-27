@@ -18,16 +18,16 @@ public class QueryPeerSet {
     private final ConcurrentHashMap<PeerId, QueryPeerState> all = new ConcurrentHashMap<>();
 
 
-    int size() {
-        return all.size();
-    }
-
     private QueryPeerSet(@NonNull ID key) {
         this.key = key;
     }
 
     public static QueryPeerSet create(@NonNull byte[] key) {
         return new QueryPeerSet(Util.ConvertKey(key));
+    }
+
+    int size() {
+        return all.size();
     }
 
     private BigInteger distanceToKey(@NonNull PeerId p) {

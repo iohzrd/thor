@@ -29,14 +29,12 @@ public class IpfsFindPeer {
     private static final String TAG = IpfsFindPeer.class.getSimpleName();
 
 
-
     private static Context context;
 
     @BeforeClass
     public static void setup() {
         context = ApplicationProvider.getApplicationContext();
     }
-
 
 
     @Test
@@ -54,7 +52,7 @@ public class IpfsFindPeer {
         Set<Multiaddr> addresses = ipfs.getAddresses(relay);
         assertFalse(addresses.isEmpty());
 
-        for (Multiaddr addr:addresses) {
+        for (Multiaddr addr : addresses) {
             LogUtils.debug(TAG, addr.toString());
         }
 
@@ -83,7 +81,7 @@ public class IpfsFindPeer {
         Set<Multiaddr> addresses = ipfs.getAddresses(res.getPeerId());
         assertFalse(addresses.isEmpty());
 
-        for (Multiaddr addr:addresses) {
+        for (Multiaddr addr : addresses) {
             LogUtils.debug(TAG, addr.toString());
         }
     }
@@ -110,7 +108,7 @@ public class IpfsFindPeer {
         Set<Multiaddr> addresses = ipfs.getAddresses(res.getPeerId());
         assertFalse(addresses.isEmpty());
 
-        for (Multiaddr addr:addresses) {
+        for (Multiaddr addr : addresses) {
             LogUtils.debug(TAG, addr.toString());
         }
     }
@@ -136,7 +134,7 @@ public class IpfsFindPeer {
         Set<Multiaddr> addresses = ipfs.getAddresses(res.getPeerId());
         assertFalse(addresses.isEmpty());
 
-        for (Multiaddr addr:addresses) {
+        for (Multiaddr addr : addresses) {
             LogUtils.debug(TAG, addr.toString());
         }
     }
@@ -163,7 +161,7 @@ public class IpfsFindPeer {
         Set<Multiaddr> addresses = ipfs.getAddresses(res.getPeerId());
         assertFalse(addresses.isEmpty());
 
-        for (Multiaddr addr:addresses) {
+        for (Multiaddr addr : addresses) {
             LogUtils.debug(TAG, addr.toString());
         }
     }

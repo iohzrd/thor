@@ -68,14 +68,6 @@ public class PeerId implements Comparable<PeerId> {
         }
     }
 
-    public String toBase32() {
-        try {
-            return Cid.NewCidV1(Cid.Libp2pKey, bytes).String();
-        } catch (Throwable throwable) {
-            throw new RuntimeException(throwable);
-        }
-    }
-
     public static PeerId fromBase58(String str) {
         return new PeerId(Base58.decode(str));
     }
@@ -96,6 +88,14 @@ public class PeerId implements Comparable<PeerId> {
             } catch (Throwable throwable) {
                 throw new RuntimeException(throwable);
             }
+        }
+    }
+
+    public String toBase32() {
+        try {
+            return Cid.NewCidV1(Cid.Libp2pKey, bytes).String();
+        } catch (Throwable throwable) {
+            throw new RuntimeException(throwable);
         }
     }
 

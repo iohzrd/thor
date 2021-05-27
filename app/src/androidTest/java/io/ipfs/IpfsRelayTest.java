@@ -10,7 +10,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.LogUtils;
@@ -20,7 +19,6 @@ import io.ipfs.host.PeerId;
 import io.ipfs.utils.DataHandler;
 import io.netty.incubator.codec.quic.QuicStreamChannel;
 
-import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
 import static junit.framework.TestCase.fail;
 

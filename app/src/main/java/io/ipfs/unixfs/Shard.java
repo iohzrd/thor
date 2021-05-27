@@ -22,19 +22,17 @@ public class Shard {
 
     private static final int SHARED_LINK = 1;
     private static final int SHARED_VALUE_LINK = 2;
-    private final int tableSize;
-    private final DagService dserv;
     public final Childer childer;
-    public Cid cid;
-    public Builder builder;
-
-
-    // leaf node
-    public String key;
-    public Link val;
     final int tableSizeLg2;
     final String prefixPadStr;
     final int maxpadlen;
+    private final int tableSize;
+    private final DagService dserv;
+    public Cid cid;
+    public Builder builder;
+    // leaf node
+    public String key;
+    public Link val;
 
 
     public Shard(DagService ds, Childer childer, String prefixPadStr, int log2s, int maxpadlen, int size) {
@@ -149,12 +147,11 @@ public class Shard {
 
     public static class Childer {
 
-        Shard sd;
         final DagService dserv;
         final BitField bitfield;
-
         // Only one of links/children will be non-nil for every child/link.
         final List<Link> links = new ArrayList<>();
+        Shard sd;
         List<Shard> children;
 
         private Childer(@NonNull DagService dagService, int size) {
@@ -240,8 +237,8 @@ public class Shard {
     }
 
     public static class HashBits {
-        int consumed;
         final byte[] b;
+        int consumed;
 
         public HashBits(@NonNull byte[] bytes) {
             this.b = bytes;
