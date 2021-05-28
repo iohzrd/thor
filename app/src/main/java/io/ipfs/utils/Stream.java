@@ -57,7 +57,7 @@ public class Stream {
         Interface exchange = new Exchange(bs);
         BlockService blockservice = BlockService.createBlockService(bs, exchange);
         DagService dags = DagService.createDagService(blockservice);
-        Node top = Resolver.ResolveNode(closeable, dags, cid);
+        Node top = Resolver.resolveNode(closeable, dags, cid);
         Objects.requireNonNull(top);
 
         RefWriter rw = new RefWriter(true, -1);
@@ -78,7 +78,7 @@ public class Stream {
         BlockService blockservice = BlockService.createBlockService(blockstore, exchange);
         DagService dagService = DagService.createDagService(blockservice);
 
-        io.ipfs.format.Node node = Resolver.ResolveNode(closeable, dagService, cid);
+        io.ipfs.format.Node node = Resolver.resolveNode(closeable, dagService, cid);
         Objects.requireNonNull(node);
         Directory dir = Directory.createDirectoryFromNode(node);
         return dir != null;
@@ -103,9 +103,9 @@ public class Stream {
         BlockService blockservice = BlockService.createBlockService(bs, exchange);
         DagService dagService = DagService.createDagService(blockservice);
 
-        io.ipfs.format.Node dirNode = Resolver.ResolveNode(closeable, dagService, dir);
+        io.ipfs.format.Node dirNode = Resolver.resolveNode(closeable, dagService, dir);
         Objects.requireNonNull(dirNode);
-        io.ipfs.format.Node linkNode = Resolver.ResolveNode(closeable, dagService, link);
+        io.ipfs.format.Node linkNode = Resolver.resolveNode(closeable, dagService, link);
         Objects.requireNonNull(linkNode);
         Node nd = fileAdder.AddLinkToDir(dirNode, name, linkNode);
         return nd.getCid();
@@ -122,7 +122,7 @@ public class Stream {
         BlockService blockservice = BlockService.createBlockService(bs, exchange);
         DagService dagService = DagService.createDagService(blockservice);
 
-        io.ipfs.format.Node dirNode = Resolver.ResolveNode(closeable, dagService, dir);
+        io.ipfs.format.Node dirNode = Resolver.resolveNode(closeable, dagService, dir);
         Objects.requireNonNull(dirNode);
         Node nd = fileAdder.RemoveChild(dirNode, name);
         return nd.getCid();
@@ -137,7 +137,7 @@ public class Stream {
         DagService dagService = DagService.createDagService(blockservice);
 
 
-        io.ipfs.format.Node node = Resolver.ResolveNode(closeable, dagService, cid);
+        io.ipfs.format.Node node = Resolver.resolveNode(closeable, dagService, cid);
         Objects.requireNonNull(node);
         Directory dir = Directory.createDirectoryFromNode(node);
 

@@ -28,7 +28,7 @@ public class Reader {
                                    @NonNull Interface exchange, @NonNull Cid cid) throws ClosedException {
         BlockService blockservice = BlockService.createBlockService(blockstore, exchange);
         DagService dags = DagService.createDagService(blockservice);
-        io.ipfs.format.Node top = Resolver.ResolveNode(closeable, dags, cid);
+        io.ipfs.format.Node top = Resolver.resolveNode(closeable, dags, cid);
         Objects.requireNonNull(top);
         DagReader dagReader = DagReader.create(top, dags);
 

@@ -33,12 +33,13 @@ public class Resolver {
         BlockStore bs = BlockStore.createBlockStore(storage);
         BlockService blockservice = BlockService.createBlockService(bs, exchange);
         DagService dags = DagService.createDagService(blockservice);
-        return Resolver.ResolveNode(closeable, dags, Path.create(path));
+        return Resolver.resolveNode(closeable, dags, Path.create(path));
     }
 
 
-    public static Cid ResolvePath(@NonNull Closeable ctx, @NonNull NodeGetter dag, @NonNull Path p) throws ClosedException {
-        Path ipa = new Path(p.getString());
+    public static Cid resolvePath(@NonNull Closeable ctx, @NonNull NodeGetter dag,
+                                  @NonNull Path path) throws ClosedException {
+        Path ipa = new Path(path.getString());
 
         List<String> paths = ipa.segments();
         String ident = paths.get(0);
@@ -46,29 +47,29 @@ public class Resolver {
             throw new RuntimeException("todo not resolved");
         }
 
-        Pair<Cid, List<String>> resolved = ResolveToLastNode(ctx, dag, ipa);
+        Pair<Cid, List<String>> resolved = resolveToLastNode(ctx, dag, ipa);
 
         return resolved.first;
 
     }
 
     @Nullable
-    public static Node ResolveNode(@NonNull Closeable closeable,
+    public static Node resolveNode(@NonNull Closeable closeable,
                                    @NonNull NodeGetter nodeGetter,
                                    @NonNull Path path) throws ClosedException {
-        Cid cid = ResolvePath(closeable, nodeGetter, path);
+        Cid cid = resolvePath(closeable, nodeGetter, path);
         Objects.requireNonNull(cid);
-        return ResolveNode(closeable, nodeGetter, cid);
+        return resolveNode(closeable, nodeGetter, cid);
     }
 
     @Nullable
-    public static Node ResolveNode(@NonNull Closeable closeable,
+    public static Node resolveNode(@NonNull Closeable closeable,
                                    @NonNull NodeGetter nodeGetter,
                                    @NonNull Cid cid) throws ClosedException {
         return nodeGetter.getNode(closeable, cid, true);
     }
 
-    public static Pair<Cid, List<String>> ResolveToLastNode(@NonNull Closeable ctx,
+    public static Pair<Cid, List<String>> resolveToLastNode(@NonNull Closeable closeable,
                                                             @NonNull NodeGetter dag,
                                                             @NonNull Path path) throws ClosedException {
         Pair<Cid, List<String>> result = Path.splitAbsPath(path);
@@ -79,12 +80,12 @@ public class Resolver {
             return Pair.create(c, Collections.emptyList());
         }
 
-        Node nd = dag.getNode(ctx, c, true);
-        Objects.requireNonNull(nd);
+        Node node = dag.getNode(closeable, c, true);
+        Objects.requireNonNull(node);
 
         while (p.size() > 0) {
 
-            Pair<Link, List<String>> resolveOnce = ResolveOnce(ctx, dag, nd, p);
+            Pair<Link, List<String>> resolveOnce = resolveOnce(closeable, dag, node, p);
             Link lnk = resolveOnce.first;
             List<String> rest = resolveOnce.second;
 
@@ -99,16 +100,16 @@ public class Resolver {
                 return Pair.create(lnk.getCid(), Collections.emptyList());
             }
 
-            nd = lnk.getNode(ctx, dag);
+            node = lnk.getNode(closeable, dag);
             p = rest;
         }
 
         if (p.size() == 0) {
-            return Pair.create(nd.getCid(), Collections.emptyList());
+            return Pair.create(node.getCid(), Collections.emptyList());
         }
 
         // Confirm the path exists within the object
-        Pair<Object, List<String>> success = nd.resolve(p);
+        Pair<Object, List<String>> success = node.resolve(p);
         List<String> rest = success.second;
         Object val = success.first;
 
@@ -119,11 +120,11 @@ public class Resolver {
             throw new RuntimeException("inconsistent ResolveOnce / nd.Resolve");
         }
 
-        return Pair.create(nd.getCid(), p);
+        return Pair.create(node.getCid(), p);
 
     }
 
-    private static Pair<Link, List<String>> ResolveOnce(@NonNull Closeable closeable,
+    private static Pair<Link, List<String>> resolveOnce(@NonNull Closeable closeable,
                                                         @NonNull NodeGetter nodeGetter,
                                                         @NonNull Node nd,
                                                         @NonNull List<String> names) {
