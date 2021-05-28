@@ -259,7 +259,6 @@ public class ContentManager {
                     return;
                 }
                 host.findProviders(closeable, priority::add, cid);
-            } catch (ClosedException ignore) {
             } catch (Throwable throwable) {
                 LogUtils.error(TAG, throwable.getMessage());
             } finally {

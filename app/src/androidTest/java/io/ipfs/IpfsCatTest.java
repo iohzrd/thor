@@ -46,11 +46,9 @@ public class IpfsCatTest {
         Cid cid = Cid.decode("Qmaisz6NMhDB51cCvNWa1GMS7LU1pAxdF4Ld6Ft9kZEP2a");
         long time = System.currentTimeMillis();
         ConcurrentSkipListSet<PeerId> provs = new ConcurrentSkipListSet<>();
-        try {
-            ipfs.findProviders(provs::add, cid, new TimeoutCloseable(45));
-        } catch (ClosedException ignore) {
-            // nothing to do
-        }
+
+        ipfs.findProviders(provs::add, cid, new TimeoutCloseable(45));
+
         assertFalse(provs.isEmpty());
 
         for (PeerId prov : provs) {

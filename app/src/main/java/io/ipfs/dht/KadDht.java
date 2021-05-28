@@ -26,7 +26,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import dht.pb.Dht;
@@ -156,7 +155,7 @@ public class KadDht implements Routing {
 
 
     private void getClosestPeers(@NonNull Closeable closeable, @NonNull byte[] key,
-                                 @NonNull Channel channel) throws ClosedException {
+                                 @NonNull Channel channel) {
         if (key.length == 0) {
             throw new RuntimeException("can't lookup empty key");
         }
@@ -172,7 +171,7 @@ public class KadDht implements Routing {
             }
 
             return peers;
-        }, closeable::isClosed);
+        }, closeable::isClosed, true);
 
 
     }
@@ -207,7 +206,6 @@ public class KadDht implements Routing {
                     service.execute(() -> putValueToPeer(ctx, addrInfo.getPeerId(), rec));
                 }
             });
-        } catch (ClosedException ignore) {
         } finally {
             LogUtils.verbose(TAG, "Finish putValue at " + (System.currentTimeMillis() - start));
         }
@@ -241,7 +239,7 @@ public class KadDht implements Routing {
 
     @Override
     public void findProviders(@NonNull Closeable closeable, @NonNull Providers providers,
-                              @NonNull Cid cid) throws ClosedException {
+                              @NonNull Cid cid) {
         if (!cid.isDefined()) {
             throw new RuntimeException("Cid invalid");
         }
@@ -296,7 +294,7 @@ public class KadDht implements Routing {
                 }
                 return evalClosestPeers(pms);
 
-            }, closeable::isClosed);
+            }, closeable::isClosed, false);
         } finally {
             LogUtils.debug(TAG, "Finished findProviders at " +
                     (System.currentTimeMillis() - start));
@@ -335,7 +333,7 @@ public class KadDht implements Routing {
     }
 
     @Override
-    public void provide(@NonNull Closeable closeable, @NonNull Cid cid) throws ClosedException {
+    public void provide(@NonNull Closeable closeable, @NonNull Cid cid) {
 
         if (!cid.isDefined()) {
             throw new RuntimeException("invalid cid: undefined");
@@ -584,7 +582,7 @@ public class KadDht implements Routing {
                 }
                 return peers;
 
-            }, closeable::isClosed);
+            }, closeable::isClosed, false);
         } catch (Throwable ignore) {
         } finally {
             LogUtils.verbose(TAG, "Finish findPeer at " + (System.currentTimeMillis() - start));
@@ -592,8 +590,7 @@ public class KadDht implements Routing {
     }
 
     private Map<PeerId, PeerState> runQuery(@NonNull Closeable ctx, @NonNull byte[] target,
-                                            @NonNull QueryFunc queryFn, @NonNull StopFunc stopFn)
-            throws ClosedException {
+                                            @NonNull QueryFunc queryFn, @NonNull StopFunc stopFn) {
         // pick the K closest peers to the key in our Routing table.
         ID targetKadID = ID.convertKey(target);
         List<PeerId> seedPeers = routingTable.NearestPeers(targetKadID, bucketSize);
@@ -605,7 +602,7 @@ public class KadDht implements Routing {
 
         try {
             q.run(ctx);
-        } catch (InterruptedException interruptedException) {
+        } catch (InterruptedException | ClosedException interruptedException) {
             return Collections.emptyMap();
         }
 
@@ -620,8 +617,8 @@ public class KadDht implements Routing {
     // After the lookup is complete the query function is run (unless stopped) against all of the top K peers from the
     // lookup that have not already been successfully queried.
     private void runLookupWithFollowup(@NonNull Closeable closeable, @NonNull byte[] target,
-                                       @NonNull QueryFunc queryFn, @NonNull StopFunc stopFn)
-            throws ClosedException {
+                                       @NonNull QueryFunc queryFn, @NonNull StopFunc stopFn,
+                                       boolean runFollowUp) {
 
 
         Map<PeerId, PeerState> lookupRes = runQuery(closeable, target, queryFn, stopFn);
@@ -648,7 +645,7 @@ public class KadDht implements Routing {
             return;
         }
 
-        if(IPFS.DHT_RUN_FOLLOWUP) {
+        if (runFollowUp) {
             List<Future<Void>> futures = new ArrayList<>();
             ExecutorService executor = Executors.newFixedThreadPool(4);
             for (PeerId peerId : queryPeers) {
@@ -713,7 +710,7 @@ public class KadDht implements Routing {
     }
 
     private void getValues(@NonNull Closeable ctx, @NonNull RecordValueFunc recordFunc,
-                           @NonNull byte[] key, @NonNull StopFunc stopQuery) throws ClosedException {
+                           @NonNull byte[] key, @NonNull StopFunc stopQuery, boolean runFollowUp) {
 
 
         runLookupWithFollowup(ctx, key, (ctx1, p) -> {
@@ -727,7 +724,7 @@ public class KadDht implements Routing {
             }
 
             return peers;
-        }, stopQuery);
+        }, stopQuery, runFollowUp);
 
     }
 
@@ -752,19 +749,24 @@ public class KadDht implements Routing {
 
 
     @Override
-    public void searchValue(@NonNull Closeable ctx, @NonNull ResolveInfo resolveInfo,
-                            @NonNull byte[] key, final int quorum) throws ClosedException {
+    public void searchValue(@NonNull Closeable closeable, @NonNull ResolveInfo resolveInfo,
+                            @NonNull byte[] key) {
 
-        AtomicInteger numResponses = new AtomicInteger(0);
+
         AtomicReference<Ipns.Entry> best = new AtomicReference<>();
-        getValues(ctx, entry -> processValues(ctx, best.get(), entry, (ctx1, v, better) -> {
-            numResponses.incrementAndGet();
-            if (better) {
-                resolveInfo.resolved(v);
-                best.set(v);
-            }
-        }), key, () -> numResponses.get() == quorum);
-
+        long start = System.currentTimeMillis();
+        try {
+            getValues(closeable, entry -> processValues(closeable, best.get(),
+                    entry, (ctx1, v, better) -> {
+                        if (better) {
+                            resolveInfo.resolved(v);
+                            best.set(v);
+                        }
+                    }), key, closeable::isClosed, true);
+        } catch (Throwable ignore) {
+        } finally {
+            LogUtils.verbose(TAG, "Finish searchValue at " + (System.currentTimeMillis() - start));
+        }
     }
 
     public interface StopFunc {

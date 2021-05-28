@@ -52,11 +52,9 @@ public class IpfsResolveTest {
         int random = (int) Math.abs(Math.random());
 
         long start = System.currentTimeMillis();
-        try {
-            ipfs.publishName(cid, random, new TimeoutCloseable(30));
-        } catch (ClosedException ignore) {
-            // ignore
-        }
+
+        ipfs.publishName(cid, random, new TimeoutCloseable(30));
+
         LogUtils.debug(TAG, "Time publish name " + (System.currentTimeMillis() - start));
 
         String key = ipfs.getBase32PeerId();

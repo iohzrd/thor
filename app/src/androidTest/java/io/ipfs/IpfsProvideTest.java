@@ -15,7 +15,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.LogUtils;
 import io.ipfs.cid.Cid;
-import io.ipfs.core.ClosedException;
 import io.ipfs.core.TimeoutCloseable;
 
 import static junit.framework.TestCase.assertNotNull;
@@ -42,18 +41,16 @@ public class IpfsProvideTest {
         assertNotNull(cid);
 
         long start = System.currentTimeMillis();
-        try {
-            ipfs.provide(cid, new TimeoutCloseable(30));
-        } catch (ClosedException ignore) {
-        }
+
+        ipfs.provide(cid, new TimeoutCloseable(30));
+
         LogUtils.debug(TAG, "Time provide " + (System.currentTimeMillis() - start));
 
         long time = System.currentTimeMillis();
         AtomicBoolean finished = new AtomicBoolean(false);
-        try {
-            ipfs.findProviders(peerId -> finished.set(true), cid, new TimeoutCloseable(30));
-        } catch (ClosedException ignore) {
-        }
+
+        ipfs.findProviders(peerId -> finished.set(true), cid, new TimeoutCloseable(30));
+
         LogUtils.debug(TAG, "Time Providers : " + (System.currentTimeMillis() - time) + " [ms]");
         assertTrue(finished.get());
     }

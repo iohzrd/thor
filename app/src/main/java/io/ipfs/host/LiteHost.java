@@ -319,7 +319,7 @@ public class LiteHost implements BitSwapReceiver {
     }
 
     public void findProviders(@NonNull Closeable closeable, @NonNull Routing.Providers providers,
-                              @NonNull Cid cid) throws ClosedException {
+                              @NonNull Cid cid) {
         routing.findProviders(closeable, providers, cid);
     }
 
@@ -460,7 +460,7 @@ public class LiteHost implements BitSwapReceiver {
     public void PublishName(@NonNull Closeable closable,
                             @NonNull PrivKey privKey,
                             @NonNull String path,
-                            @NonNull PeerId id, int sequence) throws ClosedException {
+                            @NonNull PeerId id, int sequence) {
 
 
         Date eol = Date.from(new Date().toInstant().plus(DefaultRecordEOL));

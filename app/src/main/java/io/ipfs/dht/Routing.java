@@ -4,7 +4,6 @@ import androidx.annotation.NonNull;
 
 import io.ipfs.cid.Cid;
 import io.ipfs.core.Closeable;
-import io.ipfs.core.ClosedException;
 import io.ipfs.host.PeerId;
 import io.ipfs.ipns.Ipns;
 
@@ -16,13 +15,12 @@ public interface Routing {
 
 
     void searchValue(@NonNull Closeable closeable, @NonNull ResolveInfo resolveInfo,
-                     @NonNull byte[] key, int quorum) throws ClosedException;
+                     @NonNull byte[] key);
 
 
-    void findProviders(@NonNull Closeable closeable, @NonNull Providers providers,
-                       @NonNull Cid cid) throws ClosedException;
+    void findProviders(@NonNull Closeable closeable, @NonNull Providers providers, @NonNull Cid cid);
 
-    void provide(@NonNull Closeable closeable, @NonNull Cid cid) throws ClosedException;
+    void provide(@NonNull Closeable closeable, @NonNull Cid cid);
 
 
     void bootstrap();

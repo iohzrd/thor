@@ -153,7 +153,7 @@ public class IPFS {
     public static final int CONNECT_TIMEOUT = 3;
     public static final int BITSWAP_LOAD_PROVIDERS_REFRESH = 10000;
     public static final long DHT_REQUEST_READ_TIMEOUT = 5;
-    public static final boolean DHT_RUN_FOLLOWUP = false;
+
     private static final String SWARM_PORT_KEY = "swarmPortKey";
     private static final String PRIVATE_KEY = "privateKey";
     private static final String PUBLIC_KEY = "publicKey";
@@ -496,11 +496,9 @@ public class IPFS {
         return reachable;
     }
 
-    public void provide(@NonNull Cid cid, @NonNull Closeable closable) throws ClosedException {
+    public void provide(@NonNull Cid cid, @NonNull Closeable closable) {
         try {
             host.getRouting().provide(closable, cid);
-        } catch (ClosedException closedException) {
-            throw closedException;
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         }
@@ -823,13 +821,10 @@ public class IPFS {
     }
 
 
-    public void publishName(@NonNull Cid cid, int sequence, @NonNull Closeable closeable)
-            throws ClosedException {
+    public void publishName(@NonNull Cid cid, int sequence, @NonNull Closeable closeable) {
 
         try {
             host.PublishName(closeable, privateKey, IPFS_PATH + cid.String(), getPeerID(), sequence);
-        } catch (ClosedException closedException) {
-            throw closedException;
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         }
@@ -842,11 +837,9 @@ public class IPFS {
 
     public void findProviders(@NonNull Routing.Providers providers,
                               @NonNull Cid cid,
-                              @NonNull Closeable closeable) throws ClosedException {
+                              @NonNull Closeable closeable) {
         try {
             host.findProviders(closeable, providers, cid);
-        } catch (ClosedException closedException) {
-            throw closedException;
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         }
@@ -1053,12 +1046,10 @@ public class IPFS {
                             LogUtils.error(TAG, "invalid value " + value);
                         }
 
-                    }, ipnsKey, 8);
+                    }, ipnsKey);
 
-        } catch (ClosedException ignore) {
-            // ignore exception here
-        } catch (Throwable e) {
-            LogUtils.error(TAG, e);
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable);
         }
 
 

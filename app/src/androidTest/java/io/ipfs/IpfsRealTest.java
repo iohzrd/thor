@@ -54,14 +54,13 @@ public class IpfsRealTest {
 
         AtomicBoolean atomicBoolean = new AtomicBoolean(false);
 
-        try {
-            ipfs.findProviders(addrInfo -> {
+
+        ipfs.findProviders(addrInfo -> {
                 LogUtils.debug(TAG, addrInfo.toString());
                 atomicBoolean.set(true);
             }, Cid.decode(res.getHash()), new TimeoutCloseable(30));
 
-        } catch (ClosedException ignore) {
-        }
+
         assertTrue(atomicBoolean.get());
     }
 
@@ -131,10 +130,9 @@ public class IpfsRealTest {
         assertNotNull(res);
 
         ConcurrentSkipListSet<PeerId> peers = new ConcurrentSkipListSet<>();
-        try {
-            ipfs.findProviders(peers::add, Cid.decode(res.getHash()), new TimeoutCloseable(30));
-        } catch (ClosedException ignore) {
-        }
+
+        ipfs.findProviders(peers::add, Cid.decode(res.getHash()), new TimeoutCloseable(30));
+
 
         assertFalse(peers.isEmpty());
 
