@@ -296,7 +296,7 @@ public class KadDht implements Routing {
 
             }, closeable::isClosed, false);
         } finally {
-            LogUtils.debug(TAG, "Finished findProviders at " +
+            LogUtils.debug(TAG, "Finish findProviders at " +
                     (System.currentTimeMillis() - start));
         }
     }
@@ -415,16 +415,16 @@ public class KadDht implements Routing {
             CompletableFuture<Dht.Message> request = request(quicChannel,
                     message, IPFS.PRIORITY_NORMAL);
 
-                /*
-                while (!request.isDone()) {
-                    if (closeable.isClosed()) {
-                        request.cancel(true);
-                    }
-                }
-
+            /*
+            while (!request.isDone()) {
                 if (closeable.isClosed()) {
-                    throw new ClosedException();
-                }*/
+                    request.cancel(true);
+                }
+            }
+
+            if (closeable.isClosed()) {
+                throw new ClosedException();
+            }*/
 
             Dht.Message msg = request.get(IPFS.DHT_REQUEST_READ_TIMEOUT, TimeUnit.SECONDS);
             Objects.requireNonNull(msg);
@@ -583,7 +583,6 @@ public class KadDht implements Routing {
                 return peers;
 
             }, closeable::isClosed, false);
-        } catch (Throwable ignore) {
         } finally {
             LogUtils.verbose(TAG, "Finish findPeer at " + (System.currentTimeMillis() - start));
         }
@@ -710,7 +709,7 @@ public class KadDht implements Routing {
     }
 
     private void getValues(@NonNull Closeable ctx, @NonNull RecordValueFunc recordFunc,
-                           @NonNull byte[] key, @NonNull StopFunc stopQuery, boolean runFollowUp) {
+                           @NonNull byte[] key, @NonNull StopFunc stopQuery) {
 
 
         runLookupWithFollowup(ctx, key, (ctx1, p) -> {
@@ -724,7 +723,7 @@ public class KadDht implements Routing {
             }
 
             return peers;
-        }, stopQuery, runFollowUp);
+        }, stopQuery, true);
 
     }
 
@@ -762,8 +761,7 @@ public class KadDht implements Routing {
                             resolveInfo.resolved(v);
                             best.set(v);
                         }
-                    }), key, closeable::isClosed, true);
-        } catch (Throwable ignore) {
+                    }), key, closeable::isClosed);
         } finally {
             LogUtils.verbose(TAG, "Finish searchValue at " + (System.currentTimeMillis() - start));
         }
