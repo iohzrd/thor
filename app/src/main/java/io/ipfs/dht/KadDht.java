@@ -648,6 +648,7 @@ public class KadDht implements Routing {
             return;
         }
 
+
         List<Future<Void>> futures = new ArrayList<>();
         ExecutorService executor = Executors.newFixedThreadPool(4);
         for (PeerId peerId : queryPeers) {

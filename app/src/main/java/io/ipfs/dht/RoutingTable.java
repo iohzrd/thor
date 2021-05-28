@@ -97,19 +97,20 @@ public class RoutingTable {
         return Util.CommonPrefixLen(id, local);
     }
 
-    private synchronized Bucket getBucket(int cpl) {
-        Bucket bucket = buckets.get(cpl);
-        if (bucket != null) {
+    private Bucket getBucket(int cpl) {
+        synchronized (TAG.intern()) {
+            Bucket bucket = buckets.get(cpl);
+            if (bucket != null) {
+                return bucket;
+            }
+            bucket = new Bucket();
+            buckets.put(cpl, bucket);
             return bucket;
         }
-        bucket = new Bucket();
-        buckets.put(cpl, bucket);
-        return bucket;
     }
 
     public void addPeer(@NonNull PeerId p, boolean isReplaceable) {
 
-        //synchronized (p.toBase58().intern()) {
         try {
             int bucketID = bucketIdForPeer(p);
             Bucket bucket = getBucket(bucketID);
@@ -143,9 +144,6 @@ public class RoutingTable {
         } finally {
             LogUtils.verbose(TAG, buckets.toString());
         }
-
-        //}
-
     }
 
     boolean removePeer(@NonNull PeerId p) {
