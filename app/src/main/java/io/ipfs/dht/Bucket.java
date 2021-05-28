@@ -82,7 +82,7 @@ public class Bucket {
 
 
     @NonNull
-    public Collection<PeerInfo> elements() {
+    public Collection<PeerInfo> values() {
         return peers.values();
     }
 

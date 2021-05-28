@@ -30,7 +30,7 @@ public class PeerDistanceSorter extends ArrayList<PeerDistanceSorter.PeerDistanc
     }
 
     public void appendPeersFromList(@NonNull Bucket bucket) {
-        for (Bucket.PeerInfo peerInfo : bucket.elements()) {
+        for (Bucket.PeerInfo peerInfo : bucket.values()) {
             appendPeer(peerInfo.getPeerId(), peerInfo.getID());
         }
     }
