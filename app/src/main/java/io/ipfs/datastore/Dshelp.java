@@ -15,7 +15,7 @@ public class Dshelp {
     }
 
     public static Key cidToDsKey(@NonNull Cid cid) {
-        return newKeyFromBinary(cid.Bytes());
+        return newKeyFromBinary(cid.bytes());
     }
 
 }

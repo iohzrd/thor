@@ -2,10 +2,10 @@ package io.ipfs.cid;
 
 public interface Builder {
 
-    Cid Sum(byte[] data);
+    Cid sum(byte[] data);
 
-    long GetCodec();
+    long getCodec();
 
-    Builder WithCodec(long codec);
+    Builder withCodec(long codec);
 
 }

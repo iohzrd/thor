@@ -25,7 +25,7 @@ import static junit.framework.TestCase.assertNotNull;
 @SuppressWarnings("SpellCheckingInspection")
 @RunWith(AndroidJUnit4.class)
 public class IpfsSelfSigned {
-    private static final String TAG = IpfsTest.class.getSimpleName();
+    private static final String TAG = IpfsSelfSigned.class.getSimpleName();
     private static Context context;
 
     @BeforeClass
@@ -37,17 +37,15 @@ public class IpfsSelfSigned {
     public void test_certificate() throws Exception {
 
 
-        LogUtils.error(TAG, LiteHostCertificate.integersToString(LiteHostCertificate.extensionID));
+        LogUtils.debug(TAG, LiteHostCertificate.integersToString(LiteHostCertificate.extensionID));
 
         ASN1ObjectIdentifier ident = new ASN1ObjectIdentifier(
                 LiteHostCertificate.integersToString(LiteHostCertificate.extensionID));
 
         assertNotNull(ident);
 
-        // IPFS ipfs = TestEnv.getTestInstance(context);
-
-        //X509Certificate cert = ipfs.getSelfSignedCertificate().cert();
-
+        IPFS ipfs = TestEnv.getTestInstance(context);
+        assertNotNull(ipfs);
 
         String algorithm = "RSA";
         final KeyPair keypair;

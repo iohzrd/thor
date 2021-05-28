@@ -109,12 +109,10 @@ public class RoutingTable {
 
     public void addPeer(@NonNull PeerId p, boolean isReplaceable) {
 
-        synchronized (p.toBase58().intern()) {
-
-            LogUtils.verbose(TAG, buckets.toString());
+        //synchronized (p.toBase58().intern()) {
+        try {
             int bucketID = bucketIdForPeer(p);
             Bucket bucket = getBucket(bucketID);
-
 
             // peer already exists in the Routing Table.
             Bucket.PeerInfo peer = bucket.getPeer(p);
@@ -140,13 +138,13 @@ public class RoutingTable {
                 // let's evict it and add the new peer
                 if (removePeer(replaceablePeer)) {
                     bucket.addPeer(p, isReplaceable);
-                    return;
                 }
             }
-
-            LogUtils.info(TAG, "Buckets Size :" + buckets.size());
-            LogUtils.info(TAG, "Total Size : " + size());
+        } finally {
+            LogUtils.verbose(TAG, buckets.toString());
         }
+
+        //}
 
     }
 

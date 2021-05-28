@@ -12,7 +12,7 @@ public class Decoder {
             return (Node) block;
         }
 
-        long type = block.getCid().Type();
+        long type = block.getCid().getType();
 
         if (type == Cid.DagProtobuf) {
             return DecodeProtobufBlock(block);
@@ -27,7 +27,7 @@ public class Decoder {
 
 
     public static Node DecodeRawBlock(@NonNull Block block) {
-        if (block.getCid().Type() != Cid.Raw) {
+        if (block.getCid().getType() != Cid.Raw) {
             throw new RuntimeException("raw nodes cannot be decoded from non-raw blocks");
         }
         return new RawNode(block);
@@ -35,7 +35,7 @@ public class Decoder {
 
     public static Node DecodeProtobufBlock(@NonNull Block b) {
         Cid c = b.getCid();
-        if (c.Type() != Cid.DagProtobuf) {
+        if (c.getType() != Cid.DagProtobuf) {
             throw new RuntimeException("this function can only decode protobuf nodes");
         }
 

@@ -20,10 +20,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -242,11 +242,11 @@ public class KadDht implements Routing {
     @Override
     public void findProviders(@NonNull Closeable closeable, @NonNull Providers providers,
                               @NonNull Cid cid) throws ClosedException {
-        if (!cid.Defined()) {
+        if (!cid.isDefined()) {
             throw new RuntimeException("Cid invalid");
         }
 
-        byte[] key = cid.Hash();
+        byte[] key = cid.getHash();
 
         long start = System.currentTimeMillis();
 
@@ -337,11 +337,11 @@ public class KadDht implements Routing {
     @Override
     public void provide(@NonNull Closeable closeable, @NonNull Cid cid) throws ClosedException {
 
-        if (!cid.Defined()) {
+        if (!cid.isDefined()) {
             throw new RuntimeException("invalid cid: undefined");
         }
 
-        byte[] key = cid.Hash();
+        byte[] key = cid.getHash();
 
         final Dht.Message mes = makeProvRecord(key);
 
@@ -591,19 +591,23 @@ public class KadDht implements Routing {
         }
     }
 
-    private ConcurrentHashMap<PeerId, PeerState> runQuery(@NonNull Closeable ctx, @NonNull byte[] target,
-                                                          @NonNull QueryFunc queryFn, @NonNull StopFunc stopFn)
-            throws ClosedException, InterruptedException {
+    private Map<PeerId, PeerState> runQuery(@NonNull Closeable ctx, @NonNull byte[] target,
+                                            @NonNull QueryFunc queryFn, @NonNull StopFunc stopFn)
+            throws ClosedException {
         // pick the K closest peers to the key in our Routing table.
         ID targetKadID = ID.convertKey(target);
         List<PeerId> seedPeers = routingTable.NearestPeers(targetKadID, bucketSize);
         if (seedPeers.size() == 0) {
-            throw new ClosedException();
+            return Collections.emptyMap();
         }
 
         Query q = new Query(this, target, seedPeers, queryFn, stopFn);
 
-        q.run(ctx);
+        try {
+            q.run(ctx);
+        } catch (InterruptedException interruptedException) {
+            return Collections.emptyMap();
+        }
 
         return q.constructLookupResult(targetKadID);
     }
@@ -615,62 +619,63 @@ public class KadDht implements Routing {
     //
     // After the lookup is complete the query function is run (unless stopped) against all of the top K peers from the
     // lookup that have not already been successfully queried.
-    private void runLookupWithFollowup(@NonNull Closeable ctx, @NonNull byte[] target,
+    private void runLookupWithFollowup(@NonNull Closeable closeable, @NonNull byte[] target,
                                        @NonNull QueryFunc queryFn, @NonNull StopFunc stopFn)
             throws ClosedException {
 
-        try {
 
-            if (ctx.isClosed()) {
-                return;
+        Map<PeerId, PeerState> lookupRes = runQuery(closeable, target, queryFn, stopFn);
+
+
+        // query all of the top K peers we've either Heard about or have outstanding queries we're Waiting on.
+        // This ensures that all of the top K results have been queried which adds to resiliency against churn for query
+        // functions that carry state (e.g. FindProviders and GetValue) as well as establish connections that are needed
+        // by stateless query functions (e.g. GetClosestPeers and therefore Provide and PutValue)
+
+        List<PeerId> queryPeers = new ArrayList<>();
+        for (Map.Entry<PeerId, PeerState> entry : lookupRes.entrySet()) {
+            PeerState state = entry.getValue();
+            if (state == PeerState.PeerHeard || state == PeerState.PeerWaiting) {
+                queryPeers.add(entry.getKey());
             }
-
-            ConcurrentHashMap<PeerId, PeerState> lookupRes = runQuery(ctx, target, queryFn, stopFn);
-
-
-            // query all of the top K peers we've either Heard about or have outstanding queries we're Waiting on.
-            // This ensures that all of the top K results have been queried which adds to resiliency against churn for query
-            // functions that carry state (e.g. FindProviders and GetValue) as well as establish connections that are needed
-            // by stateless query functions (e.g. GetClosestPeers and therefore Provide and PutValue)
-
-            List<PeerId> queryPeers = new ArrayList<>();
-            for (Map.Entry<PeerId, PeerState> entry : lookupRes.entrySet()) {
-                PeerState state = entry.getValue();
-                if (state == PeerState.PeerHeard || state == PeerState.PeerWaiting) {
-                    queryPeers.add(entry.getKey());
-                }
-            }
-
-            if (queryPeers.size() == 0) {
-                return;
-            }
-
-            if (stopFn.stop()) {
-                return;
-            }
-
-            // TODO still check if necessary (maybe wait)
-            ExecutorService executor = Executors.newFixedThreadPool(4);
-            for (PeerId p : queryPeers) {
-
-                executor.execute(() -> {
-                    if (ctx.isClosed()) {
-                        return;
-                    }
-
-                    try {
-                        queryFn.query(ctx, p);
-                    } catch (Throwable ignore) {
-                        // ignore
-                    }
-
-                });
-            }
-
-        } catch (InterruptedException ignore) {
-            throw new ClosedException();
         }
 
+        if (queryPeers.size() == 0) {
+            return;
+        }
+
+        if (stopFn.stop()) {
+            return;
+        }
+
+        List<Future<Void>> futures = new ArrayList<>();
+        ExecutorService executor = Executors.newFixedThreadPool(4);
+        for (PeerId peerId : queryPeers) {
+            Future<Void> future = executor.submit(() -> invokeQuery(closeable, queryFn, peerId));
+            futures.add(future);
+        }
+        for (Future<Void> future : futures) {
+            try {
+                future.get();
+            } catch (Throwable ignore) {
+                // ignore
+            }
+        }
+    }
+
+    private Void invokeQuery(@NonNull Closeable closeable,
+                             @NonNull QueryFunc queryFn,
+                             @NonNull PeerId peerId) {
+        if (closeable.isClosed()) {
+            return null;
+        }
+
+        try {
+            queryFn.query(closeable, peerId);
+        } catch (Throwable ignore) {
+            // ignore
+        }
+        return null;
     }
 
 

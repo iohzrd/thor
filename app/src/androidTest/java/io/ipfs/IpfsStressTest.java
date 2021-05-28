@@ -40,7 +40,7 @@ public class IpfsStressTest {
         IPFS ipfs = TestEnv.getTestInstance(context);
 
 
-        byte[] data = ipfs.getData(Cid.Decode("QmcniBv7UQ4gGPQQW2BwbD4ZZHzN3o3tPuNLZCbBchd1zh"),
+        byte[] data = ipfs.getData(Cid.decode("QmcniBv7UQ4gGPQQW2BwbD4ZZHzN3o3tPuNLZCbBchd1zh"),
                 new TimeoutProgress(360) {
                     @Override
                     public void setProgress(int progress) {

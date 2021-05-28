@@ -39,8 +39,8 @@ public class RawNode implements Node {
 
     public static Node NewRawNodeWPrefix(byte[] data, Builder builder) {
 
-        builder = builder.WithCodec(Cid.Raw);
-        Cid cid = builder.Sum(data);
+        builder = builder.withCodec(Cid.Raw);
+        Cid cid = builder.sum(data);
 
         Block blk = BasicBlock.createBlockWithCid(cid, data);
 

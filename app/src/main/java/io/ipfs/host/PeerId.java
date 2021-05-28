@@ -77,12 +77,12 @@ public class PeerId implements Comparable<PeerId> {
 
         byte[] pubKeyBytes = Key.marshalPublicKey(pubKey);
         if (pubKeyBytes.length <= 42) {
-            byte[] hash = Cid.Encode(pubKeyBytes, io.ipfs.multihash.Multihash.Type.id.index);
+            byte[] hash = Cid.encode(pubKeyBytes, io.ipfs.multihash.Multihash.Type.id.index);
             return PeerId.fromBase58(Base58.encode(hash));
         } else {
             try {
                 MessageDigest digest = MessageDigest.getInstance("SHA-256");
-                byte[] hash = Cid.Encode(digest.digest(pubKeyBytes),
+                byte[] hash = Cid.encode(digest.digest(pubKeyBytes),
                         io.ipfs.multihash.Multihash.Type.sha2_256.index);
                 return PeerId.fromBase58(Base58.encode(hash));
             } catch (Throwable throwable) {

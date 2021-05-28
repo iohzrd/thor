@@ -26,7 +26,7 @@ public class RefWriter {
         this.maxDepth = maxDepth;
     }
 
-    public void EvalRefs(@NonNull Node top) {
+    public void evalRefs(@NonNull Node top) {
         evalRefsRecursive(top, 0);
     }
 

@@ -245,7 +245,7 @@ public class FileDocumentsProvider extends DocumentsProvider {
                 if (signal != null) {
                     closeable = signal::isCanceled;
                 }
-                final Reader reader = ipfs.getReader(Cid.Decode(documentId), closeable);
+                final Reader reader = ipfs.getReader(Cid.decode(documentId), closeable);
                 Handler handler = new Handler(getContext().getMainLooper());
 
                 return mStorageManager.openProxyFileDescriptor(

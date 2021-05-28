@@ -28,7 +28,7 @@ public class Path {
             throw new RuntimeException("path is empty");
         }
 
-        Cid c = Cid.Decode(txt);
+        Cid c = Cid.decode(txt);
 
         return fromCid(c);
     }
@@ -95,7 +95,7 @@ public class Path {
 
 
     public static Cid decodeCid(@NonNull String cstr) {
-        Cid c = Cid.Decode(cstr);
+        Cid c = Cid.decode(cstr);
 
         if (cstr.length() == 46 && cstr.startsWith("qm")) { // https://github.com/ipfs/go-ipfs/issues/7792
             throw new RuntimeException("(possible lowercased CIDv0; consider converting to a case-agnostic CIDv1, such as base32)");

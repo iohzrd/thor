@@ -86,7 +86,7 @@ public class Adder {
 
             @Override
             public boolean Done() {
-                return reader.Done();
+                return reader.done();
             }
         };
 

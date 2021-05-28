@@ -38,7 +38,7 @@ public class ProtoNode implements Node {
         if (builder == null) {
             this.builder = v0CidPrefix;
         } else {
-            this.builder = builder.WithCodec(Cid.DagProtobuf);
+            this.builder = builder.withCodec(Cid.DagProtobuf);
             this.cached = Cid.Undef();
         }
     }
@@ -106,15 +106,15 @@ public class ProtoNode implements Node {
 
     @Override
     public Cid getCid() {
-        if (encoded != null && cached.Defined()) {
+        if (encoded != null && cached.isDefined()) {
             return cached;
         }
         byte[] data = getRawData();
 
-        if (encoded != null && cached.Defined()) {
+        if (encoded != null && cached.isDefined()) {
             return cached;
         }
-        cached = getCidBuilder().Sum(data);
+        cached = getCidBuilder().sum(data);
         return cached;
     }
 
@@ -144,8 +144,8 @@ public class ProtoNode implements Node {
                 Merkledag.PBLink.Builder lnb = Merkledag.PBLink.newBuilder().setName(link.getName())
                         .setTsize(link.getSize());
 
-                if (link.getCid().Defined()) {
-                    ByteString hash = ByteString.copyFrom(link.getCid().Bytes());
+                if (link.getCid().isDefined()) {
+                    ByteString hash = ByteString.copyFrom(link.getCid().bytes());
                     lnb.setHash(hash);
                 }
 
@@ -167,8 +167,8 @@ public class ProtoNode implements Node {
             encoded = marshal();
         }
 
-        if (!cached.Defined()) {
-            cached = getCidBuilder().Sum(encoded);
+        if (!cached.isDefined()) {
+            cached = getCidBuilder().sum(encoded);
         }
 
         return encoded;

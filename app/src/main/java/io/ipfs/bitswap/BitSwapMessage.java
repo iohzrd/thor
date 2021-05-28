@@ -24,7 +24,7 @@ public interface BitSwapMessage {
 
     static int BlockPresenceSize(@NonNull Cid c) {
         return MessageOuterClass.Message.BlockPresence.newBuilder()
-                .setCid(ByteString.copyFrom(c.Bytes()))
+                .setCid(ByteString.copyFrom(c.bytes()))
                 .setType(MessageOuterClass.Message.BlockPresenceType.Have).build().getSerializedSize();
     }
 
@@ -37,7 +37,7 @@ public interface BitSwapMessage {
         for (MessageOuterClass.Message.Wantlist.Entry e :
                 pbm.getWantlist().getEntriesList()) {
             Cid cid = new Cid(e.getBlock().toByteArray());
-            if (!cid.Defined()) {
+            if (!cid.isDefined()) {
                 throw new RuntimeException("errCidMissing");
             }
             m.addEntry(cid, e.getPriority(), e.getCancel(), e.getWantType(), e.getSendDontHave());
@@ -50,15 +50,15 @@ public interface BitSwapMessage {
         }
         for (MessageOuterClass.Message.Block b : pbm.getPayloadList()) {
             ByteString prefix = b.getPrefix();
-            Prefix pref = Prefix.PrefixFromBytes(prefix.toByteArray());
-            Cid cid = pref.Sum(b.getData().toByteArray());
+            Prefix pref = Prefix.getPrefixFromBytes(prefix.toByteArray());
+            Cid cid = pref.sum(b.getData().toByteArray());
             Block block = BasicBlock.createBlockWithCid(cid, b.getData().toByteArray());
             m.AddBlock(block);
         }
 
         for (MessageOuterClass.Message.BlockPresence bi : pbm.getBlockPresencesList()) {
             Cid cid = new Cid(bi.getCid().toByteArray());
-            if (!cid.Defined()) {
+            if (!cid.isDefined()) {
                 throw new RuntimeException("errCidMissing");
             }
             m.AddBlockPresence(cid, bi.getType());
@@ -164,7 +164,7 @@ public interface BitSwapMessage {
 
             // TODO check if Cid is correct
             return MessageOuterClass.Message.Wantlist.Entry.newBuilder().setBlock(
-                    ByteString.copyFrom(Cid.Bytes())
+                    ByteString.copyFrom(Cid.bytes())
             ).setPriority(Priority).
                     setCancel(Cancel).
                     setWantType(WantType).
@@ -307,7 +307,7 @@ public interface BitSwapMessage {
 
         private int BlockPresenceSize(@NonNull Cid c) {
             return MessageOuterClass.Message.BlockPresence
-                    .newBuilder().setCid(ByteString.copyFrom(c.Bytes()))
+                    .newBuilder().setCid(ByteString.copyFrom(c.bytes()))
                     .setType(MessageOuterClass.Message.BlockPresenceType.Have)
                     .build().getSerializedSize();
         }
@@ -382,7 +382,7 @@ public interface BitSwapMessage {
             for (Block block : Blocks()) {
                 builder.addPayload(MessageOuterClass.Message.Block.newBuilder()
                         .setData(ByteString.copyFrom(block.getRawData()))
-                        .setPrefix(ByteString.copyFrom(block.getCid().Prefix().Bytes())).build());
+                        .setPrefix(ByteString.copyFrom(block.getCid().getPrefix().bytes())).build());
             }
 
 
@@ -390,7 +390,7 @@ public interface BitSwapMessage {
                     blockPresences.entrySet()) {
                 builder.addBlockPresences(MessageOuterClass.Message.BlockPresence.newBuilder()
                         .setType(mapEntry.getValue())
-                        .setCid(ByteString.copyFrom(mapEntry.getKey().Bytes())));
+                        .setCid(ByteString.copyFrom(mapEntry.getKey().bytes())));
             }
 
             builder.setPendingBytes(PendingBytes());

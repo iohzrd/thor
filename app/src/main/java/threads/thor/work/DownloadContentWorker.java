@@ -338,7 +338,7 @@ public class DownloadContentWorker extends Worker {
 
         for (Link link : links) {
             if (!isStopped()) {
-                Cid cid = Cid.Decode(link.getContent());
+                Cid cid = Cid.decode(link.getContent());
                 if (ipfs.isDir(cid, this::isStopped)) {
                     DocumentFile dir = doc.createDirectory(link.getName());
                     Objects.requireNonNull(dir);

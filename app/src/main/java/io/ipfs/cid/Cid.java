@@ -55,7 +55,7 @@ public class Cid implements Comparable<Cid> {
         }
     }
 
-    public static Cid Decode(@NonNull String v) {
+    public static Cid decode(@NonNull String v) {
         if (v.length() < 2) {
             throw new RuntimeException("invalid cid");
         }
@@ -101,7 +101,7 @@ public class Cid implements Comparable<Cid> {
         }
     }
 
-    public static byte[] Encode(byte[] buf, long code) {
+    public static byte[] encode(byte[] buf, long code) {
 
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             Multihash.putUvarint(out, code);
@@ -127,7 +127,7 @@ public class Cid implements Comparable<Cid> {
     }
 
     public String String() {
-        switch (Version()) {
+        switch (getVersion()) {
             case 0:
                 try {
                     return Multihash.deserialize(multihash).toBase58();
@@ -141,7 +141,7 @@ public class Cid implements Comparable<Cid> {
         }
     }
 
-    public int Version() {
+    public int getVersion() {
         byte[] bytes = multihash;
         if (bytes.length == 34 && bytes[0] == 18 && bytes[1] == 32) {
             return 0;
@@ -149,8 +149,8 @@ public class Cid implements Comparable<Cid> {
         return 1;
     }
 
-    public long Type() {
-        if (Version() == 0) {
+    public long getType() {
+        if (getVersion() == 0) {
             return DagProtobuf;
         }
 
@@ -166,20 +166,20 @@ public class Cid implements Comparable<Cid> {
         return type;
     }
 
-    public byte[] Bytes() {
+    public byte[] bytes() {
         return multihash;
     }
 
-    public boolean Defined() {
+    public boolean isDefined() {
         return multihash != null;
     }
 
-    public Prefix Prefix() {
+    public Prefix getPrefix() {
 
-        if (Version() == 0) {
+        if (getVersion() == 0) {
             return new Prefix(DagProtobuf, 32, Multihash.Type.sha2_256.index, 0);
         }
-        try (InputStream inputStream = new ByteArrayInputStream(Bytes())) {
+        try (InputStream inputStream = new ByteArrayInputStream(bytes())) {
             long version = Multihash.readVarint(inputStream);
             if (version != 1) {
                 throw new Exception("invalid version");
@@ -206,12 +206,12 @@ public class Cid implements Comparable<Cid> {
         return Integer.compare(this.hashCode(), o.hashCode());
     }
 
-    public byte[] Hash() {
+    public byte[] getHash() {
 
-        if (Version() == 0) {
+        if (getVersion() == 0) {
             return multihash;
         } else {
-            byte[] data = Bytes();
+            byte[] data = bytes();
             try (InputStream inputStream = new ByteArrayInputStream(data)) {
                 long version = Multihash.readVarint(inputStream);
                 if (version != 1) {

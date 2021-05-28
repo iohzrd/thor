@@ -55,7 +55,7 @@ public class WriterStream implements io.ipfs.format.Reader {
         }
     }
 
-    public boolean Done() {
+    public boolean done() {
         return done;
     }
 }

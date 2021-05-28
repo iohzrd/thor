@@ -43,7 +43,7 @@ public class IpfsCatTest {
     public void cat_test() throws Exception {
 
         IPFS ipfs = TestEnv.getTestInstance(context);
-        Cid cid = Cid.Decode("Qmaisz6NMhDB51cCvNWa1GMS7LU1pAxdF4Ld6Ft9kZEP2a");
+        Cid cid = Cid.decode("Qmaisz6NMhDB51cCvNWa1GMS7LU1pAxdF4Ld6Ft9kZEP2a");
         long time = System.currentTimeMillis();
         ConcurrentSkipListSet<PeerId> provs = new ConcurrentSkipListSet<>();
         try {
@@ -97,7 +97,7 @@ public class IpfsCatTest {
 
 
         IPFS ipfs = TestEnv.getTestInstance(context);
-        Cid cid = Cid.Decode("QmUNLLsPACCz1vLxQVkXqqLX5R1X345qqfHbsf67hvA3Nt");
+        Cid cid = Cid.decode("QmUNLLsPACCz1vLxQVkXqqLX5R1X345qqfHbsf67hvA3Nt");
         try {
             ipfs.getData(cid, new TimeoutCloseable(10));
             fail();
@@ -132,7 +132,7 @@ public class IpfsCatTest {
         assertNotNull(data);
 
 
-        Cid cid = Cid.Decode("QmUNLLsPACCz1vLxQVkXqqLX5R1X345qqfHbsf67hvA3Nn");
+        Cid cid = Cid.decode("QmUNLLsPACCz1vLxQVkXqqLX5R1X345qqfHbsf67hvA3Nn");
         List<Link> res = ipfs.getLinks(cid, new TimeoutCloseable(30));
         assertNotNull(res);
 

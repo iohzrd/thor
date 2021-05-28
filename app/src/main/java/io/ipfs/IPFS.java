@@ -540,7 +540,7 @@ public class IPFS {
     public Cid storeInputStream(@NonNull InputStream inputStream,
                                 @NonNull Progress progress, long size) {
 
-        return Stream.Write(blocks, new WriterStream(inputStream, progress, size));
+        return Stream.write(blocks, new WriterStream(inputStream, progress, size));
 
     }
 
@@ -642,7 +642,7 @@ public class IPFS {
     @Nullable
     public Cid rmLinkFromDir(@NonNull Cid dir, String name) {
         try {
-            return Stream.RemoveLinkFromDir(blocks, () -> false, dir, name);
+            return Stream.removeLinkFromDir(blocks, () -> false, dir, name);
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         }
@@ -652,7 +652,7 @@ public class IPFS {
     @Nullable
     public Cid addLinkToDir(@NonNull Cid dir, @NonNull String name, @NonNull Cid link) {
         try {
-            return Stream.AddLinkToDir(blocks, () -> false, dir, name, link);
+            return Stream.addLinkToDir(blocks, () -> false, dir, name, link);
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         }
@@ -662,7 +662,7 @@ public class IPFS {
     @Nullable
     public Cid createEmptyDir() {
         try {
-            return Stream.CreateEmptyDir(blocks);
+            return Stream.createEmptyDir(blocks);
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         }
@@ -897,7 +897,7 @@ public class IPFS {
         boolean result;
         try {
             BlockStore blockstore = BlockStore.createBlockStore(blocks);
-            result = Stream.IsDir(closeable, blockstore, host.getExchange(), cid);
+            result = Stream.isDir(closeable, blockstore, host.getExchange(), cid);
         } catch (ClosedException closedException) {
             throw closedException;
         } catch (Throwable e) {
@@ -961,7 +961,7 @@ public class IPFS {
         List<Link> infoList = new ArrayList<>();
         try {
             BlockStore blockstore = BlockStore.createBlockStore(blocks);
-            Stream.Ls(new LinkCloseable() {
+            Stream.ls(new LinkCloseable() {
 
                 @Override
                 public boolean isClosed() {
@@ -1076,7 +1076,7 @@ public class IPFS {
 
     public boolean isValidCID(@NonNull String cid) {
         try {
-            return !Cid.Decode(cid).String().isEmpty();
+            return !Cid.decode(cid).String().isEmpty();
         } catch (Throwable e) {
             return false;
         }

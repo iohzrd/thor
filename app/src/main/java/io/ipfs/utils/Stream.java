@@ -61,7 +61,7 @@ public class Stream {
         Objects.requireNonNull(top);
 
         RefWriter rw = new RefWriter(true, -1);
-        rw.EvalRefs(top);
+        rw.evalRefs(top);
         List<Cid> cids = new ArrayList<>(rw.getCids());
 
         cids.add(top.getCid());
@@ -69,7 +69,7 @@ public class Stream {
 
     }
 
-    public static boolean IsDir(@NonNull Closeable closeable,
+    public static boolean isDir(@NonNull Closeable closeable,
                                 @NonNull BlockStore blockstore,
                                 @NonNull Interface exchange,
                                 @NonNull Cid cid) throws ClosedException {
@@ -84,7 +84,7 @@ public class Stream {
         return dir != null;
     }
 
-    public static Cid CreateEmptyDir(@NonNull Storage storage) {
+    public static Cid createEmptyDir(@NonNull Storage storage) {
 
         Adder fileAdder = getFileAdder(storage);
 
@@ -93,7 +93,7 @@ public class Stream {
     }
 
 
-    public static Cid AddLinkToDir(@NonNull Storage storage, @NonNull Closeable closeable,
+    public static Cid addLinkToDir(@NonNull Storage storage, @NonNull Closeable closeable,
                                    @NonNull Cid dir, @NonNull String name, @NonNull Cid link) throws ClosedException {
 
         Adder fileAdder = getFileAdder(storage);
@@ -112,7 +112,7 @@ public class Stream {
 
     }
 
-    public static Cid RemoveLinkFromDir(@NonNull Storage storage, @NonNull Closeable closeable,
+    public static Cid removeLinkFromDir(@NonNull Storage storage, @NonNull Closeable closeable,
                                         @NonNull Cid dir, @NonNull String name) throws ClosedException {
 
         Adder fileAdder = getFileAdder(storage);
@@ -129,7 +129,7 @@ public class Stream {
 
     }
 
-    public static void Ls(@NonNull LinkCloseable closeable, @NonNull BlockStore blockstore,
+    public static void ls(@NonNull LinkCloseable closeable, @NonNull BlockStore blockstore,
                           @NonNull Interface exchange,
                           @NonNull Cid cid, boolean resolveChildren) throws ClosedException {
 
@@ -151,7 +151,7 @@ public class Stream {
 
 
     @NonNull
-    public static Cid Write(@NonNull Storage storage, @NonNull WriterStream writerStream) {
+    public static Cid write(@NonNull Storage storage, @NonNull WriterStream writerStream) {
 
         Adder fileAdder = getFileAdder(storage);
         Node node = fileAdder.AddReader(writerStream);
@@ -188,9 +188,9 @@ public class Stream {
         long size = link.getSize();
         Cid cid = link.getCid();
 
-        if (cid.Type() == Cid.Raw) {
+        if (cid.getType() == Cid.Raw) {
             closeable.info(io.ipfs.utils.Link.create(name, hash, size, io.ipfs.utils.Link.File));
-        } else if (cid.Type() == Cid.DagProtobuf) {
+        } else if (cid.getType() == Cid.DagProtobuf) {
             if (!resolveChildren) {
                 closeable.info(io.ipfs.utils.Link.create(name, hash, size, io.ipfs.utils.Link.NotKnown));
             } else {

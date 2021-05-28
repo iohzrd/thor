@@ -58,7 +58,7 @@ public class IpfsTest {
 
         assertEquals(info.getAgent(), IPFS.AGENT);
 
-        LogUtils.error(TAG, info.toString());
+        LogUtils.debug(TAG, info.toString());
     }
 
 
@@ -91,7 +91,7 @@ public class IpfsTest {
 
 
         try {
-            Cid fault = Cid.Decode(ipfs.getPeerID().toBase58());
+            Cid fault = Cid.decode(ipfs.getPeerID().toBase58());
             ipfs.getData(fault, new TimeoutCloseable(10));
             fail();
         } catch (Exception ignore) {
@@ -104,7 +104,7 @@ public class IpfsTest {
     @Test
     public void test_timeout_cat() {
 
-        Cid notValid = Cid.Decode("QmaFuc7VmzwT5MAx3EANZiVXRtuWtTwALjgaPcSsZ2Jdip");
+        Cid notValid = Cid.decode("QmaFuc7VmzwT5MAx3EANZiVXRtuWtTwALjgaPcSsZ2Jdip");
         IPFS ipfs = TestEnv.getTestInstance(context);
 
         try {
@@ -148,7 +148,7 @@ public class IpfsTest {
 
         try {
             ipfs.getLinks(
-                    Cid.Decode("QmXm3f7uKuFKK3QUL1V1oJZnpJSYX8c3vdhd94evSQUPCH"),
+                    Cid.decode("QmXm3f7uKuFKK3QUL1V1oJZnpJSYX8c3vdhd94evSQUPCH"),
                     new TimeoutCloseable(20));
             fail();
         } catch (ClosedException closedException) {

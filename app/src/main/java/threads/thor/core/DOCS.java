@@ -531,12 +531,12 @@ public class DOCS {
 
         Cid root;
         if (Objects.equals(uri.getScheme(), Content.IPNS)) {
-            root = Cid.Decode(resolveUri(uri, closeable));
+            root = Cid.decode(resolveUri(uri, closeable));
         } else {
             if (!ipfs.isValidCID(host)) {
                 throw new InvalidNameException(uri.toString());
             }
-            root = Cid.Decode(host);
+            root = Cid.decode(host);
         }
         return root;
     }

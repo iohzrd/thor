@@ -58,7 +58,7 @@ public class IpfsRealTest {
             ipfs.findProviders(addrInfo -> {
                 LogUtils.debug(TAG, addrInfo.toString());
                 atomicBoolean.set(true);
-            }, Cid.Decode(res.getHash()), new TimeoutCloseable(30));
+            }, Cid.decode(res.getHash()), new TimeoutCloseable(30));
 
         } catch (ClosedException ignore) {
         }
@@ -132,7 +132,7 @@ public class IpfsRealTest {
 
         ConcurrentSkipListSet<PeerId> peers = new ConcurrentSkipListSet<>();
         try {
-            ipfs.findProviders(peers::add, Cid.Decode(res.getHash()), new TimeoutCloseable(30));
+            ipfs.findProviders(peers::add, Cid.decode(res.getHash()), new TimeoutCloseable(30));
         } catch (ClosedException ignore) {
         }
 

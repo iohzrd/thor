@@ -20,7 +20,7 @@ public class Prefix implements Builder {
         MhLength = mhLength;
     }
 
-    public static Prefix PrefixFromBytes(byte[] buf) {
+    public static Prefix getPrefixFromBytes(byte[] buf) {
 
         try (InputStream inputStream = new ByteArrayInputStream(buf)) {
             long version = Multihash.readVarint(inputStream);
@@ -45,7 +45,7 @@ public class Prefix implements Builder {
     }
 
     @Override
-    public Cid Sum(byte[] data) {
+    public Cid sum(byte[] data) {
 
 
         if (Version == 0 && (MhType != Multihash.Type.sha2_256.index) ||
@@ -59,7 +59,7 @@ public class Prefix implements Builder {
         try {
 
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = Cid.Encode(digest.digest(data), MhType);
+            byte[] hash = Cid.encode(digest.digest(data), MhType);
 
             switch ((int) Version) {
                 case 0:
@@ -78,12 +78,12 @@ public class Prefix implements Builder {
 
 
     @Override
-    public long GetCodec() {
+    public long getCodec() {
         return Codec;
     }
 
     @Override
-    public Builder WithCodec(long codec) {
+    public Builder withCodec(long codec) {
         if (codec == this.Codec) {
             return this;
         }
@@ -94,7 +94,7 @@ public class Prefix implements Builder {
         return this;
     }
 
-    public byte[] Bytes() {
+    public byte[] bytes() {
 
         try {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
