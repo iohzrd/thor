@@ -8,6 +8,6 @@ import java.util.List;
 
 public interface Resolver {
 
-    Pair<Object, List<String>> Resolve(@NonNull List<String> path);
+    Pair<Object, List<String>> resolve(@NonNull List<String> path);
 
 }

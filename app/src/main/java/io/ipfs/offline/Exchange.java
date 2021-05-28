@@ -21,7 +21,7 @@ public class Exchange implements Interface {
 
     @Override
     public Block getBlock(@NonNull Closeable closeable, @NonNull Cid cid, boolean root) {
-        return blockstore.Get(cid);
+        return blockstore.getBlock(cid);
     }
 
     @Override

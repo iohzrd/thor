@@ -28,7 +28,7 @@ public class NavigableIPLDNode implements NavigableNode {
         return new NavigableIPLDNode(node, nodeGetter);
     }
 
-    public static Node ExtractIPLDNode(@NonNull NavigableNode node) {
+    public static Node extractIPLDNode(@NonNull NavigableNode node) {
         if (node instanceof NavigableIPLDNode) {
             NavigableIPLDNode navigableIPLDNode = (NavigableIPLDNode) node;
             return navigableIPLDNode.GetIPLDNode();
@@ -49,7 +49,7 @@ public class NavigableIPLDNode implements NavigableNode {
     }
 
     @Override
-    public NavigableNode FetchChild(@NonNull Closeable ctx, int childIndex) throws ClosedException {
+    public NavigableNode fetchChild(@NonNull Closeable ctx, int childIndex) throws ClosedException {
         Node child = getPromiseValue(ctx, childIndex);
         Objects.requireNonNull(child);
         return NewNavigableIPLDNode(child, nodeGetter);
@@ -63,12 +63,12 @@ public class NavigableIPLDNode implements NavigableNode {
     }
 
     @Override
-    public Cid Cid() {
+    public Cid getCid() {
         return node.getCid();
     }
 
     @Override
-    public int ChildTotal() {
+    public int childTotal() {
         return GetIPLDNode().getLinks().size();
     }
 
@@ -81,6 +81,6 @@ public class NavigableIPLDNode implements NavigableNode {
     @NonNull
     @Override
     public String toString() {
-        return node.toString() + " (" + ChildTotal() + ") ";
+        return node.toString() + " (" + childTotal() + ") ";
     }
 }

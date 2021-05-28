@@ -3,9 +3,6 @@ package io.ipfs.dht;
 import androidx.annotation.NonNull;
 
 import java.math.BigInteger;
-import java.security.MessageDigest;
-
-import io.ipfs.host.PeerId;
 
 public class Util {
 
@@ -40,10 +37,6 @@ public class Util {
         return 8 - Len8(uint8);
     }
 
-    public static ID xor(@NonNull ID a, @NonNull ID b) {
-        byte[] res = xor(a.data, b.data);
-        return new ID(res);
-    }
 
     public static int CommonPrefixLen(ID a, ID b) {
         byte[] res = xor(a.data, b.data);
@@ -84,18 +77,4 @@ public class Util {
         return new BigInteger(k3);
     }
 
-    @NonNull
-    public static ID ConvertPeerID(@NonNull PeerId id) {
-        return ConvertKey(id.getBytes());
-    }
-
-    @NonNull
-    public static ID ConvertKey(@NonNull byte[] id) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            return new ID(digest.digest(id));
-        } catch (Throwable throwable) {
-            throw new RuntimeException(throwable);
-        }
-    }
 }

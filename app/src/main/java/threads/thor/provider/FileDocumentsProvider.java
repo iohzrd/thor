@@ -172,7 +172,7 @@ public class FileDocumentsProvider extends DocumentsProvider {
 
     public static Uri getUriForIpfs(@NonNull Node node, @NonNull String name, @NonNull String mimeType) {
 
-        CID_INFO_HASHTABLE.put(node.getCid().String(), new CidInfo(name, mimeType, node.Size()));
+        CID_INFO_HASHTABLE.put(node.getCid().String(), new CidInfo(name, mimeType, node.size()));
 
         Uri.Builder builder = new Uri.Builder();
         builder.scheme(SCHEME)

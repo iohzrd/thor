@@ -87,7 +87,7 @@ public class RoutingTable {
 
 
     private int bucketIdForPeer(@NonNull PeerId p) {
-        ID peerID = Util.ConvertPeerID(p);
+        ID peerID = ID.convertPeerID(p);
         int bucketID = bucketId(peerID);
         LogUtils.info(TAG, "bucketID " + bucketID + " for " + p.toBase58());
         return bucketID;

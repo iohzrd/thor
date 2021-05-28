@@ -46,20 +46,6 @@ public class Bucket {
         return found;
     }
 
-    public synchronized Bucket split(int cpl, @NonNull ID target) {
-
-        Bucket newbie = new Bucket();
-
-        for (PeerInfo e : elements()) {
-            ID pDhtId = e.getID();
-            int peerCPL = Util.CommonPrefixLen(pDhtId, target);
-            if (peerCPL > cpl) {
-                newbie.pushFront(e);
-                peers.remove(e.getPeerId());
-            }
-        }
-        return newbie;
-    }
 
     @NonNull
     @Override
@@ -94,14 +80,6 @@ public class Bucket {
         return peers.size();
     }
 
-    private void pushFront(@NonNull PeerInfo peerInfo) {
-        if (LogUtils.isDebug()) {
-            if (peers.containsKey(peerInfo.getPeerId())) {
-                throw new RuntimeException("invalid state");
-            }
-        }
-        peers.put(peerInfo.getPeerId(), peerInfo);
-    }
 
     @NonNull
     public Collection<PeerInfo> elements() {
@@ -119,7 +97,7 @@ public class Bucket {
 
         public PeerInfo(@NonNull PeerId peerId, boolean replaceable) {
             this.peerId = peerId;
-            this.id = Util.ConvertPeerID(peerId);
+            this.id = ID.convertPeerID(peerId);
             this.replaceable = replaceable;
         }
 

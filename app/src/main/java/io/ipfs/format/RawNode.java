@@ -49,17 +49,17 @@ public class RawNode implements Node {
     }
 
     @Override
-    public void SetCidBuilder(@Nullable Builder builder) {
+    public void setCidBuilder(@Nullable Builder builder) {
         throw new RuntimeException("TODO");
     }
 
     @Override
-    public Pair<Link, List<String>> ResolveLink(@NonNull List<String> path) {
+    public Pair<Link, List<String>> resolveLink(@NonNull List<String> path) {
         throw new RuntimeException("not supported here");
     }
 
     @Override
-    public long Size() {
+    public long size() {
         return getData().length;
     }
 
@@ -84,7 +84,7 @@ public class RawNode implements Node {
     }
 
     @Override
-    public Pair<Object, List<String>> Resolve(@NonNull List<String> path) {
+    public Pair<Object, List<String>> resolve(@NonNull List<String> path) {
         throw new RuntimeException("not supported here");
     }
 }

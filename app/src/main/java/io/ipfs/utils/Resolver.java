@@ -30,7 +30,7 @@ public class Resolver {
 
     public static Node resolveNode(@NonNull Closeable closeable, @NonNull Storage storage,
                                    @NonNull Interface exchange, @NonNull String path) throws ClosedException {
-        BlockStore bs = BlockStore.createBlockstore(storage);
+        BlockStore bs = BlockStore.createBlockStore(storage);
         BlockService blockservice = BlockService.createBlockService(bs, exchange);
         DagService dags = DagService.createDagService(blockservice);
         return Resolver.ResolveNode(closeable, dags, Path.create(path));
@@ -108,7 +108,7 @@ public class Resolver {
         }
 
         // Confirm the path exists within the object
-        Pair<Object, List<String>> success = nd.Resolve(p);
+        Pair<Object, List<String>> success = nd.resolve(p);
         List<String> rest = success.second;
         Object val = success.first;
 
@@ -131,7 +131,7 @@ public class Resolver {
         if (nd instanceof ProtoNode) {
             ProtoNode pn = (ProtoNode) nd;
             try {
-                FSNode fsn = FSNode.FSNodeFromBytes(pn.getData());
+                FSNode fsn = FSNode.createFSNodeFromBytes(pn.getData());
 
                 if (fsn.Type() == unixfs.pb.Unixfs.Data.DataType.HAMTShard) {
 
@@ -142,10 +142,10 @@ public class Resolver {
 
                 }
             } catch (Throwable throwable) {
-                return nd.ResolveLink(names);
+                return nd.resolveLink(names);
             }
         }
-        return nd.ResolveLink(names);
+        return nd.resolveLink(names);
     }
 
 

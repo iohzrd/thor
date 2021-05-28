@@ -22,7 +22,7 @@ public interface BlockService extends BlockGetter {
             @Override
             @Nullable
             public Block getBlock(@NonNull Closeable closeable, @NonNull Cid cid, boolean root) throws ClosedException {
-                Block block = bs.Get(cid);
+                Block block = bs.getBlock(cid);
                 if (block != null) {
                     return block;
                 }
@@ -31,14 +31,14 @@ public interface BlockService extends BlockGetter {
 
             @Override
             public void addBlock(@NonNull Block block) {
-                bs.Put(block);
+                bs.putBlock(block);
             }
 
             @Override
             public void preload(@NonNull Closeable closeable, @NonNull List<Cid> cids) {
                 List<Cid> preload = new ArrayList<>();
                 for (Cid cid : cids) {
-                    if (!bs.Has(cid)) {
+                    if (!bs.hasBlock(cid)) {
                         preload.add(cid);
                     }
                 }

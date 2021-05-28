@@ -18,15 +18,15 @@ public class Hamt {
         ProtoNode pn = (ProtoNode) nd;
         Objects.requireNonNull(pn);
 
-        FSNode fsn = FSNode.FSNodeFromBytes(pn.getData());
+        FSNode fsn = FSNode.createFSNodeFromBytes(pn.getData());
 
         if (fsn.Type() != unixfs.pb.Unixfs.Data.DataType.HAMTShard) {
             throw new RuntimeException();
         }
 
-        int size = (int) fsn.Fanout();
+        int size = (int) fsn.fanout();
         Shard ds = Shard.makeShard(dagService, size);
-        ds.childer.makeChilder(fsn.Data(), pn.Links());
+        ds.childer.makeChilder(fsn.getData(), pn.links());
         ds.cid = pn.getCid();
         ds.builder = pn.getCidBuilder();
 

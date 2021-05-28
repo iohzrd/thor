@@ -209,7 +209,7 @@ public class BitSwapEngine {
     public Map<Cid, Block> getBlocks(@NonNull List<Cid> cids) {
         Map<Cid, Block> blks = new HashMap<>();
         for (Cid c : cids) {
-            Block block = blockstore.Get(c);
+            Block block = blockstore.getBlock(c);
             if (block != null) {
                 blks.put(c, block);
             }
@@ -221,7 +221,7 @@ public class BitSwapEngine {
 
         HashMap<Cid, Integer> sizes = new HashMap<>();
         for (Cid cid : wantKs) {
-            int size = blockstore.GetSize(cid);
+            int size = blockstore.getSize(cid);
             if (size > 0) {
                 sizes.put(cid, size);
             }

@@ -23,7 +23,7 @@ public class QueryPeerSet {
     }
 
     public static QueryPeerSet create(@NonNull byte[] key) {
-        return new QueryPeerSet(Util.ConvertKey(key));
+        return new QueryPeerSet(ID.convertKey(key));
     }
 
     int size() {
@@ -31,29 +31,29 @@ public class QueryPeerSet {
     }
 
     private BigInteger distanceToKey(@NonNull PeerId p) {
-        return Util.Distance(Util.ConvertPeerID(p), key);
+        return Util.Distance(ID.convertPeerID(p), key);
     }
 
     // TryAdd adds the peer p to the peer set.
     // If the peer is already present, no action is taken.
     // Otherwise, the peer is added with state set to PeerHeard.
-    // TryAdd returns true iff the peer was not already present.
-    public boolean TryAdd(@NonNull PeerId p) {
-        QueryPeerState peerset = all.get(p);
-        if (peerset != null) {
+    // tryAdd returns true iff the peer was not already present.
+    public boolean tryAdd(@NonNull PeerId p) {
+        QueryPeerState peerSet = all.get(p);
+        if (peerSet != null) {
             return false;
         } else {
-            peerset = new QueryPeerState(p, distanceToKey(p));
-            all.put(p, peerset);
+            peerSet = new QueryPeerState(p, distanceToKey(p));
+            all.put(p, peerSet);
             return true;
         }
     }
 
-    public PeerState GetState(@NonNull PeerId p) {
+    public PeerState getState(@NonNull PeerId p) {
         return Objects.requireNonNull(all.get(p)).getState();
     }
 
-    public void SetState(@NonNull PeerId p, @NonNull PeerState peerState) {
+    public void setState(@NonNull PeerId p, @NonNull PeerState peerState) {
         Objects.requireNonNull(all.get(p)).setState(peerState);
     }
 
@@ -61,7 +61,7 @@ public class QueryPeerSet {
     // GetClosestNInStates returns the closest to the key peers, which are in one of the given states.
     // It returns n peers or less, if fewer peers meet the condition.
     // The returned peers are sorted in ascending order by their distance to the key.
-    public List<QueryPeerState> GetClosestNInStates(int maxLength, @NonNull List<PeerState> states) {
+    public List<QueryPeerState> getClosestNInStates(int maxLength, @NonNull List<PeerState> states) {
         if (LogUtils.isDebug()) {
             if (maxLength < 0) {
                 throw new RuntimeException("internal state error");
@@ -87,15 +87,15 @@ public class QueryPeerSet {
     }
 
     @NonNull
-    List<QueryPeerState> GetClosestInStates(int maxLength, @NonNull List<PeerState> states) {
-        return GetClosestNInStates(maxLength, states);
+    List<QueryPeerState> getClosestInStates(int maxLength, @NonNull List<PeerState> states) {
+        return getClosestNInStates(maxLength, states);
     }
 
     public int NumWaiting() {
-        return GetClosestInStates(all.size(), Collections.singletonList(PeerState.PeerWaiting)).size();
+        return getClosestInStates(all.size(), Collections.singletonList(PeerState.PeerWaiting)).size();
     }
 
     public int NumHeard() {
-        return GetClosestInStates(all.size(), Collections.singletonList(PeerState.PeerHeard)).size();
+        return getClosestInStates(all.size(), Collections.singletonList(PeerState.PeerHeard)).size();
     }
 }

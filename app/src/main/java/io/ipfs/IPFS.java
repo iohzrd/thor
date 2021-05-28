@@ -213,7 +213,7 @@ public class IPFS {
         int alpha = getConcurrencyValue(context);
 
 
-        BlockStore blockstore = BlockStore.createBlockstore(blocks);
+        BlockStore blockstore = BlockStore.createBlockStore(blocks);
         this.host = new LiteHost(selfSignedCertificate, privateKey, blockstore, port, alpha);
 
         HOST = host; // shitty hack
@@ -896,7 +896,7 @@ public class IPFS {
 
         boolean result;
         try {
-            BlockStore blockstore = BlockStore.createBlockstore(blocks);
+            BlockStore blockstore = BlockStore.createBlockStore(blocks);
             result = Stream.IsDir(closeable, blockstore, host.getExchange(), cid);
         } catch (ClosedException closedException) {
             throw closedException;
@@ -960,7 +960,7 @@ public class IPFS {
 
         List<Link> infoList = new ArrayList<>();
         try {
-            BlockStore blockstore = BlockStore.createBlockstore(blocks);
+            BlockStore blockstore = BlockStore.createBlockStore(blocks);
             Stream.Ls(new LinkCloseable() {
 
                 @Override
@@ -984,7 +984,7 @@ public class IPFS {
 
     @NonNull
     public Reader getReader(@NonNull Cid cid, @NonNull Closeable closeable) throws ClosedException {
-        BlockStore blockstore = BlockStore.createBlockstore(blocks);
+        BlockStore blockstore = BlockStore.createBlockStore(blocks);
         return Reader.getReader(closeable, blockstore, host.getExchange(), cid);
     }
 

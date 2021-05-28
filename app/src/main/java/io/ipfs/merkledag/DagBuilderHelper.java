@@ -33,7 +33,7 @@ public class DagBuilderHelper {
 
 
     public FSNodeOverDag NewFSNodeOverDag(@NonNull unixfs.pb.Unixfs.Data.DataType fsNodeType) {
-        return new FSNodeOverDag(new ProtoNode(), FSNode.NewFSNode(fsNodeType), builder);
+        return new FSNodeOverDag(new ProtoNode(), FSNode.createFSNode(fsNodeType), builder);
     }
 
     @Nullable
@@ -100,34 +100,34 @@ public class DagBuilderHelper {
         private FSNodeOverDag(@NonNull ProtoNode protoNode, @NonNull FSNode fsNode, @NonNull Builder builder) {
             dag = protoNode;
             file = fsNode;
-            dag.SetCidBuilder(builder);
+            dag.setCidBuilder(builder);
         }
 
 
         int NumChildren() {
-            return file.NumChildren();
+            return file.numChildren();
         }
 
         public void AddChild(@NonNull Node child, long fileSize, @NonNull DagBuilderHelper dagBuilderHelper) {
 
-            dag.AddNodeLink("", child);
-            file.AddBlockSize(fileSize);
+            dag.addNodeLink("", child);
+            file.addBlockSize(fileSize);
 
             dagBuilderHelper.Add(child);
         }
 
         public Node Commit() {
-            byte[] fileData = file.GetBytes();
-            dag.SetData(fileData);
+            byte[] fileData = file.getBytes();
+            dag.setData(fileData);
             return dag;
         }
 
         public void SetFileData(byte[] data) {
-            file.SetData(data);
+            file.setData(data);
         }
 
         public long FileSize() {
-            return file.FileSize();
+            return file.getFileSize();
         }
     }
 }

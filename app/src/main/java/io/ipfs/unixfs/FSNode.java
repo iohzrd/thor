@@ -26,22 +26,22 @@ public class FSNode {
     }
 
 
-    public static FSNode NewFSNode(@NonNull unixfs.pb.Unixfs.Data.DataType dataType) {
+    public static FSNode createFSNode(@NonNull unixfs.pb.Unixfs.Data.DataType dataType) {
         return new FSNode(dataType);
     }
 
-    public static FSNode FSNodeFromBytes(byte[] data) {
+    public static FSNode createFSNodeFromBytes(byte[] data) {
         return new FSNode(data);
     }
 
     public static byte[] ReadUnixFSNodeData(@NonNull Node node) {
 
         if (node instanceof ProtoNode) {
-            FSNode fsNode = FSNodeFromBytes(node.getData());
+            FSNode fsNode = createFSNodeFromBytes(node.getData());
             switch (fsNode.Type()) {
                 case File:
                 case Raw:
-                    return fsNode.Data();
+                    return fsNode.getData();
                 default:
                     throw new RuntimeException("found %s node in unexpected place " +
                             fsNode.Type().name());
@@ -54,20 +54,20 @@ public class FSNode {
 
     }
 
-    public static FSNode ExtractFSNode(@NonNull Node node) {
+    public static FSNode extractFSNode(@NonNull Node node) {
         if (node instanceof ProtoNode) {
-            return FSNodeFromBytes(node.getData());
+            return createFSNodeFromBytes(node.getData());
         }
         throw new RuntimeException("expected a ProtoNode as internal node");
 
     }
 
-    private void UpdateFilesize(long filesize) {
+    private void updateFileSize(long fileSize) {
         long previous = data.getFilesize();
-        data = data.toBuilder().setFilesize(previous + filesize).build();
+        data = data.toBuilder().setFilesize(previous + fileSize).build();
     }
 
-    public byte[] Data() {
+    public byte[] getData() {
         return data.getData().toByteArray();
     }
 
@@ -75,35 +75,34 @@ public class FSNode {
         return data.getType();
     }
 
-    public long FileSize() {
+    public void setData(byte[] bytes) {
+        updateFileSize(bytes.length - getData().length);
+        data = data.toBuilder().setData(ByteString.copyFrom(bytes)).build();
+    }
+
+    public long getFileSize() {
         return data.getFilesize();
     }
 
-    public long BlockSize(int i) {
+    public long getBlockSize(int i) {
         return data.getBlocksizes(i);
     }
 
-    public int NumChildren() {
+    public int numChildren() {
         return data.getBlocksizesCount();
     }
 
-
-    public void AddBlockSize(long size) {
-        UpdateFilesize(size);
+    public void addBlockSize(long size) {
+        updateFileSize(size);
         data = data.toBuilder().addBlocksizes(size).build();
     }
 
-    public byte[] GetBytes() {
+    public byte[] getBytes() {
         return data.toByteArray();
 
     }
 
-    public void SetData(byte[] bytes) {
-        UpdateFilesize(bytes.length - Data().length);
-        data = data.toBuilder().setData(ByteString.copyFrom(bytes)).build();
-    }
-
-    public long Fanout() {
+    public long fanout() {
         return data.getFanout();
     }
 }

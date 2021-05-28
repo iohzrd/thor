@@ -76,7 +76,7 @@ public class KadDht implements Routing {
         this.validator = validator;
         this.self = host.self();
         this.bucketSize = bucketSize;
-        this.routingTable = new RoutingTable(bucketSize, Util.ConvertPeerID(self));
+        this.routingTable = new RoutingTable(bucketSize, ID.convertPeerID(self));
         this.beta = beta;
         this.alpha = alpha;
 
@@ -214,7 +214,7 @@ public class KadDht implements Routing {
 
     }
 
-    private void putValueToPeer(@NonNull Closeable ctx, @NonNull PeerId p,
+    private void putValueToPeer(@NonNull Closeable ctx, @NonNull PeerId peerId,
                                 @NonNull RecordOuterClass.Record rec) {
 
         try {
@@ -224,14 +224,14 @@ public class KadDht implements Routing {
                     .setRecord(rec)
                     .setClusterLevelRaw(0).build();
 
-            Dht.Message rimes = sendRequest(ctx, p, pms);
+            Dht.Message rimes = sendRequest(ctx, peerId, pms);
 
             if (!Arrays.equals(rimes.getRecord().getValue().toByteArray(),
                     pms.getRecord().getValue().toByteArray())) {
                 throw new RuntimeException("value not put correctly put-message  " +
                         pms.toString() + " get-message " + rimes.toString());
             }
-            LogUtils.verbose(TAG, "PutValue Success to " + p.toBase58());
+            LogUtils.verbose(TAG, "PutValue Success to " + peerId.toBase58());
         } catch (ClosedException | ConnectionIssue | TimeoutIssue ignore) {
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
@@ -366,7 +366,7 @@ public class KadDht implements Routing {
             conn = host.connect(closeable, p, IPFS.CONNECT_TIMEOUT);
 
             if (closeable.isClosed()) {
-                throw new ClosedException();
+                return;
             }
             QuicChannel quicChannel = conn.channel();
 
@@ -595,7 +595,7 @@ public class KadDht implements Routing {
                                                           @NonNull QueryFunc queryFn, @NonNull StopFunc stopFn)
             throws ClosedException, InterruptedException {
         // pick the K closest peers to the key in our Routing table.
-        ID targetKadID = Util.ConvertKey(target);
+        ID targetKadID = ID.convertKey(target);
         List<PeerId> seedPeers = routingTable.NearestPeers(targetKadID, bucketSize);
         if (seedPeers.size() == 0) {
             throw new ClosedException();
@@ -649,7 +649,7 @@ public class KadDht implements Routing {
                 return;
             }
 
-            // TODO still check if necessary
+            // TODO still check if necessary (maybe wait)
             ExecutorService executor = Executors.newFixedThreadPool(4);
             for (PeerId p : queryPeers) {
 
@@ -767,7 +767,7 @@ public class KadDht implements Routing {
     public interface QueryFunc {
         @NonNull
         List<AddrInfo> query(@NonNull Closeable ctx, @NonNull PeerId peerId)
-                throws ClosedException, ProtocolIssue, TimeoutIssue, RecordIssue, ConnectionIssue;
+                throws ClosedException, ProtocolIssue, TimeoutIssue, ConnectionIssue;
     }
 
 
@@ -781,7 +781,7 @@ public class KadDht implements Routing {
 
 
     interface Channel {
-        void peer(@NonNull AddrInfo addrInfo) throws ClosedException;
+        void peer(@NonNull AddrInfo addrInfo);
     }
 
 }

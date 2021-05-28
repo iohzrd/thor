@@ -31,29 +31,29 @@ public class Adder {
 
 
     public Node CreateEmptyDir() {
-        Directory dir = Directory.NewDirectory();
-        dir.SetCidBuilder(builder);
-        Node fnd = dir.GetNode();
+        Directory dir = Directory.createDirectory();
+        dir.setCidBuilder(builder);
+        Node fnd = dir.getNode();
         dagService.Add(fnd);
         return fnd;
     }
 
     public Node AddLinkToDir(@NonNull Node dirNode, @NonNull String name, @NonNull Node link) {
-        Directory dir = Directory.NewDirectoryFromNode(dirNode);
+        Directory dir = Directory.createDirectoryFromNode(dirNode);
         Objects.requireNonNull(dir);
-        dir.SetCidBuilder(builder);
-        dir.AddChild(name, link);
-        Node fnd = dir.GetNode();
+        dir.setCidBuilder(builder);
+        dir.addChild(name, link);
+        Node fnd = dir.getNode();
         dagService.Add(fnd);
         return fnd;
     }
 
     public Node RemoveChild(@NonNull Node dirNode, @NonNull String name) {
-        Directory dir = Directory.NewDirectoryFromNode(dirNode);
+        Directory dir = Directory.createDirectoryFromNode(dirNode);
         Objects.requireNonNull(dir);
-        dir.SetCidBuilder(builder);
-        dir.RemoveChild(name);
-        Node fnd = dir.GetNode();
+        dir.setCidBuilder(builder);
+        dir.removeChild(name);
+        Node fnd = dir.getNode();
         dagService.Add(fnd);
         return fnd;
     }
@@ -74,7 +74,7 @@ public class Adder {
 
                 int size = IPFS.CHUNK_SIZE;
                 byte[] buf = new byte[size];
-                int read = reader.Read(buf);
+                int read = reader.read(buf);
                 if (read < 0) {
                     return null;
                 } else if (read < size) {

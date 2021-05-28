@@ -10,7 +10,7 @@ public class Key {
         clean();
     }
 
-    public static Key RawKey(@NonNull String s) {
+    public static Key getRawKey(@NonNull String s) {
 
         if (s.length() == 0) {
             return new Key("/");
@@ -28,7 +28,7 @@ public class Key {
         }
     }
 
-    public String String() {
+    public String getKey() {
         return key;
     }
 }

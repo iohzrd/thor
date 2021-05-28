@@ -40,8 +40,8 @@ public class IpfsUtilsTest {
 
         PeerId peerId = ipfs.getPeerID();
 
-        ID a = Util.ConvertPeerID(peerId);
-        ID b = Util.ConvertPeerID(peerId);
+        ID a = ID.convertPeerID(peerId);
+        ID b = ID.convertPeerID(peerId);
 
 
         BigInteger dist = Util.Distance(a, b);
@@ -55,8 +55,8 @@ public class IpfsUtilsTest {
 
 
         PeerId randrom = PeerId.random();
-        ID r1 = Util.ConvertPeerID(randrom);
-        ID r2 = Util.ConvertPeerID(randrom);
+        ID r1 = ID.convertPeerID(randrom);
+        ID r2 = ID.convertPeerID(randrom);
 
         BigInteger distCmp = Util.Distance(a, r1);
         assertNotEquals(distCmp.longValue(), 0L);

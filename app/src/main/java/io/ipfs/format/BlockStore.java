@@ -11,18 +11,18 @@ import io.ipfs.datastore.Storage;
 public interface BlockStore {
 
 
-    static BlockStore createBlockstore(@NonNull final Storage storage) {
+    static BlockStore createBlockStore(@NonNull final Storage storage) {
         return new BlockStore() {
             @Override
-            public boolean Has(@NonNull Cid cid) {
-                String key = Dshelp.CidToDsKey(cid).String();
+            public boolean hasBlock(@NonNull Cid cid) {
+                String key = Dshelp.cidToDsKey(cid).getKey();
                 return storage.hasBlock(key);
             }
 
             @Override
-            public Block Get(@NonNull Cid cid) {
+            public Block getBlock(@NonNull Cid cid) {
 
-                String key = Dshelp.CidToDsKey(cid).String();
+                String key = Dshelp.cidToDsKey(cid).getKey();
                 byte[] data = storage.getData(key);
                 if (data == null) {
                     return null;
@@ -31,43 +31,43 @@ public interface BlockStore {
             }
 
             @Override
-            public void Put(@NonNull Block block) {
-                String key = Dshelp.CidToDsKey(block.getCid()).String();
+            public void putBlock(@NonNull Block block) {
+                String key = Dshelp.cidToDsKey(block.getCid()).getKey();
                 storage.insertBlock(key, block.getRawData());
             }
 
             @Override
-            public int GetSize(@NonNull Cid cid) {
-                String key = Dshelp.CidToDsKey(cid).String();
+            public int getSize(@NonNull Cid cid) {
+                String key = Dshelp.cidToDsKey(cid).getKey();
                 return storage.sizeBlock(key);
             }
 
-            public void DeleteBlock(@NonNull Cid cid) {
-                String key = Dshelp.CidToDsKey(cid).String();
+            public void deleteBlock(@NonNull Cid cid) {
+                String key = Dshelp.cidToDsKey(cid).getKey();
                 storage.deleteBlock(key);
             }
 
             @Override
-            public void DeleteBlocks(@NonNull List<Cid> cids) {
+            public void deleteBlocks(@NonNull List<Cid> cids) {
                 for (Cid cid : cids) {
-                    DeleteBlock(cid);
+                    deleteBlock(cid);
                 }
             }
 
         };
     }
 
-    boolean Has(@NonNull Cid cid);
+    boolean hasBlock(@NonNull Cid cid);
 
-    Block Get(@NonNull Cid cid);
+    Block getBlock(@NonNull Cid cid);
 
-    void DeleteBlock(@NonNull Cid cid);
+    void deleteBlock(@NonNull Cid cid);
 
-    void DeleteBlocks(@NonNull List<Cid> cids);
+    void deleteBlocks(@NonNull List<Cid> cids);
 
-    void Put(@NonNull Block block);
+    void putBlock(@NonNull Block block);
 
-    int GetSize(@NonNull Cid cid);
+    int getSize(@NonNull Cid cid);
 }
 
 

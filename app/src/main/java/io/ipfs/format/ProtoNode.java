@@ -34,7 +34,7 @@ public class ProtoNode implements Node {
         this.data = data;
     }
 
-    public void SetCidBuilder(@Nullable Builder builder) {
+    public void setCidBuilder(@Nullable Builder builder) {
         if (builder == null) {
             this.builder = v0CidPrefix;
         } else {
@@ -44,20 +44,20 @@ public class ProtoNode implements Node {
     }
 
     @Override
-    public Pair<Link, List<String>> ResolveLink(@NonNull List<String> path) {
+    public Pair<Link, List<String>> resolveLink(@NonNull List<String> path) {
 
         if (path.size() == 0) {
             throw new RuntimeException("end of path, no more links to resolve");
         }
         String name = path.get(0);
-        Link lnk = GetNodeLink(name);
+        Link lnk = getNodeLink(name);
         List<String> left = new ArrayList<>(path);
         left.remove(name);
         return Pair.create(lnk, left);
     }
 
     @NonNull
-    private Link GetNodeLink(@NonNull String name) {
+    private Link getNodeLink(@NonNull String name) {
         for (Link link : links) {
             if (Objects.equals(link.getName(), name)) {
                 return new Link(link.getCid(), link.getName(), link.getSize());
@@ -90,8 +90,8 @@ public class ProtoNode implements Node {
     }
 
 
-    public long Size() {
-        byte[] b = EncodeProtobuf();
+    public long size() {
+        byte[] b = encodeProtobuf();
         long size = b.length;
         for (Link link : links) {
             size += link.getSize();
@@ -126,13 +126,13 @@ public class ProtoNode implements Node {
 
     @Override
     public byte[] getRawData() {
-        return EncodeProtobuf();
+        return encodeProtobuf();
     }
 
 
     // Marshal encodes a *Node instance into a new byte slice.
     // The conversion uses an intermediate PBNode.
-    private byte[] Marshal() {
+    private byte[] marshal() {
 
         Merkledag.PBNode.Builder pbn = Merkledag.PBNode.newBuilder();
 
@@ -159,12 +159,12 @@ public class ProtoNode implements Node {
         return pbn.build().toByteArray();
     }
 
-    private byte[] EncodeProtobuf() {
+    private byte[] encodeProtobuf() {
 
         links.sort((o1, o2) -> o1.getName().compareTo(o2.getName()));// keep links sorted
         if (encoded == null) {
             cached = Cid.Undef();
-            encoded = Marshal();
+            encoded = marshal();
         }
 
         if (!cached.Defined()) {
@@ -181,7 +181,7 @@ public class ProtoNode implements Node {
         return builder;
     }
 
-    public Node Copy() {
+    public Node copy() {
 
 
         // Copy returns a copy of the node.
@@ -204,7 +204,7 @@ public class ProtoNode implements Node {
 
     }
 
-    public void RemoveNodeLink(@NonNull String name) {
+    public void removeNodeLink(@NonNull String name) {
         encoded = null;
         synchronized (links) {
             for (Link link : links) {
@@ -216,17 +216,17 @@ public class ProtoNode implements Node {
         }
     }
 
-    public void AddNodeLink(@NonNull String name, @NonNull Node link) {
+    public void addNodeLink(@NonNull String name, @NonNull Node link) {
 
         encoded = null;
 
         Link lnk = Link.createLink(link, name);
 
-        AddRawLink(lnk);
+        addRawLink(lnk);
 
     }
 
-    private void AddRawLink(@NonNull Link link) {
+    private void addRawLink(@NonNull Link link) {
         encoded = null;
 
         synchronized (links) {
@@ -234,19 +234,19 @@ public class ProtoNode implements Node {
         }
     }
 
-    public void SetData(byte[] fileData) {
+    public void setData(byte[] fileData) {
         encoded = null;
         cached = Cid.Undef();
         data = fileData;
     }
 
     @Override
-    public Pair<Object, List<String>> Resolve(@NonNull List<String> path) {
-        Pair<Link, List<String>> res = ResolveLink(path);
+    public Pair<Object, List<String>> resolve(@NonNull List<String> path) {
+        Pair<Link, List<String>> res = resolveLink(path);
         return Pair.create(res.first, res.second);
     }
 
-    public List<Link> Links() {
+    public List<Link> links() {
         return links;
     }
 }

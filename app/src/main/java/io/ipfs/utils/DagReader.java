@@ -53,12 +53,12 @@ public class DagReader {
         if (node instanceof RawNode) {
             size = node.getData().length;
         } else if (node instanceof ProtoNode) {
-            FSNode fsNode = FSNode.FSNodeFromBytes(node.getData());
+            FSNode fsNode = FSNode.createFSNodeFromBytes(node.getData());
 
             switch (fsNode.Type()) {
                 case Raw:
                 case File:
-                    size = fsNode.FileSize();
+                    size = fsNode.getFileSize();
                     break;
             }
         } else {
@@ -75,7 +75,7 @@ public class DagReader {
     }
 
     public void Seek(@NonNull Closeable closeable, long offset) throws ClosedException {
-        Pair<Stack<Stage>, Long> result = dagWalker.Seek(closeable, offset);
+        Pair<Stack<Stage>, Long> result = dagWalker.seek(closeable, offset);
         this.atomicLeft.set(result.second.intValue());
         this.visitor.reset(result.first);
     }
@@ -88,7 +88,7 @@ public class DagReader {
         if (left > 0) {
             NavigableNode navigableNode = visitor.peekStage().getNode();
 
-            Node node = NavigableIPLDNode.ExtractIPLDNode(navigableNode);
+            Node node = NavigableIPLDNode.extractIPLDNode(navigableNode);
 
             if (node.getLinks().size() == 0) {
 
@@ -99,12 +99,12 @@ public class DagReader {
         }
 
         while (true) {
-            NavigableNode visitedNode = dagWalker.Next(closeable, visitor);
+            NavigableNode visitedNode = dagWalker.next(closeable, visitor);
             if (visitedNode == null) {
                 return null;
             }
 
-            Node node = NavigableIPLDNode.ExtractIPLDNode(visitedNode);
+            Node node = NavigableIPLDNode.extractIPLDNode(visitedNode);
             if (node.getLinks().size() > 0) {
                 continue;
             }
@@ -126,7 +126,7 @@ public class DagReader {
         int maxRuns = Math.min(min, IPFS.PRELOAD);
 
         while (runs < maxRuns) {
-            Cid cid = seeker.Next(closeable, stack);
+            Cid cid = seeker.next(closeable, stack);
             if (cid == null) {
                 break;
             }

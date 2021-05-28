@@ -8,14 +8,14 @@ import io.ipfs.cid.Cid;
 
 public class Dshelp {
 
-    public static Key NewKeyFromBinary(@NonNull byte[] rawKey) {
-        return Key.RawKey("/" +
+    public static Key newKeyFromBinary(@NonNull byte[] rawKey) {
+        return Key.getRawKey("/" +
                 BaseEncoding.base32().encode(rawKey).replaceAll("=", ""));
 
     }
 
-    public static Key CidToDsKey(@NonNull Cid cid) {
-        return NewKeyFromBinary(cid.Bytes());
+    public static Key cidToDsKey(@NonNull Cid cid) {
+        return newKeyFromBinary(cid.Bytes());
     }
 
 }

@@ -466,11 +466,11 @@ public class LiteHost implements BitSwapReceiver {
         Date eol = Date.from(new Date().toInstant().plus(DefaultRecordEOL));
 
         ipns.pb.Ipns.IpnsEntry
-                record = Ipns.Create(privKey, path.getBytes(), sequence, eol);
+                record = Ipns.create(privKey, path.getBytes(), sequence, eol);
 
         PubKey pk = privKey.publicKey();
 
-        record = Ipns.EmbedPublicKey(pk, record);
+        record = Ipns.embedPublicKey(pk, record);
 
         byte[] bytes = record.toByteArray();
 

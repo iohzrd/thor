@@ -30,7 +30,7 @@ public interface Node extends Block, Resolver {
         }
     }
 
-    static ProtoNode NodeWithData(byte[] data) {
+    static ProtoNode createNodeWithData(byte[] data) {
         return new ProtoNode(data);
     }
 
@@ -42,9 +42,9 @@ public interface Node extends Block, Resolver {
 
     byte[] getRawData();
 
-    void SetCidBuilder(@Nullable Builder builder);
+    void setCidBuilder(@Nullable Builder builder);
 
-    Pair<Link, List<String>> ResolveLink(@NonNull List<String> path);
+    Pair<Link, List<String>> resolveLink(@NonNull List<String> path);
 
-    long Size();
+    long size();
 }

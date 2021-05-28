@@ -33,7 +33,7 @@ import ipns.pb.Ipns.IpnsEntry;
 public class Ipns implements Validator {
 
     @NonNull
-    private static PubKey ExtractPublicKey(@NonNull PeerId id) {
+    private static PubKey extractPublicKey(@NonNull PeerId id) {
 
         try (InputStream inputStream = new ByteArrayInputStream(id.getBytes())) {
             long version = Multihash.readVarint(inputStream);
@@ -59,7 +59,7 @@ public class Ipns implements Validator {
         return Objects.requireNonNull(new SimpleDateFormat(IPFS.TimeFormatIpfs).parse(format));
     }
 
-    public static ipns.pb.Ipns.IpnsEntry Create(@NonNull PrivKey sk, @NonNull byte[] bytes,
+    public static ipns.pb.Ipns.IpnsEntry create(@NonNull PrivKey sk, @NonNull byte[] bytes,
                                                 long sequence, @NonNull Date eol) {
 
         @SuppressLint("SimpleDateFormat") String format = new SimpleDateFormat(
@@ -74,12 +74,12 @@ public class Ipns implements Validator {
         return entry.toBuilder().setSignature(ByteString.copyFrom(sig)).build();
     }
 
-    public static ipns.pb.Ipns.IpnsEntry EmbedPublicKey(@NonNull PubKey pk,
+    public static ipns.pb.Ipns.IpnsEntry embedPublicKey(@NonNull PubKey pk,
                                                         @NonNull ipns.pb.Ipns.IpnsEntry entry) {
 
         try {
             PeerId peerId = PeerId.fromPubKey(pk);
-            ExtractPublicKey(peerId);
+            extractPublicKey(peerId);
             return entry;
         } catch (Throwable throwable) {
             // We failed to extract the public key from the peer ID, embed it in the
@@ -146,7 +146,8 @@ public class Ipns implements Validator {
                 entry.getValue().toStringUtf8(), entry.getSequence());
     }
 
-    private int Compare(@NonNull Ipns.Entry a, @NonNull Ipns.Entry b) {
+    @Override
+    public int compare(@NonNull Ipns.Entry a, @NonNull Ipns.Entry b) {
 
         long as = a.getSequence();
         long bs = b.getSequence();
@@ -169,11 +170,6 @@ public class Ipns implements Validator {
         return 0;
     }
 
-    @Override
-    public int compare(@NonNull Ipns.Entry rec, @NonNull Ipns.Entry cmp) {
-        return Compare(rec, cmp);
-    }
-
     @NonNull
     private Date getEOL(@NonNull ipns.pb.Ipns.IpnsEntry entry) throws RecordIssue {
         try {
@@ -193,7 +189,7 @@ public class Ipns implements Validator {
     // This function returns (nil, nil) when no public key can be extracted and
     // nothing is malformed.
     @NonNull
-    private PubKey ExtractPublicKey(@NonNull PeerId pid, @NonNull ipns.pb.Ipns.IpnsEntry entry)
+    private PubKey extractPublicKey(@NonNull PeerId pid, @NonNull ipns.pb.Ipns.IpnsEntry entry)
             throws RecordIssue, IOException {
 
 
@@ -210,13 +206,13 @@ public class Ipns implements Validator {
             return pk;
         }
 
-        return ExtractPublicKey(pid);
+        return extractPublicKey(pid);
     }
 
     @NonNull
     private PubKey getPublicKey(@NonNull PeerId pid, @NonNull ipns.pb.Ipns.IpnsEntry entry)
             throws IOException, RecordIssue {
-        return ExtractPublicKey(pid, entry);
+        return extractPublicKey(pid, entry);
     }
 
     private void validate(@NonNull PubKey pk, @NonNull ipns.pb.Ipns.IpnsEntry entry) throws RecordIssue {
@@ -254,6 +250,7 @@ public class Ipns implements Validator {
             this.value = value;
         }
 
+        @NonNull
         public Crypto.KeyType getKeyType() {
             return keyType;
         }
@@ -270,6 +267,7 @@ public class Ipns implements Validator {
                     '}';
         }
 
+        @NonNull
         public Date getEol() {
             return eol;
         }

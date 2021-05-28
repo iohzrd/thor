@@ -28,7 +28,7 @@ public class Walker {
 
 
     @Nullable
-    public NavigableNode Next(@NonNull Closeable closeable, @NonNull Visitor visitor) throws ClosedException {
+    public NavigableNode next(@NonNull Closeable closeable, @NonNull Visitor visitor) throws ClosedException {
 
 
         if (!visitor.isRootVisited(true)) {
@@ -50,7 +50,7 @@ public class Walker {
             success = up(visitor);
 
             if (success) {
-                return Next(closeable, visitor);
+                return next(closeable, visitor);
             }
         }
         return null;
@@ -64,7 +64,7 @@ public class Walker {
             return false;
         }
         if (!visitor.isEmpty()) {
-            boolean result = NextChild(visitor);
+            boolean result = nextChild(visitor);
             if (result) {
                 return true;
             } else {
@@ -76,11 +76,11 @@ public class Walker {
     }
 
 
-    private boolean NextChild(@NonNull Visitor visitor) {
+    private boolean nextChild(@NonNull Visitor visitor) {
         Stage stage = visitor.peekStage();
         NavigableNode activeNode = stage.getNode();
 
-        if (stage.index() + 1 < activeNode.ChildTotal()) {
+        if (stage.index() + 1 < activeNode.childTotal()) {
             stage.incrementIndex();
             return true;
         }
@@ -108,11 +108,11 @@ public class Walker {
         int index = stage.index();
         Objects.requireNonNull(activeNode);
 
-        if (index >= activeNode.ChildTotal()) {
+        if (index >= activeNode.childTotal()) {
             return null;
         }
 
-        return activeNode.FetchChild(closeable, index);
+        return activeNode.fetchChild(closeable, index);
     }
 
     @NonNull
@@ -120,7 +120,7 @@ public class Walker {
         return root;
     }
 
-    public Pair<Stack<Stage>, Long> Seek(@NonNull Closeable closeable,
+    public Pair<Stack<Stage>, Long> seek(@NonNull Closeable closeable,
                                          @NonNull Stack<Stage> stack,
                                          long offset) throws ClosedException {
 
@@ -136,16 +136,16 @@ public class Walker {
 
         NavigableNode visitedNode = stack.peek().getNode();
 
-        Node node = NavigableIPLDNode.ExtractIPLDNode(visitedNode);
+        Node node = NavigableIPLDNode.extractIPLDNode(visitedNode);
 
         if (node.getLinks().size() > 0) {
             // Internal node, should be a `mdag.ProtoNode` containing a
             // `unixfs.FSNode` (see the `balanced` package for more details).
-            FSNode fsNode = FSNode.ExtractFSNode(node);
+            FSNode fsNode = FSNode.extractFSNode(node);
 
             // If there aren't enough size hints don't seek
             // (see the `io.EOF` handling error comment below).
-            if (fsNode.NumChildren() != node.getLinks().size()) {
+            if (fsNode.numChildren() != node.getLinks().size()) {
                 throw new RuntimeException("ErrSeekNotSupported");
             }
 
@@ -154,17 +154,17 @@ public class Walker {
             // sizes of its children (advancing the child index of the
             // `dagWalker`) to find where we need to go down to next in
             // the search
-            for (int i = 0; i < fsNode.NumChildren(); i++) {
+            for (int i = 0; i < fsNode.numChildren(); i++) {
 
-                long childSize = fsNode.BlockSize(i);
+                long childSize = fsNode.getBlockSize(i);
 
                 if (childSize > left) {
                     stack.peek().setIndex(i);
 
-                    NavigableNode fetched = visitedNode.FetchChild(closeable, i);
+                    NavigableNode fetched = visitedNode.fetchChild(closeable, i);
                     stack.push(new Stage(fetched, 0));
 
-                    return Seek(closeable, stack, left);
+                    return seek(closeable, stack, left);
                 }
                 left -= childSize;
             }
@@ -173,12 +173,12 @@ public class Walker {
         return Pair.create(stack, left);
     }
 
-    public Pair<Stack<Stage>, Long> Seek(@NonNull Closeable closeable, long offset) throws ClosedException {
+    public Pair<Stack<Stage>, Long> seek(@NonNull Closeable closeable, long offset) throws ClosedException {
 
         Stack<Stage> stack = new Stack<>();
         stack.push(new Stage(getRoot(), 0));
 
-        return Seek(closeable, stack, offset);
+        return seek(closeable, stack, offset);
 
     }
 }

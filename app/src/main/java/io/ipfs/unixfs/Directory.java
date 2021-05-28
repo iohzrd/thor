@@ -11,29 +11,29 @@ import io.ipfs.format.ProtoNode;
 public interface Directory {
 
 
-    static Directory NewDirectory() {
+    static Directory createDirectory() {
 
-        return new BasicDirectory(Unixfs.EmptyDirNode());
+        return new BasicDirectory(Unixfs.emptyDirNode());
     }
 
     @Nullable
-    static Directory NewDirectoryFromNode(@NonNull Node node) {
+    static Directory createDirectoryFromNode(@NonNull Node node) {
         ProtoNode protoNode = (ProtoNode) node;
-        FSNode fsNode = FSNode.FSNodeFromBytes(protoNode.getData());
+        FSNode fsNode = FSNode.createFSNodeFromBytes(protoNode.getData());
 
         if (fsNode.Type() == unixfs.pb.Unixfs.Data.DataType.Directory) {
-            return new BasicDirectory((ProtoNode) protoNode.Copy());
+            return new BasicDirectory((ProtoNode) protoNode.copy());
         }
         return null;
     }
 
-    void SetCidBuilder(@NonNull Builder cidBuilder);
+    void setCidBuilder(@NonNull Builder cidBuilder);
 
-    Node GetNode();
+    Node getNode();
 
-    void AddChild(@NonNull String name, @NonNull Node link);
+    void addChild(@NonNull String name, @NonNull Node link);
 
-    void RemoveChild(@NonNull String name);
+    void removeChild(@NonNull String name);
 
     class BasicDirectory implements Directory {
         private final ProtoNode protoNode;
@@ -43,24 +43,24 @@ public interface Directory {
         }
 
         @Override
-        public void SetCidBuilder(@NonNull Builder cidBuilder) {
-            protoNode.SetCidBuilder(cidBuilder);
+        public void setCidBuilder(@NonNull Builder cidBuilder) {
+            protoNode.setCidBuilder(cidBuilder);
         }
 
         @Override
-        public Node GetNode() {
+        public Node getNode() {
             return protoNode;
         }
 
         @Override
-        public void AddChild(@NonNull String name, @NonNull Node link) {
-            protoNode.RemoveNodeLink(name);
-            protoNode.AddNodeLink(name, link);
+        public void addChild(@NonNull String name, @NonNull Node link) {
+            protoNode.removeNodeLink(name);
+            protoNode.addNodeLink(name, link);
         }
 
         @Override
-        public void RemoveChild(@NonNull String name) {
-            protoNode.RemoveNodeLink(name);
+        public void removeChild(@NonNull String name) {
+            protoNode.removeNodeLink(name);
         }
     }
 

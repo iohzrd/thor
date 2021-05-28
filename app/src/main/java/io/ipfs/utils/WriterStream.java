@@ -27,7 +27,7 @@ public class WriterStream implements io.ipfs.format.Reader {
     }
 
     @Override
-    public int Read(byte[] bytes) {
+    public int read(byte[] bytes) {
 
         if (mProgress.isClosed()) {
             throw new RuntimeException("progress closed");

@@ -56,18 +56,8 @@ public class Query {
 
     public ConcurrentHashMap<PeerId, PeerState> constructLookupResult(@NonNull ID target) {
 
-        // determine if the query terminated early
-        boolean completed = true;
-
-        // Lookup and starvation are both valid ways for a lookup to complete. (Starvation does not imply failure.)
-        // Lookup termination (as defined in isLookupTermination) is not possible in small networks.
-        // Starvation is a successful query termination in small networks.
-        if (!(isLookupTermination() || isStarvationTermination())) {
-            completed = false;
-        }
-
         // extract the top K not unreachable peers
-        List<QueryPeerState> qp = queryPeers.GetClosestNInStates(dht.bucketSize,
+        List<QueryPeerState> qp = queryPeers.getClosestNInStates(dht.bucketSize,
                 Arrays.asList(PeerState.PeerHeard, PeerState.PeerWaiting, PeerState.PeerQueried));
 
         ConcurrentHashMap<PeerId, PeerState> res = new ConcurrentHashMap<>();
@@ -81,7 +71,7 @@ public class Query {
 
         PeerDistanceSorter pds = new PeerDistanceSorter(target);
         for (PeerId p : peers) {
-            pds.appendPeer(p, Util.ConvertPeerID(p));
+            pds.appendPeer(p, ID.convertPeerID(p));
         }
 
         List<PeerId> sorted = pds.sortedList();
@@ -102,7 +92,7 @@ public class Query {
             if (Objects.equals(p, dht.self)) { // don't add self.
                 continue;
             }
-            queryPeers.TryAdd(p);
+            queryPeers.tryAdd(p);
         }
 
 
@@ -110,9 +100,9 @@ public class Query {
             if (Objects.equals(p, dht.self)) { // don't add self.
                 continue;
             }
-            PeerState st = queryPeers.GetState(p);
+            PeerState st = queryPeers.getState(p);
             if (st == PeerState.PeerWaiting) {
-                queryPeers.SetState(p, PeerState.PeerQueried);
+                queryPeers.setState(p, PeerState.PeerQueried);
             } else {
                 throw new RuntimeException("internal state");
             }
@@ -121,9 +111,9 @@ public class Query {
             if (Objects.equals(p, dht.self)) { // don't add self.
                 continue;
             }
-            PeerState st = queryPeers.GetState(p);
+            PeerState st = queryPeers.getState(p);
             if (st == PeerState.PeerWaiting) {
-                queryPeers.SetState(p, PeerState.PeerUnreachable);
+                queryPeers.setState(p, PeerState.PeerUnreachable);
             } else {
                 throw new RuntimeException("internal state");
             }
@@ -158,7 +148,7 @@ public class Query {
 
                 // try spawning the queries, if there are no available peers to query then we won't spawn them
                 for (PeerId queryPeer : result.second) {
-                    queryPeers.SetState(queryPeer, PeerState.PeerWaiting);
+                    queryPeers.setState(queryPeer, PeerState.PeerWaiting);
                     new Thread(() -> {
                         try {
                             queryPeer(ctx, queryPeer);
@@ -232,10 +222,10 @@ public class Query {
     // From the set of all nodes that are not unreachable,
     // if the closest beta nodes are all queried, the lookup can terminate.
     private boolean isLookupTermination() {
-        List<QueryPeerState> peers = queryPeers.GetClosestNInStates(dht.beta, Arrays.asList(
+        List<QueryPeerState> peers = queryPeers.getClosestNInStates(dht.beta, Arrays.asList(
                 PeerState.PeerHeard, PeerState.PeerWaiting, PeerState.PeerQueried));
         for (QueryPeerState qps : peers) {
-            if (queryPeers.GetState(qps.id) != PeerState.PeerQueried) {
+            if (queryPeers.getState(qps.id) != PeerState.PeerQueried) {
                 return false;
             }
         }
@@ -266,7 +256,7 @@ public class Query {
 
         // The peers we query next should be ones that we have only Heard about.
         List<PeerId> peersToQuery = new ArrayList<>();
-        List<QueryPeerState> peers = queryPeers.GetClosestInStates(
+        List<QueryPeerState> peers = queryPeers.getClosestInStates(
                 nPeersToQuery, Collections.singletonList(PeerState.PeerHeard));
         int count = 0;
         for (QueryPeerState p : peers) {

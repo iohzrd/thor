@@ -30,7 +30,7 @@ public class Stream {
 
     public static Adder getFileAdder(@NonNull Storage storage) {
 
-        BlockStore bs = BlockStore.createBlockstore(storage);
+        BlockStore bs = BlockStore.createBlockStore(storage);
         Interface exchange = new Exchange(bs);
         BlockService blockservice = BlockService.createBlockService(bs, exchange);
         DagService dagService = DagService.createDagService(blockservice);
@@ -53,7 +53,7 @@ public class Stream {
                                  @NonNull Storage storage,
                                  @NonNull Cid cid) throws ClosedException {
 
-        BlockStore bs = BlockStore.createBlockstore(storage);
+        BlockStore bs = BlockStore.createBlockStore(storage);
         Interface exchange = new Exchange(bs);
         BlockService blockservice = BlockService.createBlockService(bs, exchange);
         DagService dags = DagService.createDagService(blockservice);
@@ -65,7 +65,7 @@ public class Stream {
         List<Cid> cids = new ArrayList<>(rw.getCids());
 
         cids.add(top.getCid());
-        bs.DeleteBlocks(cids);
+        bs.deleteBlocks(cids);
 
     }
 
@@ -80,7 +80,7 @@ public class Stream {
 
         io.ipfs.format.Node node = Resolver.ResolveNode(closeable, dagService, cid);
         Objects.requireNonNull(node);
-        Directory dir = Directory.NewDirectoryFromNode(node);
+        Directory dir = Directory.createDirectoryFromNode(node);
         return dir != null;
     }
 
@@ -98,7 +98,7 @@ public class Stream {
 
         Adder fileAdder = getFileAdder(storage);
 
-        BlockStore bs = BlockStore.createBlockstore(storage);
+        BlockStore bs = BlockStore.createBlockStore(storage);
         Interface exchange = new Exchange(bs);
         BlockService blockservice = BlockService.createBlockService(bs, exchange);
         DagService dagService = DagService.createDagService(blockservice);
@@ -117,7 +117,7 @@ public class Stream {
 
         Adder fileAdder = getFileAdder(storage);
 
-        BlockStore bs = BlockStore.createBlockstore(storage);
+        BlockStore bs = BlockStore.createBlockStore(storage);
         Interface exchange = new Exchange(bs);
         BlockService blockservice = BlockService.createBlockService(bs, exchange);
         DagService dagService = DagService.createDagService(blockservice);
@@ -139,7 +139,7 @@ public class Stream {
 
         io.ipfs.format.Node node = Resolver.ResolveNode(closeable, dagService, cid);
         Objects.requireNonNull(node);
-        Directory dir = Directory.NewDirectoryFromNode(node);
+        Directory dir = Directory.createDirectoryFromNode(node);
 
         if (dir == null) {
             lsFromLinks(closeable, dagService, node.getLinks(), resolveChildren);
@@ -163,7 +163,7 @@ public class Stream {
                                          @NonNull Directory dir,
                                          boolean resolveChildren) throws ClosedException {
 
-        List<Link> links = dir.GetNode().getLinks();
+        List<Link> links = dir.getNode().getLinks();
         for (Link link : links) {
             processLink(closeable, dagService, link, resolveChildren);
         }
@@ -198,7 +198,7 @@ public class Stream {
                 Node linkNode = link.getNode(closeable, dagService);
                 if (linkNode instanceof ProtoNode) {
                     ProtoNode pn = (ProtoNode) linkNode;
-                    FSNode d = FSNode.FSNodeFromBytes(pn.getData());
+                    FSNode d = FSNode.createFSNodeFromBytes(pn.getData());
                     int type;
                     switch (d.Type()) {
                         case File:
@@ -213,7 +213,7 @@ public class Stream {
                         default:
                             type = io.ipfs.utils.Link.Dir;
                     }
-                    size = d.FileSize();
+                    size = d.getFileSize();
                     closeable.info(io.ipfs.utils.Link.create(name, hash, size, type));
 
                 }

@@ -179,7 +179,7 @@ public class ContentManager {
             }
 
         }
-        return blockStore.Get(cid);
+        return blockStore.getBlock(cid);
     }
 
 
@@ -188,7 +188,7 @@ public class ContentManager {
         try {
             Cid cid = block.getCid();
             LogUtils.info(TAG, "Block Received " + cid.String() + " " + peer.toBase58());
-            blockStore.Put(block);
+            blockStore.putBlock(block);
 
             if (matches.containsKey(cid)) {
                 priority.add(peer);
@@ -223,7 +223,7 @@ public class ContentManager {
     public Block getBlock(@NonNull Closeable closeable, @NonNull Cid cid, boolean root) throws ClosedException {
         try {
             synchronized (cid.String().intern()) {
-                Block block = blockStore.Get(cid);
+                Block block = blockStore.getBlock(cid);
                 if (block == null) {
                     AtomicBoolean done = new AtomicBoolean(false);
                     LogUtils.info(TAG, "Block Get " + cid.String());

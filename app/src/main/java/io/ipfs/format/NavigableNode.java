@@ -8,11 +8,11 @@ import io.ipfs.core.ClosedException;
 
 public interface NavigableNode {
 
-    NavigableNode FetchChild(@NonNull Closeable ctx, int childIndex) throws ClosedException;
+    NavigableNode fetchChild(@NonNull Closeable ctx, int childIndex) throws ClosedException;
 
-    int ChildTotal();
+    int childTotal();
 
     Cid getChild(int index);
 
-    Cid Cid();
+    Cid getCid();
 }
