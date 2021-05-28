@@ -648,18 +648,19 @@ public class KadDht implements Routing {
             return;
         }
 
-
-        List<Future<Void>> futures = new ArrayList<>();
-        ExecutorService executor = Executors.newFixedThreadPool(4);
-        for (PeerId peerId : queryPeers) {
-            Future<Void> future = executor.submit(() -> invokeQuery(closeable, queryFn, peerId));
-            futures.add(future);
-        }
-        for (Future<Void> future : futures) {
-            try {
-                future.get();
-            } catch (Throwable ignore) {
-                // ignore
+        if(IPFS.DHT_RUN_FOLLOWUP) {
+            List<Future<Void>> futures = new ArrayList<>();
+            ExecutorService executor = Executors.newFixedThreadPool(4);
+            for (PeerId peerId : queryPeers) {
+                Future<Void> future = executor.submit(() -> invokeQuery(closeable, queryFn, peerId));
+                futures.add(future);
+            }
+            for (Future<Void> future : futures) {
+                try {
+                    future.get();
+                } catch (Throwable ignore) {
+                    // ignore
+                }
             }
         }
     }

@@ -149,10 +149,11 @@ public class IPFS {
     ));
 
     public static final int KAD_DHT_BUCKET_SIZE = 20;
-    public static final int KAD_DHT_BETA = 25;
+    public static final int KAD_DHT_BETA = 30;
     public static final int CONNECT_TIMEOUT = 5;
     public static final int BITSWAP_LOAD_PROVIDERS_REFRESH = 10000;
-    public static final long DHT_REQUEST_READ_TIMEOUT = 10;
+    public static final long DHT_REQUEST_READ_TIMEOUT = 5;
+    public static final boolean DHT_RUN_FOLLOWUP = false;
     private static final String SWARM_PORT_KEY = "swarmPortKey";
     private static final String PRIVATE_KEY = "privateKey";
     private static final String PUBLIC_KEY = "publicKey";
