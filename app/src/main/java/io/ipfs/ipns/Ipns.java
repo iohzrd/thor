@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Objects;
@@ -60,13 +61,15 @@ public class Ipns implements Validator {
     }
 
     public static ipns.pb.Ipns.IpnsEntry create(@NonNull PrivKey sk, @NonNull byte[] bytes,
-                                                long sequence, @NonNull Date eol) {
+                                                long sequence, @NonNull Date eol,
+                                                @NonNull Duration duration) {
 
         @SuppressLint("SimpleDateFormat") String format = new SimpleDateFormat(
                 IPFS.TimeFormatIpfs).format(eol);
         ipns.pb.Ipns.IpnsEntry entry = ipns.pb.Ipns.IpnsEntry.newBuilder()
                 .setValidityType(ipns.pb.Ipns.IpnsEntry.ValidityType.EOL)
                 .setSequence(sequence)
+                .setTtl(duration.toNanos())
                 .setValue(ByteString.copyFrom(bytes))
                 .setValidity(ByteString.copyFrom(format.getBytes())).buildPartial();
         byte[] sig = sk.sign(ipnsEntryDataForSig(entry));

@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -249,12 +250,12 @@ public class KadDht implements Routing {
         long start = System.currentTimeMillis();
 
         try {
-            ConcurrentSkipListSet<PeerId> handled = new ConcurrentSkipListSet<>();
+            ConcurrentHashMap<PeerId, Long> handled = new ConcurrentHashMap<>();
             runLookupWithFollowup(closeable, key, (ctx, p) -> {
 
                 Dht.Message pms = findProvidersSingle(ctx, p, key);
 
-                List<AddrInfo> provs = new ArrayList<>();
+
                 List<Dht.Message.Peer> list = pms.getProviderPeersList();
                 for (Dht.Message.Peer entry : list) {
 
@@ -269,29 +270,31 @@ public class KadDht implements Routing {
                         }
                     }
 
-                    LogUtils.debug(TAG, "got provider before filter " + peerId.toBase58() + " "
-                            + multiAddresses.toString());
 
                     AddrInfo addrInfo = AddrInfo.create(peerId, multiAddresses, false);
 
-                    // maybe in the future empty addresses will also reported
-                    // but an adequate searching should be provided
-                    if (addrInfo.hasAddresses()) {
-                        provs.add(addrInfo);
-                        host.addToAddressBook(addrInfo);
+
+                    Long foundNumber = handled.get(peerId);
+                    if (foundNumber == null) {
+                        foundNumber = 1L;
+                    } else {
+                        foundNumber = foundNumber + 1;
                     }
-                }
+                    handled.put(peerId, foundNumber);
 
+                    LogUtils.debug(TAG, "got provider before filter " + peerId.toBase58() + " "
+                            + multiAddresses.toString() + " " + foundNumber + " for " +
+                            cid.String() + " " + cid.getVersion() + " " + addrInfo.toString());
 
-                for (AddrInfo prov : provs) {
-                    LogUtils.debug(TAG, "got provider : " + prov.getPeerId());
-                    PeerId peerId = prov.getPeerId();
-                    if (!handled.contains(peerId)) {
-                        handled.add(peerId);
-                        LogUtils.info(TAG, "got provider using: " + prov.getPeerId());
+                    boolean update = host.addToAddressBook(addrInfo);
+                    if (update || (handled.size() < IPFS.THRESHOLD_FIND_PROVIDERS &&
+                            !addrInfo.hasAddresses() &&
+                            foundNumber == IPFS.THRESHOLD_FIND_PROVIDERS)) {
+                        LogUtils.debug(TAG, "findProviders " + peerId);
                         providers.peer(peerId);
                     }
                 }
+
                 return evalClosestPeers(pms);
 
             }, closeable::isClosed, false);

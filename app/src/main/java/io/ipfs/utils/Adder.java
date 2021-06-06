@@ -39,7 +39,7 @@ public class Adder {
     }
 
     public Node AddLinkToDir(@NonNull Node dirNode, @NonNull String name, @NonNull Node link) {
-        Directory dir = Directory.createDirectoryFromNode(dirNode);
+        Directory dir = Directory.createDirectoryFromNode(dagService, dirNode);
         Objects.requireNonNull(dir);
         dir.setCidBuilder(builder);
         dir.addChild(name, link);
@@ -49,7 +49,7 @@ public class Adder {
     }
 
     public Node RemoveChild(@NonNull Node dirNode, @NonNull String name) {
-        Directory dir = Directory.createDirectoryFromNode(dirNode);
+        Directory dir = Directory.createDirectoryFromNode(dagService, dirNode);
         Objects.requireNonNull(dir);
         dir.setCidBuilder(builder);
         dir.removeChild(name);

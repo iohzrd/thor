@@ -150,9 +150,11 @@ public class IPFS {
 
     public static final int KAD_DHT_BUCKET_SIZE = 20;
     public static final int KAD_DHT_BETA = 30;
-    public static final int CONNECT_TIMEOUT = 3;
+    public static final int CONNECT_TIMEOUT = 5;
     public static final int BITSWAP_LOAD_PROVIDERS_REFRESH = 10000;
-    public static final long DHT_REQUEST_READ_TIMEOUT = 5;
+    public static final long DHT_REQUEST_READ_TIMEOUT = 10;
+    public static final long IPNS_DURATION = 6; // 6 hours duration
+    public static final int THRESHOLD_FIND_PROVIDERS = 5;
 
     private static final String SWARM_PORT_KEY = "swarmPortKey";
     private static final String PRIVATE_KEY = "privateKey";
@@ -719,7 +721,7 @@ public class IPFS {
         } catch (ClosedException | ConnectionIssue ignore) {
             // ignore
         } catch (Throwable throwable) {
-            LogUtils.error(TAG, "dfas " + throwable.getClass().getSimpleName());
+            LogUtils.error(TAG, throwable);
         }
         return false;
     }

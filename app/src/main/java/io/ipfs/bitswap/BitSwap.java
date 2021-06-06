@@ -73,7 +73,7 @@ public class BitSwap implements Interface {
     @Override
     public void receiveMessage(@NonNull PeerId peer, @NonNull BitSwapMessage incoming) {
 
-        LogUtils.info(TAG, "ReceiveMessage " + peer.toBase58());
+        LogUtils.error(TAG, "ReceiveMessage " + peer.toBase58());
 
         List<Block> blocks = incoming.Blocks();
         List<Cid> haves = incoming.Haves();
@@ -97,7 +97,6 @@ public class BitSwap implements Interface {
                                    @NonNull List<Block> wanted,
                                    @NonNull List<Cid> haves) {
 
-
         for (Block block : wanted) {
             LogUtils.verbose(TAG, "ReceiveBlock " + peer.toBase58() +
                     " " + block.getCid().String());
@@ -105,7 +104,6 @@ public class BitSwap implements Interface {
         }
 
         contentManager.haveReceived(peer, haves);
-
 
     }
 
@@ -133,7 +131,7 @@ public class BitSwap implements Interface {
                     streamChannel.close().get();
                 }
             } else { */
-            Connection conn = host.connect(closeable, peerId, IPFS.CONNECT_TIMEOUT);
+            Connection conn = host.connectTo(closeable, peerId, IPFS.CONNECT_TIMEOUT);
 
             if (closeable.isClosed()) {
                 throw new ClosedException();

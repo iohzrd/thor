@@ -33,6 +33,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.net.ssl.ManagerFactoryParameters;
 import javax.net.ssl.TrustManager;
@@ -436,23 +437,27 @@ public class LiteHost implements BitSwapReceiver {
 
     }
 
-    public void connectTo(@NonNull Closeable closeable, @NonNull PeerId peerId, int timeout)
-            throws ClosedException {
-
-        try {
-            connect(closeable, peerId, timeout);
-
-        } catch (ConnectionIssue ignore) {
-
+    @NonNull
+    public Connection connectTo(@NonNull Closeable closeable, @NonNull PeerId peerId, int timeout)
+            throws ClosedException, ConnectionIssue {
+        if (hasAddresses(peerId)) {
+            return connect(closeable, peerId, timeout);
+        } else {
+            AtomicReference<Connection> connectionAtomicReference = new AtomicReference<>(null);
             AtomicBoolean done = new AtomicBoolean(false);
             routing.findPeer(() -> closeable.isClosed() || done.get(), peerId1 -> {
                 try {
-                    connect(closeable, peerId1, timeout);
+                    connectionAtomicReference.set(connect(closeable, peerId1, timeout));
                     done.set(true);
                 } catch (Throwable throwable) {
                     LogUtils.error(TAG, throwable);
                 }
             }, peerId);
+            Connection connection = connectionAtomicReference.get();
+            if (connection == null) {
+                throw new ConnectionIssue();
+            }
+            return connection;
         }
 
     }
@@ -465,8 +470,9 @@ public class LiteHost implements BitSwapReceiver {
 
         Date eol = Date.from(new Date().toInstant().plus(DefaultRecordEOL));
 
+        Duration duration = Duration.ofHours(IPFS.IPNS_DURATION);
         ipns.pb.Ipns.IpnsEntry
-                record = Ipns.create(privKey, path.getBytes(), sequence, eol);
+                record = Ipns.create(privKey, path.getBytes(), sequence, eol, duration);
 
         PubKey pk = privKey.publicKey();
 
@@ -634,7 +640,7 @@ public class LiteHost implements BitSwapReceiver {
                 InetAddress inetAddress = localAddress();
                 String pre = "/ip4/";
                 if (inetAddress instanceof Inet6Address) {
-                    pre = "/ip6";
+                    pre = "/ip6/";
                 }
 
                 list.add(new Multiaddr(pre +
@@ -651,6 +657,11 @@ public class LiteHost implements BitSwapReceiver {
 
     // TODO improve (check network configuration or so)
     private boolean inet6() {
+        try {
+            localAddress();
+        } catch (Throwable throwable){
+            LogUtils.error(TAG, throwable);
+        }
         if (localAddress != null) {
             return localAddress instanceof Inet6Address;
         }

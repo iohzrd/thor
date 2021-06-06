@@ -2,6 +2,8 @@ package io.ipfs.unixfs;
 
 import androidx.annotation.NonNull;
 
+import com.google.protobuf.ByteString;
+
 import org.apache.commons.codec.digest.MurmurHash3;
 
 import java.io.ByteArrayOutputStream;
@@ -16,6 +18,7 @@ import io.ipfs.core.Closeable;
 import io.ipfs.core.ClosedException;
 import io.ipfs.format.Link;
 import io.ipfs.format.Node;
+import io.ipfs.format.ProtoNode;
 import io.ipfs.merkledag.DagService;
 
 public class Shard {
@@ -49,7 +52,7 @@ public class Shard {
     }
 
     public static Shard makeShard(DagService ds, int size) {
-        int lg2s = log2(size);//BitField.logtwo(size);
+        int lg2s = BitField.logtwo(size);//log2(size);//BitField.logtwo(size);
         if (1 << lg2s != size) {
             throw new RuntimeException("hamt size should be a power of two");
         }
@@ -143,6 +146,75 @@ public class Shard {
             throw new RuntimeException(throwable);
         }
 
+    }
+
+
+
+    private Link Link() {
+        if( isValueNode() ) {
+            return val;
+        }
+
+        Node nd = Node();
+
+        dserv.Add(nd);
+
+        return Link.createLink(nd,"");
+    }
+    private final static long HashMurmur3 = 0x22;
+
+    // linkNamePrefix takes in the bitfield index of an entry and returns its hex prefix
+    private String linkNamePrefix(int idx) {
+        return String.format(Locale.US, prefixPadStr, idx);
+    }
+
+
+    // HAMTShardData return a `Data_HAMTShard` protobuf message
+    byte[] HAMTShardData(byte[] data, long fanout) {
+
+        unixfs.pb.Unixfs.Data.Builder pbdata = unixfs.pb.Unixfs.Data.newBuilder();
+        pbdata.setType(unixfs.pb.Unixfs.Data.DataType.HAMTShard);
+        pbdata.setHashType(HashMurmur3);
+        pbdata.setFanout(fanout);
+        pbdata.setData(ByteString.copyFrom(data));
+        return pbdata.build().toByteArray();
+    }
+    public Node Node() {
+        ProtoNode out = new ProtoNode();
+        out.setCidBuilder(builder);
+
+        int sliceIndex = 0;
+        // TODO: optimized 'for each set bit'
+        for( int childIndex = 0; childIndex < tableSize; childIndex++) {
+            if(!childer.has(childIndex)) {
+                continue;
+            }
+
+            Shard ch = childer.child(sliceIndex);
+            if( ch != null) {
+                Link clnk = ch.Link();
+
+
+                out.addRawLink(linkNamePrefix(childIndex)+ch.key, clnk);
+
+            } else {
+                // child unloaded, just copy in link with updated name
+                Link lnk = childer.link(sliceIndex);
+                String label = lnk.getName().substring(maxpadlen);
+
+                out.addRawLink(linkNamePrefix(childIndex)+label, lnk);
+
+            }
+            sliceIndex++;
+        }
+
+        byte[] data = HAMTShardData(childer.bitfield.Bytes(), tableSize);
+
+        out.setData(data);
+
+        dserv.Add(out);
+
+        return out;
     }
 
     public static class Childer {

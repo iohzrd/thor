@@ -80,7 +80,7 @@ public class Stream {
 
         io.ipfs.format.Node node = Resolver.resolveNode(closeable, dagService, cid);
         Objects.requireNonNull(node);
-        Directory dir = Directory.createDirectoryFromNode(node);
+        Directory dir = Directory.createDirectoryFromNode(dagService, node);
         return dir != null;
     }
 
@@ -139,7 +139,7 @@ public class Stream {
 
         io.ipfs.format.Node node = Resolver.resolveNode(closeable, dagService, cid);
         Objects.requireNonNull(node);
-        Directory dir = Directory.createDirectoryFromNode(node);
+        Directory dir = Directory.createDirectoryFromNode(dagService, node);
 
         if (dir == null) {
             lsFromLinks(closeable, dagService, node.getLinks(), resolveChildren);
@@ -201,11 +201,12 @@ public class Stream {
                     FSNode d = FSNode.createFSNodeFromBytes(pn.getData());
                     int type;
                     switch (d.Type()) {
+                        case HAMTShard:
                         case File:
-                            type = io.ipfs.utils.Link.Raw;
+                            type = io.ipfs.utils.Link.File;
                             break;
                         case Raw:
-                            type = io.ipfs.utils.Link.File;
+                            type = io.ipfs.utils.Link.Raw;
                             break;
                         case Symlink:
                             type = io.ipfs.utils.Link.Symlink;

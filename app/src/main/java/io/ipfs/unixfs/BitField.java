@@ -152,6 +152,32 @@ public class BitField {
          */
         return 0;
     }
+    public static int logtwo(int v) {
+        if(v <= 0) {
+            throw new RuntimeException("hamt size should be a power of two");
+        }
+        int  lg2 = Integer.numberOfTrailingZeros(v);
+        if( 1<<lg2 != v) {
+            throw new RuntimeException("hamt size should be a power of two");
+        }
+        return lg2;
+    }
+
+
+    // Bytes returns the Bitfield as a byte string.
+//
+// This function *does not* copy.
+    public byte[] Bytes() {
+
+        return bytes;
+        /* TODO
+        for i, b := range bf {
+            if b != 0 {
+                return bf[i:]
+            }
+        }
+        return nil */
+    }
 
 /*
     public static int logtwo(int v) {

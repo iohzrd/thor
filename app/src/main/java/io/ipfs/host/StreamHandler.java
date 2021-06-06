@@ -123,6 +123,7 @@ public class StreamHandler {
                                 " StreamId " + streamId + " PeerId " + quicChannel.attr(LiteHost.PEER_KEY).get());
                         QuicheWrapper.writeAndFin(connection, streamId, DataHandler.writeToken(IPFS.NA));
                         close(streamId);
+                        quicChannel.close();
                         return;
                 }
             }

@@ -226,6 +226,14 @@ public class ProtoNode implements Node {
 
     }
 
+    public void addRawLink(@NonNull String name, @NonNull Link link) {
+        encoded = null;
+
+        synchronized (links) {
+            links.add(new Link(link.getCid(), name, link.getSize()));
+        }
+    }
+
     private void addRawLink(@NonNull Link link) {
         encoded = null;
 

@@ -34,6 +34,7 @@ import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.Provider;
+import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateFactory;
@@ -102,6 +103,47 @@ public final class LiteHostCertificate {
     private final X509Certificate cert;
     private final PrivateKey key;
 
+    private final PublicKey publicKey;
+
+    /**
+     * Creates a new instance.
+     *
+     * @param fqdn      a fully qualified domain name
+     * @param random    the {@link SecureRandom} to use
+     * @param notBefore Certificate is not valid before this time
+     * @param notAfter  Certificate is not valid after this time
+     */
+    public LiteHostCertificate(PrivKey privKey, KeyPair keypair, String fqdn,
+                               SecureRandom random, Date notBefore, Date notAfter)
+            throws Exception {
+
+
+        String algorithm = keypair.getPublic().getAlgorithm();
+        String[] paths = generate(privKey, fqdn, keypair, random, notBefore, notAfter, algorithm);
+
+        certificate = new File(paths[0]);
+        privateKey = new File(paths[1]);
+        key = keypair.getPrivate();
+        publicKey = keypair.getPublic();
+        FileInputStream certificateInput = null;
+        try {
+            certificateInput = new FileInputStream(certificate);
+            cert = (X509Certificate) CertificateFactory.getInstance("X509").generateCertificate(certificateInput);
+        } catch (Exception e) {
+            throw new CertificateEncodingException(e);
+        } finally {
+            if (certificateInput != null) {
+                try {
+                    certificateInput.close();
+                } catch (IOException e) {
+                    if (logger.isWarnEnabled()) {
+                        logger.warn("Failed to close a file: " + certificate, e);
+                    }
+                }
+            }
+        }
+    }
+
 
     /**
      * Creates a new instance.
@@ -139,42 +181,8 @@ public final class LiteHostCertificate {
         this(privKey, keypair, fqdn, ThreadLocalInsecureRandom.current(), notBefore, notAfter);
     }
 
-    /**
-     * Creates a new instance.
-     *
-     * @param fqdn      a fully qualified domain name
-     * @param random    the {@link SecureRandom} to use
-     * @param notBefore Certificate is not valid before this time
-     * @param notAfter  Certificate is not valid after this time
-     */
-    public LiteHostCertificate(PrivKey privKey, KeyPair keypair, String fqdn,
-                               SecureRandom random, Date notBefore, Date notAfter)
-            throws Exception {
-
-
-        String algorithm = keypair.getPublic().getAlgorithm();
-        String[] paths = generate(privKey, fqdn, keypair, random, notBefore, notAfter, algorithm);
-
-        certificate = new File(paths[0]);
-        privateKey = new File(paths[1]);
-        key = keypair.getPrivate();
-        FileInputStream certificateInput = null;
-        try {
-            certificateInput = new FileInputStream(certificate);
-            cert = (X509Certificate) CertificateFactory.getInstance("X509").generateCertificate(certificateInput);
-        } catch (Exception e) {
-            throw new CertificateEncodingException(e);
-        } finally {
-            if (certificateInput != null) {
-                try {
-                    certificateInput.close();
-                } catch (IOException e) {
-                    if (logger.isWarnEnabled()) {
-                        logger.warn("Failed to close a file: " + certificate, e);
-                    }
-                }
-            }
-        }
+    public PublicKey getPublicKey() {
+        return publicKey;
     }
 
     // getPrefixedExtensionID returns an Object Identifier

@@ -4,13 +4,14 @@ import androidx.annotation.NonNull;
 
 import java.util.Objects;
 
+import io.LogUtils;
 import io.ipfs.format.Node;
 import io.ipfs.format.ProtoNode;
 import io.ipfs.merkledag.DagService;
 
 
 public class Hamt {
-
+    private static final String TAG = Hamt.class.getSimpleName();
 
     @NonNull
     public static Shard NewHamtFromDag(@NonNull DagService dagService, @NonNull Node nd) {
