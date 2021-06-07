@@ -11,10 +11,15 @@ import io.ipfs.merkledag.DagService;
 
 public interface Directory {
 
-
+    static ProtoNode emptyDirNode() {
+        byte[] data = unixfs.pb.Unixfs.Data.newBuilder()
+                .setType(unixfs.pb.Unixfs.Data.DataType.Directory)
+                .build().toByteArray();
+        return Node.createNodeWithData(data);
+    }
+    
     static Directory createDirectory() {
-
-        return new BasicDirectory(Unixfs.emptyDirNode());
+        return new BasicDirectory(emptyDirNode());
     }
 
     @Nullable

@@ -12,6 +12,9 @@ import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
+import android.net.ConnectivityManager;
+import android.net.LinkProperties;
+import android.net.Network;
 import android.net.Uri;
 import android.net.http.SslError;
 import android.net.nsd.NsdManager;
@@ -207,6 +210,7 @@ public class MainActivity extends AppCompatActivity implements
                             getString(R.string.permission_camera_denied));
                 }
             });
+    private ConnectivityManager.NetworkCallback networkCallback;
     private WebView mWebView;
     private long mLastClickTime = 0;
     private TextView mBrowserText;
@@ -1493,6 +1497,7 @@ public class MainActivity extends AppCompatActivity implements
                 openUri(Uri.parse(Settings.HOMEPAGE));
             }
         }
+        registerNetworkCallback();
         try {
             IPFS ipfs = IPFS.getInstance(getApplicationContext());
             PeerId peerId = ipfs.getPeerID();
@@ -1502,6 +1507,64 @@ public class MainActivity extends AppCompatActivity implements
         }
         LogUtils.info(InitApplication.TIME_TAG,
                 "MainActivity finish onCreate [" + (System.currentTimeMillis() - start) + "]...");
+    }
+
+    public void unRegisterNetworkCallback() {
+        try {
+            ConnectivityManager connectivityManager = (ConnectivityManager)
+                    getApplicationContext().getSystemService(Context.CONNECTIVITY_SERVICE);
+
+            connectivityManager.unregisterNetworkCallback(networkCallback);
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable);
+        }
+    }
+
+    public void registerNetworkCallback() {
+        try {
+            ConnectivityManager connectivityManager = (ConnectivityManager)
+                    getApplicationContext().getSystemService(Context.CONNECTIVITY_SERVICE);
+
+            networkCallback = new ConnectivityManager.NetworkCallback() {
+                @Override
+                public void onAvailable(Network network) {
+
+                    try {
+                        ConnectivityManager connectivityManager =
+                                (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
+
+                        LinkProperties linkProperties = connectivityManager.getLinkProperties(network);
+                        String interfaceName = null;
+                        if(linkProperties != null) {
+                            interfaceName = linkProperties.getInterfaceName();
+                        }
+
+                        IPFS ipfs = IPFS.getInstance(getApplicationContext());
+                        if(interfaceName != null) {
+                            ipfs.updateNetwork(interfaceName);
+                        }
+                        ipfs.bootstrap();
+                    } catch (Throwable throwable){
+                        LogUtils.error(TAG, throwable);
+                    }
+                }
+
+                @Override
+                public void onLost(Network network) {
+                    try {
+                        IPFS ipfs = IPFS.getInstance(getApplicationContext());
+                        ipfs.reset();
+                    } catch (Throwable throwable){
+                        LogUtils.error(TAG, throwable);
+                    }
+                }
+            };
+
+
+            connectivityManager.registerDefaultNetworkCallback(networkCallback);
+        } catch (Exception e) {
+            LogUtils.error(TAG, e);
+        }
     }
 
     private void download() {
@@ -1855,6 +1918,7 @@ public class MainActivity extends AppCompatActivity implements
     @Override
     public void onDestroy() {
         super.onDestroy();
+        unRegisterNetworkCallback();
         releaseActionMode();
         try {
             if (mNsdManager != null) {

@@ -25,8 +25,7 @@ public class InitApplication extends Application {
         LogUtils.info(TIME_TAG, "InitApplication after add blocker [" +
                 (System.currentTimeMillis() - start) + "]...");
         try {
-            IPFS ipfs = IPFS.getInstance(getApplicationContext());
-            Executors.newSingleThreadExecutor().submit(ipfs::bootstrap);
+           IPFS.getInstance(getApplicationContext());
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         }

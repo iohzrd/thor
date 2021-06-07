@@ -101,10 +101,9 @@ public class Shard {
     }
 
     private Shard makeShardValue(Link lnk) {
-        Link lnk2 = lnk;
         Shard s = makeShard(dserv, tableSize);
         s.key = lnk.getName().substring(0, maxpadlen);
-        s.val = lnk2;
+        s.val = lnk;
 
         return s;
     }

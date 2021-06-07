@@ -7,12 +7,11 @@ import com.google.common.primitives.Bytes;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.MessageLite;
 
-import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.Socket;
+import java.net.NetworkInterface;
 import java.net.SocketAddress;
 import java.net.UnknownHostException;
 import java.security.KeyStore;
@@ -22,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -145,6 +145,10 @@ public class LiteHost implements BitSwapReceiver {
     @NonNull
     private final ConcurrentSkipListSet<PeerId> relays = new ConcurrentSkipListSet<>();
     @NonNull
+    private final ConcurrentSkipListSet<InetAddress> addresses = new ConcurrentSkipListSet<>(
+            Comparator.comparing(InetAddress::getHostAddress)
+    );
+    @NonNull
     private final ConcurrentHashMap<PeerId, Set<Multiaddr>> addressBook = new ConcurrentHashMap<>();
     @NonNull
     private final ConcurrentHashMap<PeerId, Connection> connections = new ConcurrentHashMap<>();
@@ -165,7 +169,7 @@ public class LiteHost implements BitSwapReceiver {
     private Push push;
     @Nullable
     private Channel server;
-    private InetAddress localAddress;
+    @Nullable
     private Channel client;
 
     public LiteHost(@NonNull LiteHostCertificate selfSignedCertificate,
@@ -610,42 +614,27 @@ public class LiteHost implements BitSwapReceiver {
         }
     }
 
-    // THIS is just a hack for a client (without running a server)
-    @NonNull
-    private InetAddress localAddress() throws IOException {
-        if (localAddress == null) {
-            synchronized (TAG.intern()) {
-                Socket socket = new Socket();
-                socket.connect(new InetSocketAddress("google.com", 80));
-                localAddress = socket.getLocalAddress();
-                socket.close();
-            }
-        }
-        return localAddress;
-    }
 
-    // TODO should be improved with information of the device real
-    // public IP, probably asks other devices for getting
-    // the real IP address (relay, punch-hole, etc stuff
     @NonNull
     public List<Multiaddr> listenAddresses() {
         try {
             // TODO the listen address does not contain real IP address
+            // TODO given from other peers
 
             List<Multiaddr> list = new ArrayList<>();
-            if (server != null) {
-                list.add(transform(server.localAddress()));
-            } else {
 
-                InetAddress inetAddress = localAddress();
+            for (InetAddress inetAddress : addresses) {
                 String pre = "/ip4/";
                 if (inetAddress instanceof Inet6Address) {
                     pre = "/ip6/";
                 }
 
-                list.add(new Multiaddr(pre +
-                        localAddress.getHostAddress() + "/udp/" + port + "/quic"));
+                Multiaddr multiaddr = new Multiaddr(pre +
+                        inetAddress.getHostAddress() + "/udp/" + port + "/quic");
+
+                list.add(multiaddr);
             }
+
 
             return list;
         } catch (Throwable throwable) {
@@ -655,16 +644,14 @@ public class LiteHost implements BitSwapReceiver {
 
     }
 
-    // TODO improve (check network configuration or so)
     private boolean inet6() {
-        try {
-            localAddress();
-        } catch (Throwable throwable){
-            LogUtils.error(TAG, throwable);
+
+        for (InetAddress inetAddress : addresses) {
+            if (inetAddress instanceof Inet6Address) {
+                return true;
+            }
         }
-        if (localAddress != null) {
-            return localAddress instanceof Inet6Address;
-        }
+
         return false;
     }
 
@@ -902,6 +889,41 @@ public class LiteHost implements BitSwapReceiver {
             connection.disconnect();
         }
 
+    }
+
+    public void updateNetwork(@NonNull String networkInterface) {
+        updateListenAddresses(networkInterface);
+    }
+
+    public void updateListenAddresses(@NonNull String networkInterfaceName) {
+
+        try {
+            List<InetAddress> collect = new ArrayList<>();
+            List<NetworkInterface> interfaces = Collections.list(
+                    NetworkInterface.getNetworkInterfaces());
+            for (NetworkInterface networkInterface : interfaces) {
+                if (Objects.equals(networkInterface.getName(), networkInterfaceName)) {
+
+                    List<InetAddress> addresses =
+                            Collections.list(networkInterface.getInetAddresses());
+                    for (InetAddress inetAddress : addresses) {
+                        if (!(inetAddress.isAnyLocalAddress() ||
+                                inetAddress.isLinkLocalAddress() ||
+                                inetAddress.isLoopbackAddress() ||
+                                inetAddress.isSiteLocalAddress())) {
+                            collect.add(inetAddress);
+                        }
+                    }
+                }
+            }
+            synchronized (TAG.intern()) {
+                addresses.clear();
+                addresses.addAll(collect);
+            }
+            LogUtils.error(TAG, addresses.toString());
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable);
+        } // for now eat exceptions
     }
 
     public class LiteConnection implements Connection {

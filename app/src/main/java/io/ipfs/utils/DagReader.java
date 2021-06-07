@@ -92,7 +92,7 @@ public class DagReader {
 
             if (node.getLinks().size() == 0) {
 
-                byte[] data = FSNode.ReadUnixFSNodeData(node);
+                byte[] data = FSNode.readUnixFSNodeData(node);
 
                 return Arrays.copyOfRange(data, left, data.length);
             }
@@ -109,7 +109,7 @@ public class DagReader {
                 continue;
             }
 
-            return FSNode.ReadUnixFSNodeData(node);
+            return FSNode.readUnixFSNodeData(node);
         }
 
     }

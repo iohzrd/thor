@@ -201,7 +201,6 @@ public class Stream {
                     FSNode d = FSNode.createFSNodeFromBytes(pn.getData());
                     int type;
                     switch (d.Type()) {
-                        case HAMTShard:
                         case File:
                             type = io.ipfs.utils.Link.File;
                             break;
@@ -211,6 +210,9 @@ public class Stream {
                         case Symlink:
                             type = io.ipfs.utils.Link.Symlink;
                             break;
+                        case HAMTShard:
+                        case Directory:
+                        case Metadata:
                         default:
                             type = io.ipfs.utils.Link.Dir;
                     }

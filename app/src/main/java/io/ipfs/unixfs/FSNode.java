@@ -34,7 +34,7 @@ public class FSNode {
         return new FSNode(data);
     }
 
-    public static byte[] ReadUnixFSNodeData(@NonNull Node node) {
+    public static byte[] readUnixFSNodeData(@NonNull Node node) {
 
         if (node instanceof ProtoNode) {
             FSNode fsNode = createFSNodeFromBytes(node.getData());

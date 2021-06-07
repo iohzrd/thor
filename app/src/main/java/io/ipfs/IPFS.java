@@ -1193,6 +1193,10 @@ public class IPFS {
         return host.getRelays();
     }
 
+    public void updateNetwork(@NonNull String networkInterface) {
+        getHost().updateNetwork(networkInterface);
+    }
+
     public interface Connector {
         void connected(@NonNull PeerId peerId);
     }
