@@ -25,11 +25,11 @@ public interface Key {
 
     static PubKey unmarshalPublicKey(byte[] data) throws InvalidProtocolBufferException {
 
-        Crypto.PublicKey pmes = Crypto.PublicKey.parseFrom(data);
+        Crypto.PublicKey pms = Crypto.PublicKey.parseFrom(data);
 
-        byte[] pubKeyData = pmes.getData().toByteArray();
+        byte[] pubKeyData = pms.getData().toByteArray();
 
-        switch (pmes.getType()) {
+        switch (pms.getType()) {
             case RSA:
                 return Rsa.unmarshalRsaPublicKey(pubKeyData);
             case ECDSA:

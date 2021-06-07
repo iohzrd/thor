@@ -15,12 +15,7 @@
  * limitations under the License.
  */
 
-package io.ipfs.multibase.binary;
-
-import io.ipfs.multibase.BinaryDecoder;
-import io.ipfs.multibase.BinaryEncoder;
-import io.ipfs.multibase.DecoderException;
-import io.ipfs.multibase.EncoderException;
+package io.ipfs.multibase;
 
 /**
  * Abstract superclass for Base-N encoders and decoders.

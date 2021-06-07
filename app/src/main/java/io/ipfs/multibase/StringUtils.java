@@ -15,13 +15,10 @@
  * limitations under the License.
  */
 
-package io.ipfs.multibase.binary;
+package io.ipfs.multibase;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-
-import io.ipfs.multibase.CharEncoding;
-import io.ipfs.multibase.Charsets;
 
 /**
  * Converts String to and from bytes using the encodings required by the Java specification. These encodings are

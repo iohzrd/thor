@@ -3,8 +3,6 @@ package io.ipfs.multibase;
 import java.util.Map;
 import java.util.TreeMap;
 
-import io.ipfs.multibase.binary.Base32;
-
 public class Multibase {
 
     public static String encode(Base b, byte[] data) {
