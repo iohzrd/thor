@@ -86,6 +86,8 @@ import io.netty.util.internal.EmptyArrays;
 
 
 public class LiteHost implements BitSwapReceiver {
+
+
     @NonNull
     public static final AttributeKey<PeerId> PEER_KEY = AttributeKey.newInstance("PEER_KEY");
     @NonNull
@@ -165,6 +167,8 @@ public class LiteHost implements BitSwapReceiver {
     private final LiteHostCertificate selfSignedCertificate;
     @NonNull
     private final Set<PeerId> swarm = ConcurrentHashMap.newKeySet();
+    @NonNull
+    private final AtomicBoolean inet6 = new AtomicBoolean(false);
     @Nullable
     private Push push;
     @Nullable
@@ -644,17 +648,6 @@ public class LiteHost implements BitSwapReceiver {
 
     }
 
-    private boolean inet6() {
-
-        for (InetAddress inetAddress : addresses) {
-            if (inetAddress instanceof Inet6Address) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     @NonNull
     public Connection connect(@NonNull Closeable closeable, @NonNull PeerId peerId, int timeout)
             throws ConnectionIssue, ClosedException {
@@ -671,7 +664,7 @@ public class LiteHost implements BitSwapReceiver {
                 return connection;
             }
 
-            boolean ipv6 = inet6();
+            boolean ipv6 = inet6.get();
             List<Multiaddr> addrInfo = prepareAddresses(peerId);
 
             if (addrInfo.isEmpty()) {
@@ -898,6 +891,7 @@ public class LiteHost implements BitSwapReceiver {
     public void updateListenAddresses(@NonNull String networkInterfaceName) {
 
         try {
+            boolean ipv6 = false;
             List<InetAddress> collect = new ArrayList<>();
             List<NetworkInterface> interfaces = Collections.list(
                     NetworkInterface.getNetworkInterfaces());
@@ -911,12 +905,16 @@ public class LiteHost implements BitSwapReceiver {
                                 inetAddress.isLinkLocalAddress() ||
                                 inetAddress.isLoopbackAddress() ||
                                 inetAddress.isSiteLocalAddress())) {
+                            if(inetAddress instanceof Inet6Address){
+                                ipv6 = true;
+                            }
                             collect.add(inetAddress);
                         }
                     }
                 }
             }
             synchronized (TAG.intern()) {
+                inet6.set(ipv6);
                 addresses.clear();
                 addresses.addAll(collect);
             }
