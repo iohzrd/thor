@@ -19,11 +19,7 @@ import io.ipfs.format.BlockStore;
 import io.ipfs.format.Link;
 import io.ipfs.format.Node;
 import io.ipfs.format.NodeGetter;
-import io.ipfs.format.ProtoNode;
 import io.ipfs.merkledag.DagService;
-import io.ipfs.unixfs.FSNode;
-import io.ipfs.unixfs.Hamt;
-import io.ipfs.unixfs.Shard;
 
 
 public class Resolver {
@@ -129,7 +125,7 @@ public class Resolver {
                                                         @NonNull Node nd,
                                                         @NonNull List<String> names) {
 
-        if (nd instanceof ProtoNode) {
+        /*if (nd instanceof ProtoNode) {
             ProtoNode pn = (ProtoNode) nd;
             try {
                 FSNode fsn = FSNode.createFSNodeFromBytes(pn.getData());
@@ -145,7 +141,7 @@ public class Resolver {
             } catch (Throwable throwable) {
                 return nd.resolveLink(names);
             }
-        }
+        }*/
         return nd.resolveLink(names);
     }
 

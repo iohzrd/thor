@@ -115,9 +115,6 @@ dependencies {
     implementation 'com.google.protobuf:protobuf-java:3.15.6'
 
     // API (LICENSE done)
-    implementation 'commons-codec:commons-codec:1.15'
-
-    // API (LICENSE done)
     implementation 'commons-io:commons-io:2.8.0'
 
     // API (LICENSE done)

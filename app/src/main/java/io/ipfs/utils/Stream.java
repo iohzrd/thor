@@ -80,7 +80,7 @@ public class Stream {
 
         io.ipfs.format.Node node = Resolver.resolveNode(closeable, dagService, cid);
         Objects.requireNonNull(node);
-        Directory dir = Directory.createDirectoryFromNode(dagService, node);
+        Directory dir = Directory.createDirectoryFromNode(node);
         return dir != null;
     }
 
@@ -139,7 +139,7 @@ public class Stream {
 
         io.ipfs.format.Node node = Resolver.resolveNode(closeable, dagService, cid);
         Objects.requireNonNull(node);
-        Directory dir = Directory.createDirectoryFromNode(dagService, node);
+        Directory dir = Directory.createDirectoryFromNode(node);
 
         if (dir == null) {
             lsFromLinks(closeable, dagService, node.getLinks(), resolveChildren);
