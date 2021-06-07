@@ -81,7 +81,7 @@ public class Resolver {
 
         while (p.size() > 0) {
 
-            Pair<Link, List<String>> resolveOnce = resolveOnce(closeable, dag, node, p);
+            Pair<Link, List<String>> resolveOnce = node.resolveLink(p);
             Link lnk = resolveOnce.first;
             List<String> rest = resolveOnce.second;
 
@@ -119,31 +119,5 @@ public class Resolver {
         return Pair.create(node.getCid(), p);
 
     }
-
-    private static Pair<Link, List<String>> resolveOnce(@NonNull Closeable closeable,
-                                                        @NonNull NodeGetter nodeGetter,
-                                                        @NonNull Node nd,
-                                                        @NonNull List<String> names) {
-
-        /*if (nd instanceof ProtoNode) {
-            ProtoNode pn = (ProtoNode) nd;
-            try {
-                FSNode fsn = FSNode.createFSNodeFromBytes(pn.getData());
-
-                if (fsn.Type() == unixfs.pb.Unixfs.Data.DataType.HAMTShard) {
-
-                    DagService rods = DagService.createReadOnlyDagService(nodeGetter);
-                    Shard s = Hamt.NewHamtFromDag(rods, nd);
-                    Link link = s.Find(closeable, names.get(0));
-                    return Pair.create(link, names.subList(1, names.size()));
-
-                }
-            } catch (Throwable throwable) {
-                return nd.resolveLink(names);
-            }
-        }*/
-        return nd.resolveLink(names);
-    }
-
 
 }
