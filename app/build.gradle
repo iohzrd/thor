@@ -6,7 +6,7 @@ android {
 
     defaultConfig {
         applicationId "threads.thor"
-        minSdkVersion 28
+        minSdkVersion 30
         targetSdkVersion 30
         versionCode 74
         versionName "0.7.4"
@@ -43,8 +43,8 @@ android {
 
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
     }
 
     packagingOptions {
@@ -116,6 +116,8 @@ dependencies {
 
     // https://mvnrepository.com/artifact/commons-cli/commons-cli
     implementation group: 'commons-cli', name: 'commons-cli', version: '1.4'
+
+    implementation 'org.glassfish:javax.json:1.1.4'
 
     // API (LICENSE done)
     annotationProcessor 'androidx.room:room-compiler:2.3.0'
