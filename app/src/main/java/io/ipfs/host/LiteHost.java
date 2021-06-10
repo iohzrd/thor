@@ -40,6 +40,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
@@ -567,7 +568,15 @@ public class LiteHost implements BitSwapReceiver {
                     quicClientConnection.connect(timeout * 1000, IPFS.APRN,
                             null, null);
 
-                    Connection conn = new LiteConnection(quicClientConnection, peerId, address);
+                    // TODO quicClientConnection.setMaxAllowedBidirectionalStreams();
+                    // TODO quicClientConnection.setMaxAllowedUnidirectionalStreams();
+
+
+                    final Connection conn = new LiteConnection(quicClientConnection, peerId, address);
+                    Objects.requireNonNull(conn);
+
+                    quicClientConnection.setPeerInitiatedStreamCallback(quicStream ->
+                            new ConnectionStreamHandler(conn, quicStream, LiteHost.this));
 
                     // TODO quic.closeFuture().addListener(future1 -> removeConnection(conn));
                     addConnection(conn);

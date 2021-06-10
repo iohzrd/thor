@@ -12,13 +12,11 @@ import java.nio.ByteBuffer;
 
 public abstract class ConnectionChannelHandler {
     private final Connection connection;
-    private final QuicStream quicStream;
     private final InputStream inputStream;
     private final OutputStream outputStream;
 
     public ConnectionChannelHandler(@NonNull Connection connection, @NonNull QuicStream quicStream) {
         this.connection = connection;
-        this.quicStream = quicStream;
         this.inputStream = quicStream.getInputStream();
         this.outputStream = quicStream.getOutputStream();
         new Thread(this::reader).start();

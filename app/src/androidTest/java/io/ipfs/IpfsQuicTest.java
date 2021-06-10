@@ -9,13 +9,11 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.util.concurrent.Future;
-
-import io.ipfs.host.PeerId;
 import io.ipfs.multiaddr.Multiaddr;
-import io.netty.incubator.codec.quic.QuicChannel;
 
 import static junit.framework.TestCase.assertNotNull;
+
+import net.luminis.quic.QuicClientConnectionImpl;
 
 @SuppressWarnings("SpellCheckingInspection")
 @RunWith(AndroidJUnit4.class)
@@ -37,10 +35,12 @@ public class IpfsQuicTest {
 
         Multiaddr multiaddr = new Multiaddr("/ip4/147.75.109.213/udp/4001/quic/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN");
 
-        Future<QuicChannel> conn = ipfs.getHost().dial(multiaddr, PeerId.fromBase58("QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN"));
+        QuicClientConnectionImpl conn = ipfs.getHost().dial(multiaddr);
         assertNotNull(conn);
-        QuicChannel channel = conn.get();
-        assertNotNull(channel);
+
+        conn.connect(10000, IPFS.APRN, null, null);
+
+        conn.close();
 
     }
 
