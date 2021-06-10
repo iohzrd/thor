@@ -17,8 +17,6 @@ import io.ipfs.IPFS;
 import io.ipfs.core.ProtocolIssue;
 import io.ipfs.multibase.Charsets;
 import io.ipfs.multihash.Multihash;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 
 public class DataHandler {
     private static final String TAG = DataHandler.class.getSimpleName();
@@ -59,28 +57,27 @@ public class DataHandler {
         return nread;
     }
 
-    public static ByteBuf encode(@NonNull MessageLite message) {
-        byte[] data = message.toByteArray();
-        return encode(data);
+    public static byte[] encode(@NonNull MessageLite message) {
+        return message.toByteArray();
     }
 
-    public static ByteBuf encode(@NonNull byte[] data) {
+    public static byte[] encode(@NonNull byte[] data) {
         try (ByteArrayOutputStream buf = new ByteArrayOutputStream()) {
             Multihash.putUvarint(buf, data.length);
             buf.write(data);
-            return Unpooled.buffer().writeBytes(buf.toByteArray());
+            return buf.toByteArray();
         } catch (Throwable throwable) {
             throw new RuntimeException(throwable);
         }
     }
 
-    public static ByteBuf writeToken(String token) {
+    public static byte[] writeToken(String token) {
         byte[] data = token.getBytes(Charsets.UTF_8);
         try (ByteArrayOutputStream buf = new ByteArrayOutputStream()) {
             Multihash.putUvarint(buf, data.length + 1);
             buf.write(token.getBytes(Charsets.UTF_8));
             buf.write('\n');
-            return Unpooled.buffer().writeBytes(buf.toByteArray());
+            return buf.toByteArray();
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
             throw new RuntimeException(throwable);

@@ -9,6 +9,9 @@ import androidx.annotation.Nullable;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.MessageLite;
 
+import net.luminis.quic.QuicClientConnection;
+import net.luminis.quic.stream.QuicStream;
+
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -49,12 +52,6 @@ import io.ipfs.ipns.Ipns;
 import io.ipfs.multiaddr.Multiaddr;
 import io.ipfs.multiaddr.Protocol;
 import io.ipfs.utils.DataHandler;
-import io.netty.handler.timeout.ReadTimeoutException;
-import io.netty.handler.timeout.ReadTimeoutHandler;
-import io.netty.incubator.codec.quic.QuicChannel;
-import io.netty.incubator.codec.quic.QuicStreamChannel;
-import io.netty.incubator.codec.quic.QuicStreamPriority;
-import io.netty.incubator.codec.quic.QuicStreamType;
 import record.pb.RecordOuterClass;
 
 
@@ -369,18 +366,18 @@ public class KadDht implements Routing {
             if (closeable.isClosed()) {
                 return;
             }
-            QuicChannel quicChannel = conn.channel();
+            QuicClientConnection quicChannel = conn.channel();
 
             CompletableFuture<Void> stream = new CompletableFuture<>();
-            QuicStreamChannel streamChannel = quicChannel.createStream(QuicStreamType.BIDIRECTIONAL,
-                    new KadDhtSend(stream, message)).sync().get();
+            QuicStream quicStream = quicChannel.createStream(true);
+            KadDhtSend kadDhtSend = new KadDhtSend(conn, quicStream, stream, message);
 
-            streamChannel.updatePriority(new QuicStreamPriority(IPFS.PRIORITY_HIGH, false));
-            streamChannel.writeAndFlush(DataHandler.writeToken(IPFS.STREAM_PROTOCOL));
-            streamChannel.writeAndFlush(DataHandler.writeToken(IPFS.DHT_PROTOCOL));
+            // TODO quicStream.updatePriority(new QuicStreamPriority(IPFS.PRIORITY_HIGH, false));
+            kadDhtSend.writeAndFlush(DataHandler.writeToken(IPFS.STREAM_PROTOCOL));
+            kadDhtSend.writeAndFlush(DataHandler.writeToken(IPFS.DHT_PROTOCOL));
 
             stream.get(IPFS.CONNECT_TIMEOUT, TimeUnit.SECONDS);
-            streamChannel.close().get();
+            kadDhtSend.close();
 
         } catch (ClosedException | ConnectionIssue | TimeoutException ignore) {
             // ignore
@@ -413,21 +410,10 @@ public class KadDht implements Routing {
 
             time = System.currentTimeMillis();
 
-            QuicChannel quicChannel = conn.channel();
+            QuicClientConnection quicChannel = conn.channel();
 
-            CompletableFuture<Dht.Message> request = request(quicChannel,
+            CompletableFuture<Dht.Message> request = request(conn, quicChannel,
                     message, IPFS.PRIORITY_NORMAL);
-
-            /*
-            while (!request.isDone()) {
-                if (closeable.isClosed()) {
-                    request.cancel(true);
-                }
-            }
-
-            if (closeable.isClosed()) {
-                throw new ClosedException();
-            }*/
 
             Dht.Message msg = request.get(IPFS.DHT_REQUEST_READ_TIMEOUT, TimeUnit.SECONDS);
             Objects.requireNonNull(msg);
@@ -453,9 +439,6 @@ public class KadDht implements Routing {
                 if (cause instanceof TimeoutException) {
                     throw new TimeoutIssue();
                 }
-                if (cause instanceof ReadTimeoutException) {
-                    throw new TimeoutIssue();
-                }
             }
             LogUtils.error(TAG, throwable);
             throw new ConnectionIssue();
@@ -469,7 +452,8 @@ public class KadDht implements Routing {
 
     }
 
-    public CompletableFuture<Dht.Message> request(@NonNull QuicChannel quicChannel,
+    public CompletableFuture<Dht.Message> request(@NonNull Connection connection,
+                                                  @NonNull QuicClientConnection quicChannel,
                                                   @NonNull MessageLite messageLite,
                                                   short priority) {
 
@@ -477,18 +461,19 @@ public class KadDht implements Routing {
         CompletableFuture<Void> activation = new CompletableFuture<>();
 
         try {
-            QuicStreamChannel streamChannel = quicChannel.createStream(QuicStreamType.BIDIRECTIONAL,
-                    new KadDhtRequest(activation, request, messageLite)).sync().get();
+            QuicStream quicStream = quicChannel.createStream(true);
+            KadDhtRequest dhtRequest = new KadDhtRequest(connection,
+                    quicStream, activation, request, messageLite);
 
 
-            streamChannel.pipeline().addFirst(new ReadTimeoutHandler(
-                    IPFS.DHT_REQUEST_READ_TIMEOUT, TimeUnit.SECONDS));
+            // TODO quicStream.pipeline().addFirst(new ReadTimeoutHandler(
+            // TODO         IPFS.DHT_REQUEST_READ_TIMEOUT, TimeUnit.SECONDS));
 
-            streamChannel.updatePriority(new QuicStreamPriority(priority, false));
+            // TODO quicStream.updatePriority(new QuicStreamPriority(priority, false));
 
 
-            streamChannel.writeAndFlush(DataHandler.writeToken(IPFS.STREAM_PROTOCOL));
-            streamChannel.writeAndFlush(DataHandler.writeToken(IPFS.DHT_PROTOCOL));
+            dhtRequest.writeAndFlush(DataHandler.writeToken(IPFS.STREAM_PROTOCOL));
+            dhtRequest.writeAndFlush(DataHandler.writeToken(IPFS.DHT_PROTOCOL));
 
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);

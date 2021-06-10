@@ -3,11 +3,15 @@ package io.ipfs.bitswap;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import net.luminis.quic.QuicClientConnection;
+import net.luminis.quic.stream.QuicStream;
+
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 
 import io.LogUtils;
 import io.ipfs.IPFS;
@@ -24,18 +28,14 @@ import io.ipfs.host.Connection;
 import io.ipfs.host.LiteHost;
 import io.ipfs.host.PeerId;
 import io.ipfs.utils.DataHandler;
-import io.netty.handler.timeout.ReadTimeoutException;
-import io.netty.incubator.codec.quic.QuicChannel;
-import io.netty.incubator.codec.quic.QuicStreamChannel;
-import io.netty.incubator.codec.quic.QuicStreamPriority;
-import io.netty.incubator.codec.quic.QuicStreamType;
 
 
 public class BitSwap implements Interface {
 
     private static final String TAG = BitSwap.class.getSimpleName();
     @NonNull
-    public final ConcurrentHashMap<QuicChannel, QuicStreamChannel> bitSwaps = new ConcurrentHashMap<>();
+    public final ConcurrentHashMap<QuicClientConnection, BitSwapSend> bitSwaps =
+            new ConcurrentHashMap<>();
     @NonNull
     private final ContentManager contentManager;
     @NonNull
@@ -137,7 +137,7 @@ public class BitSwap implements Interface {
                 throw new ClosedException();
             }
 
-            QuicStreamChannel stream = getStream(closeable, conn, priority);
+            BitSwapSend stream = getStream(closeable, conn, priority);
             stream.writeAndFlush(DataHandler.encode(message.ToProtoV1().toByteArray()));
             //}
             success = true;
@@ -152,7 +152,7 @@ public class BitSwap implements Interface {
                 if (cause instanceof ConnectionIssue) {
                     throw new ConnectionIssue();
                 }
-                if (cause instanceof ReadTimeoutException) {
+                if (cause instanceof TimeoutException) {
                     throw new TimeoutIssue();
                 }
             }
@@ -164,20 +164,22 @@ public class BitSwap implements Interface {
     }
 
 
-    private CompletableFuture<QuicStreamChannel> getStream(@NonNull QuicChannel quicChannel, short priority) {
+    private CompletableFuture<BitSwapSend> getStream(@NonNull Connection connection,
+                                                     @NonNull QuicClientConnection quicClientConnection,
+                                                     short priority) {
 
 
-        CompletableFuture<QuicStreamChannel> stream = new CompletableFuture<>();
+        CompletableFuture<BitSwapSend> stream = new CompletableFuture<>();
 
         try {
-            QuicStreamChannel streamChannel = quicChannel.createStream(QuicStreamType.BIDIRECTIONAL,
-                    new BitSwapSend(stream, this)).sync().get();
+            QuicStream quicStream = quicClientConnection.createStream(true);
+            BitSwapSend bitSwapSend = new BitSwapSend(connection, quicStream, stream, this);
 
-            streamChannel.updatePriority(new QuicStreamPriority(priority, false));
+            // TODO streamChannel.updatePriority(new QuicStreamPriority(priority, false));
 
 
-            streamChannel.writeAndFlush(DataHandler.writeToken(IPFS.STREAM_PROTOCOL));
-            streamChannel.writeAndFlush(DataHandler.writeToken(IPFS.BITSWAP_PROTOCOL));
+            bitSwapSend.writeAndFlush(DataHandler.writeToken(IPFS.STREAM_PROTOCOL));
+            bitSwapSend.writeAndFlush(DataHandler.writeToken(IPFS.BITSWAP_PROTOCOL));
 
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
@@ -187,27 +189,26 @@ public class BitSwap implements Interface {
         return stream;
     }
 
-    private QuicStreamChannel getStream(@NonNull Closeable closeable,
-                                        @NonNull Connection conn,
-                                        short priority)
+    private BitSwapSend getStream(@NonNull Closeable closeable, @NonNull Connection conn,
+                                  short priority)
             throws InterruptedException, ExecutionException, ClosedException {
 
         if (closeable.isClosed()) {
             throw new ClosedException();
         }
 
-        QuicChannel quicChannel = conn.channel();
+        QuicClientConnection quicChannel = conn.channel();
 
-        QuicStreamChannel stored = getStream(quicChannel);
+        BitSwapSend stored = getStream(quicChannel);
         if (stored != null) {
-            if (stored.isOpen() && stored.isWritable()) {
+            if (true /* TODO stored.isOpen() && stored.isWritable()*/) {
                 return stored;
             } else {
                 removeStream(quicChannel);
             }
         }
 
-        CompletableFuture<QuicStreamChannel> ctrl = getStream(quicChannel, priority);
+        CompletableFuture<BitSwapSend> ctrl = getStream(conn, quicChannel, priority);
 
 
         while (!ctrl.isDone()) {
@@ -220,24 +221,24 @@ public class BitSwap implements Interface {
             throw new ClosedException();
         }
 
-        QuicStreamChannel stream = ctrl.get();
+        BitSwapSend stream = ctrl.get();
 
         Objects.requireNonNull(stream);
         putStream(quicChannel, stream);
         return stream;
     }
 
-    public QuicStreamChannel getStream(@NonNull QuicChannel quicChannel) {
+    public BitSwapSend getStream(@NonNull QuicClientConnection quicChannel) {
         return bitSwaps.get(quicChannel);
 
     }
 
-    public void putStream(@NonNull QuicChannel quicChannel,
-                          @NonNull QuicStreamChannel streamChannel) {
-        bitSwaps.put(quicChannel, streamChannel);
+    public void putStream(@NonNull QuicClientConnection quicChannel,
+                          @NonNull BitSwapSend bitSwapSend) {
+        bitSwaps.put(quicChannel, bitSwapSend);
     }
 
-    public void removeStream(@NonNull QuicChannel quicChannel) {
+    public void removeStream(@NonNull QuicClientConnection quicChannel) {
         bitSwaps.remove(quicChannel);
     }
 }

@@ -2,38 +2,37 @@ package io.ipfs.push;
 
 import androidx.annotation.NonNull;
 
+import net.luminis.quic.QuicClientConnection;
+import net.luminis.quic.stream.QuicStream;
+
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 import io.ipfs.IPFS;
 import io.ipfs.host.Connection;
 import io.ipfs.utils.DataHandler;
-import io.netty.incubator.codec.quic.QuicChannel;
-import io.netty.incubator.codec.quic.QuicStreamChannel;
-import io.netty.incubator.codec.quic.QuicStreamPriority;
-import io.netty.incubator.codec.quic.QuicStreamType;
 
 public class PushService {
 
     public static void notify(@NonNull Connection conn, @NonNull String content) {
 
         try {
-            QuicChannel quicChannel = conn.channel();
+            QuicClientConnection quicChannel = conn.channel();
 
-            CompletableFuture<QuicStreamChannel> stream = new CompletableFuture<>();
-            QuicStreamChannel streamChannel = quicChannel.createStream(QuicStreamType.BIDIRECTIONAL,
-                    new PushSend(stream)).sync().get();
+            CompletableFuture<Void> stream = new CompletableFuture<>();
+            QuicStream streamChannel = quicChannel.createStream(true);
+            PushSend pushSend = new PushSend(conn, streamChannel, stream);
 
-            streamChannel.updatePriority(new QuicStreamPriority(IPFS.PRIORITY_HIGH, false));
+            // TODO streamChannel.updatePriority(new QuicStreamPriority(IPFS.PRIORITY_HIGH, false));
 
-            streamChannel.writeAndFlush(DataHandler.writeToken(IPFS.STREAM_PROTOCOL));
-            streamChannel.writeAndFlush(DataHandler.writeToken(IPFS.PUSH_PROTOCOL));
+            pushSend.writeAndFlush(DataHandler.writeToken(IPFS.STREAM_PROTOCOL));
+            pushSend.writeAndFlush(DataHandler.writeToken(IPFS.PUSH_PROTOCOL));
 
 
-            QuicStreamChannel channel = stream.get(IPFS.CONNECT_TIMEOUT, TimeUnit.SECONDS);
+            stream.get(IPFS.CONNECT_TIMEOUT, TimeUnit.SECONDS);
 
-            channel.writeAndFlush(DataHandler.encode(content.getBytes())).addListener(
-                    future -> channel.close().get());
+            pushSend.writeAndFlush(DataHandler.encode(content.getBytes()));
+            pushSend.close();
 
         } catch (Throwable throwable) {
             throw new RuntimeException(throwable);

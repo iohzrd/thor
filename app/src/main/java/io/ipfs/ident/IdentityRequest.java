@@ -2,7 +2,8 @@ package io.ipfs.ident;
 
 import androidx.annotation.NonNull;
 
-import java.io.ByteArrayOutputStream;
+import net.luminis.quic.stream.QuicStream;
+
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
@@ -10,12 +11,11 @@ import identify.pb.IdentifyOuterClass;
 import io.LogUtils;
 import io.ipfs.IPFS;
 import io.ipfs.core.ProtocolIssue;
+import io.ipfs.host.Connection;
+import io.ipfs.host.ConnectionChannelHandler;
 import io.ipfs.utils.DataHandler;
-import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.SimpleChannelInboundHandler;
 
-public class IdentityRequest extends SimpleChannelInboundHandler<ByteBuf> {
+public class IdentityRequest extends ConnectionChannelHandler {
     private static final String TAG = IdentityRequest.class.getSimpleName();
     @NonNull
     private final CompletableFuture<IdentifyOuterClass.Identify> request;
@@ -23,29 +23,26 @@ public class IdentityRequest extends SimpleChannelInboundHandler<ByteBuf> {
     private final CompletableFuture<Void> activation;
     private DataHandler reader = new DataHandler(25000);
 
-    public IdentityRequest(@NonNull CompletableFuture<Void> activation,
+    public IdentityRequest(@NonNull Connection connection,
+                           @NonNull QuicStream quicStream,
+                           @NonNull CompletableFuture<Void> activation,
                            @NonNull CompletableFuture<IdentifyOuterClass.Identify> request) {
+        super(connection, quicStream);
         this.request = request;
         this.activation = activation;
     }
 
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
-            throws Exception {
+    public void exceptionCaught(@NonNull Connection connection, @NonNull Throwable cause) {
         LogUtils.error(TAG, " " + cause);
         request.completeExceptionally(cause);
         activation.completeExceptionally(cause);
-        ctx.close().get();
+        connection.disconnect();
     }
 
-    @Override
-    protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg)
+    public void channelRead0(@NonNull Connection connection, @NonNull byte[] msg)
             throws Exception {
 
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        msg.readBytes(out, msg.readableBytes());
-        byte[] data = out.toByteArray();
-        reader.load(data);
+        reader.load(msg);
 
         if (reader.isDone()) {
 
@@ -62,13 +59,13 @@ public class IdentityRequest extends SimpleChannelInboundHandler<ByteBuf> {
 
             if (message != null) {
                 request.complete(IdentifyOuterClass.Identify.parseFrom(message));
-                ctx.close().get();
+                close();
             }
             reader = new DataHandler(25000);
         } else {
             LogUtils.debug(TAG, "iteration " + reader.hasRead() + " "
-                    + reader.expectedBytes() + " " + ctx.name() + " "
-                    + ctx.channel().remoteAddress());
+                    + reader.expectedBytes() + " "
+                    + connection.remoteAddress());
         }
     }
 }

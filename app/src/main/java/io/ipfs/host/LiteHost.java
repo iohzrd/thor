@@ -7,14 +7,20 @@ import com.google.common.primitives.Bytes;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.MessageLite;
 
+import net.luminis.quic.QuicClientConnection;
+import net.luminis.quic.QuicClientConnectionImpl;
+import net.luminis.quic.Version;
+import net.luminis.quic.stream.QuicStream;
+
+import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.SocketAddress;
-import java.net.UnknownHostException;
-import java.security.KeyStore;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -35,7 +41,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-import javax.net.ssl.ManagerFactoryParameters;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
@@ -63,33 +68,11 @@ import io.ipfs.multiaddr.Multiaddr;
 import io.ipfs.multiaddr.Protocol;
 import io.ipfs.push.Push;
 import io.ipfs.relay.RelayService;
-import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.nio.NioDatagramChannel;
-import io.netty.handler.ssl.ClientAuth;
-import io.netty.handler.ssl.util.SimpleTrustManagerFactory;
-import io.netty.incubator.codec.quic.InsecureQuicTokenHandler;
-import io.netty.incubator.codec.quic.QuicChannel;
-import io.netty.incubator.codec.quic.QuicClientCodecBuilder;
-import io.netty.incubator.codec.quic.QuicServerCodecBuilder;
-import io.netty.incubator.codec.quic.QuicSslContext;
-import io.netty.incubator.codec.quic.QuicSslContextBuilder;
-import io.netty.incubator.codec.quic.QuicStreamChannel;
-import io.netty.util.AttributeKey;
-import io.netty.util.NetUtil;
-import io.netty.util.concurrent.Promise;
-import io.netty.util.internal.EmptyArrays;
 
 
 public class LiteHost implements BitSwapReceiver {
 
 
-    @NonNull
-    public static final AttributeKey<PeerId> PEER_KEY = AttributeKey.newInstance("PEER_KEY");
     @NonNull
     public static final ConcurrentHashMap<PeerId, PubKey> remotes = new ConcurrentHashMap<>();
     @NonNull
@@ -135,7 +118,7 @@ public class LiteHost implements BitSwapReceiver {
 
         @Override
         public X509Certificate[] getAcceptedIssuers() {
-            return EmptyArrays.EMPTY_X509_CERTIFICATES;
+            return new X509Certificate[0];
         }
     };
     private static int failure = 0;
@@ -162,8 +145,6 @@ public class LiteHost implements BitSwapReceiver {
     private final Interface exchange;
     private final int port;
     @NonNull
-    private final NioEventLoopGroup group = new NioEventLoopGroup(1);
-    @NonNull
     private final LiteHostCertificate selfSignedCertificate;
     @NonNull
     private final Set<PeerId> swarm = ConcurrentHashMap.newKeySet();
@@ -171,10 +152,7 @@ public class LiteHost implements BitSwapReceiver {
     private final AtomicBoolean inet6 = new AtomicBoolean(false);
     @Nullable
     private Push push;
-    @Nullable
-    private Channel server;
-    @Nullable
-    private Channel client;
+
 
     public LiteHost(@NonNull LiteHostCertificate selfSignedCertificate,
                     @NonNull PrivKey privKey,
@@ -190,50 +168,6 @@ public class LiteHost implements BitSwapReceiver {
                 IPFS.KAD_DHT_BUCKET_SIZE);
 
         this.exchange = BitSwap.create(this, blockstore);
-
-
-        QuicSslContext sslClientContext = QuicSslContextBuilder.forClient(
-                selfSignedCertificate.privateKey(), null, selfSignedCertificate.certificate()).
-                trustManager(new SimpleTrustManagerFactory() {
-                    @Override
-                    protected void engineInit(KeyStore keyStore) {
-
-                    }
-
-                    @Override
-                    protected void engineInit(ManagerFactoryParameters managerFactoryParameters) {
-
-                    }
-
-                    @Override
-                    protected TrustManager[] engineGetTrustManagers() {
-                        return new TrustManager[]{tm};
-                    }
-                }).
-                applicationProtocols(IPFS.APRN).build();
-
-
-        ChannelHandler codec = new QuicClientCodecBuilder()
-                .sslContext(sslClientContext)
-                .maxIdleTimeout(IPFS.GRACE_PERIOD, TimeUnit.SECONDS)
-                .initialMaxData(IPFS.MESSAGE_SIZE_MAX)
-                .initialMaxStreamDataBidirectionalLocal(IPFS.MESSAGE_SIZE_MAX)
-                .initialMaxStreamDataBidirectionalRemote(IPFS.MESSAGE_SIZE_MAX)
-                .initialMaxStreamsBidirectional(IPFS.HIGH_WATER)
-                .initialMaxStreamsUnidirectional(IPFS.HIGH_WATER)
-                .build();
-
-
-        Bootstrap bs = new Bootstrap();
-
-        try {
-            client = bs.group(group)
-                    .channel(NioDatagramChannel.class)
-                    .handler(codec)
-                    .bind(port).sync().channel();
-        } catch (Throwable throwable) {
-            LogUtils.error(TAG, throwable);
-        }
 
     }
 
@@ -307,7 +241,7 @@ public class LiteHost implements BitSwapReceiver {
         // first simple solution (test if conn is open)
         List<Connection> cones = new ArrayList<>();
         for (Connection conn : connections.values()) {
-            if (conn.channel().isOpen()) {
+            if (true /* TODO conn.channel().isOpen()*/) {
                 cones.add(conn);
             }
         }
@@ -381,68 +315,7 @@ public class LiteHost implements BitSwapReceiver {
     }
 
     public void start() {
-
-
-        QuicSslContext sslContext = QuicSslContextBuilder.forServer(
-                selfSignedCertificate.privateKey(), null, selfSignedCertificate.certificate())
-                .applicationProtocols(IPFS.APRN).clientAuth(ClientAuth.REQUIRE).
-                        trustManager(new SimpleTrustManagerFactory() {
-                            @Override
-                            protected void engineInit(KeyStore keyStore) {
-
-                            }
-
-                            @Override
-                            protected void engineInit(ManagerFactoryParameters managerFactoryParameters) {
-
-                            }
-
-                            @Override
-                            protected TrustManager[] engineGetTrustManagers() {
-                                return new TrustManager[]{tm};
-                            }
-                        }).build();
-
-
-        ChannelHandler codec = new QuicServerCodecBuilder().sslContext(sslContext)
-
-                .initialMaxData(IPFS.BLOCK_SIZE_LIMIT)
-                .initialMaxStreamDataBidirectionalLocal(IPFS.BLOCK_SIZE_LIMIT)
-                .initialMaxStreamDataBidirectionalRemote(IPFS.BLOCK_SIZE_LIMIT)
-                .initialMaxStreamsBidirectional(IPFS.HIGH_WATER)
-                .initialMaxStreamsUnidirectional(IPFS.HIGH_WATER)
-
-
-                // Setup a token handler. In a production system you would want to implement and provide your custom
-                // one.
-                .tokenHandler(InsecureQuicTokenHandler.INSTANCE)
-                // ChannelHandler that is added into QuicChannel pipeline.
-                .handler(new ChannelInboundHandlerAdapter() {
-                    @Override
-                    public void channelActive(ChannelHandlerContext ctx) {
-                        // todo maybe
-                    }
-
-                    public void channelInactive(ChannelHandlerContext ctx) {
-                        // todo maybe
-                    }
-
-                    @Override
-                    public boolean isSharable() {
-                        return true;
-                    }
-                })
-                .streamHandler(new WelcomeHandler(LiteHost.this)).build();
-        try {
-            Bootstrap bs = new Bootstrap();
-            server = bs.group(group)
-                    .channel(NioDatagramChannel.class)
-                    .handler(codec)
-                    .bind(new InetSocketAddress(NetUtil.LOCALHOST4, port)).sync().channel();
-        } catch (Throwable throwable) {
-            LogUtils.error(TAG, throwable);
-        }
-
+        // TODO server
     }
 
     @NonNull
@@ -571,7 +444,7 @@ public class LiteHost implements BitSwapReceiver {
     }
 
     @Nullable
-    public QuicStreamChannel getRelayStream(
+    public QuicStream getRelayStream(
             @NonNull Closeable closeable, @NonNull PeerId peerId) {
 
         for (PeerId relay : relays) {
@@ -585,8 +458,8 @@ public class LiteHost implements BitSwapReceiver {
     }
 
     @Nullable
-    private QuicStreamChannel getStream(@NonNull Closeable closeable, @NonNull PeerId relay,
-                                        @NonNull PeerId peerId)
+    private QuicStream getStream(@NonNull Closeable closeable, @NonNull PeerId relay,
+                                 @NonNull PeerId peerId)
             throws ConnectionIssue, ClosedException {
 
         try {
@@ -689,18 +562,19 @@ public class LiteHost implements BitSwapReceiver {
                 long start = System.currentTimeMillis();
                 boolean run = false;
                 try {
-                    Promise<QuicChannel> future = dial(address, peerId);
+                    QuicClientConnectionImpl quicClientConnection = dial(address);
+                    Objects.requireNonNull(quicClientConnection);
+                    quicClientConnection.connect(timeout * 1000, IPFS.APRN,
+                            null, null);
 
+                    Connection conn = new LiteConnection(quicClientConnection, peerId, address);
 
-                    QuicChannel quic = future.get(timeout, TimeUnit.SECONDS);
-                    Objects.requireNonNull(quic);
-
-                    Connection conn = new LiteConnection(quic, transform(quic.remoteAddress()));
-                    quic.closeFuture().addListener(future1 -> removeConnection(conn));
+                    // TODO quic.closeFuture().addListener(future1 -> removeConnection(conn));
                     addConnection(conn);
                     run = true;
                     return conn;
                 } catch (Throwable ignore) {
+                    LogUtils.error(TAG, ignore);
                     // nothing to do here
                 } finally {
                     if (run) {
@@ -709,7 +583,7 @@ public class LiteHost implements BitSwapReceiver {
                         failure++;
                     }
 
-                    LogUtils.debug(TAG, "Run " + run + " Success " + success + " " +
+                    LogUtils.error(TAG, "Run " + run + " Success " + success + " " +
                             "Failure " + failure + " " +
                             address + "/p2p/" + peerId.toBase58() + " " +
                             (System.currentTimeMillis() - start));
@@ -776,7 +650,7 @@ public class LiteHost implements BitSwapReceiver {
 
     }
 
-    public IdentifyOuterClass.Identify createIdentity(@Nullable SocketAddress socketAddress) {
+    public IdentifyOuterClass.Identify createIdentity(@Nullable Multiaddr observed) {
 
         IdentifyOuterClass.Identify.Builder builder = IdentifyOuterClass.Identify.newBuilder()
                 .setAgentVersion(IPFS.AGENT)
@@ -793,14 +667,10 @@ public class LiteHost implements BitSwapReceiver {
             builder.addProtocols(protocol);
         }
 
-        try {
-            if (socketAddress != null) {
-                Multiaddr observed = transform(socketAddress);
-                builder.setObservedAddr(ByteString.copyFrom(observed.getBytes()));
-            }
-        } catch (Throwable throwable) {
-            LogUtils.error(TAG, throwable);
+        if (observed != null) {
+            builder.setObservedAddr(ByteString.copyFrom(observed.getBytes()));
         }
+
         return builder.build();
     }
 
@@ -811,16 +681,7 @@ public class LiteHost implements BitSwapReceiver {
 
 
     public void shutdown() {
-        try {
-            if (server != null) {
-                server.closeFuture().sync();
-            }
-            group.shutdownGracefully();
-        } catch (Throwable throwable) {
-            LogUtils.error(TAG, throwable);
-        } finally {
-            server = null;
-        }
+        // TODO implement server
     }
 
 
@@ -841,8 +702,8 @@ public class LiteHost implements BitSwapReceiver {
     }
 
 
-    public Promise<QuicChannel> dial(@NonNull Multiaddr multiaddr,
-                                     @NonNull PeerId peerId) throws UnknownHostException {
+    public QuicClientConnectionImpl dial(@NonNull Multiaddr multiaddr)
+            throws IOException, URISyntaxException {
 
         InetAddress inetAddress;
         if (multiaddr.has(Protocol.Type.IP4)) {
@@ -855,11 +716,13 @@ public class LiteHost implements BitSwapReceiver {
         int port = multiaddr.getPort();
 
 
-        return (Promise<QuicChannel>) QuicChannel.newBootstrap(client)
-                .attr(PEER_KEY, peerId)
-                .streamHandler(new WelcomeHandler(LiteHost.this))
-                .remoteAddress(new InetSocketAddress(inetAddress, port))
-                .connect();
+        QuicClientConnectionImpl.Builder builder = QuicClientConnectionImpl.newBuilder();
+        return builder.version(Version.IETF_draft_29)
+                //  .attr(PEER_KEY, peerId)
+                //  .streamHandler(new WelcomeHandler(LiteHost.this))
+                //  .remoteAddress(new InetSocketAddress(inetAddress, port))
+                .uri(new URI("https://" + inetAddress.getHostName() + ":" + port))
+                .build();
 
 
     }
@@ -925,21 +788,26 @@ public class LiteHost implements BitSwapReceiver {
     }
 
     public class LiteConnection implements Connection {
-        private final QuicChannel channel;
+        private final QuicClientConnection channel;
         private final Multiaddr multiaddr;
+        private final PeerId peerId;
 
-        public LiteConnection(@NonNull QuicChannel channel, @NonNull Multiaddr multiaddr) {
+        public LiteConnection(@NonNull QuicClientConnection channel,
+                              @NonNull PeerId peerId,
+                              @NonNull Multiaddr multiaddr) {
             this.channel = channel;
+            this.peerId = peerId;
             this.multiaddr = multiaddr;
         }
 
         @Override
         public Multiaddr remoteAddress() {
+            // todo should based on channel and then remote address
             return multiaddr;
         }
 
         @Override
-        public QuicChannel channel() {
+        public QuicClientConnection channel() {
             return channel;
         }
 
@@ -947,7 +815,7 @@ public class LiteHost implements BitSwapReceiver {
         public void disconnect() {
             try {
                 if (!isProtected(remoteId())) {
-                    channel.disconnect();
+                    channel.close();
                 }
             } catch (Exception exception) {
                 LogUtils.error(TAG, exception);
@@ -957,7 +825,7 @@ public class LiteHost implements BitSwapReceiver {
 
         @Override
         public PeerId remoteId() {
-            return channel.attr(LiteHost.PEER_KEY).get();
+            return peerId;
         }
 
 

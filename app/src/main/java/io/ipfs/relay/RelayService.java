@@ -5,6 +5,9 @@ import androidx.annotation.Nullable;
 
 import com.google.protobuf.ByteString;
 
+import net.luminis.quic.QuicClientConnection;
+import net.luminis.quic.stream.QuicStream;
+
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -14,11 +17,6 @@ import io.ipfs.IPFS;
 import io.ipfs.host.Connection;
 import io.ipfs.host.PeerId;
 import io.ipfs.utils.DataHandler;
-import io.netty.handler.timeout.ReadTimeoutHandler;
-import io.netty.incubator.codec.quic.QuicChannel;
-import io.netty.incubator.codec.quic.QuicStreamChannel;
-import io.netty.incubator.codec.quic.QuicStreamPriority;
-import io.netty.incubator.codec.quic.QuicStreamType;
 import relay.pb.Relay;
 
 public class RelayService {
@@ -33,29 +31,30 @@ public class RelayService {
                     .setType(relay.pb.Relay.CircuitRelay.Type.CAN_HOP)
                     .build();
 
-            QuicChannel quicChannel = conn.channel();
+            QuicClientConnection quicChannel = conn.channel();
             long time = System.currentTimeMillis();
 
             CompletableFuture<Relay.CircuitRelay> request = new CompletableFuture<>();
             CompletableFuture<Void> activation = new CompletableFuture<>();
 
 
-            QuicStreamChannel streamChannel = quicChannel.createStream(QuicStreamType.BIDIRECTIONAL,
-                    new RelayRequest(activation, request, message)).sync().get();
+            QuicStream quicStream = quicChannel.createStream(true);
+            RelayRequest relayRequest = new RelayRequest(conn, quicStream, activation, request, message);
 
-            streamChannel.pipeline().addFirst(new ReadTimeoutHandler(timeout, TimeUnit.SECONDS));
+            // TODO quicStream.pipeline().addFirst(new ReadTimeoutHandler(timeout, TimeUnit.SECONDS));
 
-            streamChannel.updatePriority(new QuicStreamPriority(IPFS.PRIORITY_URGENT, false));
+            // TODO quicStream.updatePriority(new QuicStreamPriority(IPFS.PRIORITY_URGENT, false));
 
 
-            streamChannel.writeAndFlush(DataHandler.writeToken(IPFS.STREAM_PROTOCOL));
-            streamChannel.writeAndFlush(DataHandler.writeToken(IPFS.RELAY_PROTOCOL));
+            relayRequest.writeAndFlush(DataHandler.writeToken(IPFS.STREAM_PROTOCOL));
+            relayRequest.writeAndFlush(DataHandler.writeToken(IPFS.RELAY_PROTOCOL));
 
             activation.thenCompose(s -> request);
 
             Relay.CircuitRelay msg = request.get(timeout, TimeUnit.SECONDS);
 
-            streamChannel.close().get();
+            relayRequest.close();
+            // TODO quicStream.close();
 
             LogUtils.info(TAG, "Request took " + (System.currentTimeMillis() - time));
             Objects.requireNonNull(msg);
@@ -69,8 +68,8 @@ public class RelayService {
 
 
     @Nullable
-    public static QuicStreamChannel getStream(@NonNull Connection conn, @NonNull PeerId self,
-                                              @NonNull PeerId peerId, int timeout) {
+    public static QuicStream getStream(@NonNull Connection conn, @NonNull PeerId self,
+                                       @NonNull PeerId peerId, int timeout) {
 
         Relay.CircuitRelay.Peer src = Relay.CircuitRelay.Peer.newBuilder()
                 .setId(ByteString.copyFrom(self.getBytes())).build();
@@ -83,21 +82,21 @@ public class RelayService {
                 .setDstPeer(dest)
                 .build();
 
-        QuicChannel quicChannel = conn.channel();
+        QuicClientConnection quicChannel = conn.channel();
         long time = System.currentTimeMillis();
 
         CompletableFuture<Relay.CircuitRelay> request = new CompletableFuture<>();
         CompletableFuture<Void> activation = new CompletableFuture<>();
 
         try {
-            QuicStreamChannel streamChannel = quicChannel.createStream(QuicStreamType.BIDIRECTIONAL,
-                    new RelayRequest(activation, request, message)).sync().get();
+            QuicStream quicStream = quicChannel.createStream(true);
 
+            RelayRequest relayRequest = new RelayRequest(conn, quicStream, activation, request, message);
 
-            streamChannel.updatePriority(new QuicStreamPriority(IPFS.PRIORITY_URGENT, false));
+            // TODO streamChannel.updatePriority(new QuicStreamPriority(IPFS.PRIORITY_URGENT, false));
+            relayRequest.writeAndFlush(DataHandler.writeToken(IPFS.STREAM_PROTOCOL));
+            relayRequest.writeAndFlush(DataHandler.writeToken(IPFS.RELAY_PROTOCOL));
 
-            streamChannel.writeAndFlush(DataHandler.writeToken(IPFS.STREAM_PROTOCOL));
-            streamChannel.writeAndFlush(DataHandler.writeToken(IPFS.RELAY_PROTOCOL));
 
             activation.thenCompose(s -> request);
 
@@ -107,17 +106,18 @@ public class RelayService {
 
 
             if (msg.getType() != Relay.CircuitRelay.Type.STATUS) {
-                streamChannel.close().get();
+                relayRequest.close();
+                // TODO quicStream.close();
                 return null;
             }
 
             if (msg.getCode() != Relay.CircuitRelay.Status.SUCCESS) {
-                streamChannel.close().get();
+                relayRequest.close();
+                // TODO quicStream.close();
                 return null;
             }
 
-            return streamChannel;
-
+            return quicStream;
 
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);

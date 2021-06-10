@@ -4,11 +4,13 @@ import androidx.annotation.NonNull;
 
 import com.google.protobuf.ByteString;
 
+import net.luminis.quic.QuicClientConnection;
+import net.luminis.quic.stream.QuicStream;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 
 import identify.pb.IdentifyOuterClass;
 import io.LogUtils;
@@ -20,11 +22,6 @@ import io.ipfs.host.PeerId;
 import io.ipfs.host.PeerInfo;
 import io.ipfs.multiaddr.Multiaddr;
 import io.ipfs.utils.DataHandler;
-import io.netty.handler.timeout.ReadTimeoutHandler;
-import io.netty.incubator.codec.quic.QuicChannel;
-import io.netty.incubator.codec.quic.QuicStreamChannel;
-import io.netty.incubator.codec.quic.QuicStreamPriority;
-import io.netty.incubator.codec.quic.QuicStreamType;
 
 public class IdentityService {
     public static final String TAG = IdentityService.class.getSimpleName();
@@ -68,11 +65,12 @@ public class IdentityService {
     public static IdentifyOuterClass.Identify getIdentity(
             @NonNull Closeable closeable, @NonNull Connection conn) throws ClosedException {
         try {
-            QuicChannel quicChannel = conn.channel();
+            QuicClientConnection quicClientConnection = conn.channel();
             long time = System.currentTimeMillis();
 
 
-            CompletableFuture<IdentifyOuterClass.Identify> request = requestIdentity(quicChannel);
+            CompletableFuture<IdentifyOuterClass.Identify> request =
+                    requestIdentity(conn, quicClientConnection);
 
             while (!request.isDone()) {
                 if (closeable.isClosed()) {
@@ -98,23 +96,25 @@ public class IdentityService {
 
 
     private static CompletableFuture<IdentifyOuterClass.Identify> requestIdentity(
-            @NonNull QuicChannel quicChannel) {
+            @NonNull Connection connection,
+            @NonNull QuicClientConnection quicChannel) {
 
         CompletableFuture<IdentifyOuterClass.Identify> request = new CompletableFuture<>();
         CompletableFuture<Void> activation = new CompletableFuture<>();
 
         try {
-            QuicStreamChannel streamChannel = quicChannel.createStream(QuicStreamType.BIDIRECTIONAL,
-                    new IdentityRequest(activation, request)).sync().get();
+            QuicStream quicStream = quicChannel.createStream(true);
+            IdentityRequest identityRequest = new IdentityRequest(
+                    connection, quicStream, activation, request);
 
 
-            streamChannel.pipeline().addFirst(new ReadTimeoutHandler(10, TimeUnit.SECONDS));
+            // TODO quicStream.pipeline().addFirst(new ReadTimeoutHandler(10, TimeUnit.SECONDS));
 
-            streamChannel.updatePriority(new QuicStreamPriority(IPFS.PRIORITY_HIGH, false));
+            // TODO quicStream.updatePriority(new QuicStreamPriority(IPFS.PRIORITY_HIGH, false));
 
 
-            streamChannel.writeAndFlush(DataHandler.writeToken(IPFS.STREAM_PROTOCOL));
-            streamChannel.writeAndFlush(DataHandler.writeToken(IPFS.IDENTITY_PROTOCOL));
+            identityRequest.writeAndFlush(DataHandler.writeToken(IPFS.STREAM_PROTOCOL));
+            identityRequest.writeAndFlush(DataHandler.writeToken(IPFS.IDENTITY_PROTOCOL));
 
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);

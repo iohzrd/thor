@@ -4,20 +4,20 @@ import androidx.annotation.NonNull;
 
 import com.google.protobuf.MessageLite;
 
-import java.io.ByteArrayOutputStream;
+import net.luminis.quic.stream.QuicStream;
+
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 import io.LogUtils;
 import io.ipfs.IPFS;
 import io.ipfs.core.ProtocolIssue;
+import io.ipfs.host.Connection;
+import io.ipfs.host.ConnectionChannelHandler;
 import io.ipfs.utils.DataHandler;
-import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.SimpleChannelInboundHandler;
 import relay.pb.Relay;
 
-public class RelayRequest extends SimpleChannelInboundHandler<ByteBuf> {
+public class RelayRequest extends ConnectionChannelHandler {
     private static final String TAG = RelayRequest.class.getSimpleName();
     @NonNull
     private final CompletableFuture<Relay.CircuitRelay> request;
@@ -27,38 +27,38 @@ public class RelayRequest extends SimpleChannelInboundHandler<ByteBuf> {
     private final MessageLite messageLite;
     private DataHandler reader = new DataHandler(4096);
 
-    public RelayRequest(@NonNull CompletableFuture<Void> activation,
+    public RelayRequest(@NonNull Connection connection,
+                        @NonNull QuicStream quicStream,
+                        @NonNull CompletableFuture<Void> activation,
                         @NonNull CompletableFuture<relay.pb.Relay.CircuitRelay> request,
                         @NonNull MessageLite messageLite) {
+        super(connection, quicStream);
         this.request = request;
         this.activation = activation;
         this.messageLite = messageLite;
     }
 
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
-            throws Exception {
+
+    public void exceptionCaught(@NonNull Connection connection, @NonNull Throwable cause) {
         LogUtils.error(TAG, " " + cause);
         request.completeExceptionally(cause);
         activation.completeExceptionally(cause);
-        ctx.close().get();
+        connection.disconnect();
     }
 
-    @Override
-    protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg)
+
+    public void channelRead0(@NonNull Connection connection, @NonNull byte[] msg)
             throws Exception {
 
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        msg.readBytes(out, msg.readableBytes());
-        byte[] data = out.toByteArray();
-        reader.load(data);
+        reader.load(msg);
 
         if (reader.isDone()) {
 
             for (String token : reader.getTokens()) {
                 LogUtils.error(TAG, "request " + token);
                 if (Objects.equals(token, IPFS.RELAY_PROTOCOL)) {
-                    activation.complete(ctx.writeAndFlush(DataHandler.encode(messageLite)).get());
+                    writeAndFlush(DataHandler.encode(messageLite));
+                    activation.complete(null);
                 } else if (!Objects.equals(token, IPFS.STREAM_PROTOCOL)) {
                     throw new ProtocolIssue();
                 }
@@ -72,8 +72,8 @@ public class RelayRequest extends SimpleChannelInboundHandler<ByteBuf> {
             reader = new DataHandler(4096);
         } else {
             LogUtils.debug(TAG, "iteration " + reader.hasRead() + " "
-                    + reader.expectedBytes() + " " + ctx.name() + " "
-                    + ctx.channel().remoteAddress());
+                    + reader.expectedBytes() + " " +
+                    connection.remoteAddress().toString());
         }
     }
 }

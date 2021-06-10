@@ -2,7 +2,8 @@ package io.ipfs.dht;
 
 import androidx.annotation.NonNull;
 
-import java.io.ByteArrayOutputStream;
+import net.luminis.quic.stream.QuicStream;
+
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
@@ -10,12 +11,11 @@ import dht.pb.Dht;
 import io.LogUtils;
 import io.ipfs.IPFS;
 import io.ipfs.core.ProtocolIssue;
+import io.ipfs.host.Connection;
+import io.ipfs.host.ConnectionChannelHandler;
 import io.ipfs.utils.DataHandler;
-import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.SimpleChannelInboundHandler;
 
-public class KadDhtSend extends SimpleChannelInboundHandler<ByteBuf> {
+public class KadDhtSend extends ConnectionChannelHandler {
 
     private static final String TAG = KadDhtSend.class.getSimpleName();
 
@@ -27,40 +27,39 @@ public class KadDhtSend extends SimpleChannelInboundHandler<ByteBuf> {
     @NonNull
     private final Dht.Message message;
 
-    public KadDhtSend(@NonNull CompletableFuture<Void> stream, @NonNull Dht.Message message) {
+    public KadDhtSend(@NonNull Connection connection,
+                      @NonNull QuicStream quicStream,
+                      @NonNull CompletableFuture<Void> stream,
+                      @NonNull Dht.Message message) {
+        super(connection, quicStream);
         this.stream = stream;
         this.message = message;
     }
 
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
-            throws Exception {
+    public void exceptionCaught(@NonNull Connection connection, @NonNull Throwable cause) {
         LogUtils.error(TAG, " " + cause);
         stream.completeExceptionally(cause);
-        ctx.close().get();
+        connection.disconnect();
     }
 
-    @Override
-    protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg)
+    public void channelRead0(@NonNull Connection connection, @NonNull byte[] msg)
             throws Exception {
 
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        msg.readBytes(out, msg.readableBytes());
-        byte[] data = out.toByteArray();
-        reader.load(data);
+        reader.load(msg);
 
         if (reader.isDone()) {
             for (String received : reader.getTokens()) {
                 if (Objects.equals(received, IPFS.DHT_PROTOCOL)) {
-                    stream.complete(ctx.writeAndFlush(DataHandler.encode(message.toByteArray())).get());
+                    writeAndFlush(DataHandler.encode(message.toByteArray()));
+                    stream.complete(null);
                 } else if (!Objects.equals(received, IPFS.STREAM_PROTOCOL)) {
                     throw new ProtocolIssue();
                 }
             }
         } else {
-            LogUtils.debug(TAG, "iteration " + data.length + " "
-                    + reader.expectedBytes() + " " + ctx.name() + " "
-                    + ctx.channel().remoteAddress());
+            LogUtils.debug(TAG, "iteration " + msg.length + " "
+                    + reader.expectedBytes() + " "
+                    + connection.remoteAddress());
         }
     }
 }

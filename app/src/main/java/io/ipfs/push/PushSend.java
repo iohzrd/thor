@@ -2,20 +2,19 @@ package io.ipfs.push;
 
 import androidx.annotation.NonNull;
 
-import java.io.ByteArrayOutputStream;
+import net.luminis.quic.stream.QuicStream;
+
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 import io.LogUtils;
 import io.ipfs.IPFS;
 import io.ipfs.core.ProtocolIssue;
+import io.ipfs.host.Connection;
+import io.ipfs.host.ConnectionChannelHandler;
 import io.ipfs.utils.DataHandler;
-import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.incubator.codec.quic.QuicStreamChannel;
 
-public class PushSend extends SimpleChannelInboundHandler<ByteBuf> {
+public class PushSend extends ConnectionChannelHandler {
 
     private static final String TAG = PushSend.class.getSimpleName();
 
@@ -23,42 +22,38 @@ public class PushSend extends SimpleChannelInboundHandler<ByteBuf> {
     private final DataHandler reader = new DataHandler(1000);
 
     @NonNull
-    private final CompletableFuture<QuicStreamChannel> stream;
+    private final CompletableFuture<Void> done;
 
-    public PushSend(@NonNull CompletableFuture<QuicStreamChannel> stream) {
-        this.stream = stream;
+    public PushSend(@NonNull Connection connection,
+                    @NonNull QuicStream quicStream,
+                    @NonNull CompletableFuture<Void> done) {
+        super(connection, quicStream);
+        this.done = done;
     }
 
 
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
-            throws Exception {
+    public void exceptionCaught(@NonNull Connection connection, @NonNull Throwable cause) {
         LogUtils.error(TAG, " " + cause);
-        stream.completeExceptionally(cause);
-        ctx.close().get();
+        done.completeExceptionally(cause);
+        connection.disconnect();
     }
 
-    @Override
-    protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg)
+    public void channelRead0(@NonNull Connection connection, @NonNull byte[] msg)
             throws Exception {
 
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        msg.readBytes(out, msg.readableBytes());
-        byte[] data = out.toByteArray();
-        reader.load(data);
+        reader.load(msg);
 
         if (reader.isDone()) {
             for (String received : reader.getTokens()) {
                 if (Objects.equals(received, IPFS.PUSH_PROTOCOL)) {
-                    stream.complete((QuicStreamChannel) ctx.channel());
+                    done.complete(null);
                 } else if (!Objects.equals(received, IPFS.STREAM_PROTOCOL)) {
                     throw new ProtocolIssue();
                 }
             }
         } else {
-            LogUtils.debug(TAG, "iteration " + data.length + " "
-                    + reader.expectedBytes() + " " + ctx.name() + " "
-                    + ctx.channel().remoteAddress());
+            LogUtils.debug(TAG, "iteration " + msg.length + " "
+                    + reader.expectedBytes() + " " + connection.remoteAddress());
         }
     }
 }

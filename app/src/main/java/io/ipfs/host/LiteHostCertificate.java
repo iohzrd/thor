@@ -1,5 +1,8 @@
 package io.ipfs.host;
 
+import android.content.Context;
+import android.util.Base64;
+
 import androidx.annotation.NonNull;
 
 import com.google.common.primitives.Bytes;
@@ -31,6 +34,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.Provider;
@@ -39,25 +43,21 @@ import java.security.SecureRandom;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Date;
 import java.util.Objects;
 import java.util.Random;
 
 import crypto.pb.Crypto;
+import io.LogUtils;
 import io.ipfs.crypto.Ecdsa;
 import io.ipfs.crypto.Ed25519;
 import io.ipfs.crypto.PrivKey;
 import io.ipfs.crypto.PubKey;
 import io.ipfs.crypto.Rsa;
 import io.ipfs.crypto.Secp256k1;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-import io.netty.handler.codec.base64.Base64;
-import io.netty.util.CharsetUtil;
-import io.netty.util.internal.PlatformDependent;
-import io.netty.util.internal.SystemPropertyUtil;
-import io.netty.util.internal.logging.InternalLogger;
-import io.netty.util.internal.logging.InternalLoggerFactory;
+
 
 /**
  * Generates a temporary self-signed certificate for testing purposes.
@@ -77,18 +77,8 @@ import io.netty.util.internal.logging.InternalLoggerFactory;
  */
 public final class LiteHostCertificate {
     public static final String certificatePrefix = "libp2p-tls-handshake:";
-    private static final InternalLogger logger = InternalLoggerFactory.getInstance(
-            io.netty.handler.ssl.util.SelfSignedCertificate.class);
-    /**
-     * Current time minus 1 year, just in case software clock goes back due to time synchronization
-     */
-    private static final Date DEFAULT_NOT_BEFORE = new Date(SystemPropertyUtil.getLong(
-            "io.netty.selfSignedCertificate.defaultNotBefore", System.currentTimeMillis() - 86400000L * 365));
-    /**
-     * The maximum possible value in X.509 specification: 9999-12-31 23:59:59
-     */
-    private static final Date DEFAULT_NOT_AFTER = new Date(SystemPropertyUtil.getLong(
-            "io.netty.selfSignedCertificate.defaultNotAfter", 253402300799000L));
+    private static final String TAG = LiteHostCertificate.class.getSimpleName();
+
     private static final int[] extensionPrefix = new int[]{1, 3, 6, 1, 4, 1, 53594};
     public static final int[] extensionID = getPrefixedExtensionID(new int[]{1, 1});
     private static final Provider PROVIDER = new BouncyCastleProvider();
@@ -108,18 +98,24 @@ public final class LiteHostCertificate {
     /**
      * Creates a new instance.
      *
-     * @param fqdn      a fully qualified domain name
-     * @param random    the {@link SecureRandom} to use
-     * @param notBefore Certificate is not valid before this time
-     * @param notAfter  Certificate is not valid after this time
+     * @param fqdn   a fully qualified domain name
+     * @param random the {@link SecureRandom} to use
      */
-    public LiteHostCertificate(PrivKey privKey, KeyPair keypair, String fqdn,
-                               SecureRandom random, Date notBefore, Date notAfter)
+    public LiteHostCertificate(@NonNull Context context, PrivKey privKey,
+                               KeyPair keypair, String fqdn, SecureRandom random)
             throws Exception {
 
+        Date currentDate = new Date();
+        LocalDateTime localDateTime = currentDate.toInstant().atZone(
+                ZoneId.systemDefault()).toLocalDateTime();
+        LocalDateTime notBeforeLocal = localDateTime.minusYears(1);
+        LocalDateTime notAfterLocal = localDateTime.plusYears(99);
+        Date notBefore = Date.from(notBeforeLocal.atZone(ZoneId.systemDefault()).toInstant());
+        Date notAfter = Date.from(notAfterLocal.atZone(ZoneId.systemDefault()).toInstant());
 
         String algorithm = keypair.getPublic().getAlgorithm();
-        String[] paths = generate(privKey, fqdn, keypair, random, notBefore, notAfter, algorithm);
+        String[] paths = generate(context, privKey, fqdn, keypair, random,
+                notBefore, notAfter, algorithm);
 
         certificate = new File(paths[0]);
         privateKey = new File(paths[1]);
@@ -136,49 +132,24 @@ public final class LiteHostCertificate {
                 try {
                     certificateInput.close();
                 } catch (IOException e) {
-                    if (logger.isWarnEnabled()) {
-                        logger.warn("Failed to close a file: " + certificate, e);
-                    }
+                    LogUtils.error(TAG, e);
                 }
             }
         }
     }
 
 
-    /**
-     * Creates a new instance.
-     * <p> Algorithm: RSA </p>
-     */
-    public LiteHostCertificate(PrivKey privKey, KeyPair keypair) throws Exception {
-        this(privKey, keypair, DEFAULT_NOT_BEFORE, DEFAULT_NOT_AFTER);
-    }
-
-
-    /**
-     * Creates a new instance.
-     * <p> Algorithm: RSA </p>
-     *
-     * @param notBefore Certificate is not valid before this time
-     * @param notAfter  Certificate is not valid after this time
-     */
-    public LiteHostCertificate(PrivKey privKey, KeyPair keypair, Date notBefore, Date notAfter)
+    public LiteHostCertificate(@NonNull Context context, PrivKey privKey, KeyPair keypair)
             throws Exception {
-        this(privKey, keypair, "localhost", notBefore, notAfter);
+        this(context, privKey, keypair, "localhost");
     }
 
-    /**
-     * Creates a new instance.
-     * <p> Algorithm: RSA </p>
-     *
-     * @param fqdn      a fully qualified domain name
-     * @param notBefore Certificate is not valid before this time
-     * @param notAfter  Certificate is not valid after this time
-     */
-    public LiteHostCertificate(PrivKey privKey, KeyPair keypair, String fqdn, Date notBefore, Date notAfter)
+
+    public LiteHostCertificate(@NonNull Context context, PrivKey privKey, KeyPair keypair, String fqdn)
             throws Exception {
         // Bypass entropy collection by using insecure random generator.
         // We just want to generate it without any delay because it's for testing purposes only.
-        this(privKey, keypair, fqdn, ThreadLocalInsecureRandom.current(), notBefore, notAfter);
+        this(context, privKey, keypair, fqdn, ThreadLocalInsecureRandom.current());
     }
 
     public PublicKey getPublicKey() {
@@ -192,7 +163,7 @@ public final class LiteHostCertificate {
         return Ints.concat(extensionPrefix, suffix);
     }
 
-    static String[] generate(PrivKey privKey, String fqdn, KeyPair keypair,
+    static String[] generate(@NonNull Context context, PrivKey privKey, String fqdn, KeyPair keypair,
                              SecureRandom random, Date notBefore, Date notAfter,
                              String algorithm) throws Exception {
         PrivateKey key = keypair.getPrivate();
@@ -230,7 +201,7 @@ public final class LiteHostCertificate {
                 setProvider(PROVIDER).getCertificate(certHolder);
         cert.verify(keypair.getPublic());
 
-        return newSelfSignedCertificate(fqdn, key, cert);
+        return newSelfSignedCertificate(context, fqdn, key, cert);
     }
 
     public static String getLiteExtension() {
@@ -254,31 +225,21 @@ public final class LiteHostCertificate {
     }
 
 
-    static String[] newSelfSignedCertificate(
-            String fqdn, PrivateKey key, X509Certificate cert) throws IOException, CertificateEncodingException {
-        // Encode the private key into a file.
-        ByteBuf wrappedBuf = Unpooled.wrappedBuffer(key.getEncoded());
-        ByteBuf encodedBuf;
-        final String keyText;
-        try {
-            encodedBuf = Base64.encode(wrappedBuf, true);
-            try {
-                keyText = "-----BEGIN PRIVATE KEY-----\n" +
-                        encodedBuf.toString(CharsetUtil.US_ASCII) +
-                        "\n-----END PRIVATE KEY-----\n";
-            } finally {
-                encodedBuf.release();
-            }
-        } finally {
-            wrappedBuf.release();
-        }
+    static String[] newSelfSignedCertificate(@NonNull Context context, @NonNull String fqdn,
+                                             @NonNull PrivateKey key, @NonNull X509Certificate cert)
+            throws IOException, CertificateEncodingException {
+        File cacheDir = context.getCacheDir();
 
-        File keyFile = PlatformDependent.createTempFile("keyutil_" + fqdn + '_', ".key", null);
+        final String keyText = "-----BEGIN PRIVATE KEY-----\n" +
+                Base64.encodeToString(key.getEncoded(), 0) +
+                "\n-----END PRIVATE KEY-----\n";
+
+        File keyFile = File.createTempFile("keyutil_" + fqdn + '_', ".key", cacheDir);
         keyFile.deleteOnExit();
 
         OutputStream keyOut = new FileOutputStream(keyFile);
         try {
-            keyOut.write(keyText.getBytes(CharsetUtil.US_ASCII));
+            keyOut.write(keyText.getBytes(StandardCharsets.US_ASCII));
             keyOut.close();
             keyOut = null;
         } finally {
@@ -288,28 +249,18 @@ public final class LiteHostCertificate {
             }
         }
 
-        wrappedBuf = Unpooled.wrappedBuffer(cert.getEncoded());
-        final String certText;
-        try {
-            encodedBuf = Base64.encode(wrappedBuf, true);
-            try {
-                // Encode the certificate into a CRT file.
-                certText = "-----BEGIN CERTIFICATE-----\n" +
-                        encodedBuf.toString(CharsetUtil.US_ASCII) +
-                        "\n-----END CERTIFICATE-----\n";
-            } finally {
-                encodedBuf.release();
-            }
-        } finally {
-            wrappedBuf.release();
-        }
 
-        File certFile = PlatformDependent.createTempFile("keyutil_" + fqdn + '_', ".crt", null);
+        final String certText = "-----BEGIN CERTIFICATE-----\n" +
+                Base64.encodeToString(cert.getEncoded(), 0) +
+                "\n-----END CERTIFICATE-----\n";
+
+
+        File certFile = File.createTempFile("keyutil_" + fqdn + '_', ".crt", cacheDir);
         certFile.deleteOnExit();
 
         OutputStream certOut = new FileOutputStream(certFile);
         try {
-            certOut.write(certText.getBytes(CharsetUtil.US_ASCII));
+            certOut.write(certText.getBytes(StandardCharsets.US_ASCII));
             certOut.close();
             certOut = null;
         } finally {
@@ -325,9 +276,7 @@ public final class LiteHostCertificate {
 
     private static void safeDelete(File certFile) {
         if (!certFile.delete()) {
-            if (logger.isWarnEnabled()) {
-                logger.warn("Failed to delete a file: " + certFile);
-            }
+            LogUtils.error(TAG, "Failed to delete a file: " + certFile);
         }
     }
 
@@ -335,9 +284,7 @@ public final class LiteHostCertificate {
         try {
             keyOut.close();
         } catch (IOException e) {
-            if (logger.isWarnEnabled()) {
-                logger.warn("Failed to close a file: " + keyFile, e);
-            }
+            LogUtils.error(TAG, "Failed to close a file: " + keyFile, e);
         }
     }
 
@@ -443,10 +390,7 @@ public final class LiteHostCertificate {
 
     }
 
-    /**
-     * Insecure {@link SecureRandom} which relies on {@link PlatformDependent#threadLocalRandom()} for random number
-     * generation.
-     */
+
     public static final class ThreadLocalInsecureRandom extends SecureRandom {
 
         private static final long serialVersionUID = -8209473337192526191L;
@@ -461,7 +405,7 @@ public final class LiteHostCertificate {
         }
 
         private static Random random() {
-            return PlatformDependent.threadLocalRandom();
+            return new SecureRandom();
         }
 
         @Override

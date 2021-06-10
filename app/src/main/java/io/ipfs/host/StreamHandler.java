@@ -2,19 +2,11 @@ package io.ipfs.host;
 
 import androidx.annotation.NonNull;
 
-import java.io.ByteArrayOutputStream;
 import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
-import bitswap.pb.MessageOuterClass;
-import identify.pb.IdentifyOuterClass;
-import io.LogUtils;
 import io.ipfs.IPFS;
 import io.ipfs.utils.DataHandler;
-import io.netty.buffer.ByteBuf;
-import io.netty.incubator.codec.quic.QuicChannel;
-import io.netty.util.ReferenceCountUtil;
-import io.quic.QuicheWrapper;
 
 
 public class StreamHandler {
@@ -42,7 +34,7 @@ public class StreamHandler {
         return streamHandler;
 
     }
-
+    /*
     public void channelRead(QuicChannel quicChannel, long streamId, ByteBuf byteBuf, boolean fin) {
 
         try {
@@ -160,6 +152,6 @@ public class StreamHandler {
                     " PeerId " + quicChannel.attr(LiteHost.PEER_KEY).get() +
                     " Connection " + connection + " StreamId " + streamId);
         }
-    }
+    }*/
 
 }

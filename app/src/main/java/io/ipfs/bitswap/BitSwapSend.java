@@ -2,21 +2,19 @@ package io.ipfs.bitswap;
 
 import androidx.annotation.NonNull;
 
-import java.io.ByteArrayOutputStream;
+import net.luminis.quic.stream.QuicStream;
+
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 import io.LogUtils;
 import io.ipfs.IPFS;
 import io.ipfs.core.ProtocolIssue;
+import io.ipfs.host.Connection;
+import io.ipfs.host.ConnectionChannelHandler;
 import io.ipfs.utils.DataHandler;
-import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.incubator.codec.quic.QuicChannel;
-import io.netty.incubator.codec.quic.QuicStreamChannel;
 
-public class BitSwapSend extends SimpleChannelInboundHandler<ByteBuf> {
+public class BitSwapSend extends ConnectionChannelHandler {
 
     private static final String TAG = BitSwapSend.class.getSimpleName();
 
@@ -25,15 +23,20 @@ public class BitSwapSend extends SimpleChannelInboundHandler<ByteBuf> {
 
     @NonNull
     private final BitSwap bitSwap;
-    @NonNull
-    private final CompletableFuture<QuicStreamChannel> stream;
 
-    public BitSwapSend(@NonNull CompletableFuture<QuicStreamChannel> stream,
+    @NonNull
+    private final CompletableFuture<BitSwapSend> done;
+
+    public BitSwapSend(@NonNull Connection connection,
+                       @NonNull QuicStream quicStream,
+                       @NonNull CompletableFuture<BitSwapSend> done,
                        @NonNull BitSwap bitSwap) {
-        this.stream = stream;
+        super(connection, quicStream);
+        this.done = done;
         this.bitSwap = bitSwap;
     }
 
+    /* TODO
     @Override
     public void channelUnregistered(ChannelHandlerContext ctx) {
         LogUtils.debug(TAG, "channelUnregistered ");
@@ -41,38 +44,31 @@ public class BitSwapSend extends SimpleChannelInboundHandler<ByteBuf> {
         QuicChannel quicChannel = (QuicChannel) ctx.channel().parent();
 
         bitSwap.removeStream(quicChannel);
-    }
+    } */
 
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
-            throws Exception {
+    public void exceptionCaught(@NonNull Connection connection, @NonNull Throwable cause) {
         LogUtils.error(TAG, " " + cause);
-        stream.completeExceptionally(cause);
-        ctx.close().get();
+        done.completeExceptionally(cause);
+        connection.disconnect();
     }
 
-    @Override
-    protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg)
+    public void channelRead0(@NonNull Connection connection, @NonNull byte[] msg)
             throws Exception {
 
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        msg.readBytes(out, msg.readableBytes());
-        byte[] data = out.toByteArray();
-        reader.load(data);
+        reader.load(msg);
 
         if (reader.isDone()) {
             for (String received : reader.getTokens()) {
                 if (Objects.equals(received, IPFS.BITSWAP_PROTOCOL)) {
-                    stream.complete((QuicStreamChannel) ctx.channel());
+                    done.complete(this);
                 } else if (!Objects.equals(received, IPFS.STREAM_PROTOCOL)) {
                     LogUtils.error(TAG, "NOT SUPPORTED " + received);
                     throw new ProtocolIssue();
                 }
             }
         } else {
-            LogUtils.error(TAG, "iteration " + data.length + " "
-                    + reader.expectedBytes() + " " + ctx.name() + " "
-                    + ctx.channel().remoteAddress());
+            LogUtils.error(TAG, "iteration " + msg.length + " "
+                    + reader.expectedBytes() + " " + connection.remoteAddress());
         }
     }
 }
