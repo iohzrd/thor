@@ -81,6 +81,7 @@ public class QuicTransportParametersExtension extends Extension {
     }
 
     private void serialize() {
+        short idle_timeout = 0;
         ByteBuffer buffer = ByteBuffer.allocate(100 + (discardTransportParameterSize != null? discardTransportParameterSize: 0));
 
         // https://tools.ietf.org/html/draft-ietf-quic-tls-17#section-8.2:
@@ -205,6 +206,8 @@ public class QuicTransportParametersExtension extends Extension {
         int size = VariableLengthInteger.parse(buffer);
         int startPosition = buffer.position();
 
+        QuicConstants.IpVersion idle_timeout = null;
+        QuicConstants.IpVersion max_packet_size = null;
         if (parameterId == original_destination_connection_id.value) {
             byte[] destinationCid = new byte[size];
             buffer.get(destinationCid);
