@@ -16,7 +16,7 @@ public class StreamHandler {
     private final LiteHost host;
     private final HashMap<Long, DataHandler> handlers = new HashMap<>();
     private final HashMap<Long, String> protocols = new HashMap<>();
-    private long time = System.currentTimeMillis();
+    private final long time = System.currentTimeMillis();
 
 
     public StreamHandler(@NonNull LiteHost host, long connection) {

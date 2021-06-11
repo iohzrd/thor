@@ -573,7 +573,7 @@ public class IPFS {
 
         try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
             getToOutputStream(outputStream, cid, closeable);
-            return new String(outputStream.toByteArray());
+            return outputStream.toString();
         }
     }
 

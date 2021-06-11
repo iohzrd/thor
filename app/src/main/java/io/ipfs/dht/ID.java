@@ -15,11 +15,6 @@ public class ID implements Comparable<ID> {
         this.data = data;
     }
 
-    @Override
-    public int compareTo(@NonNull ID o) {
-        return UnsignedBytes.lexicographicalComparator().compare(this.data, o.data);
-    }
-
     @NonNull
     public static ID convertPeerID(@NonNull PeerId id) {
         return convertKey(id.getBytes());
@@ -38,5 +33,10 @@ public class ID implements Comparable<ID> {
     public static ID xor(@NonNull ID a, @NonNull ID b) {
         byte[] res = Util.xor(a.data, b.data);
         return new ID(res);
+    }
+
+    @Override
+    public int compareTo(@NonNull ID o) {
+        return UnsignedBytes.lexicographicalComparator().compare(this.data, o.data);
     }
 }

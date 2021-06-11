@@ -4,10 +4,9 @@ import androidx.annotation.NonNull;
 
 import net.luminis.quic.stream.QuicStream;
 
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.ByteBuffer;
+import java.util.concurrent.atomic.AtomicReference;
 
+import bitswap.pb.MessageOuterClass;
 import identify.pb.IdentifyOuterClass;
 import io.LogUtils;
 import io.ipfs.IPFS;
@@ -18,6 +17,8 @@ public class ConnectionStreamHandler extends ConnectionChannelHandler {
     private static final String TAG = ConnectionStreamHandler.class.getSimpleName();
     private final LiteHost host;
     private final DataHandler reader = new DataHandler(IPFS.PROTOCOL_READER_LIMIT);
+    private final AtomicReference<String> protocol = new AtomicReference<>();
+    private long time = System.currentTimeMillis();
 
     public ConnectionStreamHandler(@NonNull Connection connection,
                                    @NonNull QuicStream quicStream,
@@ -26,7 +27,6 @@ public class ConnectionStreamHandler extends ConnectionChannelHandler {
         this.host = host;
 
     }
-
 
 
     public void exceptionCaught(@NonNull Connection connection, @NonNull Throwable cause) {
@@ -47,49 +47,71 @@ public class ConnectionStreamHandler extends ConnectionChannelHandler {
 
         if (reader.isDone()) {
             for (String token : reader.getTokens()) {
-                if (token.equals(IPFS.STREAM_PROTOCOL)) {
-                    writeAndFlush(DataHandler.writeToken(IPFS.STREAM_PROTOCOL));
-                } else if (token.equals(IPFS.IDENTITY_PROTOCOL)) {
-                    writeAndFlush(DataHandler.writeToken(IPFS.IDENTITY_PROTOCOL));
 
-                    IdentifyOuterClass.Identify response =
-                            host.createIdentity(connection.remoteAddress());
-                    writeAndFlush(DataHandler.encode(response));
-                    close();
 
-                } else {
-                    LogUtils.debug(TAG, token);
-                    writeAndFlush(DataHandler.writeToken(IPFS.NA));
-                    close();
+                LogUtils.debug(TAG, "Token " + token + " Connection " + connection + " StreamId " + ""
+                        + " PeerId " + connection.remoteId());
+                protocol.set(token);
+                switch (token) {
+                    case IPFS.STREAM_PROTOCOL:
+                        writeAndFlush(DataHandler.writeToken(IPFS.STREAM_PROTOCOL));
+                        break;
+                    case IPFS.PUSH_PROTOCOL:
+                        writeAndFlush(DataHandler.writeToken(IPFS.PUSH_PROTOCOL));
+                        break;
+                    case IPFS.BITSWAP_PROTOCOL:
+                        if (host.gatePeer(connection.remoteId())) {
+                            writeAndFlush(DataHandler.writeToken(IPFS.NA));
+                            close();
+                            return;
+                        } else {
+                            writeAndFlush(DataHandler.writeToken(IPFS.BITSWAP_PROTOCOL));
+                        }
+                        time = System.currentTimeMillis();
+                        break;
+                    case IPFS.IDENTITY_PROTOCOL:
+                        writeAndFlush(DataHandler.writeToken(IPFS.IDENTITY_PROTOCOL));
+
+                        IdentifyOuterClass.Identify response =
+                                host.createIdentity(connection.remoteAddress());
+                        writeAndFlush(DataHandler.encode(response));
+                        close();
+                        return;
+                    default:
+                        LogUtils.debug(TAG, "Ignore " + token + " Connection " + connection +
+                                " StreamId todo " + " PeerId " + connection.remoteId());
+                        writeAndFlush(DataHandler.writeToken(IPFS.NA));
+                        close();
+
+                        connection.disconnect();// todo rethink
+                        return;
                 }
             }
-            /*
+
             byte[] message = reader.getMessage();
 
             if (message != null) {
-                String lastProtocol = protocols.get(streamId);
+                String lastProtocol = protocol.get();
                 if (lastProtocol != null) {
                     switch (lastProtocol) {
                         case IPFS.BITSWAP_PROTOCOL:
                             host.forwardMessage(
-                                    quicChannel.attr(LiteHost.PEER_KEY).get(),
+                                    connection.remoteId(),
                                     MessageOuterClass.Message.parseFrom(message));
 
                             LogUtils.debug(TAG, "Time " + (System.currentTimeMillis() - time) +
-                                    " Connection " + connection + " StreamId " + streamId +
-                                    " PeerId " + quicChannel.attr(LiteHost.PEER_KEY).get() +
-                                    " Protected " + host.isProtected(quicChannel.attr(LiteHost.PEER_KEY).get()));
+                                    " Connection " + connection + " StreamId todo" +
+                                    " PeerId " + connection.remoteId() +
+                                    " Protected " + host.isProtected(connection.remoteId()));
                             break;
                         case IPFS.PUSH_PROTOCOL:
-                            host.push(quicChannel.attr(LiteHost.PEER_KEY).get(), message);
+                            host.push(connection.remoteId(), message);
                             break;
                         default:
                             throw new Exception("unknown protocol");
                     }
                 }
             }
-
-             */
         } else {
             LogUtils.error(TAG, "iteration listener " + msg.length + " "
                     + reader.expectedBytes() + " " + connection.remoteAddress());

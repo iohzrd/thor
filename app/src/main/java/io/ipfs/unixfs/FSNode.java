@@ -71,13 +71,13 @@ public class FSNode {
         return data.getData().toByteArray();
     }
 
-    public unixfs.pb.Unixfs.Data.DataType Type() {
-        return data.getType();
-    }
-
     public void setData(byte[] bytes) {
         updateFileSize(bytes.length - getData().length);
         data = data.toBuilder().setData(ByteString.copyFrom(bytes)).build();
+    }
+
+    public unixfs.pb.Unixfs.Data.DataType Type() {
+        return data.getType();
     }
 
     public long getFileSize() {

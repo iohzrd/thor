@@ -152,10 +152,6 @@ public final class LiteHostCertificate {
         this(context, privKey, keypair, fqdn, ThreadLocalInsecureRandom.current());
     }
 
-    public PublicKey getPublicKey() {
-        return publicKey;
-    }
-
     // getPrefixedExtensionID returns an Object Identifier
     // that can be used in x509 Certificates.
     public static int[] getPrefixedExtensionID(int[] suffix) {
@@ -223,7 +219,6 @@ public final class LiteHostCertificate {
             throw new RuntimeException(throwable);
         }
     }
-
 
     static String[] newSelfSignedCertificate(@NonNull Context context, @NonNull String fqdn,
                                              @NonNull PrivateKey key, @NonNull X509Certificate cert)
@@ -335,6 +330,10 @@ public final class LiteHostCertificate {
             default:
                 throw new RuntimeException("BadKeyTypeException");
         }
+    }
+
+    public PublicKey getPublicKey() {
+        return publicKey;
     }
 
     /**

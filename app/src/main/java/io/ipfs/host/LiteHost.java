@@ -40,7 +40,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
@@ -777,7 +776,7 @@ public class LiteHost implements BitSwapReceiver {
                                 inetAddress.isLinkLocalAddress() ||
                                 inetAddress.isLoopbackAddress() ||
                                 inetAddress.isSiteLocalAddress())) {
-                            if(inetAddress instanceof Inet6Address){
+                            if (inetAddress instanceof Inet6Address) {
                                 ipv6 = true;
                             }
                             collect.add(inetAddress);

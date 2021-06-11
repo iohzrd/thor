@@ -34,15 +34,6 @@ public class ProtoNode implements Node {
         this.data = data;
     }
 
-    public void setCidBuilder(@Nullable Builder builder) {
-        if (builder == null) {
-            this.builder = v0CidPrefix;
-        } else {
-            this.builder = builder.withCodec(Cid.DagProtobuf);
-            this.cached = Cid.Undef();
-        }
-    }
-
     @Override
     public Pair<Link, List<String>> resolveLink(@NonNull List<String> path) {
 
@@ -89,7 +80,6 @@ public class ProtoNode implements Node {
 
     }
 
-
     public long size() {
         byte[] b = encodeProtobuf();
         long size = b.length;
@@ -118,10 +108,15 @@ public class ProtoNode implements Node {
         return cached;
     }
 
-
     @Override
     public byte[] getData() {
         return data;
+    }
+
+    public void setData(byte[] fileData) {
+        encoded = null;
+        cached = Cid.Undef();
+        data = fileData;
     }
 
     @Override
@@ -181,6 +176,15 @@ public class ProtoNode implements Node {
         return builder;
     }
 
+    public void setCidBuilder(@Nullable Builder builder) {
+        if (builder == null) {
+            this.builder = v0CidPrefix;
+        } else {
+            this.builder = builder.withCodec(Cid.DagProtobuf);
+            this.cached = Cid.Undef();
+        }
+    }
+
     public Node copy() {
 
 
@@ -232,12 +236,6 @@ public class ProtoNode implements Node {
         synchronized (links) {
             links.add(link);
         }
-    }
-
-    public void setData(byte[] fileData) {
-        encoded = null;
-        cached = Cid.Undef();
-        data = fileData;
     }
 
     @Override
