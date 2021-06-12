@@ -103,9 +103,6 @@ dependencies {
     implementation 'com.github.bumptech.glide:glide:4.12.0'
 
     // API (LICENSE done)
-    //implementation 'io.netty:netty-all:4.1.65.Final'
-
-    // API (LICENSE done)
     implementation 'org.bouncycastle:bcprov-jdk15on:1.62'
 
     // API (LICENSE done)

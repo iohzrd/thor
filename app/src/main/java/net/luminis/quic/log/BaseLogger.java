@@ -372,7 +372,7 @@ public abstract class BaseLogger implements Logger {
         return result;
     }
 
-    protected String byteToHexBlock(ByteBuffer data, int offset, int length) {
+    public String byteToHexBlock(ByteBuffer data, int offset, int length) {
         data.rewind();
         String result = "";
         for (int i = 0; i < length; ) {

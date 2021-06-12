@@ -1,5 +1,5 @@
 /*
- * Copyright © 2019, 2020, 2021 Peter Doornbosch
+ * Copyright © 2020, 2021 Peter Doornbosch
  *
  * This file is part of Agent15, an implementation of TLS 1.3 in Java.
  *
@@ -93,7 +93,7 @@ public class TlsServerEngine extends TlsEngine implements ServerMessageProcessor
 
         // This implementation (yet) only supports secp256r1 and x25519
         List<TlsConstants.NamedGroup> serverSupportedGroups = List.of(TlsConstants.NamedGroup.secp256r1, x25519);
-        if (supportedGroupsExt.getNamedGroups().stream()
+        if (!supportedGroupsExt.getNamedGroups().stream()
                 .filter(serverSupportedGroups::contains)
                 .findFirst()
                 .isPresent()) {
@@ -155,14 +155,14 @@ public class TlsServerEngine extends TlsEngine implements ServerMessageProcessor
 
         CertificateMessage certificate = new CertificateMessage(serverCertificateChain);
         serverMessageSender.send(certificate);
-        transcriptHash.record(certificate);
+        transcriptHash.recordServer(certificate);
 
         byte[] signature = computeSignature();
         CertificateVerifyMessage certificateVerify = new CertificateVerifyMessage(rsa_pss_rsae_sha256, signature);
         serverMessageSender.send(certificateVerify);
-        transcriptHash.record(certificateVerify);
+        transcriptHash.recordServer(certificateVerify);
 
-        byte[] hmac = computeFinishedVerifyData(transcriptHash.getHash(TlsConstants.HandshakeType.certificate_verify), state.getServerHandshakeTrafficSecret());
+        byte[] hmac = computeFinishedVerifyData(transcriptHash.getServerHash(TlsConstants.HandshakeType.certificate_verify), state.getServerHandshakeTrafficSecret());
         FinishedMessage finished = new FinishedMessage(hmac);
         serverMessageSender.send(finished);
         transcriptHash.recordServer(finished);
@@ -196,7 +196,7 @@ public class TlsServerEngine extends TlsEngine implements ServerMessageProcessor
 
         // "The content that is covered under the signature is the hash output as described in Section 4.4.1, namely:
         //      Transcript-Hash(Handshake Context, Certificate)
-        byte[] hash = transcriptHash.getHash(TlsConstants.HandshakeType.certificate);
+        byte[] hash = transcriptHash.getServerHash(TlsConstants.HandshakeType.certificate);
 
         //   The digital signature is then computed over the concatenation of:
         //   -  A string that consists of octet 32 (0x20) repeated 64 times

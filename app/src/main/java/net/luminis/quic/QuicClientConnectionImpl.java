@@ -128,6 +128,11 @@ public class QuicClientConnectionImpl extends QuicConnectionImpl implements Quic
                 sendHandshakeFrameWithRetransmit(new CryptoFrame(quicVersion, finished.getBytes()));
                 sender.flush();
             }
+
+            @Override
+            public void send(CertificateMessage cm) throws IOException {
+
+            }
         }, this);
     }
 

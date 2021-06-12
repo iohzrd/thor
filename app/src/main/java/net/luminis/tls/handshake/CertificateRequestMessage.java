@@ -1,61 +1,99 @@
+/*
+ * Copyright © 2021 Peter Doornbosch
+ *
+ * This file is part of Agent15, an implementation of TLS 1.3 in Java.
+ *
+ * Agent15 is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your option)
+ * any later version.
+ *
+ * Agent15 is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 package net.luminis.tls.handshake;
-
-import com.google.common.base.Utf8;
 
 import net.luminis.tls.TlsConstants;
 import net.luminis.tls.TlsProtocolException;
 import net.luminis.tls.alert.BadCertificateAlert;
 import net.luminis.tls.alert.DecodeErrorException;
+import net.luminis.tls.extension.CertificateAuthoritiesExtension;
+import net.luminis.tls.extension.ClientHelloPreSharedKeyExtension;
 import net.luminis.tls.extension.Extension;
-import net.luminis.tls.extension.ExtensionParser;
 
-import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 
-public class CertificateRequestMessage extends HandshakeMessage{
+// https://tools.ietf.org/html/rfc8446#section-4.3.2
+public class CertificateRequestMessage extends HandshakeMessage {
 
+    private static final int MINIMUM_MESSAGE_SIZE = 1 + 3 + 1 + 2;
+
+    private byte[] certificateRequestContext;
     private List<Extension> extensions;
     private byte[] raw;
 
-    public byte[] getCertificate_request_context() {
-        return certificate_request_context;
+    public CertificateRequestMessage() {
     }
 
-    private byte[] certificate_request_context;
-    private static final int MINIMAL_MESSAGE_LENGTH = 1 + 3 + 2;
-    public CertificateRequestMessage parse(ByteBuffer buffer,
-                                           int length, ExtensionParser customExtensionParser) throws TlsProtocolException {
-        if (buffer.remaining() < MINIMAL_MESSAGE_LENGTH) {
-            throw new DecodeErrorException("Message too short");
+    public CertificateRequestMessage(Extension extension) {
+        extensions = List.of(extension);
+        certificateRequestContext = new byte[0];
+
+        serialize();
+    }
+
+    public CertificateRequestMessage parse(ByteBuffer buffer) throws TlsProtocolException {
+        int startPosition = buffer.position();
+        int remainingLength = parseHandshakeHeader(buffer, TlsConstants.HandshakeType.certificate_request, MINIMUM_MESSAGE_SIZE);
+
+        int contextLength = buffer.get();
+        certificateRequestContext = new byte[contextLength];
+        if (contextLength > 0) {
+            buffer.get(certificateRequestContext);
         }
 
-        int start = buffer.position();
-        int msgLength = buffer.getInt() & 0x00ffffff;
-        if (buffer.remaining() < msgLength || msgLength < 2) {
-            throw new DecodeErrorException("Incorrect message length");
+        extensions = parseExtensions(buffer, TlsConstants.HandshakeType.certificate_request, null);
+
+        if (buffer.position() - (startPosition + 4) != remainingLength) {
+            throw new DecodeErrorException("inconsistent length");
         }
 
-        //int certificate_request_context_length = buffer.getShort()  & 0xffff;;
-        certificate_request_context  = new byte[msgLength];
-        buffer.get(certificate_request_context);
-
-        // extensions = parseExtensions(buffer, TlsConstants.HandshakeType.server_hello, customExtensionParser);
-
-        // Raw bytes are needed for computing the transcript hash
-        buffer.position(start);
-        raw = new byte[length];
-        buffer.mark();
+        // Update state.
+        raw = new byte[4 + remainingLength];
+        buffer.position(startPosition);
         buffer.get(raw);
 
         return this;
     }
 
+    private void serialize() {
+        int extensionsLength = extensions.stream().mapToInt(ext -> ext.getBytes().length).sum();
+        int messageLength = 4 + 1 + certificateRequestContext.length + 2 + extensionsLength;
+        ByteBuffer buffer = ByteBuffer.allocate(messageLength);
+        buffer.put(TlsConstants.HandshakeType.certificate_request.value);
+        buffer.put((byte) 0x00);
+        buffer.putShort((short) (messageLength - 4));
+        buffer.put((byte) certificateRequestContext.length);
+        if (certificateRequestContext.length > 0) {
+            buffer.put(certificateRequestContext);
+        }
+        buffer.putShort((short) extensionsLength);
+        for (Extension extension: extensions) {
+            buffer.put(extension.getBytes());
+        }
+        raw = buffer.array();
+    }
 
-    public List<Extension> getExtensions() {
-        return extensions;
+
+    @Override
+    public TlsConstants.HandshakeType getType() {
+        return TlsConstants.HandshakeType.certificate_request;
     }
 
     @Override
@@ -63,9 +101,7 @@ public class CertificateRequestMessage extends HandshakeMessage{
         return raw;
     }
 
-    @Override
-    public TlsConstants.HandshakeType getType() {
-        return TlsConstants.HandshakeType.certificate_request;
+    public List<Extension> getExtensions() {
+        return extensions;
     }
-
 }
