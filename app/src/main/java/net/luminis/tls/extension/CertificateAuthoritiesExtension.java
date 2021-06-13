@@ -74,7 +74,7 @@ public class CertificateAuthoritiesExtension extends Extension {
     public byte[] getBytes() {
         int authoritiesLength = authorities.stream().mapToInt(x500principal -> x500principal.getEncoded().length).sum();
         int extensionLength = authoritiesLength + authorities.size() * 2 + 2 + 4;
-        var buffer = ByteBuffer.allocate(extensionLength);
+        ByteBuffer buffer = ByteBuffer.allocate(extensionLength);
         buffer.putShort(TlsConstants.ExtensionType.certificate_authorities.value);
         buffer.putShort((short) (extensionLength - 4));
         buffer.putShort((short) (extensionLength - 6));
