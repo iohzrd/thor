@@ -6,6 +6,8 @@ import android.content.Context;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 
+import net.luminis.quic.stream.QuicStream;
+
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -17,7 +19,7 @@ import io.ipfs.cid.Cid;
 import io.ipfs.core.TimeoutCloseable;
 import io.ipfs.host.PeerId;
 import io.ipfs.utils.DataHandler;
-import io.netty.incubator.codec.quic.QuicStreamChannel;
+
 
 import static junit.framework.TestCase.assertTrue;
 import static junit.framework.TestCase.fail;
@@ -104,14 +106,14 @@ public class IpfsRelayTest {
         AtomicBoolean succes = new AtomicBoolean(false);
 
         try {
-            QuicStreamChannel stream = ipfs.getHost().getRelayStream(new TimeoutCloseable(15),
+            QuicStream stream = ipfs.getHost().getRelayStream(new TimeoutCloseable(15),
                     peerId);
             if (stream != null) {
                 succes.set(true);
 
 
-                stream.writeAndFlush(DataHandler.writeToken(IPFS.STREAM_PROTOCOL));
-                stream.writeAndFlush(DataHandler.writeToken(IPFS.IDENTITY_PROTOCOL));
+               // TODO stream.writeAndFlush(DataHandler.writeToken(IPFS.STREAM_PROTOCOL));
+               // TODO stream.writeAndFlush(DataHandler.writeToken(IPFS.IDENTITY_PROTOCOL));
 
                 Thread.sleep(500);
             }

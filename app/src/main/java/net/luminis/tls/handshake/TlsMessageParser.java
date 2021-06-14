@@ -24,6 +24,8 @@ import net.luminis.tls.extension.ExtensionParser;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
+import io.LogUtils;
+
 import static net.luminis.tls.TlsConstants.HandshakeType.*;
 
 public class TlsMessageParser {
@@ -49,6 +51,8 @@ public class TlsMessageParser {
         int messageType = buffer.get();
         int length = ((buffer.get() & 0xff) << 16) | ((buffer.get() & 0xff) << 8) | (buffer.get() & 0xff);
         buffer.reset();
+
+        LogUtils.error(getClass().getName(), "parseAndProcessHandshakeMessage " + messageType);
 
         HandshakeMessage parsedMessage;
         if (messageType == client_hello.value) {

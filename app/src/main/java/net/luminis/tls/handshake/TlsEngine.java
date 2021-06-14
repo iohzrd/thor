@@ -37,29 +37,35 @@ public abstract class TlsEngine implements MessageProcessor, TrafficSecrets {
     protected PublicKey publicKey;
     protected PrivateKey privateKey;
     protected TlsState state;
+    protected KeyPair keypair;
 
     public abstract TlsConstants.CipherSuite getSelectedCipher();
 
 
     protected void generateKeys(TlsConstants.NamedGroup namedGroup) {
         try {
-            KeyPairGenerator keyPairGenerator;
-            if (namedGroup == secp256r1 || namedGroup == secp384r1 || namedGroup == secp521r1) {
-                keyPairGenerator = KeyPairGenerator.getInstance("EC");
-                keyPairGenerator.initialize(new ECGenParameterSpec(namedGroup.toString()));
-            }
+            if(keypair == null) {
+                KeyPairGenerator keyPairGenerator;
+                if (namedGroup == secp256r1 || namedGroup == secp384r1 || namedGroup == secp521r1) {
+                    keyPairGenerator = KeyPairGenerator.getInstance("EC");
+                    keyPairGenerator.initialize(new ECGenParameterSpec(namedGroup.toString()));
+                }
             /*else if (namedGroup == x25519 || namedGroup == x448) {
                 keyPairGenerator = KeyPairGenerator.getInstance("XDH");
                 NamedParameterSpec paramSpec = new NamedParameterSpec(namedGroup.toString().toUpperCase());  // x25519 => X25519
                 keyPairGenerator.initialize(paramSpec);
             }*/
-            else {
-                throw new RuntimeException("unsupported group " + namedGroup);
-            }
+                else {
+                    throw new RuntimeException("unsupported group " + namedGroup);
+                }
 
-            KeyPair keyPair = keyPairGenerator.genKeyPair();
-            privateKey = keyPair.getPrivate();
-            publicKey = keyPair.getPublic();
+                KeyPair keyPair = keyPairGenerator.genKeyPair();
+                privateKey = keyPair.getPrivate();
+                publicKey = keyPair.getPublic();
+            } else {
+                privateKey = keypair.getPrivate();
+                publicKey = keypair.getPublic();
+            }
         } catch (NoSuchAlgorithmException e) {
             // Invalid runtime
             throw new RuntimeException("missing key pair generator algorithm EC");

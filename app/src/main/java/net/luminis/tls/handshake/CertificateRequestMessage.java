@@ -27,6 +27,8 @@ import net.luminis.tls.extension.ClientHelloPreSharedKeyExtension;
 import net.luminis.tls.extension.Extension;
 
 import java.nio.ByteBuffer;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 // https://tools.ietf.org/html/rfc8446#section-4.3.2
@@ -42,7 +44,7 @@ public class CertificateRequestMessage extends HandshakeMessage {
     }
 
     public CertificateRequestMessage(Extension extension) {
-        extensions = List.of(extension);
+        extensions = Collections.singletonList(extension);
         certificateRequestContext = new byte[0];
 
         serialize();

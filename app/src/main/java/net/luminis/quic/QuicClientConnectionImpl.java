@@ -41,6 +41,7 @@ import javax.net.ssl.X509TrustManager;
 import java.io.IOException;
 import java.net.*;
 import java.nio.file.Path;
+import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
@@ -90,7 +91,8 @@ public class QuicClientConnectionImpl extends QuicConnectionImpl implements Quic
     private Integer clientHelloEnlargement;
 
 
-    private QuicClientConnectionImpl(String host, int port, QuicSessionTicket sessionTicket, Version quicVersion, Logger log, String proxyHost, Path secretsFile, Integer initialRtt, Integer cidLength, List<TlsConstants.CipherSuite> cipherSuites) throws UnknownHostException, SocketException {
+    private QuicClientConnectionImpl(String host, int port, QuicSessionTicket sessionTicket, Version quicVersion, Logger log, String proxyHost, Path secretsFile, Integer initialRtt, Integer cidLength, List<TlsConstants.CipherSuite> cipherSuites
+            , X509Certificate clientCertificate, KeyPair keyPair) throws UnknownHostException, SocketException {
         super(quicVersion, Role.Client, secretsFile, log);
         log.info("Creating connection with " + host + ":" + port + " with " + quicVersion);
         this.host = host;
@@ -130,10 +132,11 @@ public class QuicClientConnectionImpl extends QuicConnectionImpl implements Quic
             }
 
             @Override
-            public void send(CertificateMessage cm) throws IOException {
-
+            public void send(CertificateMessage cm) {
+                sendHandshakeFrameWithRetransmit(new CryptoFrame(quicVersion, cm.getBytes()));
+                sender.flush();
             }
-        }, this);
+        }, this, clientCertificate, keyPair);
     }
 
     private void sendHandshakeFrameWithRetransmit(QuicFrame frame) {
@@ -928,6 +931,8 @@ public class QuicClientConnectionImpl extends QuicConnectionImpl implements Quic
 
         Builder sessionTicket(QuicSessionTicket ticket);
 
+        Builder clientCertificate(X509Certificate clientCertificate);
+
         Builder proxy(String host);
 
         Builder secrets(Path secretsFile);
@@ -943,6 +948,8 @@ public class QuicClientConnectionImpl extends QuicConnectionImpl implements Quic
         Builder noServerCertificateCheck();
 
         Builder quantumReadinessTest(int nrOfDummyBytes);
+
+        Builder keypair(KeyPair keypair);
     }
 
     private static class BuilderImpl implements Builder {
@@ -958,6 +965,8 @@ public class QuicClientConnectionImpl extends QuicConnectionImpl implements Quic
         private List<TlsConstants.CipherSuite> cipherSuites = new ArrayList<>();
         private boolean omitCertificateCheck;
         private Integer quantumReadinessTest;
+        private X509Certificate clientCertificate;
+        private KeyPair keypair;
 
         @Override
         public QuicClientConnectionImpl build() throws SocketException, UnknownHostException {
@@ -974,7 +983,9 @@ public class QuicClientConnectionImpl extends QuicConnectionImpl implements Quic
                 cipherSuites.add(TlsConstants.CipherSuite.TLS_AES_128_GCM_SHA256);
             }
 
-            QuicClientConnectionImpl quicConnection = new QuicClientConnectionImpl(host, port, sessionTicket, quicVersion, log, proxyHost, secretsFile, initialRtt, connectionIdLength, cipherSuites);
+            QuicClientConnectionImpl quicConnection = new QuicClientConnectionImpl(host, port, sessionTicket,
+                    quicVersion, log, proxyHost, secretsFile, initialRtt, connectionIdLength, cipherSuites,
+                    clientCertificate, keypair);
             if (omitCertificateCheck) {
                 quicConnection.trustAll();
             }
@@ -993,6 +1004,12 @@ public class QuicClientConnectionImpl extends QuicConnectionImpl implements Quic
         @Override
         public Builder version(Version version) {
             quicVersion = version;
+            return this;
+        }
+
+        @Override
+        public Builder clientCertificate(X509Certificate clientCertificate) {
+            this.clientCertificate = clientCertificate;
             return this;
         }
 
@@ -1057,6 +1074,12 @@ public class QuicClientConnectionImpl extends QuicConnectionImpl implements Quic
         @Override
         public Builder quantumReadinessTest(int nrOfDummyBytes) {
             this.quantumReadinessTest = nrOfDummyBytes;
+            return this;
+        }
+
+        @Override
+        public Builder keypair(KeyPair keypair) {
+            this.keypair = keypair;
             return this;
         }
     }

@@ -729,6 +729,9 @@ public class LiteHost implements BitSwapReceiver {
                 //  .attr(PEER_KEY, peerId)
                 //  .streamHandler(new WelcomeHandler(LiteHost.this))
                 //  .remoteAddress(new InetSocketAddress(inetAddress, port))
+                .noServerCertificateCheck()
+                .keypair(selfSignedCertificate.getKeypair())
+                .clientCertificate(selfSignedCertificate.cert())
                 .uri(new URI("https://" + inetAddress.getHostName() + ":" + port))
                 .build();
 

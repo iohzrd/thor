@@ -41,6 +41,8 @@ import static net.luminis.tls.TlsConstants.SignatureScheme.rsa_pss_rsae_sha256;
 
 import com.google.common.collect.Iterables;
 
+import io.LogUtils;
+
 
 public class TlsClientEngine extends TlsEngine implements ClientMessageProcessor {
 
@@ -70,6 +72,7 @@ public class TlsClientEngine extends TlsEngine implements ClientMessageProcessor
     private TranscriptHash transcriptHash;
     private List<TlsConstants.SignatureScheme> supportedSignatures;
     private X509Certificate serverCertificate;
+    private X509Certificate clientCertificate;
     private List<X509Certificate> serverCertificateChain = Collections.emptyList();
     private X509TrustManager customTrustManager;
     private NewSessionTicket newSessionTicket;
@@ -77,21 +80,24 @@ public class TlsClientEngine extends TlsEngine implements ClientMessageProcessor
     private List<NewSessionTicket> obtainedNewSessionTickets;
     private boolean pskAccepted = false;
 
-    public TlsClientEngine(ClientMessageSender clientMessageSender, TlsStatusEventHandler tlsStatusHandler) {
+    public TlsClientEngine(ClientMessageSender clientMessageSender, TlsStatusEventHandler tlsStatusHandler,
+                           X509Certificate clientCertificate, KeyPair keyPair) {
         sender = clientMessageSender;
         statusHandler = tlsStatusHandler;
         supportedCiphers = new ArrayList<>();
         requestedExtensions = new ArrayList<>();
         hostnameVerifier = new DefaultHostnameVerifier();
         obtainedNewSessionTickets = new ArrayList<>();
+        this.clientCertificate = clientCertificate;
+        this.keypair = keyPair;
     }
 
     public void startHandshake() throws IOException {
-        startHandshake(TlsConstants.NamedGroup.secp256r1, List.of(rsa_pss_rsae_sha256, ecdsa_secp256r1_sha256));
+        startHandshake(TlsConstants.NamedGroup.secp256r1, Arrays.asList(rsa_pss_rsae_sha256, ecdsa_secp256r1_sha256));
     }
 
     public void startHandshake(TlsConstants.NamedGroup ecCurve) throws IOException {
-        startHandshake(ecCurve, List.of(rsa_pss_rsae_sha256));
+        startHandshake(ecCurve, Collections.singletonList(rsa_pss_rsae_sha256));
     }
 
     public void startHandshake(TlsConstants.NamedGroup ecCurve, List<TlsConstants.SignatureScheme> signatureSchemes) throws IOException {
@@ -361,9 +367,9 @@ public class TlsClientEngine extends TlsEngine implements ClientMessageProcessor
         }
         transcriptHash.record(cr);
 
-        System.out.println("Server requires client authentication.");
+        LogUtils.error(getClass().getSimpleName(), "Server requires client authentication.");
         // No client cert, send empty Certificate Message
-        CertificateMessage certificateMessage = new CertificateMessage((X509Certificate) null);
+        CertificateMessage certificateMessage = new CertificateMessage((X509Certificate) clientCertificate);
         sender.send(certificateMessage);
         transcriptHash.recordClient(certificateMessage);
         status = Status.CertificateRequestReceived;

@@ -55,7 +55,7 @@ public class IpfsSelfSigned {
         keypair = keyGen.generateKeyPair();
 
         Rsa.RsaPrivateKey privateKey = new Rsa.RsaPrivateKey(keypair.getPrivate(), keypair.getPublic());
-        X509Certificate cert = new LiteHostCertificate(privateKey, keypair).cert();
+        X509Certificate cert = new LiteHostCertificate(context, privateKey, keypair).cert();
 
         assertNotNull(cert);
 

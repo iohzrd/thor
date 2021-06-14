@@ -2,6 +2,7 @@ package io.ipfs;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.util.Pair;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -18,12 +19,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.SecureRandom;
+import java.security.spec.ECGenParameterSpec;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
@@ -50,6 +54,7 @@ import io.ipfs.core.Closeable;
 import io.ipfs.core.ClosedException;
 import io.ipfs.core.ConnectionIssue;
 import io.ipfs.core.TimeoutCloseable;
+import io.ipfs.crypto.Ed25519;
 import io.ipfs.crypto.PrivKey;
 import io.ipfs.crypto.Rsa;
 import io.ipfs.dht.Routing;
@@ -79,6 +84,10 @@ import io.ipfs.utils.Resolver;
 import io.ipfs.utils.Stream;
 import io.ipfs.utils.WriterStream;
 import threads.thor.core.blocks.BLOCKS;
+
+import static net.luminis.tls.TlsConstants.NamedGroup.secp256r1;
+import static net.luminis.tls.TlsConstants.NamedGroup.secp384r1;
+import static net.luminis.tls.TlsConstants.NamedGroup.secp521r1;
 
 public class IPFS {
 
@@ -201,6 +210,7 @@ public class IPFS {
         blocks = BLOCKS.getInstance(context);
 
         KeyPair keypair = getKeyPair(context);
+
 
         int checkPort = getPort(context);
         if (isLocalPortFree(checkPort)) {
@@ -353,8 +363,14 @@ public class IPFS {
         }
     }
 
-    private KeyPair getKeyPair(@NonNull Context context) throws NoSuchAlgorithmException, InvalidKeySpecException {
+    private KeyPair getKeyPair(@NonNull Context context) throws NoSuchAlgorithmException, InvalidKeySpecException, InvalidAlgorithmParameterException {
 
+        KeyPairGenerator keyPairGenerator;
+        keyPairGenerator = KeyPairGenerator.getInstance("EC");
+        keyPairGenerator.initialize(new ECGenParameterSpec(secp256r1.toString()));
+
+        return keyPairGenerator.genKeyPair();
+        /*
         if (!getPrivateKey(context).isEmpty() && !getPublicKey(context).isEmpty()) {
 
             Base64.Decoder decoder = Base64.getDecoder();
@@ -382,7 +398,7 @@ public class IPFS {
             setPrivateKey(context, encoder.encodeToString(keypair.getPrivate().getEncoded()));
             setPublicKey(context, encoder.encodeToString(keypair.getPublic().getEncoded()));
             return keypair;
-        }
+        }*/
     }
 
     public boolean canHop(@NonNull PeerId peerId, @NonNull Closeable closeable)
