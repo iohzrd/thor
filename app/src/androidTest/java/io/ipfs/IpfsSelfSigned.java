@@ -50,16 +50,14 @@ public class IpfsSelfSigned {
         IPFS ipfs = TestEnv.getTestInstance(context);
         assertNotNull(ipfs);
 
+        String algorithm = "RSA";
         final KeyPair keypair;
 
-        KeyPairGenerator keyPairGenerator;
-        keyPairGenerator = KeyPairGenerator.getInstance("EC");
-        keyPairGenerator.initialize(new ECGenParameterSpec(secp256r1.toString()));
+        KeyPairGenerator keyGen = KeyPairGenerator.getInstance(algorithm);
+        keyGen.initialize(2048, LiteHostCertificate.ThreadLocalInsecureRandom.current());
+        keypair = keyGen.generateKeyPair();
 
-        keypair = keyPairGenerator.genKeyPair();
-
-
-        Rsa.RsaPrivateKey privateKey = Rsa.generateRsaKeyPair(2048, new SecureRandom()).first;
+        Rsa.RsaPrivateKey privateKey = new Rsa.RsaPrivateKey(keypair.getPrivate(), keypair.getPublic());
         X509Certificate cert = new LiteHostCertificate(context, privateKey, keypair).cert();
 
         assertNotNull(cert);

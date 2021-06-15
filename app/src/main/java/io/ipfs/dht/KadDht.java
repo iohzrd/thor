@@ -474,7 +474,6 @@ public class KadDht implements Routing {
 
             dhtRequest.writeAndFlush(DataHandler.writeToken(IPFS.STREAM_PROTOCOL));
             dhtRequest.writeAndFlush(DataHandler.writeToken(IPFS.DHT_PROTOCOL));
-
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
             activation.completeExceptionally(throwable);

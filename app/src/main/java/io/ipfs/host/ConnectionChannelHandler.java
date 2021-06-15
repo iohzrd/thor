@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 import io.LogUtils;
 
@@ -28,27 +29,19 @@ public abstract class ConnectionChannelHandler {
     public void reader() {
         ByteBuffer buf = ByteBuffer.allocate(4096);
         try {
-            while (true) {
-                int b = inputStream.read();
+            int length;
 
-                LogUtils.error(TAG, "Read : " + b);
-
-                if (b == -1) {
-                    if (buf.position() > 0) {
-                        channelRead0(connection, buf.array());
-                        buf.rewind();
-                    }
-                    break;
-                }
-                buf.put((byte) b);
-                if (buf.remaining() == 0) {
-                    channelRead0(connection, buf.array());
-                    buf.rewind();
-                }
+            while ((length = inputStream.read(buf.array(), 0, buf.capacity())) > 0) {
+                byte[] data = Arrays.copyOfRange(buf.array(), 0, length);
+                channelRead0(connection, data);
+                buf.rewind();
+                LogUtils.error(TAG, "Reader active " + new String(data));
             }
 
         } catch (Throwable throwable) {
             exceptionCaught(connection, throwable);
+        } finally {
+            LogUtils.error(TAG, "Reader done");
         }
     }
 

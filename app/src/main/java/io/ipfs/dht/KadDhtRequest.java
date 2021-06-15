@@ -56,12 +56,12 @@ public class KadDhtRequest extends ConnectionChannelHandler {
         if (reader.isDone()) {
 
             for (String token : reader.getTokens()) {
-                LogUtils.verbose(TAG, "request " + token);
+                LogUtils.error(TAG, "request " + token);
                 if (Objects.equals(token, IPFS.DHT_PROTOCOL)) {
                     start = System.currentTimeMillis();
                     writeAndFlush(DataHandler.encode(messageLite));
                     // TODO addListener(QuicStreamChannel.SHUTDOWN_OUTPUT).get());
-                    closeOutputStream();
+                    // closeOutputStream();
                     activation.complete(null);
                 } else if (!Objects.equals(token, IPFS.STREAM_PROTOCOL)) {
                     throw new ProtocolIssue();
@@ -79,7 +79,7 @@ public class KadDhtRequest extends ConnectionChannelHandler {
             }
             reader = new DataHandler(IPFS.MESSAGE_SIZE_MAX);
         } else {
-            LogUtils.debug(TAG, "iteration " + reader.hasRead() + " "
+            LogUtils.error(TAG, "iteration " + reader.hasRead() + " "
                     + reader.expectedBytes() + " "
                     + connection.remoteAddress());
         }

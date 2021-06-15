@@ -253,7 +253,7 @@ public class SenderImpl implements Sender, CongestionControlEventListener {
     }
 
     public void shutdown() {
-        assert(stopped);  // Stopped should have be called before.
+//        assert(stopped);  // Stopped should have be called before.
         // Stop cannot be called here (again), because it would drop ConnectionCloseFrame still waiting to be sent.
 
         running = false;

@@ -23,12 +23,12 @@ import net.luminis.quic.Version;
 import net.luminis.quic.log.SysOutLogger;
 import net.luminis.quic.stream.QuicStream;
 
+import org.apache.commons.io.IOUtils;
+
 import java.io.BufferedOutputStream;
 import java.io.FileOutputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
-
-import io.ipfs.IPFS;
 
 
 /**
@@ -62,8 +62,7 @@ public class Sample {
         outputStream.write("GET / \r\n".getBytes(StandardCharsets.UTF_8));
         outputStream.flush();
 
-        long transferred = IPFS.copy(stream.getInputStream(), new FileOutputStream("kwik_client_output"));
-        //long transferred = stream.getInputStream().transferTo(new FileOutputStream("kwik_client_output"));
+        long transferred = IOUtils.copy(stream.getInputStream(), new FileOutputStream("kwik_client_output"));
 
         connection.close();
 

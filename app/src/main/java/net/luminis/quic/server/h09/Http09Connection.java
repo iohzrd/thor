@@ -27,13 +27,13 @@ import net.luminis.quic.run.KwikVersion;
 import net.luminis.quic.server.ApplicationProtocolConnection;
 import net.luminis.quic.stream.QuicStream;
 
+import org.apache.commons.io.IOUtils;
+
 import java.io.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import io.ipfs.IPFS;
 
 public class Http09Connection extends ApplicationProtocolConnection implements Consumer<QuicStream> {
 
@@ -66,7 +66,7 @@ public class Http09Connection extends ApplicationProtocolConnection implements C
                 OutputStream outputStream = quicStream.getOutputStream();
                 if (file != null && file.exists() && file.isFile() && file.canRead()) {
                     FileInputStream fileInputStream = new FileInputStream(file);
-                    IPFS.copy(fileInputStream,outputStream);
+                    IOUtils.copy(fileInputStream, outputStream);
                     fileInputStream.close();
                 }
                 else if (fileName.equals("version") || fileName.equals("version.txt")) {

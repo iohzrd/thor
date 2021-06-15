@@ -24,6 +24,7 @@ import net.luminis.quic.cid.ConnectionIdStatus;
 import net.luminis.quic.stream.QuicStream;
 import net.luminis.tls.util.ByteUtils;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.*;
@@ -34,8 +35,6 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import io.ipfs.IPFS;
 
 
 public class InteractiveShell {
@@ -177,8 +176,7 @@ public class InteractiveShell {
             httpStream.getOutputStream().close();
             File outputFile = createNewFile(arg);
             out = new FileOutputStream(outputFile);
-            IPFS.copy(httpStream.getInputStream(), out);
-            // TODO httpStream.getInputStream().transferTo(out);
+            IOUtils.copy(httpStream.getInputStream(), out);
             out.close();
         } catch (IOException e) {
             System.out.println("Error: " + e);

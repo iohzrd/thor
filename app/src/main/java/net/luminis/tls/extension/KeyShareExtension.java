@@ -159,17 +159,16 @@ public class KeyShareExtension extends Extension {
                 } else {
                     throw new DecodeErrorException("EC keys must be in legacy form");
                 }
-            }
-            /*else if (namedGroup == x25519 || namedGroup == x448) {
+            }/*
+            else if (namedGroup == x25519 || namedGroup == x448) {
                 byte[] keyData = new byte[keyLength];
                 buffer.get(keyData);
                 PublicKey publicKey = rawToEncodedXDHPublicKey(namedGroup, keyData);
                 keyShareEntries.add(new KeyShareEntry(namedGroup, publicKey));
             }*/
             else {
-                throw new RuntimeException("unsupported group " + namedGroup);
+                throw new RuntimeException();
             }
-
         }
         return buffer.position() - startPosition;
     }
@@ -204,8 +203,8 @@ public class KeyShareExtension extends Extension {
                 writeAffine(buffer, affineX);
                 byte[] affineY = ((ECPublicKey) keyShare.getKey()).getW().getAffineY().toByteArray();
                 writeAffine(buffer, affineY);
-            }
-            /*else if (keyShare.getNamedGroup() == x25519 || keyShare.getNamedGroup() == x448) {
+            }/*
+            else if (keyShare.getNamedGroup() == x25519 || keyShare.getNamedGroup() == x448) {
                 byte[] raw = ((XECPublicKey) keyShare.getKey()).getU().toByteArray();
                 if (raw.length > CURVE_KEY_LENGTHS.get(keyShare.getNamedGroup())) {
                     throw new RuntimeException("Invalid " + keyShare.getNamedGroup() + " key length: " + raw.length);

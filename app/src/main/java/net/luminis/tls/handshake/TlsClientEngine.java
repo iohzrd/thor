@@ -1,5 +1,5 @@
 /*
- * Copyright © 2019, 2020, 2021 Peter Doornbosch
+ * Copyright © 2020, 2021 Peter Doornbosch
  *
  * This file is part of Agent15, an implementation of TLS 1.3 in Java.
  *
@@ -27,6 +27,7 @@ import net.luminis.tls.extension.*;
 
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
+import javax.security.auth.x500.X500Principal;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -36,6 +37,7 @@ import java.security.cert.*;
 import java.security.spec.MGF1ParameterSpec;
 import java.security.spec.PSSParameterSpec;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static net.luminis.tls.TlsConstants.SignatureScheme.ecdsa_secp256r1_sha256;
@@ -51,6 +53,7 @@ public class TlsClientEngine extends TlsEngine implements ClientMessageProcessor
         ClientHelloSent,
         ServerHelloReceived,
         EncryptedExtensionsReceived,
+        CertificateRequestReceived,
         CertificateReceived,
         CertificateVerifyReceived,
         Finished
@@ -75,6 +78,10 @@ public class TlsClientEngine extends TlsEngine implements ClientMessageProcessor
     private HostnameVerifier hostnameVerifier;
     private List<NewSessionTicket> obtainedNewSessionTickets;
     private boolean pskAccepted = false;
+    private boolean clientAuthRequested;
+    private List<X500Principal> clientCertificateAuthorities;
+    private Function<List<X500Principal>, CertificateWithPrivateKey> clientCertificateSelector;
+
 
     public TlsClientEngine(ClientMessageSender clientMessageSender, TlsStatusEventHandler tlsStatusHandler) {
         sender = clientMessageSender;
@@ -83,6 +90,7 @@ public class TlsClientEngine extends TlsEngine implements ClientMessageProcessor
         requestedExtensions = new ArrayList<>();
         hostnameVerifier = new DefaultHostnameVerifier();
         obtainedNewSessionTickets = new ArrayList<>();
+        clientCertificateSelector = l -> null;
     }
 
     public void startHandshake() throws IOException {
@@ -129,6 +137,7 @@ public class TlsClientEngine extends TlsEngine implements ClientMessageProcessor
      * @param serverHello
      * @throws MissingExtensionAlert
      */
+    @Override
     public void received(ServerHello serverHello) throws MissingExtensionAlert, IllegalParameterAlert {
         boolean containsSupportedVersionExt = serverHello.getExtensions().stream().anyMatch(ext -> ext instanceof SupportedVersionsExtension);
         boolean containsKeyExt = serverHello.getExtensions().stream().anyMatch(ext -> ext instanceof PreSharedKeyExtension || ext instanceof KeyShareExtension);
@@ -209,6 +218,7 @@ public class TlsClientEngine extends TlsEngine implements ClientMessageProcessor
         statusHandler.handshakeSecretsKnown();
     }
 
+    @Override
     public void received(EncryptedExtensions encryptedExtensions) throws TlsProtocolException {
         if (status != Status.ServerHelloReceived) {
             // https://tools.ietf.org/html/rfc8446#section-4.3.1
@@ -243,8 +253,9 @@ public class TlsClientEngine extends TlsEngine implements ClientMessageProcessor
         statusHandler.extensionsReceived(encryptedExtensions.getExtensions());
     }
 
+    @Override
     public void received(CertificateMessage certificateMessage) throws TlsProtocolException {
-        if (status != Status.EncryptedExtensionsReceived) {
+        if (status != Status.EncryptedExtensionsReceived && status != Status.CertificateRequestReceived) {
             // https://tools.ietf.org/html/rfc8446#section-4.4
             // "TLS generally uses a common set of messages for authentication, key confirmation, and handshake
             //   integrity: Certificate, CertificateVerify, and Finished.  (...)  These three messages are always
@@ -264,10 +275,11 @@ public class TlsClientEngine extends TlsEngine implements ClientMessageProcessor
 
         serverCertificate = certificateMessage.getEndEntityCertificate();
         serverCertificateChain = certificateMessage.getCertificateChain();
-        transcriptHash.record(certificateMessage);
+        transcriptHash.recordServer(certificateMessage);
         status = Status.CertificateReceived;
     }
 
+    @Override
     public void received(CertificateVerifyMessage certificateVerifyMessage) throws TlsProtocolException {
         if (status != Status.CertificateReceived) {
             // https://tools.ietf.org/html/rfc8446#section-4.4.3
@@ -285,7 +297,7 @@ public class TlsClientEngine extends TlsEngine implements ClientMessageProcessor
         }
 
         byte[] signature = certificateVerifyMessage.getSignature();
-        if (!verifySignature(signature, signatureScheme, serverCertificate, transcriptHash.getHash(TlsConstants.HandshakeType.certificate))) {
+        if (!verifySignature(signature, signatureScheme, serverCertificate, transcriptHash.getServerHash(TlsConstants.HandshakeType.certificate))) {
             throw new DecryptErrorAlert("signature verification fails");
         }
 
@@ -295,10 +307,11 @@ public class TlsClientEngine extends TlsEngine implements ClientMessageProcessor
             throw new CertificateUnknownAlert("servername does not match");
         }
 
-        transcriptHash.record(certificateVerifyMessage);
+        transcriptHash.recordServer(certificateVerifyMessage);
         status = Status.CertificateVerifyReceived;
     }
 
+    @Override
     public void received(FinishedMessage finishedMessage) throws DecryptErrorAlert, UnexpectedMessageAlert, IOException {
         Status expectedStatus;
         if (pskAccepted) {
@@ -319,11 +332,15 @@ public class TlsClientEngine extends TlsEngine implements ClientMessageProcessor
         //     | Server    | ClientHello ... later   | server_handshake_traffic_   |
         //     |           | of EncryptedExtensions/ | secret                      |
         //     |           | CertificateRequest      |                             |"
-        byte[] serverHmac = computeFinishedVerifyData(transcriptHash.getHash(TlsConstants.HandshakeType.certificate_verify), state.getServerHandshakeTrafficSecret());
+        byte[] serverHmac = computeFinishedVerifyData(transcriptHash.getServerHash(TlsConstants.HandshakeType.certificate_verify), state.getServerHandshakeTrafficSecret());
         // https://tools.ietf.org/html/rfc8446#section-4.4
         // "Recipients of Finished messages MUST verify that the contents are correct and if incorrect MUST terminate the connection with a "decrypt_error" alert."
         if (!Arrays.equals(finishedMessage.getVerifyData(), serverHmac)) {
             throw new DecryptErrorAlert("incorrect finished message");
+        }
+
+        if (clientAuthRequested) {
+            sendClientAuth();
         }
 
         // https://tools.ietf.org/html/rfc8446#section-4.4
@@ -331,7 +348,7 @@ public class TlsClientEngine extends TlsEngine implements ClientMessageProcessor
         //     | Client    | ClientHello ... later   | client_handshake_traffic_   |
         //     |           | of server               | secret                      |
         //     |           | Finished/EndOfEarlyData |                             |"
-        byte[] clientHmac = computeFinishedVerifyData(transcriptHash.getServerHash(TlsConstants.HandshakeType.finished), state.getClientHandshakeTrafficSecret());
+        byte[] clientHmac = computeFinishedVerifyData(transcriptHash.getClientHash(TlsConstants.HandshakeType.certificate_verify), state.getClientHandshakeTrafficSecret());
         FinishedMessage clientFinished = new FinishedMessage(clientHmac);
         sender.send(clientFinished);
 
@@ -346,6 +363,23 @@ public class TlsClientEngine extends TlsEngine implements ClientMessageProcessor
         NewSessionTicket ticket = new NewSessionTicket(state, nst);
         obtainedNewSessionTickets.add(ticket);
         statusHandler.newSessionTicketReceived(ticket);
+    }
+
+    @Override
+    public void received(CertificateRequestMessage certificateRequestMessage) throws TlsProtocolException, IOException {
+        if (status != Status.EncryptedExtensionsReceived) {
+            throw new UnexpectedMessageAlert("unexpected certificate request message");
+        }
+        transcriptHash.record(certificateRequestMessage);
+
+        clientCertificateAuthorities = certificateRequestMessage.getExtensions().stream()
+                .filter(extension -> extension instanceof CertificateAuthoritiesExtension)
+                .findFirst()
+                .map(extension -> ((CertificateAuthoritiesExtension) extension).getAuthorities())
+                .orElse(Collections.emptyList());
+        clientAuthRequested = true;
+
+        status = Status.CertificateRequestReceived;
     }
 
 
@@ -435,6 +469,23 @@ public class TlsClientEngine extends TlsEngine implements ClientMessageProcessor
         }
     }
 
+    private void sendClientAuth() throws IOException {
+        CertificateWithPrivateKey certificateWithKey = clientCertificateSelector.apply(clientCertificateAuthorities);
+
+        // Send certificate message (with possible null value for client certificate)
+        CertificateMessage certificateMessage =
+                new CertificateMessage(certificateWithKey != null? certificateWithKey.getCertificate(): null);
+        sender.send(certificateMessage);
+        transcriptHash.recordClient(certificateMessage);
+        if (certificateWithKey != null) {
+            PrivateKey privateKey = certificateWithKey.getPrivateKey();
+            byte[] signature = computeSignature(transcriptHash.getClientHash(TlsConstants.HandshakeType.certificate), privateKey, true);
+            CertificateVerifyMessage certificateVerify = new CertificateVerifyMessage(rsa_pss_rsae_sha256, signature);
+            sender.send(certificateVerify);
+            transcriptHash.recordClient(certificateVerify);
+        }
+    }
+
     private Optional<String> extractReason(CertificateException exception) {
         Throwable cause = exception.getCause();
         if (cause instanceof CertPathValidatorException) {
@@ -480,6 +531,7 @@ public class TlsClientEngine extends TlsEngine implements ClientMessageProcessor
         this.newSessionTicket = newSessionTicket;
     }
 
+    @Override
     public TlsConstants.CipherSuite getSelectedCipher() {
         if (selectedCipher != null) {
             return selectedCipher;
@@ -511,6 +563,9 @@ public class TlsClientEngine extends TlsEngine implements ClientMessageProcessor
         return status == Status.Finished;
     }
 
+    public void setClientCertificateCallback(Function<List<X500Principal>, CertificateWithPrivateKey> callback) {
+        clientCertificateSelector = callback;
+    }
 
     // TODO: remove this
     public TlsState getState() {

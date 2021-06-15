@@ -23,6 +23,7 @@ import net.luminis.quic.log.FileLogger;
 import net.luminis.quic.log.Logger;
 import net.luminis.quic.stream.QuicStream;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.*;
@@ -41,8 +42,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-
-import io.ipfs.IPFS;
 
 
 public class InteropRunner extends KwikCli {
@@ -286,9 +285,7 @@ public class InteropRunner extends KwikCli {
         logger.info("Initiating key update");
         ((QuicClientConnectionImpl) connection).updateKeys();
         // And download the rest.
-
-        IPFS.copy(httpStream.getInputStream(), out);
-        // TODO httpStream.getInputStream().transferTo(out);
+        IOUtils.copy(httpStream.getInputStream(), out);
         logger.info("Downloaded " + downloadUrls.get(0) + " finished at " + timeNow());
     }
 
