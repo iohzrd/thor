@@ -24,6 +24,8 @@ import net.luminis.tls.alert.DecodeErrorException;
 import net.luminis.tls.util.ByteUtils;
 import net.luminis.tls.extension.Extension;
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
@@ -345,7 +347,7 @@ public class QuicTransportParametersExtension extends Extension {
             if (parameterId == 0x7157) extension = "timestamp";
             if (parameterId == 0x73db) extension = "version-negotiation";
             if (parameterId == 0xde1a) extension = "delayed-ack";
-            if (!extension.isEmpty()) {
+            if (!StringUtils.isBlank(extension)) {
                 msg += " (" + extension + " extension)";
             }
             log.warn(msg);

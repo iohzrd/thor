@@ -218,7 +218,7 @@ public class IPFS {
         } else {
             port = nextFreePort();
         }
-
+        //privateKey = Rsa.generateRsaKeyPair(2048, new SecureRandom()).first;
         privateKey = new Rsa.RsaPrivateKey(keypair.getPrivate(), keypair.getPublic());
         LiteHostCertificate selfSignedCertificate = new LiteHostCertificate(context,
                 privateKey, keypair);
@@ -365,12 +365,14 @@ public class IPFS {
 
     private KeyPair getKeyPair(@NonNull Context context) throws NoSuchAlgorithmException, InvalidKeySpecException, InvalidAlgorithmParameterException {
 
+        /*
         KeyPairGenerator keyPairGenerator;
         keyPairGenerator = KeyPairGenerator.getInstance("EC");
         keyPairGenerator.initialize(new ECGenParameterSpec(secp256r1.toString()));
 
         return keyPairGenerator.genKeyPair();
-        /*
+        */
+
         if (!getPrivateKey(context).isEmpty() && !getPublicKey(context).isEmpty()) {
 
             Base64.Decoder decoder = Base64.getDecoder();
@@ -398,7 +400,7 @@ public class IPFS {
             setPrivateKey(context, encoder.encodeToString(keypair.getPrivate().getEncoded()));
             setPublicKey(context, encoder.encodeToString(keypair.getPublic().getEncoded()));
             return keypair;
-        }*/
+        }
     }
 
     public boolean canHop(@NonNull PeerId peerId, @NonNull Closeable closeable)

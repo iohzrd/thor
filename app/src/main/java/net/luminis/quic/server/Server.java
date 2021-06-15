@@ -28,6 +28,7 @@ import net.luminis.quic.server.h09.Http09ApplicationProtocolFactory;
 import net.luminis.tls.handshake.TlsServerEngineFactory;
 import net.luminis.tls.util.ByteUtils;
 import org.apache.commons.cli.*;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -159,7 +160,7 @@ public class Server implements ServerConnectionRegistry {
                 + applicationProtocolRegistry.getRegisteredApplicationProtocols());
     }
 
-    private void start() {
+    public void start() {
         receiver.start();
 
         new Thread(this::receiveLoop, "server receive loop").start();
@@ -183,7 +184,7 @@ public class Server implements ServerConnectionRegistry {
         supportedVersions.forEach(version -> {
             String protocol = "hq";
             String versionSuffix = version.getDraftVersion();
-            if (! versionSuffix.isEmpty()) {
+            if (!StringUtils.isBlank(versionSuffix)) {
                 protocol += "-" + versionSuffix;
             }
             else {
@@ -289,11 +290,8 @@ public class Server implements ServerConnectionRegistry {
         data.get(dcid);
         data.rewind();
         Optional<ServerConnectionProxy> connection = isExistingConnection(clientAddress, dcid);
-        /* TODO
-        connection.orElse(c -> c.parsePackets(0, Instant.now(), data),
-                () -> log.warn("Discarding short header packet addressing non existent connection " + ByteUtils.bytesToHex(dcid)));
-
-         */
+        connection.ifPresent(c -> c.parsePackets(0, Instant.now(), data));
+        // TODO else case() -> log.warn("Discarding short header packet addressing non existent connection " + ByteUtils.bytesToHex(dcid)));
     }
 
     private boolean mightStartNewConnection(ByteBuffer packetBytes, int version, byte[] dcid) {

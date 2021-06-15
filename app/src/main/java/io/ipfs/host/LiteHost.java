@@ -10,8 +10,11 @@ import com.google.protobuf.MessageLite;
 import net.luminis.quic.QuicClientConnection;
 import net.luminis.quic.QuicClientConnectionImpl;
 import net.luminis.quic.Version;
+import net.luminis.quic.log.SysOutLogger;
+import net.luminis.quic.server.Server;
 import net.luminis.quic.stream.QuicStream;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
@@ -248,6 +251,24 @@ public class LiteHost implements BitSwapReceiver {
 
         return cones;
     }
+    private Server server;
+
+    public void start() {
+        try {
+            List<Version> supportedVersions = new ArrayList<>();
+            supportedVersions.add(Version.IETF_draft_29);
+            supportedVersions.add(Version.QUIC_version_1);
+
+            boolean requireRetry = false; // TODO what does it mean
+            server = new Server(port, new
+                    FileInputStream(selfSignedCertificate.certificate()),
+                    new FileInputStream(selfSignedCertificate.certificate()),
+                    supportedVersions, requireRetry, null /* TODO*/);
+            server.start();
+        } catch (Throwable throwable){
+            LogUtils.error(TAG, throwable);
+        }
+    }
 
     public void forwardMessage(@NonNull PeerId peerId, @NonNull MessageLite msg) {
         if (msg instanceof MessageOuterClass.Message) {
@@ -314,9 +335,6 @@ public class LiteHost implements BitSwapReceiver {
         return result;
     }
 
-    public void start() {
-        // TODO server
-    }
 
     @NonNull
     public Connection connectTo(@NonNull Closeable closeable, @NonNull PeerId peerId, int timeout)
@@ -730,8 +748,9 @@ public class LiteHost implements BitSwapReceiver {
                 //  .streamHandler(new WelcomeHandler(LiteHost.this))
                 //  .remoteAddress(new InetSocketAddress(inetAddress, port))
                 .noServerCertificateCheck()
-                .keypair(selfSignedCertificate.getKeypair())
-                .clientCertificate(selfSignedCertificate.cert())
+                .logger(new SysOutLogger())
+                //.keypair(selfSignedCertificate.getKeypair())
+                //.clientCertificate(selfSignedCertificate.cert())
                 .uri(new URI("https://" + inetAddress.getHostName() + ":" + port))
                 .build();
 

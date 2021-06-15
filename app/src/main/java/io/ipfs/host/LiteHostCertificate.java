@@ -2,7 +2,6 @@ package io.ipfs.host;
 
 import android.content.Context;
 import android.util.Base64;
-import android.util.Pair;
 
 import androidx.annotation.NonNull;
 
@@ -12,14 +11,12 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 
 import org.bouncycastle.asn1.ASN1Encodable;
-import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.asn1.DERSequenceGenerator;
 import org.bouncycastle.asn1.DLSequence;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -27,13 +24,10 @@ import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
-import org.bouncycastle.crypto.params.ParametersWithRandom;
-import org.bouncycastle.crypto.signers.ECDSASigner;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -46,7 +40,6 @@ import java.security.PrivateKey;
 import java.security.Provider;
 import java.security.PublicKey;
 import java.security.SecureRandom;
-import java.security.Signature;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -60,7 +53,6 @@ import crypto.pb.Crypto;
 import io.LogUtils;
 import io.ipfs.crypto.Ecdsa;
 import io.ipfs.crypto.Ed25519;
-import io.ipfs.crypto.Hash;
 import io.ipfs.crypto.PrivKey;
 import io.ipfs.crypto.PubKey;
 import io.ipfs.crypto.Rsa;
@@ -188,17 +180,8 @@ public final class LiteHostCertificate {
 
         SubjectPublicKeyInfo subjectPublicKeyInfo = SubjectPublicKeyInfo.
                 getInstance(keypair.getPublic().getEncoded());
-
-        Signature algo = Signature.getInstance("SHA256withECDSA");
-
-        algo.initSign(keypair.getPrivate());
-        algo.update(Bytes.concat(
+        byte[] signature = privKey.sign(Bytes.concat(
                 certificatePrefix.getBytes(), subjectPublicKeyInfo.getEncoded()));
-        byte[] signature = algo.sign();
-
-
-        //byte[] signature = privKey.sign(Bytes.concat(
-        //        certificatePrefix.getBytes(), subjectPublicKeyInfo.getEncoded()));
 
 
         SignedKey signedKey = new SignedKey(keyBytes, signature);
@@ -390,10 +373,6 @@ public final class LiteHostCertificate {
         safeDelete(privateKey);
     }
 
-    public KeyPair getKeypair() {
-        return keypair;
-    }
-
     public static class SignedKey extends ASN1Object {
         private final ASN1OctetString PubKey;
         private final ASN1OctetString Signature;
@@ -490,4 +469,3 @@ public final class LiteHostCertificate {
         }
     }
 }
-

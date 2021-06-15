@@ -12,7 +12,9 @@ import org.junit.runner.RunWith;
 
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
+import java.security.spec.ECGenParameterSpec;
 
 import io.LogUtils;
 import io.ipfs.crypto.PubKey;
@@ -20,6 +22,7 @@ import io.ipfs.crypto.Rsa;
 import io.ipfs.host.LiteHostCertificate;
 
 import static junit.framework.TestCase.assertNotNull;
+import static net.luminis.tls.TlsConstants.NamedGroup.secp256r1;
 
 
 @SuppressWarnings("SpellCheckingInspection")
@@ -47,14 +50,16 @@ public class IpfsSelfSigned {
         IPFS ipfs = TestEnv.getTestInstance(context);
         assertNotNull(ipfs);
 
-        String algorithm = "RSA";
         final KeyPair keypair;
 
-        KeyPairGenerator keyGen = KeyPairGenerator.getInstance(algorithm);
-        keyGen.initialize(2048, LiteHostCertificate.ThreadLocalInsecureRandom.current());
-        keypair = keyGen.generateKeyPair();
+        KeyPairGenerator keyPairGenerator;
+        keyPairGenerator = KeyPairGenerator.getInstance("EC");
+        keyPairGenerator.initialize(new ECGenParameterSpec(secp256r1.toString()));
 
-        Rsa.RsaPrivateKey privateKey = new Rsa.RsaPrivateKey(keypair.getPrivate(), keypair.getPublic());
+        keypair = keyPairGenerator.genKeyPair();
+
+
+        Rsa.RsaPrivateKey privateKey = Rsa.generateRsaKeyPair(2048, new SecureRandom()).first;
         X509Certificate cert = new LiteHostCertificate(context, privateKey, keypair).cert();
 
         assertNotNull(cert);

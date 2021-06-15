@@ -1,7 +1,7 @@
 /*
- * Copyright © 2019, 2020 Peter Doornbosch
+ * Copyright © 2019, 2020, 2021 Peter Doornbosch
  *
- * This file is part of Kwik, a QUIC client Java library
+ * This file is part of Kwik, an implementation of the QUIC protocol in Java.
  *
  * Kwik is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -22,6 +22,8 @@ import net.luminis.quic.*;
 import net.luminis.quic.log.FileLogger;
 import net.luminis.quic.log.Logger;
 import net.luminis.quic.stream.QuicStream;
+
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.*;
 import java.net.MalformedURLException;
@@ -98,7 +100,7 @@ public class InteropRunner extends KwikCli {
             builder.logger(logger);
             builder.initialRtt(100);
             String keylogfileEnvVar = System.getenv("SSLKEYLOGFILE");
-            if (keylogfileEnvVar != null && ! keylogfileEnvVar.isEmpty() /* TODO keylogfileEnvVar.isBlank()*/) {
+            if (keylogfileEnvVar != null && !StringUtils.isBlank(keylogfileEnvVar)) {
                 System.out.println("Writing keys to " + keylogfileEnvVar);
                 builder.secrets(Paths.get(keylogfileEnvVar));
             }

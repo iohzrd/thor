@@ -1,7 +1,7 @@
 /*
- * Copyright © 2019, 2020 Peter Doornbosch
+ * Copyright © 2019, 2020, 2021 Peter Doornbosch
  *
- * This file is part of Kwik, a QUIC client Java library
+ * This file is part of Kwik, an implementation of the QUIC protocol in Java.
  *
  * Kwik is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -38,7 +38,6 @@ import java.nio.file.StandardOpenOption;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.Base64;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -96,7 +95,7 @@ public class KwikCli {
         }
 
         if (cmd.hasOption("v")) {
-            System.out.println("Kwik build nr: " + getVersion());
+            System.out.println("Kwik build nr: " + KwikVersion.getVersion());
             System.exit(0);
         }
 
@@ -384,8 +383,7 @@ public class KwikCli {
                 if (useZeroRtt && httpRequestPath != null) {
                     String http09Request = "GET " + httpRequestPath + "\r\n";
                     QuicClientConnection.StreamEarlyData earlyData = new QuicClientConnection.StreamEarlyData(http09Request.getBytes(), true);
-                    httpStream = quicConnection.connect(connectionTimeout * 1000, "hq-27", null,
-                            Collections.singletonList(earlyData)).get(0);
+                    httpStream = quicConnection.connect(connectionTimeout * 1000, "hq-27", null, List.of(earlyData)).get(0);
                 }
                 else {
                     if (alpn == null) {
@@ -533,18 +531,6 @@ public class KwikCli {
                 System.out.println(line);
             }
         }
-    }
-
-    static String getVersion() {
-        InputStream in = QuicConnection.class.getResourceAsStream("version.properties");
-        if (in != null) {
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
-                return reader.readLine();
-            } catch (IOException e) {
-                return null;
-            }
-        }
-        else return "dev";
     }
 
     public static void usage() {

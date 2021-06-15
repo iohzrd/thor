@@ -24,6 +24,8 @@ import net.luminis.quic.Version;
 import net.luminis.quic.log.Logger;
 import net.luminis.quic.packet.QuicPacket;
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -54,7 +56,7 @@ public class ConnectionCloseFrame extends QuicFrame {
     public ConnectionCloseFrame(Version quicVersion, int error, String reason) {
         frameType = 0x1c;
         errorCode = error;
-        if (reason != null && !reason.isEmpty()) {
+        if (reason != null && !StringUtils.isBlank(reason)) {
             reasonPhrase = reason.getBytes(StandardCharsets.UTF_8);
         }
     }

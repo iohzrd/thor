@@ -9,7 +9,7 @@ import threads.thor.BuildConfig;
 
 
 public class LogUtils {
-
+    public static final String TAG = LogUtils.class.getSimpleName();
 
     @SuppressWarnings("SameReturnValue")
     public static boolean isDebug() {

@@ -9,8 +9,11 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 
+import io.LogUtils;
+
 
 public abstract class ConnectionChannelHandler {
+    private static final String TAG = ConnectionChannelHandler.class.getSimpleName();
     private final Connection connection;
     private final InputStream inputStream;
     private final OutputStream outputStream;
@@ -25,8 +28,11 @@ public abstract class ConnectionChannelHandler {
     public void reader() {
         ByteBuffer buf = ByteBuffer.allocate(4096);
         try {
-            while (inputStream.available() > 0) {
+            while (true) {
                 int b = inputStream.read();
+
+                LogUtils.error(TAG, "Read : " + b);
+
                 if (b == -1) {
                     if (buf.position() > 0) {
                         channelRead0(connection, buf.array());

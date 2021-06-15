@@ -1,7 +1,7 @@
 /*
- * Copyright © 2019, 2020 Peter Doornbosch
+ * Copyright © 2019, 2020, 2021 Peter Doornbosch
  *
- * This file is part of Kwik, a QUIC client Java library
+ * This file is part of Kwik, an implementation of the QUIC protocol in Java.
  *
  * Kwik is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -23,6 +23,8 @@ import net.luminis.quic.TransportParameters;
 import net.luminis.quic.cid.ConnectionIdStatus;
 import net.luminis.quic.stream.QuicStream;
 import net.luminis.tls.util.ByteUtils;
+
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.*;
 import java.util.Arrays;
@@ -99,7 +101,7 @@ public class InteractiveShell {
             running = true;
             while (running) {
                 String cmdLine = in.readLine();
-                if (! cmdLine.isEmpty()) {
+                if (!StringUtils.isBlank(cmdLine)) {
                     String cmd = cmdLine.split(" ")[0];
                     List<String> matchingCommands = commands.keySet().stream().filter(command -> command.startsWith(cmd)).collect(Collectors.toList());
                     if (matchingCommands.size() == 1) {
@@ -129,7 +131,7 @@ public class InteractiveShell {
 
     private void connect(String arg) {
         int connectionTimeout = 3000;
-        if (arg != null && !arg.isEmpty()) {
+        if (arg != null && !StringUtils.isBlank(arg)) {
             try {
                 connectionTimeout = Integer.parseInt(arg);
                 if (connectionTimeout < 100) {
