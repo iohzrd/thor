@@ -50,7 +50,7 @@ public class KadDhtSend extends ConnectionChannelHandler {
         if (reader.isDone()) {
             for (String received : reader.getTokens()) {
                 if (Objects.equals(received, IPFS.DHT_PROTOCOL)) {
-                    writeAndFlush(DataHandler.encode(message.toByteArray()));
+                    writeAndFlush(DataHandler.encode(message));
                     stream.complete(null);
                 } else if (!Objects.equals(received, IPFS.STREAM_PROTOCOL)) {
                     throw new ProtocolIssue();

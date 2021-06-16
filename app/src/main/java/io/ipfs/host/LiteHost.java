@@ -600,7 +600,6 @@ public class LiteHost implements BitSwapReceiver {
                     run = true;
                     return conn;
                 } catch (Throwable ignore) {
-                    LogUtils.error(TAG, ignore);
                     // nothing to do here
                 } finally {
                     if (run) {

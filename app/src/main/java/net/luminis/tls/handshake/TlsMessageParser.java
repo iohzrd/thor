@@ -52,8 +52,6 @@ public class TlsMessageParser {
         int length = ((buffer.get() & 0xff) << 16) | ((buffer.get() & 0xff) << 8) | (buffer.get() & 0xff);
         buffer.reset();
 
-        LogUtils.error(getClass().getSimpleName(), "parseAndProcessHandshakeMessage " + messageType);
-
         HandshakeMessage parsedMessage;
         if (messageType == client_hello.value) {
             ClientHello ch = new ClientHello(buffer, customExtensionParser);

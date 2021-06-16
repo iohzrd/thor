@@ -22,21 +22,19 @@ import net.luminis.quic.log.BaseLogger;
 
 import java.nio.ByteBuffer;
 
+import io.LogUtils;
+
 public class SysOutLogger extends BaseLogger {
 
     @Override
     protected void log(String message) {
-        synchronized (this) {
-            System.out.println(message);
-        }
+        LogUtils.error(LogUtils.TAG, message);
+
     }
 
     @Override
     protected void log(String message, Throwable error) {
-        synchronized (this) {
-            System.out.println(message);
-            error.printStackTrace();
-        }
+        LogUtils.error(LogUtils.TAG, message, error);
 
     }
 

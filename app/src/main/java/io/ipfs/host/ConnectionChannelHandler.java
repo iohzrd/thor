@@ -10,11 +10,9 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
-import io.LogUtils;
-
 
 public abstract class ConnectionChannelHandler {
-    private static final String TAG = ConnectionChannelHandler.class.getSimpleName();
+
     private final Connection connection;
     private final InputStream inputStream;
     private final OutputStream outputStream;
@@ -35,13 +33,10 @@ public abstract class ConnectionChannelHandler {
                 byte[] data = Arrays.copyOfRange(buf.array(), 0, length);
                 channelRead0(connection, data);
                 buf.rewind();
-                LogUtils.error(TAG, "Reader active " + new String(data));
             }
 
         } catch (Throwable throwable) {
             exceptionCaught(connection, throwable);
-        } finally {
-            LogUtils.error(TAG, "Reader done");
         }
     }
 

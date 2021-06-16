@@ -16,7 +16,7 @@ import io.ipfs.utils.DataHandler;
 public class ConnectionStreamHandler extends ConnectionChannelHandler {
     private static final String TAG = ConnectionStreamHandler.class.getSimpleName();
     private final LiteHost host;
-    private final DataHandler reader = new DataHandler(IPFS.PROTOCOL_READER_LIMIT);
+    private final DataHandler reader = new DataHandler(IPFS.MESSAGE_SIZE_MAX);
     private final AtomicReference<String> protocol = new AtomicReference<>();
     private long time = System.currentTimeMillis();
 
@@ -41,15 +41,13 @@ public class ConnectionStreamHandler extends ConnectionChannelHandler {
 
     public void channelRead0(@NonNull Connection connection, @NonNull byte[] msg) throws Exception {
 
-        LogUtils.error(TAG, "PeerId " + connection.remoteId());
-
         reader.load(msg);
 
         if (reader.isDone()) {
             for (String token : reader.getTokens()) {
 
 
-                LogUtils.debug(TAG, "Token " + token + " Connection " + connection + " StreamId " + ""
+                LogUtils.error(TAG, "Token " + token + " Connection " + connection + " StreamId " + ""
                         + " PeerId " + connection.remoteId());
                 protocol.set(token);
                 switch (token) {

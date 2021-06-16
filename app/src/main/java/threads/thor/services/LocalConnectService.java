@@ -24,14 +24,11 @@ public class LocalConnectService {
             }
             String multiAddress = pre + host + "/udp/" + port + "/quic/p2p/" + pid;
 
-            boolean connect = ipfs.swarmConnect(multiAddress, 10);
+            boolean connect = ipfs.swarmConnect(multiAddress, IPFS.CONNECT_TIMEOUT);
 
             if (connect) {
                 ipfs.swarmEnhance(PeerId.fromBase58(pid));
             }
-
-            LogUtils.error(TAG, "Success ? " + connect + " for " + multiAddress);
-
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         }

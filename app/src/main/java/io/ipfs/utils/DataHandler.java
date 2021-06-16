@@ -58,7 +58,7 @@ public class DataHandler {
     }
 
     public static byte[] encode(@NonNull MessageLite message) {
-        return message.toByteArray();
+        return encode(message.toByteArray());
     }
 
     public static byte[] encode(@NonNull byte[] data) {

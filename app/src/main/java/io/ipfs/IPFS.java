@@ -2,7 +2,6 @@ package io.ipfs;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.util.Pair;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -19,15 +18,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
-import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.SecureRandom;
-import java.security.spec.ECGenParameterSpec;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
@@ -54,7 +50,6 @@ import io.ipfs.core.Closeable;
 import io.ipfs.core.ClosedException;
 import io.ipfs.core.ConnectionIssue;
 import io.ipfs.core.TimeoutCloseable;
-import io.ipfs.crypto.Ed25519;
 import io.ipfs.crypto.PrivKey;
 import io.ipfs.crypto.Rsa;
 import io.ipfs.dht.Routing;
@@ -84,10 +79,6 @@ import io.ipfs.utils.Resolver;
 import io.ipfs.utils.Stream;
 import io.ipfs.utils.WriterStream;
 import threads.thor.core.blocks.BLOCKS;
-
-import static net.luminis.tls.TlsConstants.NamedGroup.secp256r1;
-import static net.luminis.tls.TlsConstants.NamedGroup.secp384r1;
-import static net.luminis.tls.TlsConstants.NamedGroup.secp521r1;
 
 public class IPFS {
 
@@ -159,7 +150,7 @@ public class IPFS {
 
     public static final int KAD_DHT_BUCKET_SIZE = 20;
     public static final int KAD_DHT_BETA = 30;
-    public static final int CONNECT_TIMEOUT = 55;
+    public static final int CONNECT_TIMEOUT = 10;
     public static final int BITSWAP_LOAD_PROVIDERS_REFRESH = 10000;
     public static final long DHT_REQUEST_READ_TIMEOUT = 10;
     public static final long IPNS_DURATION = 6; // 6 hours duration
@@ -363,15 +354,7 @@ public class IPFS {
         }
     }
 
-    private KeyPair getKeyPair(@NonNull Context context) throws NoSuchAlgorithmException, InvalidKeySpecException, InvalidAlgorithmParameterException {
-
-        /*
-        KeyPairGenerator keyPairGenerator;
-        keyPairGenerator = KeyPairGenerator.getInstance("EC");
-        keyPairGenerator.initialize(new ECGenParameterSpec(secp256r1.toString()));
-
-        return keyPairGenerator.genKeyPair();
-        */
+    private KeyPair getKeyPair(@NonNull Context context) throws NoSuchAlgorithmException, InvalidKeySpecException {
 
         if (!getPrivateKey(context).isEmpty() && !getPublicKey(context).isEmpty()) {
 
