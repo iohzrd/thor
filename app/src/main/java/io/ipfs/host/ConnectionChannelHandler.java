@@ -49,6 +49,8 @@ public abstract class ConnectionChannelHandler {
             exceptionCaught(connection, new ConnectionIssue());
         } catch (Throwable throwable) {
             exceptionCaught(connection, throwable);
+        } finally {
+            buf.clear();
         }
     }
 

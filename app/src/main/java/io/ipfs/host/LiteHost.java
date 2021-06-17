@@ -252,6 +252,7 @@ public class LiteHost implements BitSwapReceiver {
 
         return cones;
     }
+
     private Server server;
 
     public void start() {
@@ -266,7 +267,7 @@ public class LiteHost implements BitSwapReceiver {
                     new FileInputStream(selfSignedCertificate.certificate()),
                     supportedVersions, requireRetry, null /* TODO*/);
             server.start();
-        } catch (Throwable throwable){
+        } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         }
     }
@@ -389,11 +390,11 @@ public class LiteHost implements BitSwapReceiver {
     public boolean isConnected(@NonNull PeerId id) {
         try {
             Connection connection = connections.get(id);
-            if(connection != null) {
+            if (connection != null) {
                 return connection.isConnected();
             }
         } catch (Throwable throwable) {
-           LogUtils.error(TAG, throwable);
+            LogUtils.error(TAG, throwable);
         }
         return false;
     }
@@ -595,8 +596,9 @@ public class LiteHost implements BitSwapReceiver {
                     final Connection conn = new LiteConnection(quicClientConnection, peerId, address);
                     Objects.requireNonNull(conn);
 
+
                     quicClientConnection.setPeerInitiatedStreamCallback(quicStream ->
-                            new ConnectionStreamHandler(conn, quicStream, LiteHost.this));
+                            new StreamHandler(conn, quicStream, LiteHost.this).start());
 
                     // TODO quic.closeFuture().addListener(future1 -> removeConnection(conn));
                     addConnection(conn);
@@ -713,7 +715,7 @@ public class LiteHost implements BitSwapReceiver {
             if (server != null) {
                 server.shutdown();
             }
-        } catch (Throwable throwable){
+        } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         } finally {
             server = null;

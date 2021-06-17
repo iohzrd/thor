@@ -34,9 +34,10 @@ public class KadDhtRequest extends ConnectionChannelHandler {
     }
 
     public void exceptionCaught(@NonNull Connection connection, @NonNull Throwable cause) {
-        LogUtils.error(TAG, "" + cause);
+        LogUtils.warning(TAG, "" + cause);
         request.completeExceptionally(cause);
         closeInputStream();
+        reader.clear();
     }
 
     public void channelRead0(@NonNull Connection connection, @NonNull byte[] msg)
@@ -62,9 +63,7 @@ public class KadDhtRequest extends ConnectionChannelHandler {
                 closeInputStream();
                 LogUtils.debug(TAG, "done " + (System.currentTimeMillis() - start) + " "
                         + connection.remoteAddress());
-                return;
             }
-
         } else {
             LogUtils.debug(TAG, "iteration " + reader.hasRead() + " "
                     + reader.expectedBytes() + " "

@@ -4,39 +4,100 @@ import androidx.annotation.NonNull;
 
 import net.luminis.quic.stream.QuicStream;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.ProtocolException;
+import java.nio.ByteBuffer;
+import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import bitswap.pb.MessageOuterClass;
 import identify.pb.IdentifyOuterClass;
 import io.LogUtils;
 import io.ipfs.IPFS;
+import io.ipfs.core.ConnectionIssue;
 import io.ipfs.utils.DataHandler;
 
 
-public class ConnectionStreamHandler extends ConnectionChannelHandler {
-    private static final String TAG = ConnectionStreamHandler.class.getSimpleName();
+public class StreamHandler {
+    private static final String TAG = StreamHandler.class.getSimpleName();
     private final LiteHost host;
     private final DataHandler reader = new DataHandler(IPFS.MESSAGE_SIZE_MAX);
     private final AtomicReference<String> protocol = new AtomicReference<>();
     private long time = System.currentTimeMillis();
+    private final Connection connection;
+    private final InputStream inputStream;
+    private final OutputStream outputStream;
+    private final AtomicBoolean close = new AtomicBoolean(false);
+    protected final int streamId;
 
-    public ConnectionStreamHandler(@NonNull Connection connection,
-                                   @NonNull QuicStream quicStream,
-                                   @NonNull LiteHost host) {
-        super(connection, quicStream);
+    public StreamHandler(@NonNull Connection connection,
+                         @NonNull QuicStream quicStream,
+                         @NonNull LiteHost host) {
+        this.connection = connection;
+        this.inputStream = quicStream.getInputStream();
+        this.outputStream = quicStream.getOutputStream();
+        this.streamId = quicStream.getStreamId();
         this.host = host;
         LogUtils.debug(TAG, "Instance" + " StreamId " + streamId + " PeerId " + connection.remoteId());
     }
 
 
-    public void exceptionCaught(@NonNull Connection connection, @NonNull Throwable cause) {
-        LogUtils.debug(TAG, "" + cause);
+    public void start() {
+        ByteBuffer buf = ByteBuffer.allocate(4096);
+        try {
+            int length;
+
+            while (!close.get() && (length = inputStream.read(buf.array(), 0, buf.capacity())) > 0) {
+                byte[] data = Arrays.copyOfRange(buf.array(), 0, length);
+                channelRead0(connection, data);
+                buf.rewind();
+            }
+
+        } catch (ProtocolException protocolException) {
+            exceptionCaught(new ConnectionIssue());
+            connection.disconnect();
+        } catch (Throwable throwable) {
+            exceptionCaught(throwable);
+        } finally {
+            buf.clear();
+            reader.clear();
+        }
+    }
+
+    private void exceptionCaught(@NonNull Throwable cause) {
+        LogUtils.error(TAG, "" + cause);
         closeInputStream();
         closeOutputStream();
     }
 
+    private void writeAndFlush(@NonNull byte[] data) throws IOException {
+        outputStream.write(data);
+        outputStream.flush();
+    }
 
-    public void channelRead0(@NonNull Connection connection, @NonNull byte[] msg) throws Exception {
+
+    private void closeInputStream() {
+        try {
+            inputStream.close();
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable);
+        } finally {
+            close.set(true);
+        }
+    }
+
+    private void closeOutputStream() {
+        try {
+            outputStream.close();
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable);
+        }
+    }
+
+    private void channelRead0(@NonNull Connection connection, @NonNull byte[] msg) throws Exception {
 
         reader.load(msg);
 
@@ -65,7 +126,8 @@ public class ConnectionStreamHandler extends ConnectionChannelHandler {
                             return;
                         } else {
                             writeAndFlush(DataHandler.writeToken(IPFS.BITSWAP_PROTOCOL));
-                            closeOutputStream();
+                            LogUtils.error(TAG, "Token " + token + " Connection " + connection +
+                                    " StreamId " + streamId + " PeerId " + connection.remoteId());
                         }
                         time = System.currentTimeMillis();
                         break;
@@ -117,7 +179,7 @@ public class ConnectionStreamHandler extends ConnectionChannelHandler {
                 }
             }
         } else {
-            LogUtils.debug(TAG, "iteration " + protocol.get() + " " + reader.hasRead() + " "
+            LogUtils.error(TAG, "iteration " + protocol.get() + " " + reader.hasRead() + " "
                     + reader.expectedBytes() + " " + connection.remoteAddress()
                     + " StreamId " + streamId + " PeerId " + connection.remoteId());
         }

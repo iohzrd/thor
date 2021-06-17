@@ -162,6 +162,17 @@ public class DataHandler {
         }
 
     }
+    public void clear(){
+        isDone = false;
+        expectedLength = 0;
+        message = null;
+        tokens.clear();
+        try {
+            temp.close();
+        } catch (Throwable throwable){
+            LogUtils.error(TAG, throwable);
+        }
+    }
 
     private void merge(DataHandler dataReader) throws IOException {
         this.expectedLength = dataReader.expectedLength;

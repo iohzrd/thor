@@ -426,7 +426,6 @@ public class KadDht implements Routing {
                 return msg;
 
             } catch (TimeoutException exception) {
-                LogUtils.error(TAG, exception.getClass().getSimpleName());
                 throw new TimeoutIssue();
             } catch (Throwable throwable) {
                 Throwable cause = throwable.getCause();
@@ -445,7 +444,7 @@ public class KadDht implements Routing {
                 LogUtils.error(TAG, throwable);
                 throw new ConnectionIssue();
             } finally {
-                LogUtils.error(TAG, "Request " + success + " took " +
+                LogUtils.warning(TAG, "Request " + success + " took " +
                         (System.currentTimeMillis() - time));
                 conn.disconnect();
 
