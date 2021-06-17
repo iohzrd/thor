@@ -32,7 +32,8 @@ public class PushService {
             stream.get(IPFS.CONNECT_TIMEOUT, TimeUnit.SECONDS);
             // todo exception
             pushSend.writeAndFlush(DataHandler.encode(content.getBytes()));
-            pushSend.close();
+            pushSend.closeOutputStream();
+            pushSend.closeInputStream();
 
         } catch (Throwable throwable) {
             throw new RuntimeException(throwable);

@@ -100,28 +100,25 @@ public class IdentityService {
             @NonNull QuicClientConnection quicChannel) {
 
         CompletableFuture<IdentifyOuterClass.Identify> request = new CompletableFuture<>();
-        CompletableFuture<Void> activation = new CompletableFuture<>();
 
         try {
             QuicStream quicStream = quicChannel.createStream(true);
             IdentityRequest identityRequest = new IdentityRequest(
-                    connection, quicStream, activation, request);
-
+                    connection, quicStream, request);
 
             // TODO quicStream.pipeline().addFirst(new ReadTimeoutHandler(10, TimeUnit.SECONDS));
 
             // TODO quicStream.updatePriority(new QuicStreamPriority(IPFS.PRIORITY_HIGH, false));
 
-
             identityRequest.writeAndFlush(DataHandler.writeToken(IPFS.STREAM_PROTOCOL));
             identityRequest.writeAndFlush(DataHandler.writeToken(IPFS.IDENTITY_PROTOCOL));
-
+            identityRequest.closeOutputStream();
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
-            activation.completeExceptionally(throwable);
+
             request.completeExceptionally(throwable);
         }
 
-        return activation.thenCompose(s -> request);
+        return request;
     }
 }

@@ -185,7 +185,9 @@ public abstract class QuicConnectionImpl implements QuicConnection, FrameProcess
                 getSender().packetProcessed(data.hasRemaining());
             }
             catch (DecryptionException | MissingKeysException cannotParse) {
-                LogUtils.error(getClass().getSimpleName(), cannotParse);
+                if(cannotParse instanceof DecryptionException) {
+                    LogUtils.error(getClass().getSimpleName(), cannotParse);
+                }
                 // https://tools.ietf.org/html/draft-ietf-quic-transport-24#section-12.2
                 // "if decryption fails (...), the receiver (...) MUST attempt to process the remaining packets."
                 int nrOfPacketBytes = data.position();

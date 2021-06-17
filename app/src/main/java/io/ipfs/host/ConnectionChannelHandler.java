@@ -10,6 +10,7 @@ import java.io.OutputStream;
 import java.net.ProtocolException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.LogUtils;
 import io.ipfs.core.ConnectionIssue;
@@ -20,6 +21,7 @@ public abstract class ConnectionChannelHandler {
     private final Connection connection;
     private final InputStream inputStream;
     private final OutputStream outputStream;
+    private final AtomicBoolean close = new AtomicBoolean(false);
     protected final int streamId;
 
     public ConnectionChannelHandler(@NonNull Connection connection, @NonNull QuicStream quicStream) {
@@ -35,13 +37,14 @@ public abstract class ConnectionChannelHandler {
         try {
             int length;
 
-            while ((length = inputStream.read(buf.array(), 0, buf.capacity())) > 0) {
+            while (!close.get() && (length = inputStream.read(buf.array(), 0, buf.capacity())) > 0) {
                 byte[] data = Arrays.copyOfRange(buf.array(), 0, length);
                 channelRead0(connection, data);
                 buf.rewind();
             }
 
         } catch (ProtocolException protocolException) {
+            closeInputStream();
             connection.disconnect();
             exceptionCaught(connection, new ConnectionIssue());
         } catch (Throwable throwable) {
@@ -58,24 +61,22 @@ public abstract class ConnectionChannelHandler {
         outputStream.flush();
     }
 
-    public void close() {
+
+    public void closeInputStream() {
         try {
-            closeInputStream();
+            inputStream.close();
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
-        }
-        try {
-            closeOutputStream();
-        } catch (Throwable throwable) {
-            LogUtils.error(TAG, throwable);
+        } finally {
+            close.set(true);
         }
     }
 
-    public void closeInputStream() throws IOException {
-        inputStream.close();
-    }
-
-    public void closeOutputStream() throws IOException {
-        outputStream.close();
+    public void closeOutputStream() {
+        try {
+            outputStream.close();
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable);
+        }
     }
 }

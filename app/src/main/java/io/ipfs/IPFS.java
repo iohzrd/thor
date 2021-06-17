@@ -151,8 +151,8 @@ public class IPFS {
     public static final int KAD_DHT_BUCKET_SIZE = 20;
     public static final int KAD_DHT_BETA = 30;
     public static final int CONNECT_TIMEOUT = 5;
-    public static final int BITSWAP_LOAD_PROVIDERS_REFRESH = 10000;
-    public static final long DHT_REQUEST_READ_TIMEOUT = 10;
+    public static final int BIT_SWAP_LOAD_PROVIDERS_REFRESH = 10000;
+    public static final long DHT_REQUEST_READ_TIMEOUT = 5;
     public static final long IPNS_DURATION = 6; // 6 hours duration
     public static final int THRESHOLD_FIND_PROVIDERS = 5;
 

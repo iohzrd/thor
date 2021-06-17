@@ -36,6 +36,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
@@ -50,7 +51,7 @@ public class RecoveryManager implements FrameProcessor2<AckFrame>, HandshakeStat
     private final LossDetector[] lossDetectors = new LossDetector[PnSpace.values().length];
     private final Sender sender;
     private final Logger log;
-    private final ScheduledExecutorService scheduler;
+    private static final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(8, new DaemonThreadFactory("loss-detection"));;
     private int receiverMaxAckDelay;
     private volatile ScheduledFuture<?> lossDetectionTimer;
     private volatile int ptoCount;
@@ -68,7 +69,7 @@ public class RecoveryManager implements FrameProcessor2<AckFrame>, HandshakeStat
         log = logger;
 
         processorRegistry.registerProcessor(this);
-        scheduler = Executors.newScheduledThreadPool(1, new DaemonThreadFactory("loss-detection"));
+
         lossDetectionTimer = new NullScheduledFuture();
     }
 
@@ -153,6 +154,8 @@ public class RecoveryManager implements FrameProcessor2<AckFrame>, HandshakeStat
                 }
             }
         }
+        //Objects.requireNonNull(ptoSpace);
+        //Objects.requireNonNull(ptoTime);
         return new PnSpaceTime(ptoSpace, ptoTime);
     }
 
@@ -268,17 +271,21 @@ public class RecoveryManager implements FrameProcessor2<AckFrame>, HandshakeStat
             }
         }
         else {
-            EncryptionLevel probeLevel = pnSpace.relatedEncryptionLevel();
-            List<QuicFrame> framesToRetransmit = getFramesToRetransmit(pnSpace);
-            if (!framesToRetransmit.isEmpty()) {
-                log.recovery(("(Probe is retransmit on level " + probeLevel + ")"));
-                repeatSend(numberOfPackets, () ->
-                        sender.sendProbe(framesToRetransmit, probeLevel));
-            }
-            else {
-                log.recovery(("(Probe is ping on level " + probeLevel + ")"));
-                repeatSend(numberOfPackets, () ->
-                        sender.sendProbe(List.of(new PingFrame(), new Padding(2)), probeLevel));
+            if(pnSpace == null){
+                log.recovery(("(Probe is ping on level "  + ")"));
+
+            } else {
+                EncryptionLevel probeLevel = pnSpace.relatedEncryptionLevel();
+                List<QuicFrame> framesToRetransmit = getFramesToRetransmit(pnSpace);
+                if (!framesToRetransmit.isEmpty()) {
+                    log.recovery(("(Probe is retransmit on level " + probeLevel + ")"));
+                    repeatSend(numberOfPackets, () ->
+                            sender.sendProbe(framesToRetransmit, probeLevel));
+                } else {
+                    log.recovery(("(Probe is ping on level " + probeLevel + ")"));
+                    repeatSend(numberOfPackets, () ->
+                            sender.sendProbe(List.of(new PingFrame(), new Padding(2)), probeLevel));
+                }
             }
         }
     }

@@ -370,14 +370,16 @@ public class KadDht implements Routing {
 
             CompletableFuture<Void> stream = new CompletableFuture<>();
             QuicStream quicStream = quicChannel.createStream(true);
-            KadDhtSend kadDhtSend = new KadDhtSend(conn, quicStream, stream, message);
+            KadDhtSend kadDhtSend = new KadDhtSend(conn, quicStream, stream);
 
             // TODO quicStream.updatePriority(new QuicStreamPriority(IPFS.PRIORITY_HIGH, false));
             kadDhtSend.writeAndFlush(DataHandler.writeToken(IPFS.STREAM_PROTOCOL));
             kadDhtSend.writeAndFlush(DataHandler.writeToken(IPFS.DHT_PROTOCOL));
+            kadDhtSend.writeAndFlush(DataHandler.encode(message));
+            kadDhtSend.closeOutputStream();
 
             stream.get(IPFS.CONNECT_TIMEOUT, TimeUnit.SECONDS);
-            kadDhtSend.close();
+
 
         } catch (ClosedException | ConnectionIssue | TimeoutException ignore) {
             // ignore
@@ -399,57 +401,56 @@ public class KadDht implements Routing {
         long time = System.currentTimeMillis();
         boolean success = false;
 
-        Connection conn = null;
+        Connection conn = host.connect(closeable, peerId, IPFS.CONNECT_TIMEOUT);
 
-        try {
-            conn = host.connect(closeable, peerId, IPFS.CONNECT_TIMEOUT);
+
+        synchronized (peerId.toBase58().intern()) {
 
             if (closeable.isClosed()) {
                 throw new ClosedException();
             }
 
-            time = System.currentTimeMillis();
+            try {
+                time = System.currentTimeMillis();
 
-            QuicClientConnection quicChannel = conn.channel();
+                QuicClientConnection quicChannel = conn.channel();
 
-            CompletableFuture<Dht.Message> request = request(conn, quicChannel,
-                    message, IPFS.PRIORITY_NORMAL);
+                CompletableFuture<Dht.Message> request = request(conn, quicChannel,
+                        message, IPFS.PRIORITY_NORMAL);
 
-            Dht.Message msg = request.get(IPFS.DHT_REQUEST_READ_TIMEOUT, TimeUnit.SECONDS);
-            Objects.requireNonNull(msg);
-            success = true;
-            peerId.setLatency(System.currentTimeMillis() - time);
+                Dht.Message msg = request.get(IPFS.DHT_REQUEST_READ_TIMEOUT, TimeUnit.SECONDS);
+                Objects.requireNonNull(msg);
+                success = true;
+                peerId.setLatency(System.currentTimeMillis() - time);
 
-            return msg;
+                return msg;
 
-        } catch (ClosedException | ConnectionIssue exception) {
-            throw exception;
-        } catch (TimeoutException exception) {
-            throw new TimeoutIssue();
-        } catch (Throwable throwable) {
-            Throwable cause = throwable.getCause();
-            if (cause != null) {
-                LogUtils.info(TAG, cause.getClass().getSimpleName());
-                if (cause instanceof ProtocolIssue) {
-                    throw new ProtocolIssue();
+            } catch (TimeoutException exception) {
+                LogUtils.error(TAG, exception.getClass().getSimpleName());
+                throw new TimeoutIssue();
+            } catch (Throwable throwable) {
+                Throwable cause = throwable.getCause();
+                if (cause != null) {
+                    LogUtils.info(TAG, cause.getClass().getSimpleName());
+                    if (cause instanceof ProtocolIssue) {
+                        throw new ProtocolIssue();
+                    }
+                    if (cause instanceof ConnectionIssue) {
+                        throw new ConnectionIssue();
+                    }
+                    if (cause instanceof TimeoutException) {
+                        throw new TimeoutIssue();
+                    }
                 }
-                if (cause instanceof ConnectionIssue) {
-                    throw new ConnectionIssue();
-                }
-                if (cause instanceof TimeoutException) {
-                    throw new TimeoutIssue();
-                }
-            }
-            LogUtils.error(TAG, throwable);
-            throw new ConnectionIssue();
-        } finally {
-            LogUtils.debug(TAG, "Request " + success + " took " +
-                    (System.currentTimeMillis() - time));
-            if (conn != null) {
+                LogUtils.error(TAG, throwable);
+                throw new ConnectionIssue();
+            } finally {
+                LogUtils.error(TAG, "Request " + success + " took " +
+                        (System.currentTimeMillis() - time));
                 conn.disconnect();
+
             }
         }
-
     }
 
     public CompletableFuture<Dht.Message> request(@NonNull Connection connection,
@@ -458,12 +459,11 @@ public class KadDht implements Routing {
                                                   short priority) {
 
         CompletableFuture<Dht.Message> request = new CompletableFuture<>();
-        CompletableFuture<Void> activation = new CompletableFuture<>();
+
 
         try {
             QuicStream quicStream = quicChannel.createStream(true);
-            KadDhtRequest dhtRequest = new KadDhtRequest(connection,
-                    quicStream, activation, request, messageLite);
+            KadDhtRequest dhtRequest = new KadDhtRequest(connection, quicStream, request);
 
 
             // TODO quicStream.pipeline().addFirst(new ReadTimeoutHandler(
@@ -474,13 +474,15 @@ public class KadDht implements Routing {
 
             dhtRequest.writeAndFlush(DataHandler.writeToken(IPFS.STREAM_PROTOCOL));
             dhtRequest.writeAndFlush(DataHandler.writeToken(IPFS.DHT_PROTOCOL));
+            dhtRequest.writeAndFlush(DataHandler.encode(messageLite));
+            dhtRequest.closeOutputStream();
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
-            activation.completeExceptionally(throwable);
+
             request.completeExceptionally(throwable);
         }
 
-        return activation.thenCompose(s -> request);
+        return request;
     }
 
 

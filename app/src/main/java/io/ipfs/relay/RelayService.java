@@ -35,11 +35,10 @@ public class RelayService {
             long time = System.currentTimeMillis();
 
             CompletableFuture<Relay.CircuitRelay> request = new CompletableFuture<>();
-            CompletableFuture<Void> activation = new CompletableFuture<>();
 
 
             QuicStream quicStream = quicChannel.createStream(true);
-            RelayRequest relayRequest = new RelayRequest(conn, quicStream, activation, request, message);
+            RelayRequest relayRequest = new RelayRequest(conn, quicStream, request);
 
             // TODO quicStream.pipeline().addFirst(new ReadTimeoutHandler(timeout, TimeUnit.SECONDS));
 
@@ -48,12 +47,12 @@ public class RelayService {
 
             relayRequest.writeAndFlush(DataHandler.writeToken(IPFS.STREAM_PROTOCOL));
             relayRequest.writeAndFlush(DataHandler.writeToken(IPFS.RELAY_PROTOCOL));
+            relayRequest.writeAndFlush(DataHandler.encode(message));
+            relayRequest.closeOutputStream();
 
-            activation.thenCompose(s -> request);
 
             Relay.CircuitRelay msg = request.get(timeout, TimeUnit.SECONDS);
 
-            relayRequest.close();
             // TODO quicStream.close();
 
             LogUtils.info(TAG, "Request took " + (System.currentTimeMillis() - time));
@@ -82,23 +81,21 @@ public class RelayService {
                 .setDstPeer(dest)
                 .build();
 
-        QuicClientConnection quicChannel = conn.channel();
+        QuicClientConnection quicClientConnection = conn.channel();
         long time = System.currentTimeMillis();
 
         CompletableFuture<Relay.CircuitRelay> request = new CompletableFuture<>();
-        CompletableFuture<Void> activation = new CompletableFuture<>();
 
         try {
-            QuicStream quicStream = quicChannel.createStream(true);
+            QuicStream quicStream = quicClientConnection.createStream(true);
 
-            RelayRequest relayRequest = new RelayRequest(conn, quicStream, activation, request, message);
+            RelayRequest relayRequest = new RelayRequest(conn, quicStream, request);
 
             // TODO streamChannel.updatePriority(new QuicStreamPriority(IPFS.PRIORITY_URGENT, false));
             relayRequest.writeAndFlush(DataHandler.writeToken(IPFS.STREAM_PROTOCOL));
             relayRequest.writeAndFlush(DataHandler.writeToken(IPFS.RELAY_PROTOCOL));
-
-
-            activation.thenCompose(s -> request);
+            relayRequest.writeAndFlush(DataHandler.encode(message));
+            relayRequest.closeOutputStream();
 
             Relay.CircuitRelay msg = request.get(timeout, TimeUnit.SECONDS);
             LogUtils.info(TAG, "Request took " + (System.currentTimeMillis() - time));
@@ -106,13 +103,15 @@ public class RelayService {
 
 
             if (msg.getType() != Relay.CircuitRelay.Type.STATUS) {
-                relayRequest.close();
+                relayRequest.closeInputStream();
+                relayRequest.closeOutputStream();
                 // TODO quicStream.close();
                 return null;
             }
 
             if (msg.getCode() != Relay.CircuitRelay.Status.SUCCESS) {
-                relayRequest.close();
+                relayRequest.closeInputStream();
+                relayRequest.closeOutputStream();
                 // TODO quicStream.close();
                 return null;
             }

@@ -139,7 +139,7 @@ public class BitSwap implements Interface {
             // TODO
             BitSwapSend stream = getStream(closeable, conn, priority);
             stream.writeAndFlush(DataHandler.encode(message.ToProtoV1()));
-            stream.close();
+            stream.closeOutputStream();
             //}
             success = true;
         } catch (ClosedException | ConnectionIssue exception) {

@@ -21,29 +21,21 @@ public class RelayRequest extends ConnectionChannelHandler {
     private static final String TAG = RelayRequest.class.getSimpleName();
     @NonNull
     private final CompletableFuture<Relay.CircuitRelay> request;
-    @NonNull
-    private final CompletableFuture<Void> activation;
-    @NonNull
-    private final MessageLite messageLite;
-    private DataHandler reader = new DataHandler(4096);
+
+    private final DataHandler reader = new DataHandler(4096);
 
     public RelayRequest(@NonNull Connection connection,
                         @NonNull QuicStream quicStream,
-                        @NonNull CompletableFuture<Void> activation,
-                        @NonNull CompletableFuture<relay.pb.Relay.CircuitRelay> request,
-                        @NonNull MessageLite messageLite) {
+                        @NonNull CompletableFuture<relay.pb.Relay.CircuitRelay> request) {
         super(connection, quicStream);
         this.request = request;
-        this.activation = activation;
-        this.messageLite = messageLite;
     }
 
 
     public void exceptionCaught(@NonNull Connection connection, @NonNull Throwable cause) {
         LogUtils.error(TAG, "" + cause);
         request.completeExceptionally(cause);
-        activation.completeExceptionally(cause);
-        connection.disconnect();
+        closeInputStream();
     }
 
 
@@ -55,10 +47,9 @@ public class RelayRequest extends ConnectionChannelHandler {
         if (reader.isDone()) {
 
             for (String token : reader.getTokens()) {
-                LogUtils.error(TAG, "request " + token);
+                LogUtils.verbose(TAG, "request " + token);
                 if (Objects.equals(token, IPFS.RELAY_PROTOCOL)) {
-                    writeAndFlush(DataHandler.encode(messageLite));
-                    activation.complete(null);
+                    LogUtils.debug(TAG, "request " + token);
                 } else if (!Objects.equals(token, IPFS.STREAM_PROTOCOL)) {
                     throw new ProtocolIssue();
                 }
@@ -68,8 +59,8 @@ public class RelayRequest extends ConnectionChannelHandler {
 
             if (message != null) {
                 request.complete(Relay.CircuitRelay.parseFrom(message));
+                closeInputStream();
             }
-            reader = new DataHandler(4096);
         } else {
             LogUtils.debug(TAG, "iteration " + reader.hasRead() + " "
                     + reader.expectedBytes() + " " +

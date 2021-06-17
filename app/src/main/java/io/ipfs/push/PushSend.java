@@ -19,7 +19,7 @@ public class PushSend extends ConnectionChannelHandler {
     private static final String TAG = PushSend.class.getSimpleName();
 
     @NonNull
-    private final DataHandler reader = new DataHandler(1000);
+    private final DataHandler reader = new DataHandler(IPFS.PROTOCOL_READER_LIMIT);
 
     @NonNull
     private final CompletableFuture<Void> done;
@@ -35,8 +35,7 @@ public class PushSend extends ConnectionChannelHandler {
     public void exceptionCaught(@NonNull Connection connection, @NonNull Throwable cause) {
         LogUtils.error(TAG, "" + cause);
         done.completeExceptionally(cause);
-        close();
-        connection.disconnect();
+        closeInputStream();
     }
 
     public void channelRead0(@NonNull Connection connection, @NonNull byte[] msg)

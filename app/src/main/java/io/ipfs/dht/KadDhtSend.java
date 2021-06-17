@@ -20,27 +20,22 @@ public class KadDhtSend extends ConnectionChannelHandler {
     private static final String TAG = KadDhtSend.class.getSimpleName();
 
     @NonNull
-    private final DataHandler reader = new DataHandler(1000);
+    private final DataHandler reader = new DataHandler(IPFS.PROTOCOL_READER_LIMIT);
 
     @NonNull
     private final CompletableFuture<Void> stream;
-    @NonNull
-    private final Dht.Message message;
 
     public KadDhtSend(@NonNull Connection connection,
                       @NonNull QuicStream quicStream,
-                      @NonNull CompletableFuture<Void> stream,
-                      @NonNull Dht.Message message) {
+                      @NonNull CompletableFuture<Void> stream) {
         super(connection, quicStream);
         this.stream = stream;
-        this.message = message;
     }
 
     public void exceptionCaught(@NonNull Connection connection, @NonNull Throwable cause) {
         LogUtils.debug(TAG, "" + cause);
         stream.completeExceptionally(cause);
-        close();
-        connection.disconnect();
+        closeInputStream();
     }
 
     public void channelRead0(@NonNull Connection connection, @NonNull byte[] msg)
@@ -51,8 +46,6 @@ public class KadDhtSend extends ConnectionChannelHandler {
         if (reader.isDone()) {
             for (String received : reader.getTokens()) {
                 if (Objects.equals(received, IPFS.DHT_PROTOCOL)) {
-                    writeAndFlush(DataHandler.encode(message));
-                    closeOutputStream();
                     stream.complete(null);
                 } else if (!Objects.equals(received, IPFS.STREAM_PROTOCOL)) {
                     throw new ProtocolIssue();

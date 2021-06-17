@@ -19,23 +19,20 @@ public class IdentityRequest extends ConnectionChannelHandler {
     private static final String TAG = IdentityRequest.class.getSimpleName();
     @NonNull
     private final CompletableFuture<IdentifyOuterClass.Identify> request;
-    @NonNull
-    private final CompletableFuture<Void> activation;
+
     private DataHandler reader = new DataHandler(25000);
 
     public IdentityRequest(@NonNull Connection connection,
                            @NonNull QuicStream quicStream,
-                           @NonNull CompletableFuture<Void> activation,
                            @NonNull CompletableFuture<IdentifyOuterClass.Identify> request) {
         super(connection, quicStream);
         this.request = request;
-        this.activation = activation;
+
     }
 
     public void exceptionCaught(@NonNull Connection connection, @NonNull Throwable cause) {
         LogUtils.error(TAG, "" + cause);
         request.completeExceptionally(cause);
-        activation.completeExceptionally(cause);
         connection.disconnect();
     }
 
@@ -49,7 +46,7 @@ public class IdentityRequest extends ConnectionChannelHandler {
             for (String token : reader.getTokens()) {
                 LogUtils.verbose(TAG, "request " + token);
                 if (Objects.equals(token, IPFS.IDENTITY_PROTOCOL)) {
-                    activation.complete(null);
+                    LogUtils.debug(TAG, "request " + token);
                 } else if (!Objects.equals(token, IPFS.STREAM_PROTOCOL)) {
                     throw new ProtocolIssue();
                 }
@@ -59,7 +56,7 @@ public class IdentityRequest extends ConnectionChannelHandler {
 
             if (message != null) {
                 request.complete(IdentifyOuterClass.Identify.parseFrom(message));
-                close();
+                closeInputStream();
             }
             reader = new DataHandler(25000);
         } else {

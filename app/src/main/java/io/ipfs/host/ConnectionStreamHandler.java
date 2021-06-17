@@ -31,11 +31,8 @@ public class ConnectionStreamHandler extends ConnectionChannelHandler {
 
     public void exceptionCaught(@NonNull Connection connection, @NonNull Throwable cause) {
         LogUtils.debug(TAG, "" + cause);
-        try {
-            close();
-        } catch (Throwable throwable) {
-            LogUtils.error(TAG, throwable);
-        }
+        closeInputStream();
+        closeOutputStream();
     }
 
 
@@ -63,10 +60,12 @@ public class ConnectionStreamHandler extends ConnectionChannelHandler {
                         protocol.set(token);
                         if (host.gatePeer(connection.remoteId())) {
                             writeAndFlush(DataHandler.writeToken(IPFS.NA));
-                            close();
+                            closeInputStream();
+                            closeOutputStream();
                             return;
                         } else {
                             writeAndFlush(DataHandler.writeToken(IPFS.BITSWAP_PROTOCOL));
+                            closeOutputStream();
                         }
                         time = System.currentTimeMillis();
                         break;
@@ -76,13 +75,15 @@ public class ConnectionStreamHandler extends ConnectionChannelHandler {
                         IdentifyOuterClass.Identify response =
                                 host.createIdentity(connection.remoteAddress());
                         writeAndFlush(DataHandler.encode(response));
-                        close();
+                        closeInputStream();
+                        closeOutputStream();
                         return;
                     default:
                         LogUtils.debug(TAG, "Ignore " + token + " Connection " + connection +
                                 " StreamId " + streamId + " PeerId " + connection.remoteId());
                         writeAndFlush(DataHandler.writeToken(IPFS.NA));
-                        close();
+                        closeInputStream();
+                        closeOutputStream();
                         return;
                 }
             }
@@ -102,11 +103,11 @@ public class ConnectionStreamHandler extends ConnectionChannelHandler {
                                     " Connection " + connection + " StreamId " + streamId +
                                     " PeerId " + connection.remoteId() +
                                     " Protected " + host.isProtected(connection.remoteId()));
-                            close();
+                            closeInputStream();
                             break;
                         case IPFS.PUSH_PROTOCOL:
                             host.push(connection.remoteId(), message);
-                            close();
+                            closeInputStream();
                             break;
                         default:
                             throw new Exception("unknown protocol");

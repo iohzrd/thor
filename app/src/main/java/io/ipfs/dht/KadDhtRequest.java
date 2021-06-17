@@ -23,29 +23,20 @@ public class KadDhtRequest extends ConnectionChannelHandler {
     private static final String TAG = KadDhtRequest.class.getSimpleName();
     @NonNull
     private final CompletableFuture<Dht.Message> request;
-    @NonNull
-    private final CompletableFuture<Void> activation;
-    @NonNull
-    private final MessageLite messageLite;
     private long start = System.currentTimeMillis();
-    private DataHandler reader = new DataHandler(IPFS.PROTOCOL_READER_LIMIT);
+    private DataHandler reader = new DataHandler(IPFS.BLOCK_SIZE_LIMIT);
 
     public KadDhtRequest(@NonNull Connection connection,
                          @NonNull QuicStream quicStream,
-                         @NonNull CompletableFuture<Void> activation,
-                         @NonNull CompletableFuture<Dht.Message> request,
-                         @NonNull MessageLite messageLite) {
+                         @NonNull CompletableFuture<Dht.Message> request) {
         super(connection, quicStream);
         this.request = request;
-        this.activation = activation;
-        this.messageLite = messageLite;
     }
 
     public void exceptionCaught(@NonNull Connection connection, @NonNull Throwable cause) {
-        LogUtils.debug(TAG, "" + cause);
+        LogUtils.error(TAG, "" + cause);
         request.completeExceptionally(cause);
-        activation.completeExceptionally(cause);
-        connection.disconnect();
+        closeInputStream();
     }
 
     public void channelRead0(@NonNull Connection connection, @NonNull byte[] msg)
@@ -59,10 +50,6 @@ public class KadDhtRequest extends ConnectionChannelHandler {
                 LogUtils.debug(TAG, "request " + token);
                 if (Objects.equals(token, IPFS.DHT_PROTOCOL)) {
                     start = System.currentTimeMillis();
-                    writeAndFlush(DataHandler.encode(messageLite));
-                    // TODO addListener(QuicStreamChannel.SHUTDOWN_OUTPUT).get());
-                    // closeOutputStream();
-                    activation.complete(null);
                 } else if (!Objects.equals(token, IPFS.STREAM_PROTOCOL)) {
                     throw new ProtocolIssue();
                 }
@@ -72,12 +59,12 @@ public class KadDhtRequest extends ConnectionChannelHandler {
 
             if (message != null) {
                 request.complete(Dht.Message.parseFrom(message));
-                close();
+                closeInputStream();
                 LogUtils.debug(TAG, "done " + (System.currentTimeMillis() - start) + " "
                         + connection.remoteAddress());
                 return;
             }
-            reader = new DataHandler(IPFS.MESSAGE_SIZE_MAX);
+
         } else {
             LogUtils.debug(TAG, "iteration " + reader.hasRead() + " "
                     + reader.expectedBytes() + " "
