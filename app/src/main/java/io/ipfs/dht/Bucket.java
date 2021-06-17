@@ -11,12 +11,12 @@ import io.LogUtils;
 import io.ipfs.host.PeerId;
 
 public class Bucket {
-
+    private static final String TAG = Bucket.class.getSimpleName();
     private final ConcurrentHashMap<PeerId, PeerInfo> peers = new ConcurrentHashMap<>();
 
-    @Nullable
-    public PeerInfo getPeer(@NonNull PeerId p) {
-        return peers.get(p);
+
+    public boolean containsPeer(@NonNull PeerId peerId) {
+        return peers.containsKey(peerId);
     }
 
 
@@ -55,15 +55,13 @@ public class Bucket {
                 '}';
     }
 
-    public void addPeer(@NonNull PeerId p, boolean isReplaceable) {
-        Bucket.PeerInfo peerInfo = new Bucket.PeerInfo(p, isReplaceable);
-
-        if (LogUtils.isDebug()) {
-            if (peers.containsKey(p)) {
-                throw new RuntimeException("invalid state");
+    public void addPeer(@NonNull PeerId peerId, boolean isReplaceable) {
+        synchronized (TAG.intern()) {
+            if (!peers.containsKey(peerId)) {
+                Bucket.PeerInfo peerInfo = new Bucket.PeerInfo(peerId, isReplaceable);
+                peers.put(peerId, peerInfo);
             }
         }
-        peers.put(p, peerInfo);
     }
 
     public boolean removePeer(@NonNull PeerId p) {

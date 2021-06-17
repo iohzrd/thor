@@ -40,4 +40,6 @@ public interface QuicConnection {
     void close(QuicConstants.TransportErrorCode applicationError, String errorReason);
 
     Statistics getStats();
+
+    boolean isConnected();
 }

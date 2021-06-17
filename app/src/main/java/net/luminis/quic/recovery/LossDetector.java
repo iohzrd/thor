@@ -23,6 +23,7 @@ import net.luminis.quic.frame.AckFrame;
 import net.luminis.quic.packet.PacketInfo;
 import net.luminis.quic.packet.QuicPacket;
 
+import java.net.ProtocolException;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -93,7 +94,10 @@ public class LossDetector {
         // Possible optimization: everything that follows only if newlyAcked not empty
 
         int ackedAckEliciting = (int) newlyAcked.stream().filter(packetStatus -> packetStatus.packet().isAckEliciting()).count();
-        assert ackedAckEliciting <= ackElicitingInFlight.get();
+        //assert ackedAckEliciting <= ackElicitingInFlight.get();
+        if(ackedAckEliciting > ackElicitingInFlight.get()){
+            throw new RuntimeException("fdsafde");
+        }
         ackElicitingInFlight.getAndAdd(-1 * ackedAckEliciting);
 
         congestionController.registerAcked(filterInFlight(newlyAcked));

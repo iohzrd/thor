@@ -37,8 +37,9 @@ public class KadDhtSend extends ConnectionChannelHandler {
     }
 
     public void exceptionCaught(@NonNull Connection connection, @NonNull Throwable cause) {
-        LogUtils.error(TAG, " " + cause);
+        LogUtils.debug(TAG, "" + cause);
         stream.completeExceptionally(cause);
+        close();
         connection.disconnect();
     }
 
@@ -51,6 +52,7 @@ public class KadDhtSend extends ConnectionChannelHandler {
             for (String received : reader.getTokens()) {
                 if (Objects.equals(received, IPFS.DHT_PROTOCOL)) {
                     writeAndFlush(DataHandler.encode(message));
+                    closeOutputStream();
                     stream.complete(null);
                 } else if (!Objects.equals(received, IPFS.STREAM_PROTOCOL)) {
                     throw new ProtocolIssue();

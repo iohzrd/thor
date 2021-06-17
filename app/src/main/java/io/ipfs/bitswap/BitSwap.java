@@ -136,9 +136,10 @@ public class BitSwap implements Interface {
             if (closeable.isClosed()) {
                 throw new ClosedException();
             }
-
+            // TODO
             BitSwapSend stream = getStream(closeable, conn, priority);
             stream.writeAndFlush(DataHandler.encode(message.ToProtoV1()));
+            stream.close();
             //}
             success = true;
         } catch (ClosedException | ConnectionIssue exception) {
@@ -173,7 +174,7 @@ public class BitSwap implements Interface {
 
         try {
             QuicStream quicStream = quicClientConnection.createStream(true);
-            BitSwapSend bitSwapSend = new BitSwapSend(connection, quicStream, stream, this);
+            BitSwapSend bitSwapSend = new BitSwapSend(connection, quicStream, stream);
 
             // TODO streamChannel.updatePriority(new QuicStreamPriority(priority, false));
 
@@ -199,14 +200,15 @@ public class BitSwap implements Interface {
 
         QuicClientConnection quicChannel = conn.channel();
 
+        /*
         BitSwapSend stored = getStream(quicChannel);
         if (stored != null) {
-            if (true /* TODO stored.isOpen() && stored.isWritable()*/) {
+            if (true  TODO stored.isOpen() && stored.isWritable() ) {
                 return stored;
             } else {
                 removeStream(quicChannel);
             }
-        }
+        }*/
 
         CompletableFuture<BitSwapSend> ctrl = getStream(conn, quicChannel, priority);
 
@@ -224,7 +226,7 @@ public class BitSwap implements Interface {
         BitSwapSend stream = ctrl.get();
 
         Objects.requireNonNull(stream);
-        putStream(quicChannel, stream);
+        //putStream(quicChannel, stream);
         return stream;
     }
 

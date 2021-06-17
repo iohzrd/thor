@@ -9,6 +9,7 @@ import com.google.protobuf.MessageLite;
 
 import net.luminis.quic.QuicClientConnection;
 import net.luminis.quic.QuicClientConnectionImpl;
+import net.luminis.quic.TransportParameters;
 import net.luminis.quic.Version;
 import net.luminis.quic.log.SysOutLogger;
 import net.luminis.quic.server.Server;
@@ -244,7 +245,7 @@ public class LiteHost implements BitSwapReceiver {
         // first simple solution (test if conn is open)
         List<Connection> cones = new ArrayList<>();
         for (Connection conn : connections.values()) {
-            if (true /* TODO conn.channel().isOpen()*/) {
+            if (conn.isConnected()) {
                 cones.add(conn);
             }
         }
@@ -348,6 +349,7 @@ public class LiteHost implements BitSwapReceiver {
                 try {
                     connectionAtomicReference.set(connect(closeable, peerId1, timeout));
                     done.set(true);
+                } catch (ConnectionIssue ignore) {
                 } catch (Throwable throwable) {
                     LogUtils.error(TAG, throwable);
                 }
@@ -386,10 +388,14 @@ public class LiteHost implements BitSwapReceiver {
 
     public boolean isConnected(@NonNull PeerId id) {
         try {
-            return connections.get(id) != null;
+            Connection connection = connections.get(id);
+            if(connection != null) {
+                return connection.isConnected();
+            }
         } catch (Throwable throwable) {
-            return false;
+           LogUtils.error(TAG, throwable);
         }
+        return false;
     }
 
     @NonNull
@@ -551,7 +557,7 @@ public class LiteHost implements BitSwapReceiver {
             }
 
             Connection connection = connections.get(peerId);
-            if (connection != null) {
+            if (connection != null && connection.isConnected()) {
                 return connection;
             }
 
@@ -583,11 +589,8 @@ public class LiteHost implements BitSwapReceiver {
                     QuicClientConnectionImpl quicClientConnection = dial(address);
                     Objects.requireNonNull(quicClientConnection);
                     quicClientConnection.connect(timeout * 1000, IPFS.APRN,
-                            null, null);
-
-                    // TODO quicClientConnection.setMaxAllowedBidirectionalStreams();
-                    // TODO quicClientConnection.setMaxAllowedUnidirectionalStreams();
-
+                            new TransportParameters(IPFS.GRACE_PERIOD, IPFS.MESSAGE_SIZE_MAX,
+                                    IPFS.HIGH_WATER, IPFS.HIGH_WATER), null);
 
                     final Connection conn = new LiteConnection(quicClientConnection, peerId, address);
                     Objects.requireNonNull(conn);
@@ -608,7 +611,7 @@ public class LiteHost implements BitSwapReceiver {
                         failure++;
                     }
 
-                    LogUtils.error(TAG, "Run " + run + " Success " + success + " " +
+                    LogUtils.debug(TAG, "Run " + run + " Success " + success + " " +
                             "Failure " + failure + " " +
                             address + "/p2p/" + peerId.toBase58() + " " +
                             (System.currentTimeMillis() - start));
@@ -706,7 +709,15 @@ public class LiteHost implements BitSwapReceiver {
 
 
     public void shutdown() {
-        // TODO implement server
+        try {
+            if (server != null) {
+                server.shutdown();
+            }
+        } catch (Throwable throwable){
+            LogUtils.error(TAG, throwable);
+        } finally {
+            server = null;
+        }
     }
 
 
@@ -844,11 +855,17 @@ public class LiteHost implements BitSwapReceiver {
         public void disconnect() {
             try {
                 if (!isProtected(remoteId())) {
+                    removeConnection(this);
                     channel.close();
                 }
             } catch (Exception exception) {
                 LogUtils.error(TAG, exception);
             }
+        }
+
+        @Override
+        public boolean isConnected() {
+            return channel.isConnected();
         }
 
 

@@ -96,7 +96,7 @@ public class IpfsRelayTest {
         }
     }
 
-    // TODO @Test
+    @Test
     public void test_relay_dialPeer() {
         IPFS ipfs = TestEnv.getTestInstance(context);
 

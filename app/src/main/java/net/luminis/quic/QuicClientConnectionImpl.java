@@ -59,6 +59,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import io.LogUtils;
+
 import static net.luminis.quic.EarlyDataStatus.*;
 import static net.luminis.quic.EncryptionLevel.*;
 import static net.luminis.quic.QuicConstants.TransportErrorCode.PROTOCOL_VIOLATION;
@@ -461,7 +463,11 @@ public class QuicClientConnectionImpl extends QuicConnectionImpl implements Quic
     @Override
     public ProcessResult process(VersionNegotiationPacket vnPacket, Instant time) {
         if (!ignoreVersionNegotiation && !vnPacket.getServerSupportedVersions().contains(quicVersion)) {
-            log.info("Server doesn't support " + quicVersion + ", but only: " + ((VersionNegotiationPacket) vnPacket).getServerSupportedVersions().stream().map(v -> v.toString()).collect(Collectors.joining(", ")));
+            LogUtils.error(getClass().getSimpleName(),
+                    "Server doesn't support " + quicVersion + ", but only: " +
+                            ((VersionNegotiationPacket) vnPacket).getServerSupportedVersions().
+                                    stream().map(v -> v.toString()).
+                                    collect(Collectors.joining(", ")));
             throw new VersionNegotiationFailure();
         }
         else {

@@ -20,6 +20,8 @@ package net.luminis.tls;
 
 import at.favre.lib.crypto.HKDF;
 import at.favre.lib.crypto.HkdfMacFactory;
+import io.LogUtils;
+import io.ipfs.crypto.PrivKey;
 
 import javax.crypto.*;
 import javax.crypto.spec.GCMParameterSpec;
@@ -28,6 +30,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.security.*;
 import java.security.interfaces.ECPublicKey;
+import java.util.Objects;
 //import java.security.interfaces.XECPublicKey;
 
 import static net.luminis.tls.util.ByteUtils.bytesToHex;
@@ -68,7 +71,9 @@ public class TlsState {
     private final TranscriptHash transcriptHash;
     private byte[] sharedSecret;
 
-    public TlsState(TranscriptHash transcriptHash, byte[] psk) {
+    public TlsState(PrivateKey privKey, TranscriptHash transcriptHash, byte[] psk) {
+        Objects.requireNonNull(privKey);
+        this.clientPrivateKey = privKey;
         this.psk = psk;
         this.transcriptHash = transcriptHash;
 
@@ -95,8 +100,8 @@ public class TlsState {
         computeEarlySecret(psk);
     }
 
-    public TlsState(TranscriptHash transcriptHash) {
-        this(transcriptHash, null);
+    public TlsState(PrivateKey privKey, TranscriptHash transcriptHash) {
+        this(privKey, transcriptHash, null);
     }
 
     private byte[] computeEarlySecret(byte[] ikm) {
@@ -144,6 +149,7 @@ public class TlsState {
             else {
                 throw new RuntimeException("Unsupported key type");
             }
+            Objects.requireNonNull(clientPrivateKey);
 
             keyAgreement.init(clientPrivateKey);
             keyAgreement.doPhase(serverSharedKey, true);
@@ -152,6 +158,7 @@ public class TlsState {
             Logger.debug("Shared key: " + bytesToHex(sharedSecret));
         }
         catch (NoSuchAlgorithmException | InvalidKeyException e) {
+            LogUtils.error(getClass().getSimpleName(), clientPrivateKey.getAlgorithm());
             throw new RuntimeException("Unsupported crypto: " + e);
         }
     }

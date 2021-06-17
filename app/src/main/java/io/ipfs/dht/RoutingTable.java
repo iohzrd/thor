@@ -109,22 +109,21 @@ public class RoutingTable {
         }
     }
 
-    public void addPeer(@NonNull PeerId p, boolean isReplaceable) {
+    public void addPeer(@NonNull PeerId peerId, boolean isReplaceable) {
 
         try {
-            int bucketID = bucketIdForPeer(p);
+            int bucketID = bucketIdForPeer(peerId);
             Bucket bucket = getBucket(bucketID);
 
             // peer already exists in the Routing Table.
-            Bucket.PeerInfo peer = bucket.getPeer(p);
-            if (peer != null) {
+            if (bucket.containsPeer(peerId)) {
                 return;
             }
 
 
-            // We have enough space in the bucket (whether spawned or grouped).
+            // We have enough space in the bucket
             if (bucket.size() < bucketSize) {
-                bucket.addPeer(p, isReplaceable);
+                bucket.addPeer(peerId, isReplaceable);
                 return;
             }
 
@@ -138,7 +137,7 @@ public class RoutingTable {
             if (replaceablePeer != null) {
                 // let's evict it and add the new peer
                 if (removePeer(replaceablePeer)) {
-                    bucket.addPeer(p, isReplaceable);
+                    bucket.addPeer(peerId, isReplaceable);
                 }
             }
         } finally {

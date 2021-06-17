@@ -392,7 +392,7 @@ public class KadDht implements Routing {
     }
 
 
-    private Dht.Message sendRequest(@NonNull Closeable closeable, @NonNull PeerId p,
+    private Dht.Message sendRequest(@NonNull Closeable closeable, @NonNull PeerId peerId,
                                     @NonNull Dht.Message message)
             throws ClosedException, ProtocolIssue, TimeoutIssue, ConnectionIssue {
 
@@ -402,7 +402,7 @@ public class KadDht implements Routing {
         Connection conn = null;
 
         try {
-            conn = host.connect(closeable, p, IPFS.CONNECT_TIMEOUT);
+            conn = host.connect(closeable, peerId, IPFS.CONNECT_TIMEOUT);
 
             if (closeable.isClosed()) {
                 throw new ClosedException();
@@ -418,7 +418,7 @@ public class KadDht implements Routing {
             Dht.Message msg = request.get(IPFS.DHT_REQUEST_READ_TIMEOUT, TimeUnit.SECONDS);
             Objects.requireNonNull(msg);
             success = true;
-            p.setLatency(System.currentTimeMillis() - time);
+            peerId.setLatency(System.currentTimeMillis() - time);
 
             return msg;
 

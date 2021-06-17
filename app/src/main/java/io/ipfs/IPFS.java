@@ -150,7 +150,7 @@ public class IPFS {
 
     public static final int KAD_DHT_BUCKET_SIZE = 20;
     public static final int KAD_DHT_BETA = 30;
-    public static final int CONNECT_TIMEOUT = 10;
+    public static final int CONNECT_TIMEOUT = 5;
     public static final int BITSWAP_LOAD_PROVIDERS_REFRESH = 10000;
     public static final long DHT_REQUEST_READ_TIMEOUT = 10;
     public static final long IPNS_DURATION = 6; // 6 hours duration
@@ -181,7 +181,7 @@ public class IPFS {
     //                            = ( 8192 / 47 )
     //                            = (approximately) 174
     public static final int LINKS_PER_BLOCK = roughLinkBlockSize / roughLinkSize;
-    public static LiteHost HOST; // TODO
+
     private static IPFS INSTANCE = null;
 
     @NonNull
@@ -221,7 +221,6 @@ public class IPFS {
         BlockStore blockstore = BlockStore.createBlockStore(blocks);
         this.host = new LiteHost(selfSignedCertificate, privateKey, blockstore, port, alpha);
 
-        HOST = host; // shitty hack
 
         if (IPFS.SERVER_ACTIVE) {
             this.host.start();
@@ -1147,7 +1146,7 @@ public class IPFS {
     public boolean swarmConnect(@NonNull PeerId peerId, @NonNull Closeable closeable) {
         try {
             host.connectTo(closeable, peerId, IPFS.CONNECT_TIMEOUT);
-        } catch (ClosedException ignore) {
+        } catch (ClosedException | ConnectionIssue ignore) {
             // ignore
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);

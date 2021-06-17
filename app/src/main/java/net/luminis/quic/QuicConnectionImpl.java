@@ -42,9 +42,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
+
+import io.LogUtils;
 
 import static net.luminis.quic.EncryptionLevel.App;
 import static net.luminis.quic.EncryptionLevel.Initial;
@@ -93,6 +96,11 @@ public abstract class QuicConnectionImpl implements QuicConnection, FrameProcess
     protected long largestPacketNumber;
 
     protected volatile Status connectionState;
+
+
+    public boolean isConnected(){
+        return Status.Connected == connectionState;
+    }
 
     private RateLimiter closeFramesSendRateLimiter;
 
@@ -177,6 +185,7 @@ public abstract class QuicConnectionImpl implements QuicConnection, FrameProcess
                 getSender().packetProcessed(data.hasRemaining());
             }
             catch (DecryptionException | MissingKeysException cannotParse) {
+                LogUtils.error(getClass().getSimpleName(), cannotParse);
                 // https://tools.ietf.org/html/draft-ietf-quic-transport-24#section-12.2
                 // "if decryption fails (...), the receiver (...) MUST attempt to process the remaining packets."
                 int nrOfPacketBytes = data.position();
@@ -606,6 +615,7 @@ public abstract class QuicConnectionImpl implements QuicConnection, FrameProcess
         }
     }
 
+
     /**
      * Abort connection due to a local fatal error. No message is sent to peer; just inform application it's all over.
      * @param error  the exception that caused the trouble
@@ -638,8 +648,11 @@ public abstract class QuicConnectionImpl implements QuicConnection, FrameProcess
         immediateCloseWithError(App, applicationError.value, errorReason);
     }
 
+    private static final  ScheduledExecutorService closers =
+            Executors.newScheduledThreadPool(16,
+                    new DaemonThreadFactory("scheduled"));
     private void schedule(Runnable command, int delay, TimeUnit unit) {
-        Executors.newScheduledThreadPool(1, new DaemonThreadFactory("scheduled")).schedule(command, delay, unit);
+        closers.schedule(command, delay, unit);
     }
 
     @Override

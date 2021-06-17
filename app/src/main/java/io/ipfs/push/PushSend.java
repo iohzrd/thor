@@ -33,8 +33,9 @@ public class PushSend extends ConnectionChannelHandler {
 
 
     public void exceptionCaught(@NonNull Connection connection, @NonNull Throwable cause) {
-        LogUtils.error(TAG, " " + cause);
+        LogUtils.error(TAG, "" + cause);
         done.completeExceptionally(cause);
+        close();
         connection.disconnect();
     }
 

@@ -391,4 +391,8 @@ public class Server implements ServerConnectionRegistry {
                     + ByteUtils.bytesToHex(connectionId));
         }
     }
+
+    public void shutdown() {
+        // TODO
+    }
 }

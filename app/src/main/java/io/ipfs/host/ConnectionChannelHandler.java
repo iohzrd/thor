@@ -7,20 +7,26 @@ import net.luminis.quic.stream.QuicStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.ProtocolException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
+import io.LogUtils;
+import io.ipfs.core.ConnectionIssue;
+
 
 public abstract class ConnectionChannelHandler {
-
+    private static final String TAG = ConnectionChannelHandler.class.getSimpleName();
     private final Connection connection;
     private final InputStream inputStream;
     private final OutputStream outputStream;
+    protected final int streamId;
 
     public ConnectionChannelHandler(@NonNull Connection connection, @NonNull QuicStream quicStream) {
         this.connection = connection;
         this.inputStream = quicStream.getInputStream();
         this.outputStream = quicStream.getOutputStream();
+        this.streamId = quicStream.getStreamId();
         new Thread(this::reader).start();
     }
 
@@ -35,6 +41,9 @@ public abstract class ConnectionChannelHandler {
                 buf.rewind();
             }
 
+        } catch (ProtocolException protocolException) {
+            connection.disconnect();
+            exceptionCaught(connection, new ConnectionIssue());
         } catch (Throwable throwable) {
             exceptionCaught(connection, throwable);
         }
@@ -49,9 +58,17 @@ public abstract class ConnectionChannelHandler {
         outputStream.flush();
     }
 
-    public void close() throws IOException {
-        closeInputStream();
-        closeOutputStream();
+    public void close() {
+        try {
+            closeInputStream();
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable);
+        }
+        try {
+            closeOutputStream();
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable);
+        }
     }
 
     public void closeInputStream() throws IOException {

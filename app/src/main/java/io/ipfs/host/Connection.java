@@ -14,4 +14,5 @@ public interface Connection {
 
     void disconnect();
 
+    boolean isConnected();
 }

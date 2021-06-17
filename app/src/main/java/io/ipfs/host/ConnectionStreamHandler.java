@@ -25,12 +25,12 @@ public class ConnectionStreamHandler extends ConnectionChannelHandler {
                                    @NonNull LiteHost host) {
         super(connection, quicStream);
         this.host = host;
-
+        LogUtils.debug(TAG, "Instance" + " StreamId " + streamId + " PeerId " + connection.remoteId());
     }
 
 
     public void exceptionCaught(@NonNull Connection connection, @NonNull Throwable cause) {
-        LogUtils.error(TAG, cause.getClass().getSimpleName());
+        LogUtils.debug(TAG, "" + cause);
         try {
             close();
         } catch (Throwable throwable) {
@@ -46,18 +46,21 @@ public class ConnectionStreamHandler extends ConnectionChannelHandler {
         if (reader.isDone()) {
             for (String token : reader.getTokens()) {
 
+                // TODO check token happens only once
+                LogUtils.debug(TAG, "Token " + token + " Connection " + connection +
+                        " StreamId " + streamId + " PeerId " + connection.remoteId());
 
-                LogUtils.error(TAG, "Token " + token + " Connection " + connection + " StreamId " + ""
-                        + " PeerId " + connection.remoteId());
-                protocol.set(token);
                 switch (token) {
                     case IPFS.STREAM_PROTOCOL:
                         writeAndFlush(DataHandler.writeToken(IPFS.STREAM_PROTOCOL));
                         break;
                     case IPFS.PUSH_PROTOCOL:
+                        protocol.set(token);
                         writeAndFlush(DataHandler.writeToken(IPFS.PUSH_PROTOCOL));
+                        closeOutputStream();
                         break;
                     case IPFS.BITSWAP_PROTOCOL:
+                        protocol.set(token);
                         if (host.gatePeer(connection.remoteId())) {
                             writeAndFlush(DataHandler.writeToken(IPFS.NA));
                             close();
@@ -77,11 +80,9 @@ public class ConnectionStreamHandler extends ConnectionChannelHandler {
                         return;
                     default:
                         LogUtils.debug(TAG, "Ignore " + token + " Connection " + connection +
-                                " StreamId todo " + " PeerId " + connection.remoteId());
+                                " StreamId " + streamId + " PeerId " + connection.remoteId());
                         writeAndFlush(DataHandler.writeToken(IPFS.NA));
                         close();
-
-                        connection.disconnect();// todo rethink
                         return;
                 }
             }
@@ -97,22 +98,27 @@ public class ConnectionStreamHandler extends ConnectionChannelHandler {
                                     connection.remoteId(),
                                     MessageOuterClass.Message.parseFrom(message));
 
-                            LogUtils.debug(TAG, "Time " + (System.currentTimeMillis() - time) +
-                                    " Connection " + connection + " StreamId todo" +
+                            LogUtils.error(TAG, "Time " + (System.currentTimeMillis() - time) +
+                                    " Connection " + connection + " StreamId " + streamId +
                                     " PeerId " + connection.remoteId() +
                                     " Protected " + host.isProtected(connection.remoteId()));
+                            close();
                             break;
                         case IPFS.PUSH_PROTOCOL:
                             host.push(connection.remoteId(), message);
+                            close();
                             break;
                         default:
                             throw new Exception("unknown protocol");
                     }
+                } else {
+                    throw new Exception("unknown protocol");
                 }
             }
         } else {
-            LogUtils.error(TAG, "iteration listener " + msg.length + " "
-                    + reader.expectedBytes() + " " + connection.remoteAddress());
+            LogUtils.debug(TAG, "iteration " + protocol.get() + " " + reader.hasRead() + " "
+                    + reader.expectedBytes() + " " + connection.remoteAddress()
+                    + " StreamId " + streamId + " PeerId " + connection.remoteId());
         }
     }
 }

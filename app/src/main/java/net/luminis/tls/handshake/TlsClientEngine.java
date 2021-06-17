@@ -113,11 +113,11 @@ public class TlsClientEngine extends TlsEngine implements ClientMessageProcessor
         if (newSessionTicket != null) {
             extensions = new ArrayList<>();
             extensions.addAll(requestedExtensions);
-            state = new TlsState(transcriptHash, newSessionTicket.getPSK());
+            state = new TlsState(privateKey,transcriptHash, newSessionTicket.getPSK());
             extensions.add(new ClientHelloPreSharedKeyExtension(state, newSessionTicket));
         }
         else {
-            state = new TlsState(transcriptHash);
+            state = new TlsState(privateKey,transcriptHash);
         }
 
         clientHello = new ClientHello(serverName, publicKey, compatibilityMode, supportedCiphers, supportedSignatures, ecCurve, extensions);
@@ -126,7 +126,7 @@ public class TlsClientEngine extends TlsEngine implements ClientMessageProcessor
         status = Status.ClientHelloSent;
 
         transcriptHash.record(clientHello);
-        state.setOwnKey(privateKey);
+        //state.setOwnKey(privateKey);
         state.computeEarlyTrafficSecret();
 
         statusHandler.earlySecretsKnown();

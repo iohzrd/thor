@@ -123,11 +123,11 @@ public class TlsServerEngine extends TlsEngine implements ServerMessageProcessor
         statusHandler.extensionsReceived(clientHello.getExtensions());
 
         // Start building TLS state and prepare response
-        state = new TlsState(transcriptHash);
+        state = new TlsState(privateKey,transcriptHash);
         transcriptHash.record(clientHello);
 
         generateKeys(keyShareEntry.getNamedGroup());
-        state.setOwnKey(privateKey);
+       // state.setOwnKey(privateKey);
         state.computeEarlyTrafficSecret();
         statusHandler.earlySecretsKnown();
 

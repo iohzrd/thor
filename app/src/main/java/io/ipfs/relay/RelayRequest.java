@@ -40,7 +40,7 @@ public class RelayRequest extends ConnectionChannelHandler {
 
 
     public void exceptionCaught(@NonNull Connection connection, @NonNull Throwable cause) {
-        LogUtils.error(TAG, " " + cause);
+        LogUtils.error(TAG, "" + cause);
         request.completeExceptionally(cause);
         activation.completeExceptionally(cause);
         connection.disconnect();

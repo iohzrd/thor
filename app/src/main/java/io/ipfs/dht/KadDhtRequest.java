@@ -42,7 +42,7 @@ public class KadDhtRequest extends ConnectionChannelHandler {
     }
 
     public void exceptionCaught(@NonNull Connection connection, @NonNull Throwable cause) {
-        LogUtils.debug(TAG, connection.remoteId().toString() + " " + cause);
+        LogUtils.debug(TAG, "" + cause);
         request.completeExceptionally(cause);
         activation.completeExceptionally(cause);
         connection.disconnect();
