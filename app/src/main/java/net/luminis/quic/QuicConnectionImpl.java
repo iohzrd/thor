@@ -650,11 +650,9 @@ public abstract class QuicConnectionImpl implements QuicConnection, FrameProcess
         immediateCloseWithError(App, applicationError.value, errorReason);
     }
 
-    private static final  ScheduledExecutorService closers =
-            Executors.newScheduledThreadPool(16,
-                    new DaemonThreadFactory("scheduled"));
     private void schedule(Runnable command, int delay, TimeUnit unit) {
-        closers.schedule(command, delay, unit);
+        Executors.newScheduledThreadPool(1,
+                new DaemonThreadFactory("scheduled")).schedule(command, delay, unit);
     }
 
     @Override
