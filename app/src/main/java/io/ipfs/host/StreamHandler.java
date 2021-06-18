@@ -82,6 +82,7 @@ public class StreamHandler extends ConnectionChannelHandler {
                         writeAndFlush(DataHandler.writeToken(IPFS.NA));
                         closeInputStream();
                         closeOutputStream();
+                        connection.disconnect();
                         return;
                 }
             }

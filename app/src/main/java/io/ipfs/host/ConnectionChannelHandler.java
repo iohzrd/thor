@@ -45,6 +45,7 @@ public abstract class ConnectionChannelHandler {
 
         } catch (ProtocolException protocolException) {
             closeInputStream();
+            closeOutputStream();
             connection.disconnect();
             exceptionCaught(connection, new ConnectionIssue());
         } catch (Throwable throwable) {

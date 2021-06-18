@@ -611,7 +611,7 @@ public class LiteHost implements BitSwapReceiver {
                         failure++;
                     }
 
-                    LogUtils.debug(TAG, "Run " + run + " Success " + success + " " +
+                    LogUtils.error(TAG, "Run " + run + " Success " + success + " " +
                             "Failure " + failure + " " +
                             address + "/p2p/" + peerId.toBase58() + " " +
                             (System.currentTimeMillis() - start));
@@ -750,6 +750,7 @@ public class LiteHost implements BitSwapReceiver {
             throw new RuntimeException();
         }
         int port = multiaddr.getPort();
+        String host = inetAddress.getHostAddress();
 
 
         QuicClientConnectionImpl.Builder builder = QuicClientConnectionImpl.newBuilder();
@@ -761,7 +762,8 @@ public class LiteHost implements BitSwapReceiver {
                 .logger(new SysOutLogger())
                 .clientCertificate(selfSignedCertificate.cert())
                 .clientCertificateKey(selfSignedCertificate.key())
-                .uri(new URI("https://" + inetAddress.getHostName() + ":" + port))
+                .host(host)
+                .port(port)
                 .build();
 
 
@@ -821,10 +823,10 @@ public class LiteHost implements BitSwapReceiver {
                 addresses.clear();
                 addresses.addAll(collect);
             }
-            LogUtils.error(TAG, addresses.toString());
+
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
-        } // for now eat exceptions
+        }
     }
 
     public class LiteConnection implements Connection {

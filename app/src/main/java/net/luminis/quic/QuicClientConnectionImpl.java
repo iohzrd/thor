@@ -971,6 +971,10 @@ public class QuicClientConnectionImpl extends QuicConnectionImpl implements Quic
 
         Builder secrets(Path secretsFile);
 
+        Builder host(String host);
+
+        Builder port(int port);
+
         Builder uri(URI uri);
 
         Builder connectionIdLength(int length);
@@ -1070,8 +1074,20 @@ public class QuicClientConnectionImpl extends QuicConnectionImpl implements Quic
 
         @Override
         public Builder uri(URI uri) {
-            host = uri.getHost();
-            port = uri.getPort();
+            this.port = uri.getPort();
+            this.host = uri.getHost();
+            return this;
+        }
+
+        @Override
+        public Builder port(int port) {
+            this.port = port;
+            return this;
+        }
+
+        @Override
+        public Builder host(String host) {
+            this.host = host;
             return this;
         }
 
