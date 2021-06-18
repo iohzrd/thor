@@ -120,7 +120,6 @@ public class DataHandler {
         try (InputStream inputStream = new ByteArrayInputStream(temp.toByteArray())) {
             expectedLength = (int) Multihash.readVarint(inputStream);
 
-            //LogUtils.error(TAG, "" + expectedLength);
             if (expectedLength > maxLength) {
                 LogUtils.error(TAG, "expected length " + expectedLength + " max length " + maxLength);
                 throw new ProtocolIssue();

@@ -26,4 +26,5 @@ public class Content {
     public static final String HOST = "host";
     public static final String PORT = "port";
     public static final String INET6 = "inet6";
+    public static final String SEQ = "seq";
 }

@@ -18,6 +18,8 @@ public class LocalConnectService {
         try {
             IPFS ipfs = IPFS.getInstance(context);
 
+            ipfs.swarmEnhance(PeerId.fromBase58(pid));
+
             String pre = "/ip4";
             if (inet6) {
                 pre = "/ip6";
@@ -26,9 +28,8 @@ public class LocalConnectService {
 
             boolean connect = ipfs.swarmConnect(multiAddress, IPFS.CONNECT_TIMEOUT);
 
-            if (connect) {
-                ipfs.swarmEnhance(PeerId.fromBase58(pid));
-            }
+
+            LogUtils.error(TAG,"Success " + connect + " " + pid);
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         }

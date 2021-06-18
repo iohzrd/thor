@@ -91,7 +91,8 @@ public class IPFS {
     public static final String BITSWAP_PROTOCOL = "/ipfs/bitswap/1.2.0";
     public static final String IDENTITY_PROTOCOL = "/ipfs/id/1.0.0";
     public static final String INDEX_HTML = "index.html";
-    public static final String AGENT = "thor/0.7.4/";
+    public static final String AGENT_PREFIX = "lite";
+    public static final String AGENT = AGENT_PREFIX + "/0.7.4/";
     public static final String PROTOCOL_VERSION = "ipfs/0.1.0";
     public static final String IPFS_PATH = "/ipfs/";
     public static final String IPNS_PATH = "/ipns/";
@@ -111,8 +112,8 @@ public class IPFS {
     public static final boolean BITSWAP_ENGINE_ACTIVE = false;
     public static final int PROTOCOL_READER_LIMIT = 1000;
     public static final int TIMEOUT_BOOTSTRAP = 10;
-    public static final int HIGH_WATER = 1000;
-    public static final int GRACE_PERIOD = 10;
+    public static final int MAX_STREAMS = 100;
+    public static final int GRACE_PERIOD = 60; // TODO
     public static final int MIN_PEERS = 5;
     public static final int RESOLVE_TIMEOUT = 1000; // 1 sec
     public static final long WANTS_WAIT_TIMEOUT = 500; // 500 ms
@@ -1179,7 +1180,7 @@ public class IPFS {
         } catch (ClosedException | ConnectionIssue exception) {
             throw exception;
         } catch (Throwable throwable) {
-            LogUtils.error(TAG, "fdasdf " + multiaddr + " " + throwable);
+            LogUtils.error(TAG, throwable);
         }
 
         return host.isConnected(peerId);

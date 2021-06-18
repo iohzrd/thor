@@ -591,16 +591,14 @@ public class LiteHost implements BitSwapReceiver {
                     Objects.requireNonNull(quicClientConnection);
                     quicClientConnection.connect(timeout * 1000, IPFS.APRN,
                             new TransportParameters(IPFS.GRACE_PERIOD, IPFS.MESSAGE_SIZE_MAX,
-                                    IPFS.HIGH_WATER, IPFS.HIGH_WATER), null);
+                                    IPFS.MAX_STREAMS, IPFS.MAX_STREAMS), null);
 
                     final Connection conn = new LiteConnection(quicClientConnection, peerId, address);
                     Objects.requireNonNull(conn);
 
-
                     quicClientConnection.setPeerInitiatedStreamCallback(quicStream ->
-                            new StreamHandler(conn, quicStream, LiteHost.this).start());
+                            new StreamHandler(conn, quicStream, LiteHost.this));
 
-                    // TODO quic.closeFuture().addListener(future1 -> removeConnection(conn));
                     addConnection(conn);
                     run = true;
                     return conn;

@@ -9,7 +9,6 @@ import net.luminis.quic.stream.QuicStream;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
@@ -33,9 +32,7 @@ import io.ipfs.utils.DataHandler;
 public class BitSwap implements Interface {
 
     private static final String TAG = BitSwap.class.getSimpleName();
-    @NonNull
-    public final ConcurrentHashMap<QuicClientConnection, BitSwapSend> bitSwaps =
-            new ConcurrentHashMap<>();
+
     @NonNull
     private final ContentManager contentManager;
     @NonNull
@@ -73,7 +70,7 @@ public class BitSwap implements Interface {
     @Override
     public void receiveMessage(@NonNull PeerId peer, @NonNull BitSwapMessage incoming) {
 
-        LogUtils.error(TAG, "ReceiveMessage " + peer.toBase58());
+        LogUtils.verbose(TAG, "ReceiveMessage " + peer.toBase58());
 
         List<Block> blocks = incoming.Blocks();
         List<Cid> haves = incoming.Haves();
@@ -122,25 +119,17 @@ public class BitSwap implements Interface {
         boolean success = false;
         host.protectPeer(peerId, host.getShortTime());
         try {
-             /* TODO implement
-            if(!host.hasAddresses(peerId)) {
 
-                QuicStreamChannel streamChannel = host.getRelayStream(closeable, peerId);
-                if(streamChannel != null) {
-                    streamChannel.writeAndFlush(DataHandler.encode(message.ToProtoV1().toByteArray()));
-                    streamChannel.close().get();
-                }
-            } else { */
             Connection conn = host.connectTo(closeable, peerId, IPFS.CONNECT_TIMEOUT);
 
             if (closeable.isClosed()) {
                 throw new ClosedException();
             }
-            // TODO
+
             BitSwapSend stream = getStream(closeable, conn, priority);
             stream.writeAndFlush(DataHandler.encode(message.ToProtoV1()));
             stream.closeOutputStream();
-            //}
+
             success = true;
         } catch (ClosedException | ConnectionIssue exception) {
             throw exception;
@@ -178,7 +167,6 @@ public class BitSwap implements Interface {
 
             // TODO streamChannel.updatePriority(new QuicStreamPriority(priority, false));
 
-
             bitSwapSend.writeAndFlush(DataHandler.writeToken(IPFS.STREAM_PROTOCOL));
             bitSwapSend.writeAndFlush(DataHandler.writeToken(IPFS.BITSWAP_PROTOCOL));
 
@@ -200,16 +188,6 @@ public class BitSwap implements Interface {
 
         QuicClientConnection quicChannel = conn.channel();
 
-        /*
-        BitSwapSend stored = getStream(quicChannel);
-        if (stored != null) {
-            if (true  TODO stored.isOpen() && stored.isWritable() ) {
-                return stored;
-            } else {
-                removeStream(quicChannel);
-            }
-        }*/
-
         CompletableFuture<BitSwapSend> ctrl = getStream(conn, quicChannel, priority);
 
 
@@ -226,22 +204,9 @@ public class BitSwap implements Interface {
         BitSwapSend stream = ctrl.get();
 
         Objects.requireNonNull(stream);
-        //putStream(quicChannel, stream);
+
         return stream;
     }
 
-    public BitSwapSend getStream(@NonNull QuicClientConnection quicChannel) {
-        return bitSwaps.get(quicChannel);
-
-    }
-
-    public void putStream(@NonNull QuicClientConnection quicChannel,
-                          @NonNull BitSwapSend bitSwapSend) {
-        bitSwaps.put(quicChannel, bitSwapSend);
-    }
-
-    public void removeStream(@NonNull QuicClientConnection quicChannel) {
-        bitSwaps.remove(quicChannel);
-    }
 }
 
