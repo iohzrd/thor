@@ -161,7 +161,7 @@ public class ContentManager {
                             whitelist.remove(peer);
                             LogUtils.error(TAG, throwable);
                         } finally {
-                            LogUtils.error(TAG, "Match Peer " +
+                            LogUtils.debug(TAG, "Match Peer " +
                                     peer.toBase58() + " took " + (System.currentTimeMillis() - start));
                         }
                     }
