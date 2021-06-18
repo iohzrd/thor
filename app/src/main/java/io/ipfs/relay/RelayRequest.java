@@ -33,9 +33,9 @@ public class RelayRequest extends ConnectionChannelHandler {
 
 
     public void exceptionCaught(@NonNull Connection connection, @NonNull Throwable cause) {
-        LogUtils.error(TAG, "" + cause);
+        LogUtils.debug(TAG, "" + cause);
         request.completeExceptionally(cause);
-        closeInputStream();
+        reader.clear();
     }
 
 

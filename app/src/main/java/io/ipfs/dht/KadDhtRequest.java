@@ -34,9 +34,8 @@ public class KadDhtRequest extends ConnectionChannelHandler {
     }
 
     public void exceptionCaught(@NonNull Connection connection, @NonNull Throwable cause) {
-        LogUtils.warning(TAG, "" + cause);
+        LogUtils.debug(TAG, "" + cause);
         request.completeExceptionally(cause);
-        closeInputStream();
         reader.clear();
     }
 

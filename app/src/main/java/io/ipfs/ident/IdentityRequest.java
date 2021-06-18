@@ -31,9 +31,9 @@ public class IdentityRequest extends ConnectionChannelHandler {
     }
 
     public void exceptionCaught(@NonNull Connection connection, @NonNull Throwable cause) {
-        LogUtils.error(TAG, "" + cause);
+        LogUtils.debug(TAG, "" + cause);
         request.completeExceptionally(cause);
-        connection.disconnect();
+        reader.clear();
     }
 
     public void channelRead0(@NonNull Connection connection, @NonNull byte[] msg)

@@ -30,8 +30,7 @@ public class StreamHandler extends ConnectionChannelHandler {
 
     public void exceptionCaught(@NonNull Connection connection, @NonNull Throwable cause) {
         LogUtils.debug(TAG, "Error" + " StreamId " + streamId + " PeerId " + connection.remoteId() + " " + cause);
-        closeInputStream();
-        closeOutputStream();
+        reader.clear();
     }
 
 

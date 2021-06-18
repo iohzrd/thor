@@ -11,6 +11,7 @@ import java.net.ProtocolException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import io.LogUtils;
 import io.ipfs.core.ConnectionIssue;
@@ -43,13 +44,12 @@ public abstract class ConnectionChannelHandler {
                 buf.rewind();
             }
 
-        } catch (ProtocolException protocolException) {
+        } catch (Throwable throwable) {
+            LogUtils.debug(TAG, "" + throwable);
             closeInputStream();
             closeOutputStream();
             connection.disconnect();
             exceptionCaught(connection, new ConnectionIssue());
-        } catch (Throwable throwable) {
-            exceptionCaught(connection, throwable);
         } finally {
             buf.clear();
         }

@@ -464,7 +464,6 @@ public class KadDht implements Routing {
             QuicStream quicStream = quicChannel.createStream(true);
             KadDhtRequest dhtRequest = new KadDhtRequest(connection, quicStream, request);
 
-
             // TODO quicStream.pipeline().addFirst(new ReadTimeoutHandler(
             // TODO         IPFS.DHT_REQUEST_READ_TIMEOUT, TimeUnit.SECONDS));
 

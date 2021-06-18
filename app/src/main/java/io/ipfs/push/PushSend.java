@@ -33,9 +33,9 @@ public class PushSend extends ConnectionChannelHandler {
 
 
     public void exceptionCaught(@NonNull Connection connection, @NonNull Throwable cause) {
-        LogUtils.error(TAG, "" + cause);
+        LogUtils.debug(TAG, "" + cause);
         done.completeExceptionally(cause);
-        closeInputStream();
+        reader.clear();
     }
 
     public void channelRead0(@NonNull Connection connection, @NonNull byte[] msg)

@@ -156,7 +156,7 @@ public class IPFS {
     public static final long DHT_REQUEST_READ_TIMEOUT = 5;
     public static final long IPNS_DURATION = 6; // 6 hours duration
     public static final int THRESHOLD_FIND_PROVIDERS = 5;
-    public static final boolean BITSWAP_REQUEST_ACTIVE = false; // TODO
+    public static final boolean BITSWAP_REQUEST_ACTIVE = true;
 
     private static final String SWARM_PORT_KEY = "swarmPortKey";
     private static final String PRIVATE_KEY = "privateKey";

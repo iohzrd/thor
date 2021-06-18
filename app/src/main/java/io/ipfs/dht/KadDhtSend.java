@@ -7,7 +7,6 @@ import net.luminis.quic.stream.QuicStream;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
-import dht.pb.Dht;
 import io.LogUtils;
 import io.ipfs.IPFS;
 import io.ipfs.core.ProtocolIssue;
@@ -23,19 +22,19 @@ public class KadDhtSend extends ConnectionChannelHandler {
     private final DataHandler reader = new DataHandler(IPFS.PROTOCOL_READER_LIMIT);
 
     @NonNull
-    private final CompletableFuture<Void> stream;
+    private final CompletableFuture<Void> request;
 
     public KadDhtSend(@NonNull Connection connection,
                       @NonNull QuicStream quicStream,
-                      @NonNull CompletableFuture<Void> stream) {
+                      @NonNull CompletableFuture<Void> request) {
         super(connection, quicStream);
-        this.stream = stream;
+        this.request = request;
     }
 
     public void exceptionCaught(@NonNull Connection connection, @NonNull Throwable cause) {
         LogUtils.debug(TAG, "" + cause);
-        stream.completeExceptionally(cause);
-        closeInputStream();
+        request.completeExceptionally(cause);
+        reader.clear();
     }
 
     public void channelRead0(@NonNull Connection connection, @NonNull byte[] msg)
@@ -46,7 +45,7 @@ public class KadDhtSend extends ConnectionChannelHandler {
         if (reader.isDone()) {
             for (String received : reader.getTokens()) {
                 if (Objects.equals(received, IPFS.DHT_PROTOCOL)) {
-                    stream.complete(null);
+                    request.complete(null);
                 } else if (!Objects.equals(received, IPFS.STREAM_PROTOCOL)) {
                     throw new ProtocolIssue();
                 }

@@ -603,9 +603,8 @@ public class LiteHost implements BitSwapReceiver {
                     final Connection conn = new LiteConnection(quicClientConnection, peerId, address);
                     Objects.requireNonNull(conn);
 
-                    // TODO
-                    //quicClientConnection.setPeerInitiatedStreamCallback(quicStream ->
-                    //        new StreamHandler(conn, quicStream, LiteHost.this));
+                    quicClientConnection.setPeerInitiatedStreamCallback(quicStream ->
+                            new StreamHandler(conn, quicStream, LiteHost.this));
 
                     addConnection(conn);
                     run = true;
@@ -619,7 +618,7 @@ public class LiteHost implements BitSwapReceiver {
                         failure++;
                     }
 
-                    LogUtils.error(TAG, "Run " + run + " Success " + success + " " +
+                    LogUtils.debug(TAG, "Run " + run + " Success " + success + " " +
                             "Failure " + failure + " " +
                             address + "/p2p/" + peerId.toBase58() + " " +
                             (System.currentTimeMillis() - start));
