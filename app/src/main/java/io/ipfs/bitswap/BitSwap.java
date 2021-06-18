@@ -115,41 +115,43 @@ public class BitSwap implements Interface {
                              @NonNull BitSwapMessage message, short priority)
             throws ClosedException, ProtocolIssue, TimeoutIssue, ConnectionIssue {
 
-        long time = System.currentTimeMillis();
-        boolean success = false;
-        host.protectPeer(peerId, host.getShortTime());
-        try {
+        if (IPFS.BITSWAP_REQUEST_ACTIVE) {
+            long time = System.currentTimeMillis();
+            boolean success = false;
+            host.protectPeer(peerId, host.getShortTime());
+            try {
 
-            Connection conn = host.connectTo(closeable, peerId, IPFS.CONNECT_TIMEOUT);
+                Connection conn = host.connectTo(closeable, peerId, IPFS.CONNECT_TIMEOUT);
 
-            if (closeable.isClosed()) {
-                throw new ClosedException();
+                if (closeable.isClosed()) {
+                    throw new ClosedException();
+                }
+
+                BitSwapSend stream = getStream(closeable, conn, priority);
+                stream.writeAndFlush(DataHandler.encode(message.ToProtoV1()));
+                stream.closeOutputStream();
+
+                success = true;
+            } catch (ClosedException | ConnectionIssue exception) {
+                throw exception;
+            } catch (Throwable throwable) {
+                Throwable cause = throwable.getCause();
+                if (cause != null) {
+                    if (cause instanceof ProtocolIssue) {
+                        throw new ProtocolIssue();
+                    }
+                    if (cause instanceof ConnectionIssue) {
+                        throw new ConnectionIssue();
+                    }
+                    if (cause instanceof TimeoutException) {
+                        throw new TimeoutIssue();
+                    }
+                }
+                throw new RuntimeException(throwable);
+            } finally {
+                LogUtils.debug(TAG, "Send took " + success + " " +
+                        peerId.toBase58() + " " + (System.currentTimeMillis() - time));
             }
-
-            BitSwapSend stream = getStream(closeable, conn, priority);
-            stream.writeAndFlush(DataHandler.encode(message.ToProtoV1()));
-            stream.closeOutputStream();
-
-            success = true;
-        } catch (ClosedException | ConnectionIssue exception) {
-            throw exception;
-        } catch (Throwable throwable) {
-            Throwable cause = throwable.getCause();
-            if (cause != null) {
-                if (cause instanceof ProtocolIssue) {
-                    throw new ProtocolIssue();
-                }
-                if (cause instanceof ConnectionIssue) {
-                    throw new ConnectionIssue();
-                }
-                if (cause instanceof TimeoutException) {
-                    throw new TimeoutIssue();
-                }
-            }
-            throw new RuntimeException(throwable);
-        } finally {
-            LogUtils.debug(TAG, "Send took " + success + " " +
-                    peerId.toBase58() + " " + (System.currentTimeMillis() - time));
         }
     }
 

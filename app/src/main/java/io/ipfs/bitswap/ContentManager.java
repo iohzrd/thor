@@ -173,7 +173,7 @@ public class ContentManager {
             }
 
             if (System.currentTimeMillis()
-                    > (enter + IPFS.BIT_SWAP_LOAD_PROVIDERS_REFRESH)) {
+                    > (enter + IPFS.BITSWAP_LOAD_PROVIDERS_REFRESH)) {
                 loadProviders(closeable, cid);
                 enter = System.currentTimeMillis();
             }

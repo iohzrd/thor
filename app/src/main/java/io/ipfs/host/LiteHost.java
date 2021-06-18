@@ -15,6 +15,8 @@ import net.luminis.quic.log.SysOutLogger;
 import net.luminis.quic.server.Server;
 import net.luminis.quic.stream.QuicStream;
 
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.Inet4Address;
@@ -23,8 +25,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.SocketAddress;
-import java.net.URI;
-import java.net.URISyntaxException;
+import java.security.Signature;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -75,8 +76,8 @@ import io.ipfs.relay.RelayService;
 
 
 public class LiteHost implements BitSwapReceiver {
-
-
+    @NonNull
+    private static final ExecutorService executors = Executors.newFixedThreadPool(2);
     @NonNull
     public static final ConcurrentHashMap<PeerId, PubKey> remotes = new ConcurrentHashMap<>();
     @NonNull
@@ -157,7 +158,6 @@ public class LiteHost implements BitSwapReceiver {
     @Nullable
     private Push push;
 
-
     public LiteHost(@NonNull LiteHostCertificate selfSignedCertificate,
                     @NonNull PrivKey privKey,
                     @NonNull BlockStore blockstore,
@@ -165,7 +165,6 @@ public class LiteHost implements BitSwapReceiver {
         this.selfSignedCertificate = selfSignedCertificate;
         this.privKey = privKey;
         this.port = port;
-
 
         this.routing = new KadDht(this,
                 new Ipns(), alpha, IPFS.KAD_DHT_BETA,
@@ -247,6 +246,8 @@ public class LiteHost implements BitSwapReceiver {
         for (Connection conn : connections.values()) {
             if (conn.isConnected()) {
                 cones.add(conn);
+            } else {
+                removeConnection(conn);
             }
         }
 
@@ -438,14 +439,16 @@ public class LiteHost implements BitSwapReceiver {
         return result;
     }
 
+
+
     private void addConnection(@NonNull Connection connection) {
 
 
         connections.put(connection.remoteId(), connection);
 
         LogUtils.verbose(TAG, "Active Connections : " + connections.size());
+
         if (handlers.size() > 0) {
-            ExecutorService executors = Executors.newFixedThreadPool(2);
             executors.execute(() -> {
                 for (ConnectionHandler handle : handlers) {
                     try {
@@ -558,8 +561,12 @@ public class LiteHost implements BitSwapReceiver {
             }
 
             Connection connection = connections.get(peerId);
-            if (connection != null && connection.isConnected()) {
-                return connection;
+            if (connection != null) {
+                if (connection.isConnected()) {
+                    return connection;
+                } else {
+                    removeConnection(connection);
+                }
             }
 
             boolean ipv6 = inet6.get();
@@ -596,8 +603,9 @@ public class LiteHost implements BitSwapReceiver {
                     final Connection conn = new LiteConnection(quicClientConnection, peerId, address);
                     Objects.requireNonNull(conn);
 
-                    quicClientConnection.setPeerInitiatedStreamCallback(quicStream ->
-                            new StreamHandler(conn, quicStream, LiteHost.this));
+                    // TODO
+                    //quicClientConnection.setPeerInitiatedStreamCallback(quicStream ->
+                    //        new StreamHandler(conn, quicStream, LiteHost.this));
 
                     addConnection(conn);
                     run = true;
@@ -738,8 +746,7 @@ public class LiteHost implements BitSwapReceiver {
     }
 
 
-    public QuicClientConnectionImpl dial(@NonNull Multiaddr multiaddr)
-            throws IOException, URISyntaxException {
+    public QuicClientConnectionImpl dial(@NonNull Multiaddr multiaddr) throws IOException {
 
         InetAddress inetAddress;
         if (multiaddr.has(Protocol.Type.IP4)) {
@@ -752,12 +759,8 @@ public class LiteHost implements BitSwapReceiver {
         int port = multiaddr.getPort();
         String host = inetAddress.getHostAddress();
 
-
         QuicClientConnectionImpl.Builder builder = QuicClientConnectionImpl.newBuilder();
         return builder.version(Version.IETF_draft_29)
-                //  .attr(PEER_KEY, peerId)
-                //  .streamHandler(new WelcomeHandler(LiteHost.this))
-                //  .remoteAddress(new InetSocketAddress(inetAddress, port))
                 .noServerCertificateCheck()
                 .logger(new SysOutLogger())
                 .clientCertificate(selfSignedCertificate.cert())
