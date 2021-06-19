@@ -161,14 +161,15 @@ public class DataHandler {
         }
 
     }
-    public void clear(){
+
+    public void clear() {
         isDone = false;
         expectedLength = 0;
         message = null;
         tokens.clear();
         try {
             temp.close();
-        } catch (Throwable throwable){
+        } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         }
     }

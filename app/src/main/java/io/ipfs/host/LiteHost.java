@@ -440,7 +440,6 @@ public class LiteHost implements BitSwapReceiver {
     }
 
 
-
     private void addConnection(@NonNull Connection connection) {
 
 

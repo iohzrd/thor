@@ -12,6 +12,7 @@ import io.ipfs.IPFS;
 import io.ipfs.core.ProtocolIssue;
 import io.ipfs.host.Connection;
 import io.ipfs.host.ConnectionChannelHandler;
+import io.ipfs.host.PeerId;
 import io.ipfs.utils.DataHandler;
 
 public class BitSwapSend extends ConnectionChannelHandler {
@@ -23,23 +24,26 @@ public class BitSwapSend extends ConnectionChannelHandler {
 
     @NonNull
     private final CompletableFuture<BitSwapSend> done;
+    @NonNull
+    private final PeerId peerId;
 
-    public BitSwapSend(@NonNull Connection connection,
+    public BitSwapSend(@NonNull PeerId peerId,
                        @NonNull QuicStream quicStream,
                        @NonNull CompletableFuture<BitSwapSend> done) {
-        super(connection, quicStream);
+        super(quicStream);
+        this.peerId = peerId;
         this.done = done;
         new Thread(this::reading).start();
     }
 
 
-    public void exceptionCaught(@NonNull Connection connection, @NonNull Throwable cause) {
+    public void exceptionCaught(@NonNull Throwable cause) {
         LogUtils.debug(TAG, "" + cause);
         done.completeExceptionally(cause);
         reader.clear();
     }
 
-    public void channelRead0(@NonNull Connection connection, @NonNull byte[] msg)
+    public void channelRead0(@NonNull byte[] msg)
             throws Exception {
 
         reader.load(msg);
@@ -54,9 +58,8 @@ public class BitSwapSend extends ConnectionChannelHandler {
                 }
             }
         } else {
-            LogUtils.error(TAG, "iteration "  + reader.hasRead() + " "
-                + reader.expectedBytes() + " " + connection.remoteAddress()
-                + " StreamId " + streamId + " PeerId " + connection.remoteId());
+            LogUtils.error(TAG, "iteration " + reader.hasRead() + " "
+                    + reader.expectedBytes() + " StreamId " + streamId + " PeerId " + peerId);
         }
     }
 }

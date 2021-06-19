@@ -12,6 +12,7 @@ import com.google.protobuf.MessageLite;
 import net.luminis.quic.QuicClientConnection;
 import net.luminis.quic.stream.QuicStream;
 
+import java.net.ProtocolException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -370,7 +371,7 @@ public class KadDht implements Routing {
 
             CompletableFuture<Void> stream = new CompletableFuture<>();
             QuicStream quicStream = quicChannel.createStream(true);
-            KadDhtSend kadDhtSend = new KadDhtSend(conn, quicStream, stream);
+            KadDhtSend kadDhtSend = new KadDhtSend(quicStream, stream);
 
             // TODO quicStream.updatePriority(new QuicStreamPriority(IPFS.PRIORITY_HIGH, false));
             kadDhtSend.writeAndFlush(DataHandler.writeToken(IPFS.STREAM_PROTOCOL));
@@ -381,7 +382,7 @@ public class KadDht implements Routing {
             stream.get(IPFS.CONNECT_TIMEOUT, TimeUnit.SECONDS);
 
 
-        } catch (ClosedException | ConnectionIssue | TimeoutException ignore) {
+        } catch (ClosedException | ConnectionIssue | TimeoutException | ProtocolException ignore) {
             // ignore
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
@@ -415,7 +416,7 @@ public class KadDht implements Routing {
 
                 QuicClientConnection quicChannel = conn.channel();
 
-                CompletableFuture<Dht.Message> request = request(conn, quicChannel,
+                CompletableFuture<Dht.Message> request = request(quicChannel,
                         message, IPFS.PRIORITY_NORMAL);
 
                 Dht.Message msg = request.get(IPFS.DHT_REQUEST_READ_TIMEOUT, TimeUnit.SECONDS);
@@ -434,11 +435,8 @@ public class KadDht implements Routing {
                     if (cause instanceof ProtocolIssue) {
                         throw new ProtocolIssue();
                     }
-                    if (cause instanceof ConnectionIssue) {
+                    if (cause instanceof ProtocolException) {
                         throw new ConnectionIssue();
-                    }
-                    if (cause instanceof TimeoutException) {
-                        throw new TimeoutIssue();
                     }
                 }
                 LogUtils.error(TAG, throwable);
@@ -452,8 +450,7 @@ public class KadDht implements Routing {
         }
     }
 
-    public CompletableFuture<Dht.Message> request(@NonNull Connection connection,
-                                                  @NonNull QuicClientConnection quicChannel,
+    public CompletableFuture<Dht.Message> request(@NonNull QuicClientConnection quicChannel,
                                                   @NonNull MessageLite messageLite,
                                                   short priority) {
 
@@ -462,7 +459,7 @@ public class KadDht implements Routing {
 
         try {
             QuicStream quicStream = quicChannel.createStream(true);
-            KadDhtRequest dhtRequest = new KadDhtRequest(connection, quicStream, request);
+            KadDhtRequest dhtRequest = new KadDhtRequest(quicStream, request);
 
             // TODO quicStream.pipeline().addFirst(new ReadTimeoutHandler(
             // TODO         IPFS.DHT_REQUEST_READ_TIMEOUT, TimeUnit.SECONDS));

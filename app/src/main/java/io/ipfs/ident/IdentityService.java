@@ -70,7 +70,7 @@ public class IdentityService {
 
 
             CompletableFuture<IdentifyOuterClass.Identify> request =
-                    requestIdentity(conn, quicClientConnection);
+                    requestIdentity(quicClientConnection);
 
             while (!request.isDone()) {
                 if (closeable.isClosed()) {
@@ -96,15 +96,13 @@ public class IdentityService {
 
 
     private static CompletableFuture<IdentifyOuterClass.Identify> requestIdentity(
-            @NonNull Connection connection,
             @NonNull QuicClientConnection quicChannel) {
 
         CompletableFuture<IdentifyOuterClass.Identify> request = new CompletableFuture<>();
 
         try {
             QuicStream quicStream = quicChannel.createStream(true);
-            IdentityRequest identityRequest = new IdentityRequest(
-                    connection, quicStream, request);
+            IdentityRequest identityRequest = new IdentityRequest(quicStream, request);
 
             // TODO quicStream.pipeline().addFirst(new ReadTimeoutHandler(10, TimeUnit.SECONDS));
 

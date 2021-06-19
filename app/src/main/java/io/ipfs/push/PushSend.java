@@ -24,22 +24,20 @@ public class PushSend extends ConnectionChannelHandler {
     @NonNull
     private final CompletableFuture<Void> request;
 
-    public PushSend(@NonNull Connection connection,
-                    @NonNull QuicStream quicStream,
-                    @NonNull CompletableFuture<Void> request) {
-        super(connection, quicStream);
+    public PushSend(@NonNull QuicStream quicStream, @NonNull CompletableFuture<Void> request) {
+        super(quicStream);
         this.request = request;
         new Thread(this::reading).start();
     }
 
 
-    public void exceptionCaught(@NonNull Connection connection, @NonNull Throwable cause) {
+    public void exceptionCaught(@NonNull Throwable cause) {
         LogUtils.debug(TAG, "" + cause);
         request.completeExceptionally(cause);
         reader.clear();
     }
 
-    public void channelRead0(@NonNull Connection connection, @NonNull byte[] msg)
+    public void channelRead0(@NonNull byte[] msg)
             throws Exception {
 
         reader.load(msg);
@@ -53,8 +51,7 @@ public class PushSend extends ConnectionChannelHandler {
                 }
             }
         } else {
-            LogUtils.debug(TAG, "iteration " + msg.length + " "
-                    + reader.expectedBytes() + " " + connection.remoteAddress());
+            LogUtils.debug(TAG, "iteration " + msg.length + " " + reader.expectedBytes());
         }
     }
 }

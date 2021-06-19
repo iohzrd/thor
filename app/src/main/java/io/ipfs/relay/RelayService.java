@@ -38,7 +38,7 @@ public class RelayService {
 
 
             QuicStream quicStream = quicChannel.createStream(true);
-            RelayRequest relayRequest = new RelayRequest(conn, quicStream, request);
+            RelayRequest relayRequest = new RelayRequest(quicStream, request);
 
             // TODO quicStream.pipeline().addFirst(new ReadTimeoutHandler(timeout, TimeUnit.SECONDS));
 
@@ -89,7 +89,7 @@ public class RelayService {
         try {
             QuicStream quicStream = quicClientConnection.createStream(true);
 
-            RelayRequest relayRequest = new RelayRequest(conn, quicStream, request);
+            RelayRequest relayRequest = new RelayRequest(quicStream, request);
 
             // TODO streamChannel.updatePriority(new QuicStreamPriority(IPFS.PRIORITY_URGENT, false));
             relayRequest.writeAndFlush(DataHandler.writeToken(IPFS.STREAM_PROTOCOL));

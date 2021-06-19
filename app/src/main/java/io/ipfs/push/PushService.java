@@ -21,7 +21,7 @@ public class PushService {
 
             CompletableFuture<Void> stream = new CompletableFuture<>();
             QuicStream streamChannel = quicChannel.createStream(true);
-            PushSend pushSend = new PushSend(conn, streamChannel, stream);
+            PushSend pushSend = new PushSend(streamChannel, stream);
 
             // TODO streamChannel.updatePriority(new QuicStreamPriority(IPFS.PRIORITY_HIGH, false));
 
