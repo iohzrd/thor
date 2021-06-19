@@ -2,8 +2,6 @@ package io.ipfs.relay;
 
 import androidx.annotation.NonNull;
 
-import com.google.protobuf.MessageLite;
-
 import net.luminis.quic.stream.QuicStream;
 
 import java.util.Objects;
@@ -29,6 +27,7 @@ public class RelayRequest extends ConnectionChannelHandler {
                         @NonNull CompletableFuture<relay.pb.Relay.CircuitRelay> request) {
         super(connection, quicStream);
         this.request = request;
+        new Thread(this::reading).start();
     }
 
 

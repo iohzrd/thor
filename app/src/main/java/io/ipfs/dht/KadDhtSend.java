@@ -29,6 +29,7 @@ public class KadDhtSend extends ConnectionChannelHandler {
                       @NonNull CompletableFuture<Void> request) {
         super(connection, quicStream);
         this.request = request;
+        new Thread(this::reading).start();
     }
 
     public void exceptionCaught(@NonNull Connection connection, @NonNull Throwable cause) {

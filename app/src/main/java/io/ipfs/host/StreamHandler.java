@@ -24,6 +24,7 @@ public class StreamHandler extends ConnectionChannelHandler {
                          @NonNull LiteHost host) {
         super(connection, quicStream);
         this.host = host;
+        new Thread(this::reading).start();
         LogUtils.debug(TAG, "Instance" + " StreamId " + streamId + " PeerId " + connection.remoteId());
     }
 

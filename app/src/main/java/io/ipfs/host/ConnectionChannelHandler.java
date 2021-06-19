@@ -30,10 +30,9 @@ public abstract class ConnectionChannelHandler {
         this.inputStream = quicStream.getInputStream();
         this.outputStream = quicStream.getOutputStream();
         this.streamId = quicStream.getStreamId();
-        new Thread(this::reader).start();
     }
 
-    public void reader() {
+    protected void reading() {
         ByteBuffer buf = ByteBuffer.allocate(4096);
         try {
             int length;

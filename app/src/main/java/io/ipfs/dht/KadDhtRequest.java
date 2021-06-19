@@ -2,8 +2,6 @@ package io.ipfs.dht;
 
 import androidx.annotation.NonNull;
 
-import com.google.protobuf.MessageLite;
-
 import net.luminis.quic.stream.QuicStream;
 
 import java.util.Objects;
@@ -31,6 +29,7 @@ public class KadDhtRequest extends ConnectionChannelHandler {
                          @NonNull CompletableFuture<Dht.Message> request) {
         super(connection, quicStream);
         this.request = request;
+        new Thread(this::reading).start();
     }
 
     public void exceptionCaught(@NonNull Connection connection, @NonNull Throwable cause) {

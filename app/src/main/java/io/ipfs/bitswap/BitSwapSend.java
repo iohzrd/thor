@@ -7,7 +7,6 @@ import net.luminis.quic.stream.QuicStream;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
-import bitswap.pb.MessageOuterClass;
 import io.LogUtils;
 import io.ipfs.IPFS;
 import io.ipfs.core.ProtocolIssue;
@@ -30,6 +29,7 @@ public class BitSwapSend extends ConnectionChannelHandler {
                        @NonNull CompletableFuture<BitSwapSend> done) {
         super(connection, quicStream);
         this.done = done;
+        new Thread(this::reading).start();
     }
 
 

@@ -27,7 +27,7 @@ public class IdentityRequest extends ConnectionChannelHandler {
                            @NonNull CompletableFuture<IdentifyOuterClass.Identify> request) {
         super(connection, quicStream);
         this.request = request;
-
+        new Thread(this::reading).start();
     }
 
     public void exceptionCaught(@NonNull Connection connection, @NonNull Throwable cause) {

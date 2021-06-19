@@ -22,19 +22,20 @@ public class PushSend extends ConnectionChannelHandler {
     private final DataHandler reader = new DataHandler(IPFS.PROTOCOL_READER_LIMIT);
 
     @NonNull
-    private final CompletableFuture<Void> done;
+    private final CompletableFuture<Void> request;
 
     public PushSend(@NonNull Connection connection,
                     @NonNull QuicStream quicStream,
-                    @NonNull CompletableFuture<Void> done) {
+                    @NonNull CompletableFuture<Void> request) {
         super(connection, quicStream);
-        this.done = done;
+        this.request = request;
+        new Thread(this::reading).start();
     }
 
 
     public void exceptionCaught(@NonNull Connection connection, @NonNull Throwable cause) {
         LogUtils.debug(TAG, "" + cause);
-        done.completeExceptionally(cause);
+        request.completeExceptionally(cause);
         reader.clear();
     }
 
@@ -46,7 +47,7 @@ public class PushSend extends ConnectionChannelHandler {
         if (reader.isDone()) {
             for (String received : reader.getTokens()) {
                 if (Objects.equals(received, IPFS.PUSH_PROTOCOL)) {
-                    done.complete(null);
+                    request.complete(null);
                 } else if (!Objects.equals(received, IPFS.STREAM_PROTOCOL)) {
                     throw new ProtocolIssue();
                 }

@@ -96,7 +96,7 @@ public class LossDetector {
         int ackedAckEliciting = (int) newlyAcked.stream().filter(packetStatus -> packetStatus.packet().isAckEliciting()).count();
         //assert ackedAckEliciting <= ackElicitingInFlight.get();
         if(ackedAckEliciting > ackElicitingInFlight.get()){
-            throw new RuntimeException("fdsafde");
+            throw new RuntimeException("ackElicitingInFlight");
         }
         ackElicitingInFlight.getAndAdd(-1 * ackedAckEliciting);
 
