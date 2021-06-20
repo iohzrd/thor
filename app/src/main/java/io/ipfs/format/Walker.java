@@ -10,7 +10,7 @@ import java.util.Stack;
 
 import io.ipfs.core.Closeable;
 import io.ipfs.core.ClosedException;
-import io.ipfs.unixfs.FSNode;
+import io.ipfs.dag.FSNode;
 
 public class Walker {
 

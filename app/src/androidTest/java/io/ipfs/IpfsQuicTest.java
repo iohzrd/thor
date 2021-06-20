@@ -9,7 +9,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import io.ipfs.multiaddr.Multiaddr;
+import io.ipfs.cid.Multiaddr;
 
 import static junit.framework.TestCase.assertNotNull;
 

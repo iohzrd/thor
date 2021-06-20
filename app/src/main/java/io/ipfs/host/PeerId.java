@@ -10,12 +10,12 @@ import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.Random;
 
+import io.ipfs.cid.Base58;
 import io.ipfs.cid.Cid;
+import io.ipfs.cid.Multibase;
+import io.ipfs.cid.Multihash;
 import io.ipfs.crypto.Key;
 import io.ipfs.crypto.PubKey;
-import io.ipfs.multibase.Base58;
-import io.ipfs.multibase.Multibase;
-import io.ipfs.multihash.Multihash;
 
 
 public class PeerId implements Comparable<PeerId> {
@@ -77,13 +77,13 @@ public class PeerId implements Comparable<PeerId> {
 
         byte[] pubKeyBytes = Key.marshalPublicKey(pubKey);
         if (pubKeyBytes.length <= 42) {
-            byte[] hash = Cid.encode(pubKeyBytes, io.ipfs.multihash.Multihash.Type.id.index);
+            byte[] hash = Cid.encode(pubKeyBytes, Multihash.Type.id.index);
             return PeerId.fromBase58(Base58.encode(hash));
         } else {
             try {
                 MessageDigest digest = MessageDigest.getInstance("SHA-256");
                 byte[] hash = Cid.encode(digest.digest(pubKeyBytes),
-                        io.ipfs.multihash.Multihash.Type.sha2_256.index);
+                        Multihash.Type.sha2_256.index);
                 return PeerId.fromBase58(Base58.encode(hash));
             } catch (Throwable throwable) {
                 throw new RuntimeException(throwable);

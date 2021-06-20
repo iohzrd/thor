@@ -33,7 +33,7 @@ import io.ipfs.format.Node;
 import io.ipfs.host.DnsResolver;
 import io.ipfs.host.PeerId;
 import io.ipfs.ipns.Ipns;
-import io.ipfs.multiaddr.Multiaddr;
+import io.ipfs.cid.Multiaddr;
 import io.ipfs.utils.Link;
 import threads.LogUtils;
 import threads.thor.InitApplication;

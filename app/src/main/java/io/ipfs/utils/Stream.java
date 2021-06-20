@@ -7,22 +7,23 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import io.ipfs.blockservice.BlockService;
+import io.ipfs.bitswap.BitSwap;
 import io.ipfs.cid.Cid;
+import io.ipfs.cid.Multihash;
 import io.ipfs.cid.Prefix;
 import io.ipfs.core.Closeable;
 import io.ipfs.core.ClosedException;
-import io.ipfs.datastore.Storage;
-import io.ipfs.exchange.Interface;
+import io.ipfs.core.Interface;
+import io.ipfs.dag.Adder;
+import io.ipfs.dag.BlockService;
+import io.ipfs.dag.DagService;
+import io.ipfs.dag.Directory;
+import io.ipfs.dag.FSNode;
+import io.ipfs.data.Storage;
 import io.ipfs.format.BlockStore;
 import io.ipfs.format.Link;
 import io.ipfs.format.Node;
 import io.ipfs.format.ProtoNode;
-import io.ipfs.merkledag.DagService;
-import io.ipfs.multihash.Multihash;
-import io.ipfs.offline.Exchange;
-import io.ipfs.unixfs.Directory;
-import io.ipfs.unixfs.FSNode;
 
 
 public class Stream {
@@ -71,7 +72,7 @@ public class Stream {
 
     public static boolean isDir(@NonNull Closeable closeable,
                                 @NonNull BlockStore blockstore,
-                                @NonNull Interface exchange,
+                                @NonNull BitSwap exchange,
                                 @NonNull Cid cid) throws ClosedException {
 
 

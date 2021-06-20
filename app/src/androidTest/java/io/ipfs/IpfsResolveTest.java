@@ -26,7 +26,7 @@ import io.ipfs.core.ClosedException;
 import io.ipfs.core.TimeoutCloseable;
 import io.ipfs.host.PeerId;
 import io.ipfs.ipns.Ipns;
-import io.ipfs.multihash.Multihash;
+import io.ipfs.cid.Multihash;
 
 import static junit.framework.TestCase.assertNotNull;
 import static org.junit.Assert.assertEquals;

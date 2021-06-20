@@ -5,8 +5,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.security.MessageDigest;
 
-import io.ipfs.multihash.Multihash;
-
 public class Prefix implements Builder {
     public long Version;
     public long Codec;

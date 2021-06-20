@@ -13,7 +13,7 @@ import org.junit.runner.RunWith;
 import java.util.List;
 
 import io.LogUtils;
-import io.ipfs.multiaddr.Multiaddr;
+import io.ipfs.cid.Multiaddr;
 import io.ipfs.utils.Reachable;
 
 import static org.junit.Assert.assertSame;

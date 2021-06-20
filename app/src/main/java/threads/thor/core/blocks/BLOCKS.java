@@ -8,7 +8,7 @@ import androidx.room.Room;
 
 import java.util.List;
 
-import io.ipfs.datastore.Storage;
+import io.ipfs.data.Storage;
 import threads.thor.Settings;
 
 public class BLOCKS implements Storage {

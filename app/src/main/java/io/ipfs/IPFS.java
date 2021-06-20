@@ -46,6 +46,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import identify.pb.IdentifyOuterClass;
 import io.LogUtils;
 import io.ipfs.cid.Cid;
+import io.ipfs.cid.Multiaddr;
+import io.ipfs.cid.Protocol;
 import io.ipfs.core.Closeable;
 import io.ipfs.core.ClosedException;
 import io.ipfs.core.ConnectionIssue;
@@ -63,8 +65,6 @@ import io.ipfs.host.LiteHostCertificate;
 import io.ipfs.host.PeerId;
 import io.ipfs.host.PeerInfo;
 import io.ipfs.ipns.Ipns;
-import io.ipfs.multiaddr.Multiaddr;
-import io.ipfs.multiaddr.Protocol;
 import io.ipfs.push.Push;
 import io.ipfs.push.PushService;
 import io.ipfs.utils.Link;
@@ -745,7 +745,7 @@ public class IPFS {
     public Node resolveNode(@NonNull String path, @NonNull Closeable closeable) throws ClosedException {
 
         try {
-            return Resolver.resolveNode(closeable, blocks, host.getExchange(), path);
+            return Resolver.resolveNode(closeable, blocks, host.getBitSwap(), path);
         } catch (ClosedException closedException) {
             throw closedException;
         } catch (Throwable ignore) {
@@ -873,7 +873,7 @@ public class IPFS {
     public Cid resolve(@NonNull String path, @NonNull Closeable closeable) throws ClosedException {
 
         try {
-            Node node = Resolver.resolveNode(closeable, blocks, host.getExchange(), path);
+            Node node = Resolver.resolveNode(closeable, blocks, host.getBitSwap(), path);
             if (node != null) {
                 return node.getCid();
             }
@@ -896,7 +896,7 @@ public class IPFS {
         boolean result;
         try {
             BlockStore blockstore = BlockStore.createBlockStore(blocks);
-            result = Stream.isDir(closeable, blockstore, host.getExchange(), cid);
+            result = Stream.isDir(closeable, blockstore, host.getBitSwap(), cid);
         } catch (ClosedException closedException) {
             throw closedException;
         } catch (Throwable e) {
@@ -971,7 +971,7 @@ public class IPFS {
                 public void info(@NonNull Link link) {
                     infoList.add(link);
                 }
-            }, blockstore, host.getExchange(), cid, resolveChildren);
+            }, blockstore, host.getBitSwap(), cid, resolveChildren);
 
         } catch (ClosedException closedException) {
             throw closedException;
@@ -984,7 +984,7 @@ public class IPFS {
     @NonNull
     public Reader getReader(@NonNull Cid cid, @NonNull Closeable closeable) throws ClosedException {
         BlockStore blockstore = BlockStore.createBlockStore(blocks);
-        return Reader.getReader(closeable, blockstore, host.getExchange(), cid);
+        return Reader.getReader(closeable, blockstore, host.getBitSwap(), cid);
     }
 
     private void getToOutputStream(@NonNull OutputStream outputStream, @NonNull Cid cid,
@@ -1085,7 +1085,7 @@ public class IPFS {
 
     public void reset() {
         try {
-            host.getExchange().reset();
+            host.getBitSwap().reset();
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         }

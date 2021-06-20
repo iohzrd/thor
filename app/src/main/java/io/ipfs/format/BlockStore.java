@@ -5,8 +5,8 @@ import androidx.annotation.NonNull;
 import java.util.List;
 
 import io.ipfs.cid.Cid;
-import io.ipfs.datastore.Dshelp;
-import io.ipfs.datastore.Storage;
+import io.ipfs.data.Dshelp;
+import io.ipfs.data.Storage;
 
 public interface BlockStore {
 

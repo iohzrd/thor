@@ -5,7 +5,7 @@ import androidx.annotation.Nullable;
 
 import java.util.List;
 
-import io.ipfs.multiaddr.Multiaddr;
+import io.ipfs.cid.Multiaddr;
 
 public class PeerInfo {
     @NonNull

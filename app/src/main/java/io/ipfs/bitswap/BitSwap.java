@@ -18,9 +18,9 @@ import io.ipfs.cid.Cid;
 import io.ipfs.core.Closeable;
 import io.ipfs.core.ClosedException;
 import io.ipfs.core.ConnectionIssue;
+import io.ipfs.core.Interface;
 import io.ipfs.core.ProtocolIssue;
 import io.ipfs.core.TimeoutIssue;
-import io.ipfs.exchange.Interface;
 import io.ipfs.format.Block;
 import io.ipfs.format.BlockStore;
 import io.ipfs.host.Connection;
@@ -46,10 +46,6 @@ public class BitSwap implements Interface {
         engine = new BitSwapEngine(this, blockstore, host.self());
     }
 
-    public static Interface create(@NonNull LiteHost bitSwapNetwork,
-                                   @NonNull BlockStore blockstore) {
-        return new BitSwap(blockstore, bitSwapNetwork);
-    }
 
     @Nullable
     @Override
@@ -67,7 +63,7 @@ public class BitSwap implements Interface {
         contentManager.reset();
     }
 
-    @Override
+
     public void receiveMessage(@NonNull PeerId peer, @NonNull BitSwapMessage incoming) {
 
         LogUtils.verbose(TAG, "ReceiveMessage " + peer.toBase58());
@@ -105,7 +101,6 @@ public class BitSwap implements Interface {
     }
 
 
-    @Override
     public boolean gatePeer(@NonNull PeerId peerID) {
         return contentManager.gatePeer(peerID);
     }

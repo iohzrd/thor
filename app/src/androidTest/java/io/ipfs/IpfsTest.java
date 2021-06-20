@@ -21,7 +21,7 @@ import io.ipfs.core.ClosedException;
 import io.ipfs.core.TimeoutCloseable;
 import io.ipfs.host.DnsResolver;
 import io.ipfs.host.PeerInfo;
-import io.ipfs.multiaddr.Multiaddr;
+import io.ipfs.cid.Multiaddr;
 import io.ipfs.utils.Link;
 
 import static junit.framework.TestCase.assertNotNull;

@@ -3,7 +3,7 @@ package io.ipfs.host;
 
 import net.luminis.quic.QuicClientConnection;
 
-import io.ipfs.multiaddr.Multiaddr;
+import io.ipfs.cid.Multiaddr;
 
 public interface Connection {
     PeerId remoteId();

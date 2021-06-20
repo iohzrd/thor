@@ -15,12 +15,12 @@ import java.util.concurrent.CompletableFuture;
 import identify.pb.IdentifyOuterClass;
 import io.LogUtils;
 import io.ipfs.IPFS;
+import io.ipfs.cid.Multiaddr;
 import io.ipfs.core.Closeable;
 import io.ipfs.core.ClosedException;
 import io.ipfs.host.Connection;
 import io.ipfs.host.PeerId;
 import io.ipfs.host.PeerInfo;
-import io.ipfs.multiaddr.Multiaddr;
 import io.ipfs.utils.DataHandler;
 
 public class IdentityService {

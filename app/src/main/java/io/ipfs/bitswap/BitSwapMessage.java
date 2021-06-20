@@ -13,10 +13,10 @@ import java.util.Map;
 
 import bitswap.pb.MessageOuterClass;
 import io.ipfs.cid.Cid;
+import io.ipfs.cid.Multihash;
 import io.ipfs.cid.Prefix;
 import io.ipfs.format.BasicBlock;
 import io.ipfs.format.Block;
-import io.ipfs.multihash.Multihash;
 
 
 public interface BitSwapMessage {

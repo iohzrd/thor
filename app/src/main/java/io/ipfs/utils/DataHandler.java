@@ -14,9 +14,9 @@ import java.util.Set;
 
 import io.LogUtils;
 import io.ipfs.IPFS;
+import io.ipfs.cid.Charsets;
+import io.ipfs.cid.Multihash;
 import io.ipfs.core.ProtocolIssue;
-import io.ipfs.multibase.Charsets;
-import io.ipfs.multihash.Multihash;
 
 public class DataHandler {
     private static final String TAG = DataHandler.class.getSimpleName();

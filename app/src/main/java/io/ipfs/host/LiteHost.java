@@ -15,8 +15,6 @@ import net.luminis.quic.log.SysOutLogger;
 import net.luminis.quic.server.Server;
 import net.luminis.quic.stream.QuicStream;
 
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.Inet4Address;
@@ -25,7 +23,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.SocketAddress;
-import java.security.Signature;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -55,8 +52,9 @@ import io.LogUtils;
 import io.ipfs.IPFS;
 import io.ipfs.bitswap.BitSwap;
 import io.ipfs.bitswap.BitSwapMessage;
-import io.ipfs.bitswap.BitSwapReceiver;
 import io.ipfs.cid.Cid;
+import io.ipfs.cid.Multiaddr;
+import io.ipfs.cid.Protocol;
 import io.ipfs.core.Closeable;
 import io.ipfs.core.ClosedException;
 import io.ipfs.core.ConnectionIssue;
@@ -65,17 +63,14 @@ import io.ipfs.crypto.PrivKey;
 import io.ipfs.crypto.PubKey;
 import io.ipfs.dht.KadDht;
 import io.ipfs.dht.Routing;
-import io.ipfs.exchange.Interface;
 import io.ipfs.format.BlockStore;
 import io.ipfs.ident.IdentityService;
 import io.ipfs.ipns.Ipns;
-import io.ipfs.multiaddr.Multiaddr;
-import io.ipfs.multiaddr.Protocol;
 import io.ipfs.push.Push;
 import io.ipfs.relay.RelayService;
 
 
-public class LiteHost implements BitSwapReceiver {
+public class LiteHost {
     @NonNull
     private static final ExecutorService executors = Executors.newFixedThreadPool(2);
     @NonNull
@@ -147,7 +142,8 @@ public class LiteHost implements BitSwapReceiver {
     @NonNull
     private final PrivKey privKey;
     @NonNull
-    private final Interface exchange;
+    private final BitSwap bitSwap;
+
     private final int port;
     @NonNull
     private final LiteHostCertificate selfSignedCertificate;
@@ -170,7 +166,7 @@ public class LiteHost implements BitSwapReceiver {
                 new Ipns(), alpha, IPFS.KAD_DHT_BETA,
                 IPFS.KAD_DHT_BUCKET_SIZE);
 
-        this.exchange = BitSwap.create(this, blockstore);
+        this.bitSwap = new BitSwap(blockstore, this);
 
     }
 
@@ -216,18 +212,18 @@ public class LiteHost implements BitSwapReceiver {
     }
 
     @NonNull
-    public Interface getExchange() {
-        return exchange;
+    public BitSwap getBitSwap() {
+        return bitSwap;
     }
 
-    @Override
+    //@Override
     public boolean gatePeer(@NonNull PeerId peerID) {
-        return exchange.gatePeer(peerID);
+        return bitSwap.gatePeer(peerID);
     }
 
-    @Override
+    //@Override
     public void receiveMessage(@NonNull PeerId peer, @NonNull BitSwapMessage incoming) {
-        exchange.receiveMessage(peer, incoming);
+        bitSwap.receiveMessage(peer, incoming);
     }
 
     public PeerId self() {

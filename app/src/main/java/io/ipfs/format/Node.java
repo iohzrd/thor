@@ -9,8 +9,8 @@ import java.util.List;
 
 import io.ipfs.cid.Builder;
 import io.ipfs.cid.Cid;
+import io.ipfs.cid.Multihash;
 import io.ipfs.cid.Prefix;
-import io.ipfs.multihash.Multihash;
 
 public interface Node extends Block, Resolver {
     Prefix v0CidPrefix = new Prefix(

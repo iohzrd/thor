@@ -36,6 +36,8 @@ import dht.pb.Dht;
 import io.LogUtils;
 import io.ipfs.IPFS;
 import io.ipfs.cid.Cid;
+import io.ipfs.cid.Multiaddr;
+import io.ipfs.cid.Protocol;
 import io.ipfs.core.Closeable;
 import io.ipfs.core.ClosedException;
 import io.ipfs.core.ConnectionIssue;
@@ -49,8 +51,6 @@ import io.ipfs.host.DnsResolver;
 import io.ipfs.host.LiteHost;
 import io.ipfs.host.PeerId;
 import io.ipfs.ipns.Ipns;
-import io.ipfs.multiaddr.Multiaddr;
-import io.ipfs.multiaddr.Protocol;
 import io.ipfs.utils.DataHandler;
 import record.pb.RecordOuterClass;
 

@@ -5,13 +5,14 @@ import androidx.annotation.Nullable;
 
 import java.util.Objects;
 
-import io.ipfs.blockservice.BlockService;
 import io.ipfs.cid.Cid;
 import io.ipfs.core.Closeable;
 import io.ipfs.core.ClosedException;
-import io.ipfs.exchange.Interface;
+import io.ipfs.core.Interface;
+import io.ipfs.dag.BlockService;
+import io.ipfs.dag.DagReader;
+import io.ipfs.dag.DagService;
 import io.ipfs.format.BlockStore;
-import io.ipfs.merkledag.DagService;
 
 public class Reader {
 

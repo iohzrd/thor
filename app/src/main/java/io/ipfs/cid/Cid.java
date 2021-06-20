@@ -10,9 +10,6 @@ import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.Objects;
 
-import io.ipfs.multibase.Multibase;
-import io.ipfs.multihash.Multihash;
-
 public class Cid implements Comparable<Cid> {
     public static final String TAG = Cid.class.getSimpleName();
     public static final long IDENTITY = 0x00;
