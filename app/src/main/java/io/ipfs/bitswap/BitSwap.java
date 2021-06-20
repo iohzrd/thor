@@ -160,7 +160,7 @@ public class BitSwap implements Interface {
 
         try {
             QuicStream quicStream = quicClientConnection.createStream(true);
-            BitSwapSend bitSwapSend = new BitSwapSend(connection, quicStream, stream);
+            BitSwapSend bitSwapSend = new BitSwapSend(connection.remoteId(), quicStream, stream);
 
             // TODO streamChannel.updatePriority(new QuicStreamPriority(priority, false));
 

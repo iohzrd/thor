@@ -22,23 +22,22 @@ public class RelayRequest extends ConnectionChannelHandler {
 
     private final DataHandler reader = new DataHandler(4096);
 
-    public RelayRequest(@NonNull Connection connection,
-                        @NonNull QuicStream quicStream,
+    public RelayRequest(@NonNull QuicStream quicStream,
                         @NonNull CompletableFuture<relay.pb.Relay.CircuitRelay> request) {
-        super(connection, quicStream);
+        super(quicStream);
         this.request = request;
         new Thread(this::reading).start();
     }
 
 
-    public void exceptionCaught(@NonNull Connection connection, @NonNull Throwable cause) {
+    public void exceptionCaught(@NonNull Throwable cause) {
         LogUtils.debug(TAG, "" + cause);
         request.completeExceptionally(cause);
         reader.clear();
     }
 
 
-    public void channelRead0(@NonNull Connection connection, @NonNull byte[] msg)
+    public void channelRead0(@NonNull byte[] msg)
             throws Exception {
 
         reader.load(msg);
@@ -61,9 +60,7 @@ public class RelayRequest extends ConnectionChannelHandler {
                 closeInputStream();
             }
         } else {
-            LogUtils.debug(TAG, "iteration " + reader.hasRead() + " "
-                    + reader.expectedBytes() + " " +
-                    connection.remoteAddress().toString());
+            LogUtils.debug(TAG, "iteration " + reader.hasRead() + " " + reader.expectedBytes());
         }
     }
 }

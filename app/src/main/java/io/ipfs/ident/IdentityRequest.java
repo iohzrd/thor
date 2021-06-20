@@ -11,7 +11,6 @@ import identify.pb.IdentifyOuterClass;
 import io.LogUtils;
 import io.ipfs.IPFS;
 import io.ipfs.core.ProtocolIssue;
-import io.ipfs.host.Connection;
 import io.ipfs.host.ConnectionChannelHandler;
 import io.ipfs.utils.DataHandler;
 
@@ -20,23 +19,22 @@ public class IdentityRequest extends ConnectionChannelHandler {
     @NonNull
     private final CompletableFuture<IdentifyOuterClass.Identify> request;
 
-    private DataHandler reader = new DataHandler(25000);
+    private final DataHandler reader = new DataHandler(25000);
 
-    public IdentityRequest(@NonNull Connection connection,
-                           @NonNull QuicStream quicStream,
+    public IdentityRequest(@NonNull QuicStream quicStream,
                            @NonNull CompletableFuture<IdentifyOuterClass.Identify> request) {
-        super(connection, quicStream);
+        super(quicStream);
         this.request = request;
         new Thread(this::reading).start();
     }
 
-    public void exceptionCaught(@NonNull Connection connection, @NonNull Throwable cause) {
+    public void exceptionCaught(@NonNull Throwable cause) {
         LogUtils.debug(TAG, "" + cause);
         request.completeExceptionally(cause);
         reader.clear();
     }
 
-    public void channelRead0(@NonNull Connection connection, @NonNull byte[] msg)
+    public void channelRead0(@NonNull byte[] msg)
             throws Exception {
 
         reader.load(msg);
@@ -58,11 +56,8 @@ public class IdentityRequest extends ConnectionChannelHandler {
                 request.complete(IdentifyOuterClass.Identify.parseFrom(message));
                 closeInputStream();
             }
-            reader = new DataHandler(25000);
         } else {
-            LogUtils.debug(TAG, "iteration " + reader.hasRead() + " "
-                    + reader.expectedBytes() + " "
-                    + connection.remoteAddress());
+            LogUtils.debug(TAG, "iteration " + reader.hasRead() + " " + reader.expectedBytes());
         }
     }
 }

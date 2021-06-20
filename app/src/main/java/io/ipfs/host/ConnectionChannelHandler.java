@@ -7,26 +7,22 @@ import net.luminis.quic.stream.QuicStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.ProtocolException;
+
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import io.LogUtils;
-import io.ipfs.core.ConnectionIssue;
 
 
 public abstract class ConnectionChannelHandler {
     private static final String TAG = ConnectionChannelHandler.class.getSimpleName();
-    private final Connection connection;
     private final InputStream inputStream;
     private final OutputStream outputStream;
     private final AtomicBoolean close = new AtomicBoolean(false);
     protected final int streamId;
 
-    public ConnectionChannelHandler(@NonNull Connection connection, @NonNull QuicStream quicStream) {
-        this.connection = connection;
+    public ConnectionChannelHandler(@NonNull QuicStream quicStream) {
         this.inputStream = quicStream.getInputStream();
         this.outputStream = quicStream.getOutputStream();
         this.streamId = quicStream.getStreamId();
@@ -39,24 +35,22 @@ public abstract class ConnectionChannelHandler {
 
             while (!close.get() && (length = inputStream.read(buf.array(), 0, buf.capacity())) > 0) {
                 byte[] data = Arrays.copyOfRange(buf.array(), 0, length);
-                channelRead0(connection, data);
+                channelRead0(data);
                 buf.rewind();
             }
 
         } catch (Throwable throwable) {
-            LogUtils.debug(TAG, "" + throwable);
             closeInputStream();
             closeOutputStream();
-            connection.disconnect();
-            exceptionCaught(connection, new ConnectionIssue());
+            exceptionCaught(throwable);
         } finally {
             buf.clear();
         }
     }
 
-    abstract public void exceptionCaught(@NonNull Connection connection, @NonNull Throwable cause);
+    abstract public void exceptionCaught(@NonNull Throwable cause);
 
-    abstract public void channelRead0(@NonNull Connection connection, @NonNull byte[] msg) throws Exception;
+    abstract public void channelRead0(@NonNull byte[] msg) throws Exception;
 
     public void writeAndFlush(@NonNull byte[] data) throws IOException {
         outputStream.write(data);
