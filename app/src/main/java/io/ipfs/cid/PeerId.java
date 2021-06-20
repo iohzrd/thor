@@ -1,4 +1,4 @@
-package io.ipfs.host;
+package io.ipfs.cid;
 
 import androidx.annotation.NonNull;
 
@@ -10,10 +10,6 @@ import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.Random;
 
-import io.ipfs.cid.Base58;
-import io.ipfs.cid.Cid;
-import io.ipfs.cid.Multibase;
-import io.ipfs.cid.Multihash;
 import io.ipfs.crypto.Key;
 import io.ipfs.crypto.PubKey;
 

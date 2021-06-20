@@ -31,7 +31,7 @@ import io.ipfs.core.Closeable;
 import io.ipfs.core.ClosedException;
 import io.ipfs.format.Node;
 import io.ipfs.host.DnsResolver;
-import io.ipfs.host.PeerId;
+import io.ipfs.cid.PeerId;
 import io.ipfs.ipns.Ipns;
 import io.ipfs.cid.Multiaddr;
 import io.ipfs.utils.Link;

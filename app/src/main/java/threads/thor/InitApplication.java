@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import io.ipfs.IPFS;
-import io.ipfs.host.PeerId;
+import io.ipfs.cid.PeerId;
 import threads.LogUtils;
 import threads.thor.core.Content;
 import threads.thor.core.pages.PAGES;

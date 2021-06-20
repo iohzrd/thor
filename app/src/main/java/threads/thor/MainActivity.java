@@ -86,7 +86,7 @@ import io.ipfs.IPFS;
 import io.ipfs.core.Closeable;
 import io.ipfs.core.TimeoutCloseable;
 import io.ipfs.format.Node;
-import io.ipfs.host.PeerId;
+import io.ipfs.cid.PeerId;
 import threads.LogUtils;
 import threads.thor.core.Content;
 import threads.thor.core.DOCS;

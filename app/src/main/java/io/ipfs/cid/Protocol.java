@@ -13,8 +13,6 @@ import java.net.Inet6Address;
 import java.util.HashMap;
 import java.util.Map;
 
-import io.ipfs.host.PeerId;
-
 public class Protocol {
     public static final int LENGTH_PREFIXED_VAR_SIZE = -1;
     private static final String IPV4_REGEX = "\\A(25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)(\\.(25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)){3}\\z";

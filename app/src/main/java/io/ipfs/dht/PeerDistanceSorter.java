@@ -7,7 +7,7 @@ import java.util.Collections;
 import java.util.List;
 
 import io.LogUtils;
-import io.ipfs.host.PeerId;
+import io.ipfs.cid.PeerId;
 
 public class PeerDistanceSorter extends ArrayList<PeerDistanceSorter.PeerDistance> {
     private static final String TAG = PeerDistanceSorter.class.getSimpleName();

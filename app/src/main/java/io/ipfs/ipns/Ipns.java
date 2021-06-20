@@ -22,12 +22,11 @@ import crypto.pb.Crypto;
 import io.ipfs.IPFS;
 import io.ipfs.cid.Cid;
 import io.ipfs.cid.Multihash;
+import io.ipfs.cid.PeerId;
 import io.ipfs.core.RecordIssue;
-import io.ipfs.core.Validator;
 import io.ipfs.crypto.Key;
 import io.ipfs.crypto.PrivKey;
 import io.ipfs.crypto.PubKey;
-import io.ipfs.host.PeerId;
 import ipns.pb.Ipns.IpnsEntry;
 
 

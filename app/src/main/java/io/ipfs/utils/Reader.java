@@ -5,10 +5,10 @@ import androidx.annotation.Nullable;
 
 import java.util.Objects;
 
+import io.ipfs.bitswap.Interface;
 import io.ipfs.cid.Cid;
 import io.ipfs.core.Closeable;
 import io.ipfs.core.ClosedException;
-import io.ipfs.core.Interface;
 import io.ipfs.dag.BlockService;
 import io.ipfs.dag.DagReader;
 import io.ipfs.dag.DagService;

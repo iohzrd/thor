@@ -6,7 +6,7 @@ import androidx.annotation.NonNull;
 
 import io.LogUtils;
 import io.ipfs.IPFS;
-import io.ipfs.host.PeerId;
+import io.ipfs.cid.PeerId;
 
 public class LocalConnectService {
 

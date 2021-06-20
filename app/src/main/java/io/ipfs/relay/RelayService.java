@@ -14,8 +14,8 @@ import java.util.concurrent.TimeUnit;
 
 import io.LogUtils;
 import io.ipfs.IPFS;
+import io.ipfs.cid.PeerId;
 import io.ipfs.host.Connection;
-import io.ipfs.host.PeerId;
 import io.ipfs.utils.DataHandler;
 import relay.pb.Relay;
 

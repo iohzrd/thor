@@ -7,8 +7,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import io.LogUtils;
-import io.ipfs.host.PeerId;
+import io.ipfs.cid.PeerId;
 
 public class Bucket {
     private static final String TAG = Bucket.class.getSimpleName();

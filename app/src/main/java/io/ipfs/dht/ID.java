@@ -6,7 +6,7 @@ import com.google.common.primitives.UnsignedBytes;
 
 import java.security.MessageDigest;
 
-import io.ipfs.host.PeerId;
+import io.ipfs.cid.PeerId;
 
 public class ID implements Comparable<ID> {
     public final byte[] data;

@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.LogUtils;
 import io.ipfs.cid.Cid;
-import io.ipfs.utils.Progress;
+import io.ipfs.core.Progress;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNotNull;

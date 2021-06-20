@@ -17,8 +17,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import io.LogUtils;
 import io.ipfs.cid.Cid;
 import io.ipfs.core.TimeoutCloseable;
-import io.ipfs.host.PeerId;
-import io.ipfs.utils.DataHandler;
+import io.ipfs.cid.PeerId;
 
 
 import static junit.framework.TestCase.assertTrue;

@@ -3,8 +3,8 @@ package io.ipfs.dht;
 import androidx.annotation.NonNull;
 
 import io.ipfs.cid.Cid;
+import io.ipfs.cid.PeerId;
 import io.ipfs.core.Closeable;
-import io.ipfs.host.PeerId;
 import io.ipfs.ipns.Ipns;
 
 public interface Routing {

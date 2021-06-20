@@ -31,7 +31,7 @@ import io.ipfs.IPFS;
 import io.ipfs.cid.Cid;
 import io.ipfs.core.ClosedException;
 import io.ipfs.utils.Link;
-import io.ipfs.utils.Progress;
+import io.ipfs.core.Progress;
 import threads.LogUtils;
 import threads.thor.MainActivity;
 import threads.thor.R;

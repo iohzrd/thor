@@ -4,7 +4,7 @@ import androidx.annotation.NonNull;
 
 import java.math.BigInteger;
 
-import io.ipfs.host.PeerId;
+import io.ipfs.cid.PeerId;
 
 public class QueryPeerState implements Comparable<QueryPeerState> {
 

@@ -9,7 +9,7 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 import io.LogUtils;
-import io.ipfs.host.PeerId;
+import io.ipfs.cid.PeerId;
 
 public class RoutingTable {
 

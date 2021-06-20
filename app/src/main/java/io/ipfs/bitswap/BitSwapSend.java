@@ -9,10 +9,9 @@ import java.util.concurrent.CompletableFuture;
 
 import io.LogUtils;
 import io.ipfs.IPFS;
+import io.ipfs.cid.PeerId;
 import io.ipfs.core.ProtocolIssue;
-import io.ipfs.host.Connection;
 import io.ipfs.host.ConnectionChannelHandler;
-import io.ipfs.host.PeerId;
 import io.ipfs.utils.DataHandler;
 
 public class BitSwapSend extends ConnectionChannelHandler {

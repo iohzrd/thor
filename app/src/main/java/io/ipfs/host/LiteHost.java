@@ -54,6 +54,7 @@ import io.ipfs.bitswap.BitSwap;
 import io.ipfs.bitswap.BitSwapMessage;
 import io.ipfs.cid.Cid;
 import io.ipfs.cid.Multiaddr;
+import io.ipfs.cid.PeerId;
 import io.ipfs.cid.Protocol;
 import io.ipfs.core.Closeable;
 import io.ipfs.core.ClosedException;

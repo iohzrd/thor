@@ -6,6 +6,7 @@ import androidx.annotation.Nullable;
 import java.util.List;
 
 import io.ipfs.cid.Multiaddr;
+import io.ipfs.cid.PeerId;
 
 public class PeerInfo {
     @NonNull
@@ -22,7 +23,9 @@ public class PeerInfo {
     @Nullable
     private final Multiaddr observed;
 
-    public PeerInfo(@NonNull PeerId peerId, @NonNull String agent, @NonNull String version,
+    public PeerInfo(@NonNull PeerId peerId,
+                    @NonNull String agent,
+                    @NonNull String version,
                     @NonNull List<Multiaddr> addresses,
                     @NonNull List<String> protocols,
                     @Nullable Multiaddr observed) {

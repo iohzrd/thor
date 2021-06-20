@@ -11,6 +11,7 @@ import java.util.Set;
 
 import io.LogUtils;
 import io.ipfs.cid.Multiaddr;
+import io.ipfs.cid.PeerId;
 import io.ipfs.cid.Protocol;
 
 

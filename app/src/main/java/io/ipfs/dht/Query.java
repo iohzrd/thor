@@ -16,13 +16,13 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 
 import io.LogUtils;
+import io.ipfs.cid.PeerId;
 import io.ipfs.core.Closeable;
 import io.ipfs.core.ClosedException;
 import io.ipfs.core.ConnectionIssue;
 import io.ipfs.core.ProtocolIssue;
 import io.ipfs.core.TimeoutIssue;
 import io.ipfs.host.AddrInfo;
-import io.ipfs.host.PeerId;
 
 public class Query {
 

@@ -8,12 +8,12 @@ import java.util.List;
 import java.util.Objects;
 
 import io.ipfs.bitswap.BitSwap;
+import io.ipfs.bitswap.Interface;
 import io.ipfs.cid.Cid;
 import io.ipfs.cid.Multihash;
 import io.ipfs.cid.Prefix;
 import io.ipfs.core.Closeable;
 import io.ipfs.core.ClosedException;
-import io.ipfs.core.Interface;
 import io.ipfs.dag.Adder;
 import io.ipfs.dag.BlockService;
 import io.ipfs.dag.DagService;

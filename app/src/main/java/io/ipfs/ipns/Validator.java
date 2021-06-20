@@ -1,8 +1,8 @@
-package io.ipfs.core;
+package io.ipfs.ipns;
 
 import androidx.annotation.NonNull;
 
-import io.ipfs.ipns.Ipns;
+import io.ipfs.core.RecordIssue;
 
 public interface Validator {
 

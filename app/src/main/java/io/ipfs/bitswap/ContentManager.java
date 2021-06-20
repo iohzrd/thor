@@ -18,6 +18,7 @@ import bitswap.pb.MessageOuterClass;
 import io.LogUtils;
 import io.ipfs.IPFS;
 import io.ipfs.cid.Cid;
+import io.ipfs.cid.PeerId;
 import io.ipfs.core.Closeable;
 import io.ipfs.core.ClosedException;
 import io.ipfs.core.ConnectionIssue;
@@ -26,7 +27,6 @@ import io.ipfs.core.TimeoutIssue;
 import io.ipfs.format.Block;
 import io.ipfs.format.BlockStore;
 import io.ipfs.host.LiteHost;
-import io.ipfs.host.PeerId;
 
 
 public class ContentManager {

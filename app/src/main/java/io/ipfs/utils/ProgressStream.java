@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import io.ipfs.core.ClosedException;
+import io.ipfs.core.Progress;
 
 public class ProgressStream extends InputStream {
     private static final String TAG = ProgressStream.class.getSimpleName();

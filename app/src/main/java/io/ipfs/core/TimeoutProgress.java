@@ -3,8 +3,6 @@ package io.ipfs.core;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import io.ipfs.utils.Progress;
-
 public abstract class TimeoutProgress implements Progress {
 
     private final long timeout;
