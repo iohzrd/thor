@@ -11,10 +11,10 @@ import io.LogUtils;
 import io.ipfs.IPFS;
 import io.ipfs.cid.PeerId;
 import io.ipfs.core.ProtocolIssue;
-import io.ipfs.host.ConnectionChannelHandler;
+import io.ipfs.host.QuicStreamHandler;
 import io.ipfs.utils.DataHandler;
 
-public class BitSwapSend extends ConnectionChannelHandler {
+public class BitSwapSend extends QuicStreamHandler {
 
     private static final String TAG = BitSwapSend.class.getSimpleName();
 
@@ -50,9 +50,11 @@ public class BitSwapSend extends ConnectionChannelHandler {
         if (reader.isDone()) {
             for (String received : reader.getTokens()) {
                 if (Objects.equals(received, IPFS.BITSWAP_PROTOCOL)) {
+                    closeInputStream();
                     done.complete(this);
                 } else if (!Objects.equals(received, IPFS.STREAM_PROTOCOL)) {
                     LogUtils.debug(TAG, "NOT SUPPORTED " + received);
+                    closeInputStream();
                     throw new ProtocolIssue();
                 }
             }

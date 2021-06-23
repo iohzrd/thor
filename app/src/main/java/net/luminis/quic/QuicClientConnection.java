@@ -41,6 +41,8 @@ public interface QuicClientConnection extends QuicConnection {
 
     InetSocketAddress getLocalAddress();
 
+    InetSocketAddress getRemoteAddress();
+
     List<X509Certificate> getServerCertificateChain();
 
     class StreamEarlyData {

@@ -22,7 +22,6 @@ import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
-import java.net.SocketAddress;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -33,6 +32,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -137,7 +137,7 @@ public class LiteHost {
     @NonNull
     private final ConcurrentHashMap<PeerId, Set<Multiaddr>> addressBook = new ConcurrentHashMap<>();
     @NonNull
-    private final ConcurrentHashMap<PeerId, Connection> connections = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<PeerId, QuicClientConnection> connections = new ConcurrentHashMap<>();
     @NonNull
     private final Routing routing;
     @NonNull
@@ -236,18 +236,30 @@ public class LiteHost {
     }
 
     @NonNull
-    public List<Connection> getConnections() {
-
-        // first simple solution (test if conn is open)
-        List<Connection> cones = new ArrayList<>();
-        for (Connection conn : connections.values()) {
-            if (conn.isConnected()) {
-                cones.add(conn);
+    public List<QuicClientConnection> getConnections() {
+        List<QuicClientConnection> cones = new ArrayList<>();
+        for (Map.Entry<PeerId, QuicClientConnection> entry : connections.entrySet()) {
+            if (entry.getValue().isConnected()) {
+                cones.add(entry.getValue());
             } else {
-                removeConnection(conn);
+                removeConnection(entry.getKey());
             }
         }
 
+        return cones;
+    }
+
+
+    @NonNull
+    public Set<PeerId> getConnectedPeers() {
+        Set<PeerId> cones = new HashSet<>();
+        for (Map.Entry<PeerId, QuicClientConnection> entry : connections.entrySet()) {
+            if (entry.getValue().isConnected()) {
+                cones.add(entry.getKey());
+            } else {
+                removeConnection(entry.getKey());
+            }
+        }
         return cones;
     }
 
@@ -337,12 +349,12 @@ public class LiteHost {
 
 
     @NonNull
-    public Connection connectTo(@NonNull Closeable closeable, @NonNull PeerId peerId, int timeout)
+    public QuicClientConnection connectTo(@NonNull Closeable closeable, @NonNull PeerId peerId, int timeout)
             throws ClosedException, ConnectionIssue {
         if (hasAddresses(peerId)) {
             return connect(closeable, peerId, timeout);
         } else {
-            AtomicReference<Connection> connectionAtomicReference = new AtomicReference<>(null);
+            AtomicReference<QuicClientConnection> connectionAtomicReference = new AtomicReference<>(null);
             AtomicBoolean done = new AtomicBoolean(false);
             routing.findPeer(() -> closeable.isClosed() || done.get(), peerId1 -> {
                 try {
@@ -353,7 +365,7 @@ public class LiteHost {
                     LogUtils.error(TAG, throwable);
                 }
             }, peerId);
-            Connection connection = connectionAtomicReference.get();
+            QuicClientConnection connection = connectionAtomicReference.get();
             if (connection == null) {
                 throw new ConnectionIssue();
             }
@@ -387,7 +399,7 @@ public class LiteHost {
 
     public boolean isConnected(@NonNull PeerId id) {
         try {
-            Connection connection = connections.get(id);
+            QuicClientConnection connection = connections.get(id);
             if (connection != null) {
                 return connection.isConnected();
             }
@@ -401,16 +413,11 @@ public class LiteHost {
     public PeerInfo getPeerInfo(@NonNull Closeable closeable, @NonNull PeerId peerId)
             throws ClosedException, ConnectionIssue {
 
-        Connection conn = connect(closeable, peerId, IPFS.CONNECT_TIMEOUT);
+        QuicClientConnection conn = connect(closeable, peerId, IPFS.CONNECT_TIMEOUT);
 
-        return getPeerInfo(closeable, conn);
+        return IdentityService.getPeerInfo(closeable, peerId, conn);
     }
 
-    @NonNull
-    public PeerInfo getPeerInfo(@NonNull Closeable closeable,
-                                @NonNull Connection conn) throws ClosedException {
-        return IdentityService.getPeerInfo(closeable, conn);
-    }
 
     public void swarmReduce(@NonNull PeerId peerId) {
         swarm.remove(peerId);
@@ -424,7 +431,9 @@ public class LiteHost {
 
             if (addrInfo.hasAddresses()) {
                 if (info != null) {
-                    result = info.addAll(addrInfo.asSet());
+                    int size = info.size();
+                    info.addAll(addrInfo.asSet());
+                    return info.size() > size;
                 } else {
                     addressBook.put(peerId, addrInfo.asSet());
                     result = true;
@@ -437,10 +446,10 @@ public class LiteHost {
     }
 
 
-    private void addConnection(@NonNull Connection connection) {
+    private void addConnection(@NonNull PeerId peerId, @NonNull QuicClientConnection connection) {
 
 
-        connections.put(connection.remoteId(), connection);
+        connections.put(peerId, connection);
 
         LogUtils.verbose(TAG, "Active Connections : " + connections.size());
 
@@ -448,7 +457,7 @@ public class LiteHost {
             executors.execute(() -> {
                 for (ConnectionHandler handle : handlers) {
                     try {
-                        handle.handleConnection(connection);
+                        handle.connected(peerId);
                     } catch (Throwable throwable) {
                         LogUtils.error(TAG, throwable);
                     }
@@ -487,7 +496,7 @@ public class LiteHost {
             throws ConnectionIssue, ClosedException {
 
         try {
-            Connection conn = connect(closeable, relay, IPFS.CONNECT_TIMEOUT);
+            QuicClientConnection conn = connect(closeable, relay, IPFS.CONNECT_TIMEOUT);
 
             return RelayService.getStream(conn, self(), peerId, IPFS.CONNECT_TIMEOUT);
 
@@ -504,7 +513,7 @@ public class LiteHost {
             throws ConnectionIssue, ClosedException {
 
         try {
-            Connection conn = connect(closeable, peerId, IPFS.CONNECT_TIMEOUT);
+            QuicClientConnection conn = connect(closeable, peerId, IPFS.CONNECT_TIMEOUT);
 
             return RelayService.canHop(conn, IPFS.CONNECT_TIMEOUT);
 
@@ -546,7 +555,8 @@ public class LiteHost {
     }
 
     @NonNull
-    public Connection connect(@NonNull Closeable closeable, @NonNull PeerId peerId, int timeout)
+    public QuicClientConnection connect(@NonNull Closeable closeable,
+                                        @NonNull PeerId peerId, int timeout)
             throws ConnectionIssue, ClosedException {
 
 
@@ -556,12 +566,12 @@ public class LiteHost {
                 throw new ClosedException();
             }
 
-            Connection connection = connections.get(peerId);
+            QuicClientConnection connection = connections.get(peerId);
             if (connection != null) {
                 if (connection.isConnected()) {
                     return connection;
                 } else {
-                    removeConnection(connection);
+                    removeConnection(peerId);
                 }
             }
 
@@ -596,15 +606,13 @@ public class LiteHost {
                             new TransportParameters(IPFS.GRACE_PERIOD, IPFS.MESSAGE_SIZE_MAX,
                                     IPFS.MAX_STREAMS, IPFS.MAX_STREAMS), null);
 
-                    final Connection conn = new LiteConnection(quicClientConnection, peerId, address);
-                    Objects.requireNonNull(conn);
 
                     quicClientConnection.setPeerInitiatedStreamCallback(quicStream ->
-                            new StreamHandler(conn, quicStream, LiteHost.this));
+                            new StreamHandler(quicClientConnection, quicStream, peerId, LiteHost.this));
 
-                    addConnection(conn);
+                    addConnection(peerId, quicClientConnection);
                     run = true;
-                    return conn;
+                    return quicClientConnection;
                 } catch (Throwable ignore) {
                     // nothing to do here
                 } finally {
@@ -614,11 +622,9 @@ public class LiteHost {
                         failure++;
                     }
 
-                    LogUtils.debug(TAG, "Run " + run + " Success " + success + " " +
-                            "Failure " + failure + " " +
-                            address + "/p2p/" + peerId.toBase58() + " " +
-                            (System.currentTimeMillis() - start));
-
+                    LogUtils.error(TAG, "Run " + run + " Success " + success + " " +
+                            "Failure " + failure + " Active " + connections.size() + " " +
+                            address + " " + (System.currentTimeMillis() - start));
                 }
 
             }
@@ -627,11 +633,11 @@ public class LiteHost {
         }
     }
 
-    private void removeConnection(@NonNull Connection conn) {
+    private void removeConnection(@NonNull PeerId peerId) {
         try {
-            LogUtils.verbose(TAG, "Remove Connection " + conn.remoteId().toBase58());
+            LogUtils.verbose(TAG, "Remove Connection " + peerId.toBase58());
 
-            connections.remove(conn.remoteId());
+            connections.remove(peerId);
 
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
@@ -661,9 +667,8 @@ public class LiteHost {
 
 
     @NonNull
-    private Multiaddr transform(@NonNull SocketAddress socketAddress) {
+    public Multiaddr transform(@NonNull InetSocketAddress inetSocketAddress) {
 
-        InetSocketAddress inetSocketAddress = (InetSocketAddress) socketAddress;
         InetAddress inetAddress = inetSocketAddress.getAddress();
         boolean ipv6 = false;
         if (inetAddress instanceof Inet6Address) {
@@ -681,7 +686,8 @@ public class LiteHost {
 
     }
 
-    public IdentifyOuterClass.Identify createIdentity(@Nullable Multiaddr observed) {
+    public IdentifyOuterClass.Identify createIdentity(@Nullable InetSocketAddress inetSocketAddress) {
+
 
         IdentifyOuterClass.Identify.Builder builder = IdentifyOuterClass.Identify.newBuilder()
                 .setAgentVersion(IPFS.AGENT)
@@ -698,7 +704,8 @@ public class LiteHost {
             builder.addProtocols(protocol);
         }
 
-        if (observed != null) {
+        if (inetSocketAddress != null) {
+            Multiaddr observed = transform(inetSocketAddress);
             builder.setObservedAddr(ByteString.copyFrom(observed.getBytes()));
         }
 
@@ -780,11 +787,16 @@ public class LiteHost {
     }
 
     public void disconnect(@NonNull PeerId peerId) {
-        Connection connection = connections.get(peerId);
-        if (connection != null) {
-            connection.disconnect();
+        try {
+            if (!isProtected(peerId)) {
+                QuicClientConnection connection = connections.remove(peerId);
+                if (connection != null) {
+                    connection.close();
+                }
+            }
+        } catch (Throwable throwable) {
+            LogUtils.error(TAG, throwable);
         }
-
     }
 
     public void updateNetwork(@NonNull String networkInterface) {
@@ -827,53 +839,4 @@ public class LiteHost {
         }
     }
 
-    public class LiteConnection implements Connection {
-        private final QuicClientConnection channel;
-        private final Multiaddr multiaddr;
-        private final PeerId peerId;
-
-        public LiteConnection(@NonNull QuicClientConnection channel,
-                              @NonNull PeerId peerId,
-                              @NonNull Multiaddr multiaddr) {
-            this.channel = channel;
-            this.peerId = peerId;
-            this.multiaddr = multiaddr;
-        }
-
-        @Override
-        public Multiaddr remoteAddress() {
-            // todo should based on channel and then remote address
-            return multiaddr;
-        }
-
-        @Override
-        public QuicClientConnection channel() {
-            return channel;
-        }
-
-        @Override
-        public void disconnect() {
-            try {
-                if (!isProtected(remoteId())) {
-                    removeConnection(this);
-                    channel.close();
-                }
-            } catch (Exception exception) {
-                LogUtils.error(TAG, exception);
-            }
-        }
-
-        @Override
-        public boolean isConnected() {
-            return channel.isConnected();
-        }
-
-
-        @Override
-        public PeerId remoteId() {
-            return peerId;
-        }
-
-
-    }
 }

@@ -7,7 +7,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.google.protobuf.ByteString;
-import com.google.protobuf.MessageLite;
 
 import net.luminis.quic.QuicClientConnection;
 import net.luminis.quic.stream.QuicStream;
@@ -47,7 +46,6 @@ import io.ipfs.core.ProtocolIssue;
 import io.ipfs.core.RecordIssue;
 import io.ipfs.core.TimeoutIssue;
 import io.ipfs.host.AddrInfo;
-import io.ipfs.host.Connection;
 import io.ipfs.host.DnsResolver;
 import io.ipfs.host.LiteHost;
 import io.ipfs.ipns.Ipns;
@@ -280,7 +278,7 @@ public class KadDht implements Routing {
                     }
                     handled.put(peerId, foundNumber);
 
-                    LogUtils.debug(TAG, "got provider before filter " + peerId.toBase58() + " "
+                    LogUtils.debug(TAG, "findProviders before filter " + peerId.toBase58() + " "
                             + multiAddresses.toString() + " " + foundNumber + " for " +
                             cid.String() + " " + cid.getVersion() + " " + addrInfo.toString());
 
@@ -357,20 +355,20 @@ public class KadDht implements Routing {
     }
 
 
-    private void sendMessage(@NonNull Closeable closeable, @NonNull PeerId p,
+    private void sendMessage(@NonNull Closeable closeable, @NonNull PeerId peerId,
                              @NonNull Dht.Message message) {
         long time = System.currentTimeMillis();
-        Connection conn = null;
+        QuicClientConnection conn;
         try {
-            conn = host.connect(closeable, p, IPFS.CONNECT_TIMEOUT);
+            conn = host.connect(closeable, peerId, IPFS.CONNECT_TIMEOUT);
 
             if (closeable.isClosed()) {
                 return;
             }
-            QuicClientConnection quicChannel = conn.channel();
 
             CompletableFuture<Void> stream = new CompletableFuture<>();
-            QuicStream quicStream = quicChannel.createStream(true);
+            QuicStream quicStream = conn.createStream(true,
+                    IPFS.CONNECT_TIMEOUT, TimeUnit.SECONDS);
             KadDhtSend kadDhtSend = new KadDhtSend(quicStream, stream);
 
             // TODO quicStream.updatePriority(new QuicStreamPriority(IPFS.PRIORITY_HIGH, false));
@@ -382,15 +380,13 @@ public class KadDht implements Routing {
             stream.get(IPFS.CONNECT_TIMEOUT, TimeUnit.SECONDS);
 
 
-        } catch (ClosedException | ConnectionIssue | TimeoutException | ProtocolException ignore) {
+        } catch (ClosedException | ConnectionIssue | TimeoutException ignore) {
             // ignore
         } catch (Throwable throwable) {
             LogUtils.error(TAG, throwable);
         } finally {
+            host.disconnect(peerId);
             LogUtils.debug(TAG, "Send took " + (System.currentTimeMillis() - time));
-            if (conn != null) {
-                conn.disconnect();
-            }
         }
     }
 
@@ -402,7 +398,7 @@ public class KadDht implements Routing {
         long time = System.currentTimeMillis();
         boolean success = false;
 
-        Connection conn = host.connect(closeable, peerId, IPFS.CONNECT_TIMEOUT);
+        QuicClientConnection conn = host.connect(closeable, peerId, IPFS.CONNECT_TIMEOUT);
 
 
         synchronized (peerId.toBase58().intern()) {
@@ -414,10 +410,21 @@ public class KadDht implements Routing {
             try {
                 time = System.currentTimeMillis();
 
-                QuicClientConnection quicChannel = conn.channel();
+                CompletableFuture<Dht.Message> request = new CompletableFuture<>();
 
-                CompletableFuture<Dht.Message> request = request(quicChannel,
-                        message, IPFS.PRIORITY_NORMAL);
+                QuicStream quicStream = conn.createStream(true,
+                        IPFS.DHT_REQUEST_READ_TIMEOUT, TimeUnit.SECONDS);
+
+                KadDhtRequest dhtRequest = new KadDhtRequest(quicStream, request);
+
+                // TODO quicStream.updatePriority(new QuicStreamPriority(IPFS.PRIORITY_NORMAL, false));
+
+
+                dhtRequest.writeAndFlush(DataHandler.writeToken(IPFS.STREAM_PROTOCOL));
+                dhtRequest.writeAndFlush(DataHandler.writeToken(IPFS.DHT_PROTOCOL));
+                dhtRequest.writeAndFlush(DataHandler.encode(message));
+                dhtRequest.closeOutputStream();
+
 
                 Dht.Message msg = request.get(IPFS.DHT_REQUEST_READ_TIMEOUT, TimeUnit.SECONDS);
                 Objects.requireNonNull(msg);
@@ -442,42 +449,11 @@ public class KadDht implements Routing {
                 LogUtils.error(TAG, throwable);
                 throw new ConnectionIssue();
             } finally {
+                host.disconnect(peerId);
                 LogUtils.warning(TAG, "Request " + success + " took " +
                         (System.currentTimeMillis() - time));
-                conn.disconnect();
-
             }
         }
-    }
-
-    public CompletableFuture<Dht.Message> request(@NonNull QuicClientConnection quicChannel,
-                                                  @NonNull MessageLite messageLite,
-                                                  short priority) {
-
-        CompletableFuture<Dht.Message> request = new CompletableFuture<>();
-
-
-        try {
-            QuicStream quicStream = quicChannel.createStream(true);
-            KadDhtRequest dhtRequest = new KadDhtRequest(quicStream, request);
-
-            // TODO quicStream.pipeline().addFirst(new ReadTimeoutHandler(
-            // TODO         IPFS.DHT_REQUEST_READ_TIMEOUT, TimeUnit.SECONDS));
-
-            // TODO quicStream.updatePriority(new QuicStreamPriority(priority, false));
-
-
-            dhtRequest.writeAndFlush(DataHandler.writeToken(IPFS.STREAM_PROTOCOL));
-            dhtRequest.writeAndFlush(DataHandler.writeToken(IPFS.DHT_PROTOCOL));
-            dhtRequest.writeAndFlush(DataHandler.encode(messageLite));
-            dhtRequest.closeOutputStream();
-        } catch (Throwable throwable) {
-            LogUtils.error(TAG, throwable);
-
-            request.completeExceptionally(throwable);
-        }
-
-        return request;
     }
 
 

@@ -41,9 +41,11 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -103,7 +105,7 @@ public abstract class QuicConnectionImpl implements QuicConnection, FrameProcess
     }
 
     private RateLimiter closeFramesSendRateLimiter;
-
+    private final ScheduledExecutorService scheduler;
 
     protected QuicConnectionImpl(Version quicVersion, Role role, Path secretsFile, Logger log) {
         this.quicVersion = quicVersion;
@@ -119,6 +121,7 @@ public abstract class QuicConnectionImpl implements QuicConnection, FrameProcess
 
         connectionState = Status.Idle;
         closeFramesSendRateLimiter = new ProgressivelyIncreasingRateLimiter();
+        scheduler = Executors.newScheduledThreadPool(1, new DaemonThreadFactory("scheduler"));
     }
 
     public void addHandshakeStateListener(RecoveryManager recoveryManager) {
@@ -162,6 +165,10 @@ public abstract class QuicConnectionImpl implements QuicConnection, FrameProcess
         }
     }
 
+    @Override
+    public QuicStream createStream(boolean bidirectional, long timeout, TimeUnit timeoutUnit) throws TimeoutException {
+        return getStreamManager().createStream(bidirectional, timeout, timeoutUnit);
+    }
     @Override
     public QuicStream createStream(boolean bidirectional) {
         return getStreamManager().createStream(bidirectional);
@@ -598,8 +605,11 @@ public abstract class QuicConnectionImpl implements QuicConnection, FrameProcess
         // https://tools.ietf.org/html/draft-ietf-quic-transport-32#section-10.2
         // "Once its closing or draining state ends, an endpoint SHOULD discard all connection state."
         idleTimer.shutdown();
+        getSender().stop();
         getSender().shutdown();
+
         connectionState = Status.Closed;
+        scheduler.shutdown();
     }
 
     protected int quicError(TlsProtocolException tlsError) {
@@ -643,6 +653,9 @@ public abstract class QuicConnectionImpl implements QuicConnection, FrameProcess
         // Because this method is not called in the context of processing received messages,
         // sender flush must be called explicitly.
         getSender().flush();
+        idleTimer.shutdown();
+        cryptoStreams.clear();
+
     }
 
     @Override
@@ -651,8 +664,7 @@ public abstract class QuicConnectionImpl implements QuicConnection, FrameProcess
     }
 
     private void schedule(Runnable command, int delay, TimeUnit unit) {
-        Executors.newScheduledThreadPool(1,
-                new DaemonThreadFactory("scheduled")).schedule(command, delay, unit);
+        scheduler.schedule(command, delay, unit);
     }
 
     @Override

@@ -9,18 +9,15 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 import io.ipfs.IPFS;
-import io.ipfs.host.Connection;
 import io.ipfs.utils.DataHandler;
 
 public class PushService {
 
-    public static void notify(@NonNull Connection conn, @NonNull String content) {
+    public static void notify(@NonNull QuicClientConnection conn, @NonNull String content) {
 
         try {
-            QuicClientConnection quicChannel = conn.channel();
-
             CompletableFuture<Void> stream = new CompletableFuture<>();
-            QuicStream streamChannel = quicChannel.createStream(true);
+            QuicStream streamChannel = conn.createStream(true);
             PushSend pushSend = new PushSend(streamChannel, stream);
 
             // TODO streamChannel.updatePriority(new QuicStreamPriority(IPFS.PRIORITY_HIGH, false));

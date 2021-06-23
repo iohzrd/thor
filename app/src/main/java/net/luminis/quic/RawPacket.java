@@ -64,4 +64,8 @@ public class RawPacket {
     public int getPort() {
         return receivedPacket.getPort();
     }
+
+    public void clear() {
+        data.clear();
+    }
 }

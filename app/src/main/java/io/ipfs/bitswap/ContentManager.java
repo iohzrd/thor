@@ -70,16 +70,6 @@ public class ContentManager {
 
         LogUtils.verbose(TAG, "Reset");
         try {
-            ExecutorService service = Executors.newFixedThreadPool(4);
-            for (PeerId peerId : priority) {
-                service.execute(() -> {
-                    try {
-                        host.disconnect(peerId);
-                    } catch (Throwable throwable) {
-                        LogUtils.error(TAG, throwable);
-                    }
-                });
-            }
             loads.clear();
             priority.clear();
             whitelist.clear();

@@ -7,9 +7,8 @@ import net.luminis.quic.QuicClientConnection;
 import net.luminis.quic.stream.QuicStream;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import io.LogUtils;
@@ -23,7 +22,6 @@ import io.ipfs.core.ProtocolIssue;
 import io.ipfs.core.TimeoutIssue;
 import io.ipfs.format.Block;
 import io.ipfs.format.BlockStore;
-import io.ipfs.host.Connection;
 import io.ipfs.host.LiteHost;
 import io.ipfs.utils.DataHandler;
 
@@ -110,25 +108,36 @@ public class BitSwap implements Interface {
             throws ClosedException, ProtocolIssue, TimeoutIssue, ConnectionIssue {
 
         if (IPFS.BITSWAP_REQUEST_ACTIVE) {
-            long time = System.currentTimeMillis();
             boolean success = false;
             host.protectPeer(peerId, host.getShortTime());
+
+            QuicClientConnection conn = host.connectTo(closeable, peerId, IPFS.CONNECT_TIMEOUT);
+
+            if (closeable.isClosed()) {
+                throw new ClosedException();
+            }
+
+            long time = System.currentTimeMillis();
             try {
 
-                Connection conn = host.connectTo(closeable, peerId, IPFS.CONNECT_TIMEOUT);
+                CompletableFuture<BitSwapSend> request = new CompletableFuture<>();
 
-                if (closeable.isClosed()) {
-                    throw new ClosedException();
-                }
+                QuicStream quicStream = conn.createStream(true,
+                        IPFS.CONNECT_TIMEOUT, TimeUnit.SECONDS);
+                BitSwapSend bitSwapSend = new BitSwapSend(peerId, quicStream, request);
 
-                BitSwapSend stream = getStream(closeable, conn, priority);
-                stream.writeAndFlush(DataHandler.encode(message.ToProtoV1()));
-                stream.closeOutputStream();
+                // TODO streamChannel.updatePriority(new QuicStreamPriority(priority, false));
+
+                bitSwapSend.writeAndFlush(DataHandler.writeToken(IPFS.STREAM_PROTOCOL));
+                bitSwapSend.writeAndFlush(DataHandler.writeToken(IPFS.BITSWAP_PROTOCOL));
+                bitSwapSend.writeAndFlush(DataHandler.encode(message.ToProtoV1()));
+                bitSwapSend.closeOutputStream();
+
+                request.get(IPFS.CONNECT_TIMEOUT, TimeUnit.SECONDS);
 
                 success = true;
-            } catch (ClosedException | ConnectionIssue exception) {
-                throw exception;
             } catch (Throwable throwable) {
+                LogUtils.error(TAG, "" + throwable);
                 Throwable cause = throwable.getCause();
                 if (cause != null) {
                     if (cause instanceof ProtocolIssue) {
@@ -148,61 +157,5 @@ public class BitSwap implements Interface {
             }
         }
     }
-
-
-    private CompletableFuture<BitSwapSend> getStream(@NonNull Connection connection,
-                                                     @NonNull QuicClientConnection quicClientConnection,
-                                                     short priority) {
-
-
-        CompletableFuture<BitSwapSend> stream = new CompletableFuture<>();
-
-        try {
-            QuicStream quicStream = quicClientConnection.createStream(true);
-            BitSwapSend bitSwapSend = new BitSwapSend(connection.remoteId(), quicStream, stream);
-
-            // TODO streamChannel.updatePriority(new QuicStreamPriority(priority, false));
-
-            bitSwapSend.writeAndFlush(DataHandler.writeToken(IPFS.STREAM_PROTOCOL));
-            bitSwapSend.writeAndFlush(DataHandler.writeToken(IPFS.BITSWAP_PROTOCOL));
-
-        } catch (Throwable throwable) {
-            LogUtils.error(TAG, throwable);
-            stream.completeExceptionally(throwable);
-        }
-
-        return stream;
-    }
-
-    private BitSwapSend getStream(@NonNull Closeable closeable, @NonNull Connection conn,
-                                  short priority)
-            throws InterruptedException, ExecutionException, ClosedException {
-
-        if (closeable.isClosed()) {
-            throw new ClosedException();
-        }
-
-        QuicClientConnection quicChannel = conn.channel();
-
-        CompletableFuture<BitSwapSend> ctrl = getStream(conn, quicChannel, priority);
-
-
-        while (!ctrl.isDone()) {
-            if (closeable.isClosed()) {
-                ctrl.cancel(true);
-            }
-        }
-
-        if (closeable.isClosed()) {
-            throw new ClosedException();
-        }
-
-        BitSwapSend stream = ctrl.get();
-
-        Objects.requireNonNull(stream);
-
-        return stream;
-    }
-
 }
 

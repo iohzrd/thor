@@ -10,11 +10,10 @@ import java.util.concurrent.CompletableFuture;
 import io.LogUtils;
 import io.ipfs.IPFS;
 import io.ipfs.core.ProtocolIssue;
-import io.ipfs.host.Connection;
-import io.ipfs.host.ConnectionChannelHandler;
+import io.ipfs.host.QuicStreamHandler;
 import io.ipfs.utils.DataHandler;
 
-public class PushSend extends ConnectionChannelHandler {
+public class PushSend extends QuicStreamHandler {
 
     private static final String TAG = PushSend.class.getSimpleName();
 

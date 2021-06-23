@@ -15,7 +15,6 @@ import java.util.concurrent.TimeUnit;
 import io.LogUtils;
 import io.ipfs.IPFS;
 import io.ipfs.cid.PeerId;
-import io.ipfs.host.Connection;
 import io.ipfs.utils.DataHandler;
 import relay.pb.Relay;
 
@@ -24,26 +23,22 @@ public class RelayService {
     public static final String TAG = RelayService.class.getSimpleName();
 
 
-    public static boolean canHop(@NonNull Connection conn, int timeout) {
+    public static boolean canHop(@NonNull QuicClientConnection conn, int timeout) {
 
         try {
             Relay.CircuitRelay message = relay.pb.Relay.CircuitRelay.newBuilder()
                     .setType(relay.pb.Relay.CircuitRelay.Type.CAN_HOP)
                     .build();
 
-            QuicClientConnection quicChannel = conn.channel();
             long time = System.currentTimeMillis();
 
             CompletableFuture<Relay.CircuitRelay> request = new CompletableFuture<>();
 
 
-            QuicStream quicStream = quicChannel.createStream(true);
+            QuicStream quicStream = conn.createStream(true);
             RelayRequest relayRequest = new RelayRequest(quicStream, request);
 
-            // TODO quicStream.pipeline().addFirst(new ReadTimeoutHandler(timeout, TimeUnit.SECONDS));
-
             // TODO quicStream.updatePriority(new QuicStreamPriority(IPFS.PRIORITY_URGENT, false));
-
 
             relayRequest.writeAndFlush(DataHandler.writeToken(IPFS.STREAM_PROTOCOL));
             relayRequest.writeAndFlush(DataHandler.writeToken(IPFS.RELAY_PROTOCOL));
@@ -67,7 +62,8 @@ public class RelayService {
 
 
     @Nullable
-    public static QuicStream getStream(@NonNull Connection conn, @NonNull PeerId self,
+    public static QuicStream getStream(@NonNull QuicClientConnection quicClientConnection,
+                                       @NonNull PeerId self,
                                        @NonNull PeerId peerId, int timeout) {
 
         Relay.CircuitRelay.Peer src = Relay.CircuitRelay.Peer.newBuilder()
@@ -81,7 +77,6 @@ public class RelayService {
                 .setDstPeer(dest)
                 .build();
 
-        QuicClientConnection quicClientConnection = conn.channel();
         long time = System.currentTimeMillis();
 
         CompletableFuture<Relay.CircuitRelay> request = new CompletableFuture<>();

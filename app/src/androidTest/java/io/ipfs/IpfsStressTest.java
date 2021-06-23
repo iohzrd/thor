@@ -41,7 +41,7 @@ public class IpfsStressTest {
 
 
         byte[] data = ipfs.getData(Cid.decode("QmcniBv7UQ4gGPQQW2BwbD4ZZHzN3o3tPuNLZCbBchd1zh"),
-                new TimeoutProgress(360) {
+                new TimeoutProgress(300) {
                     @Override
                     public void setProgress(int progress) {
                         LogUtils.error(TAG, "Progress " + progress);

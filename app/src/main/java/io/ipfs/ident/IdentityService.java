@@ -19,7 +19,6 @@ import io.ipfs.cid.Multiaddr;
 import io.ipfs.cid.PeerId;
 import io.ipfs.core.Closeable;
 import io.ipfs.core.ClosedException;
-import io.ipfs.host.Connection;
 import io.ipfs.host.PeerInfo;
 import io.ipfs.utils.DataHandler;
 
@@ -28,13 +27,13 @@ public class IdentityService {
 
     @NonNull
     public static PeerInfo getPeerInfo(@NonNull Closeable closeable,
-                                       @NonNull Connection conn) throws ClosedException {
+                                       @NonNull PeerId peerId,
+                                       @NonNull QuicClientConnection conn) throws ClosedException {
 
         try {
             IdentifyOuterClass.Identify identify = IdentityService.getIdentity(closeable, conn);
             Objects.requireNonNull(identify);
 
-            PeerId peerId = conn.remoteId();
             String agent = identify.getAgentVersion();
             String version = identify.getProtocolVersion();
             Multiaddr observedAddr = null;
@@ -62,10 +61,9 @@ public class IdentityService {
     }
 
     @NonNull
-    public static IdentifyOuterClass.Identify getIdentity(
-            @NonNull Closeable closeable, @NonNull Connection conn) throws ClosedException {
+    public static IdentifyOuterClass.Identify getIdentity(@NonNull Closeable closeable,
+                                                          @NonNull QuicClientConnection quicClientConnection) throws ClosedException {
         try {
-            QuicClientConnection quicClientConnection = conn.channel();
             long time = System.currentTimeMillis();
 
 

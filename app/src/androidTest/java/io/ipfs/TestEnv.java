@@ -38,10 +38,11 @@ class TestEnv {
             ipfs.updateNetwork(interfaceName);
         }
 
-
         ipfs.clearDatabase();
         ipfs.bootstrap();
         ipfs.reset();
+
+        System.gc();
         return ipfs;
     }
 

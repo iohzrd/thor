@@ -48,9 +48,9 @@ public class Chacha20Keys extends Keys {
 
     @Override
     public Cipher getHeaderProtectionCipher() {
-        if (hpCipher == null) {
+        //if (hpCipher == null) {
             try {
-                hpCipher = Cipher.getInstance("ChaCha20");
+                return Cipher.getInstance("ChaCha20");
             } catch (NoSuchAlgorithmException e) {
                 // Inappropriate runtime environment
                 throw new QuicRuntimeException(e);
@@ -58,30 +58,30 @@ public class Chacha20Keys extends Keys {
                 // Programming error
                 throw new RuntimeException();
             }
-        }
-        return hpCipher;
+       // }
+       // return hpCipher;
     }
 
     @Override
     public SecretKeySpec getWriteKeySpec() {
-        if (writeKeySpec == null) {
-            writeKeySpec = new SecretKeySpec(writeKey, "ChaCha20-Poly1305");
-        }
-        return writeKeySpec;
+        //if (writeKeySpec == null) {
+            return new SecretKeySpec(writeKey, "ChaCha20-Poly1305");
+        //}
+        //return writeKeySpec;
     }
 
     @Override
     public Cipher getWriteCipher() {
-        if (writeCipher == null) {
+        //if (writeCipher == null) {
             try {
-                writeCipher = Cipher.getInstance("ChaCha20-Poly1305");
+                return Cipher.getInstance("ChaCha20-Poly1305");
             }
             catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
                 // Inappropriate runtime environment
                 throw new QuicRuntimeException(e);
             }
-        }
-        return writeCipher;
+        //}
+        //return writeCipher;
     }
 
     @Override

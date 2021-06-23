@@ -2,40 +2,46 @@ package io.ipfs.host;
 
 import androidx.annotation.NonNull;
 
+import net.luminis.quic.QuicClientConnection;
 import net.luminis.quic.stream.QuicStream;
 
 import bitswap.pb.MessageOuterClass;
 import identify.pb.IdentifyOuterClass;
 import io.LogUtils;
 import io.ipfs.IPFS;
+import io.ipfs.cid.PeerId;
 import io.ipfs.utils.DataHandler;
 
 
-public class StreamHandler extends ConnectionChannelHandler {
+public class StreamHandler extends QuicStreamHandler {
     private static final String TAG = StreamHandler.class.getSimpleName();
     private final LiteHost host;
     @NonNull
-    private final Connection connection;
+    private final QuicClientConnection connection;
     @NonNull
     private final DataHandler reader = new DataHandler(IPFS.MESSAGE_SIZE_MAX);
     private volatile String protocol = null;
     private long time = System.currentTimeMillis();
+    @NonNull
+    private final PeerId peerId;
 
 
-    public StreamHandler(@NonNull Connection connection,
+    public StreamHandler(@NonNull QuicClientConnection connection,
                          @NonNull QuicStream quicStream,
+                         @NonNull PeerId peerId,
                          @NonNull LiteHost host) {
         super(quicStream);
         this.connection = connection;
         this.host = host;
+        this.peerId = peerId;
         new Thread(this::reading).start();
-        LogUtils.debug(TAG, "Instance" + " StreamId " + streamId + " PeerId " + connection.remoteId());
+        LogUtils.debug(TAG, "Instance" + " StreamId " + streamId + " PeerId " + peerId);
     }
 
 
     public void exceptionCaught(@NonNull Throwable cause) {
-        LogUtils.debug(TAG, "Error" + " StreamId " + streamId + " PeerId " + connection.remoteId() + " " + cause);
-        connection.disconnect();
+        LogUtils.debug(TAG, "Error" + " StreamId " + streamId + " PeerId " + peerId + " " + cause);
+        host.disconnect(peerId);
         reader.clear();
     }
 
@@ -47,7 +53,7 @@ public class StreamHandler extends ConnectionChannelHandler {
         if (reader.isDone()) {
             for (String token : reader.getTokens()) {
 
-                LogUtils.debug(TAG, "Token " + token + " StreamId " + streamId + " PeerId " + connection.remoteId());
+                LogUtils.debug(TAG, "Token " + token + " StreamId " + streamId + " PeerId " + peerId);
 
                 protocol = token;
                 switch (token) {
@@ -60,7 +66,7 @@ public class StreamHandler extends ConnectionChannelHandler {
                         break;
                     case IPFS.BITSWAP_PROTOCOL:
                         // TODO check if correct
-                        if (host.gatePeer(connection.remoteId())) {
+                        if (host.gatePeer(peerId)) {
                             writeAndFlush(DataHandler.writeToken(IPFS.NA));
                             closeInputStream();
                             closeOutputStream();
@@ -75,18 +81,18 @@ public class StreamHandler extends ConnectionChannelHandler {
                         writeAndFlush(DataHandler.writeToken(IPFS.IDENTITY_PROTOCOL));
 
                         IdentifyOuterClass.Identify response =
-                                host.createIdentity(connection.remoteAddress());
+                                host.createIdentity(connection.getRemoteAddress());
                         writeAndFlush(DataHandler.encode(response));
                         closeInputStream();
                         closeOutputStream();
                         return;
                     default:
                         LogUtils.debug(TAG, "Ignore " + token +
-                                " StreamId " + streamId + " PeerId " + connection.remoteId());
+                                " StreamId " + streamId + " PeerId " + peerId);
                         writeAndFlush(DataHandler.writeToken(IPFS.NA));
                         closeInputStream();
                         closeOutputStream();
-                        connection.disconnect();
+                        host.disconnect(peerId);
                         return;
                 }
             }
@@ -96,16 +102,16 @@ public class StreamHandler extends ConnectionChannelHandler {
                 if (protocol != null) {
                     switch (protocol) {
                         case IPFS.BITSWAP_PROTOCOL:
-                            host.forwardMessage(connection.remoteId(),
+                            host.forwardMessage(peerId,
                                     MessageOuterClass.Message.parseFrom(message));
 
                             LogUtils.debug(TAG, "Time " + (System.currentTimeMillis() - time) +
-                                    " StreamId " + streamId + " PeerId " + connection.remoteId() +
-                                    " Protected " + host.isProtected(connection.remoteId()));
+                                    " StreamId " + streamId + " PeerId " + peerId +
+                                    " Protected " + host.isProtected(peerId));
                             closeInputStream();
                             break;
                         case IPFS.PUSH_PROTOCOL:
-                            host.push(connection.remoteId(), message);
+                            host.push(peerId, message);
                             closeInputStream();
                             break;
                         default:
@@ -118,8 +124,7 @@ public class StreamHandler extends ConnectionChannelHandler {
         } else {
 
             LogUtils.debug(TAG, "Iteration " + protocol + " " + reader.hasRead() + " "
-                    + reader.expectedBytes() + " " + connection.remoteAddress()
-                    + " StreamId " + streamId + " PeerId " + connection.remoteId() +
+                    + reader.expectedBytes() + " StreamId " + streamId + " PeerId " + peerId +
                     " Tokens " + reader.getTokens().toString());
         }
     }

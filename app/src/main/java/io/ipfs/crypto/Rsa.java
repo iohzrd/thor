@@ -18,6 +18,7 @@ import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
@@ -34,12 +35,13 @@ public class Rsa {
 
 
     public static Pair<RsaPrivateKey, RsaPublicKey> generateRsaKeyPair(int bits, SecureRandom random)
-            throws NoSuchAlgorithmException, IOException {
+            throws NoSuchAlgorithmException, IOException, NoSuchProviderException {
 
         if (bits < 2048) {
             throw new RuntimeException("rsa keys must be >= 512 bits to be useful");
         } else {
-            KeyPairGenerator rsa = KeyPairGenerator.getInstance("RSA", new BouncyCastleProvider());
+            KeyPairGenerator rsa = KeyPairGenerator.getInstance("RSA",
+                    BouncyCastleProvider.PROVIDER_NAME);
             rsa.initialize(bits, random);
             KeyPair kp = rsa.genKeyPair();
             RsaPrivateKey var10002 = new RsaPrivateKey(kp.getPrivate(), kp.getPublic());
@@ -51,7 +53,7 @@ public class Rsa {
     public static PubKey unmarshalRsaPublicKey(byte[] keyBytes) {
         try {
             PublicKey publicKey = KeyFactory.getInstance("RSA",
-                    new BouncyCastleProvider()).generatePublic(new X509EncodedKeySpec(keyBytes));
+                    BouncyCastleProvider.PROVIDER_NAME).generatePublic(new X509EncodedKeySpec(keyBytes));
             return new RsaPublicKey(publicKey);
         } catch (Throwable throwable) {
             throw new RuntimeException(throwable);
@@ -60,7 +62,7 @@ public class Rsa {
 
     @NonNull
     public static PrivKey unmarshalRsaPrivateKey(byte[] keyBytes)
-            throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
+            throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, NoSuchProviderException {
 
         RSAPrivateKey rsaPrivateKey = RSAPrivateKey.getInstance(ASN1Primitive.fromByteArray(keyBytes));
 
@@ -73,7 +75,7 @@ public class Rsa {
 
         String algorithmId = algorithm.getId();
         PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(privateKeyInfo.getEncoded());
-        PrivateKey sk = KeyFactory.getInstance(algorithmId, new BouncyCastleProvider()).generatePrivate(spec);
+        PrivateKey sk = KeyFactory.getInstance(algorithmId, BouncyCastleProvider.PROVIDER_NAME).generatePrivate(spec);
         RSAPublicKeySpec publicKeySpec = new RSAPublicKeySpec(privateKeyParameters.getModulus(),
                 privateKeyParameters.getPublicExponent());
         KeyFactory keyFactory = KeyFactory.getInstance("RSA");
@@ -116,7 +118,7 @@ public class Rsa {
         public byte[] sign(byte[] data) {
             try {
 
-                Signature var2 = Signature.getInstance("SHA256withRSA", new BouncyCastleProvider());
+                Signature var2 = Signature.getInstance("SHA256withRSA", BouncyCastleProvider.PROVIDER_NAME);
 
                 var2.initSign(this.sk);
                 var2.update(data);
@@ -156,7 +158,7 @@ public class Rsa {
             try {
 
                 Signature sha256withRSA = Signature.getInstance(
-                        "SHA256withRSA", new BouncyCastleProvider());
+                        "SHA256withRSA", BouncyCastleProvider.PROVIDER_NAME);
                 sha256withRSA.initVerify(this.publicKey);
                 sha256withRSA.update(data);
                 return sha256withRSA.verify(signature);

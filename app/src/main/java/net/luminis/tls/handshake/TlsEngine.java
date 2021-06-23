@@ -105,7 +105,8 @@ public abstract class TlsEngine implements MessageProcessor, TrafficSecrets {
         }
 
         try {
-            Signature signatureAlgorithm = Signature.getInstance("SHA256withRSA/PSS", new BouncyCastleProvider());
+            Signature signatureAlgorithm = Signature.getInstance("SHA256withRSA/PSS",
+                    BouncyCastleProvider.PROVIDER_NAME);
 
 
             // Signature signatureAlgorithm = Signature.getInstance("RSASSA-PSS");
@@ -115,7 +116,7 @@ public abstract class TlsEngine implements MessageProcessor, TrafficSecrets {
             byte[] digitalSignature = signatureAlgorithm.sign();
             return digitalSignature;
         }
-        catch (NoSuchAlgorithmException e) {
+        catch (NoSuchProviderException | NoSuchAlgorithmException e) {
             throw new RuntimeException("Missing " + "RSASSA-PSS" + " support");
         }
         catch (/*InvalidAlgorithmParameterException |*/ InvalidKeyException e) {

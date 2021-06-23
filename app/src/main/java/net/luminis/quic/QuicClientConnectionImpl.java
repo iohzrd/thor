@@ -291,9 +291,9 @@ public class QuicClientConnectionImpl extends QuicConnectionImpl implements Quic
             throw new IllegalStateException("not connected");
         }
     }
-
+    private Thread receiverThread;
     private void startReceiverLoop() {
-        Thread receiverThread = new Thread(this::receiveAndProcessPackets, "receiver-loop");
+        receiverThread = new Thread(this::receiveAndProcessPackets, "receiver-loop");
         receiverThread.setDaemon(true);
         receiverThread.start();
     }
@@ -312,6 +312,7 @@ public class QuicClientConnectionImpl extends QuicConnectionImpl implements Quic
 
                     parseAndProcessPackets(receivedPacketCounter, rawPacket.getTimeReceived(), rawPacket.getData(), null);
                     sender.datagramProcessed(receiver.hasMore());
+                    rawPacket.clear();
                 }
             }
         }
@@ -594,6 +595,17 @@ public class QuicClientConnectionImpl extends QuicConnectionImpl implements Quic
         handshakeFinishedCondition.countDown();
         receiver.shutdown();
         socket.close();
+        streamManager.abortAll();
+    }
+
+    @Override
+    public void close() {
+        super.close();
+        terminate();
+
+        if(receiverThread != null) {
+            receiverThread.interrupt();
+        }
     }
 
     public void changeAddress() {
@@ -922,6 +934,11 @@ public class QuicClientConnectionImpl extends QuicConnectionImpl implements Quic
     @Override
     public InetSocketAddress getLocalAddress() {
         return (InetSocketAddress) socket.getLocalSocketAddress();
+    }
+
+    @Override
+    public InetSocketAddress getRemoteAddress() {
+        return (InetSocketAddress) socket.getRemoteSocketAddress();
     }
 
     @Override

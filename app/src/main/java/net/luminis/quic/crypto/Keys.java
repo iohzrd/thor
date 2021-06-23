@@ -19,6 +19,8 @@
 package net.luminis.quic.crypto;
 
 import at.favre.lib.crypto.HKDF;
+import io.LogUtils;
+
 import net.luminis.quic.DecryptionException;
 import net.luminis.quic.QuicRuntimeException;
 import net.luminis.quic.Role;
@@ -54,10 +56,10 @@ public class Keys {
     protected byte[] writeIV;
     protected byte[] newIV;
     protected byte[] hp;
-    protected Cipher hpCipher;
-    protected SecretKeySpec writeKeySpec;
-    protected SecretKeySpec newWriteKeySpec;
-    protected Cipher writeCipher;
+    //protected Cipher hpCipher;
+    //protected SecretKeySpec writeKeySpec;
+    //protected SecretKeySpec newWriteKeySpec;
+    //protected Cipher writeCipher;
     private int keyUpdateCounter = 0;
     private boolean possibleKeyUpdateInProgresss = false;
     private volatile Keys peerKeys;
@@ -81,17 +83,20 @@ public class Keys {
 
     public synchronized void computeZeroRttKeys(TrafficSecrets secrets) {
         byte[] earlySecret = secrets.getClientEarlyTrafficSecret();
+       // LogUtils.error(LogUtils.TAG, "earlySecret " + earlySecret.length);
         computeKeys(earlySecret, true, true);
     }
 
     public synchronized void computeHandshakeKeys(TrafficSecrets secrets) {
         if (nodeRole == Client) {
             trafficSecret = secrets.getClientHandshakeTrafficSecret();
+         //   LogUtils.error(LogUtils.TAG, "trafficSecret " + trafficSecret.length);
             log.secret("ClientHandshakeTrafficSecret: ", trafficSecret);
             computeKeys(trafficSecret, true, true);
         }
         if (nodeRole == Server) {
             trafficSecret = secrets.getServerHandshakeTrafficSecret();
+         //   LogUtils.error(LogUtils.TAG, "trafficSecret " + trafficSecret.length);
             log.secret("ServerHandshakeTrafficSecret: ", trafficSecret);
             computeKeys(trafficSecret, true, true);
         }
@@ -100,11 +105,13 @@ public class Keys {
     public synchronized void computeApplicationKeys(TrafficSecrets secrets) {
         if (nodeRole == Client) {
             trafficSecret = secrets.getClientApplicationTrafficSecret();
+         //   LogUtils.error(LogUtils.TAG, "trafficSecret " + trafficSecret.length);
             log.secret("ClientApplicationTrafficSecret: ", trafficSecret);
             computeKeys(trafficSecret, true, true);
         }
         if (nodeRole == Server) {
             trafficSecret = secrets.getServerApplicationTrafficSecret();
+         //   LogUtils.error(LogUtils.TAG, "trafficSecret " + trafficSecret.length);
             log.secret("Got new serverApplicationTrafficSecret from TLS (recomputing secrets): ", trafficSecret);
             computeKeys(trafficSecret, true, true);
         }
@@ -117,6 +124,9 @@ public class Keys {
      */
     public synchronized void computeKeyUpdate(boolean selfInitiated) {
         newApplicationTrafficSecret = hkdfExpandLabel(quicVersion, trafficSecret, "quic ku", "", (short) 32);
+
+       // LogUtils.error(LogUtils.TAG, "newApplicationTrafficSecret " + newApplicationTrafficSecret.length);
+
         log.secret("Updated ApplicationTrafficSecret (" + (selfInitiated? "self":"peer") + "): ", newApplicationTrafficSecret);
         computeKeys(newApplicationTrafficSecret, false, selfInitiated);
         if (selfInitiated) {
@@ -138,7 +148,7 @@ public class Keys {
             log.info("Installing updated keys (initiated by peer)");
             trafficSecret = newApplicationTrafficSecret;
             writeKey = newKey;
-            writeKeySpec = null;
+           // writeKeySpec = null;
             writeIV = newIV;
             keyUpdateCounter++;
             newApplicationTrafficSecret = null;
@@ -189,11 +199,11 @@ public class Keys {
         byte[] key = hkdfExpandLabel(quicVersion, secret, prefix + "key", "", getKeyLength());
         if (replaceKeys) {
             writeKey = key;
-            writeKeySpec = null;
+            //writeKeySpec = null;
         }
         else {
             newKey = key;
-            newWriteKeySpec = null;
+           // newWriteKeySpec = null;
         }
         log.secret(nodeRole + " key", key);
 
@@ -238,6 +248,7 @@ public class Keys {
     }
 
     public byte[] getTrafficSecret() {
+       // LogUtils.error(LogUtils.TAG, "trafficSecret " + trafficSecret.length);
         return trafficSecret;
     }
 
@@ -245,6 +256,7 @@ public class Keys {
         if (possibleKeyUpdateInProgresss) {
             return newKey;
         }
+       // LogUtils.error(LogUtils.TAG, "WriteKey " + writeKey.length);
         return writeKey;
     }
 
@@ -252,60 +264,67 @@ public class Keys {
         if (possibleKeyUpdateInProgresss) {
             return newIV;
         }
+       // LogUtils.error(LogUtils.TAG, "WriteIv " + writeKey.length);
         return writeIV;
     }
 
     public byte[] getHp() {
+       // LogUtils.error(LogUtils.TAG, "hp " + hp.length);
         return hp;
     }
 
     public Cipher getHeaderProtectionCipher() {
-        if (hpCipher == null) {
+        //if (hpCipher == null) {
             try {
                 // https://tools.ietf.org/html/draft-ietf-quic-tls-27#section-5.4.3
                 // "AEAD_AES_128_GCM and AEAD_AES_128_CCM use 128-bit AES [AES] in electronic code-book (ECB) mode."
-                hpCipher = Cipher.getInstance("AES/ECB/NoPadding");
+                Cipher hpCipher = Cipher.getInstance("AES/ECB/NoPadding");
                 SecretKeySpec keySpec = new SecretKeySpec(getHp(), "AES");
                 hpCipher.init(Cipher.ENCRYPT_MODE, keySpec);
+                return hpCipher;
             } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
+                LogUtils.error(LogUtils.TAG, e);
                 // Inappropriate runtime environment
                 throw new QuicRuntimeException(e);
             } catch (InvalidKeyException e) {
+                LogUtils.error(LogUtils.TAG, e);
                 // Programming error
                 throw new RuntimeException();
             }
-        }
-        return hpCipher;
+       // }
+        //return hpCipher;
     }
 
     public SecretKeySpec getWriteKeySpec() {
         if (possibleKeyUpdateInProgresss) {
-            if (newWriteKeySpec == null) {
-                newWriteKeySpec = new SecretKeySpec(newKey, "AES");
-            }
-            return newWriteKeySpec;
+            //if (newWriteKeySpec == null) {
+                return new SecretKeySpec(newKey, "AES");
+            //}
+            //return newWriteKeySpec;
         }
         else {
-            if (writeKeySpec == null) {
-                writeKeySpec = new SecretKeySpec(writeKey, "AES");
-            }
-            return writeKeySpec;
+            //if (writeKeySpec == null) {
+                return new SecretKeySpec(writeKey, "AES");
+            //}
+            //return writeKeySpec;
         }
     }
 
     public Cipher getWriteCipher() {
-        if (writeCipher == null) {
+        //if (writeCipher == null) {
             try {
                 // From https://tools.ietf.org/html/draft-ietf-quic-tls-16#section-5.3:
                 // "Prior to establishing a shared secret, packets are protected with AEAD_AES_128_GCM"
                 String AES_GCM_NOPADDING = "AES/GCM/NoPadding";
-                writeCipher = Cipher.getInstance(AES_GCM_NOPADDING);
+                Cipher writeCipher = Cipher.getInstance(AES_GCM_NOPADDING);
+                return writeCipher;
             } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
+                LogUtils.error(LogUtils.TAG, e);
                 // Inappropriate runtime environment
                 throw new QuicRuntimeException(e);
             }
-        }
-        return writeCipher;
+       // }
+        //return writeCipher;
     }
 
     public byte[] aeadEncrypt(byte[] associatedData, byte[] message, byte[] nonce) {
@@ -318,6 +337,7 @@ public class Keys {
             return aeadCipher.doFinal(message);
         } catch (InvalidKeyException | InvalidAlgorithmParameterException | IllegalBlockSizeException | BadPaddingException e) {
             // Programming error
+            LogUtils.error(LogUtils.TAG, e);
             throw new RuntimeException();
         }
     }
@@ -331,9 +351,11 @@ public class Keys {
             aeadCipher.updateAAD(associatedData);
             return aeadCipher.doFinal(message);
         } catch (AEADBadTagException decryptError) {
+            LogUtils.error(LogUtils.TAG, decryptError);
             throw new DecryptionException();
         } catch (InvalidKeyException | InvalidAlgorithmParameterException | IllegalBlockSizeException | BadPaddingException e) {
             // Programming error
+            LogUtils.error(LogUtils.TAG, e);
             throw new RuntimeException();
         }
     }
@@ -344,6 +366,7 @@ public class Keys {
         try {
             mask = hpCipher.doFinal(sample);
         } catch (IllegalBlockSizeException | BadPaddingException e) {
+            LogUtils.error(LogUtils.TAG, e);
             // Programming error
             throw new RuntimeException();
         }

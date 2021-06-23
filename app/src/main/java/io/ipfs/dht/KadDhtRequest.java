@@ -11,10 +11,10 @@ import dht.pb.Dht;
 import io.LogUtils;
 import io.ipfs.IPFS;
 import io.ipfs.core.ProtocolIssue;
-import io.ipfs.host.ConnectionChannelHandler;
+import io.ipfs.host.QuicStreamHandler;
 import io.ipfs.utils.DataHandler;
 
-public class KadDhtRequest extends ConnectionChannelHandler {
+public class KadDhtRequest extends QuicStreamHandler {
 
 
     private static final String TAG = KadDhtRequest.class.getSimpleName();

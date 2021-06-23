@@ -69,6 +69,7 @@ public class Receiver {
     public void shutdown() {
         isClosing = true;
         receiverThread.interrupt();
+        receivedPacketsQueue.clear();
     }
 
     public RawPacket get() throws InterruptedException {

@@ -4,10 +4,8 @@ import androidx.annotation.NonNull;
 
 import net.luminis.quic.stream.QuicStream;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -15,14 +13,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import io.LogUtils;
 
 
-public abstract class ConnectionChannelHandler {
-    private static final String TAG = ConnectionChannelHandler.class.getSimpleName();
+public abstract class QuicStreamHandler {
+    private static final String TAG = QuicStreamHandler.class.getSimpleName();
     private final InputStream inputStream;
     private final OutputStream outputStream;
     private final AtomicBoolean close = new AtomicBoolean(false);
     protected final int streamId;
 
-    public ConnectionChannelHandler(@NonNull QuicStream quicStream) {
+    public QuicStreamHandler(@NonNull QuicStream quicStream) {
         this.inputStream = quicStream.getInputStream();
         this.outputStream = quicStream.getOutputStream();
         this.streamId = quicStream.getStreamId();
@@ -52,9 +50,14 @@ public abstract class ConnectionChannelHandler {
 
     abstract public void channelRead0(@NonNull byte[] msg) throws Exception;
 
-    public void writeAndFlush(@NonNull byte[] data) throws IOException {
-        outputStream.write(data);
-        outputStream.flush();
+    public void writeAndFlush(@NonNull byte[] data) {
+        try {
+            outputStream.write(data);
+            outputStream.flush();
+        } catch (Throwable throwable) {
+            closeOutputStream();
+            exceptionCaught(throwable);
+        }
     }
 
 

@@ -37,7 +37,6 @@ import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.PrivateKey;
-import java.security.Provider;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.cert.CertificateEncodingException;
@@ -81,7 +80,7 @@ public final class LiteHostCertificate {
 
     private static final int[] extensionPrefix = new int[]{1, 3, 6, 1, 4, 1, 53594};
     public static final int[] extensionID = getPrefixedExtensionID(new int[]{1, 1});
-    private static final Provider PROVIDER = new BouncyCastleProvider();
+
 
     /**
      * FIPS 140-2 encryption requires the RSA key length to be 2048 bits or greater.
@@ -91,7 +90,6 @@ public final class LiteHostCertificate {
     private final File certificate;
     private final File privateKey;
     private final X509Certificate cert;
-    private final KeyPair keypair;
     private final PrivateKey key;
 
     private final PublicKey publicKey;
@@ -117,7 +115,6 @@ public final class LiteHostCertificate {
         String algorithm = keypair.getPublic().getAlgorithm();
         String[] paths = generate(context, privKey, fqdn, keypair, random,
                 notBefore, notAfter, algorithm);
-        this.keypair = keypair;
         certificate = new File(paths[0]);
         privateKey = new File(paths[1]);
         key = keypair.getPrivate();
@@ -195,7 +192,7 @@ public final class LiteHostCertificate {
                         "SHA256WithRSAEncryption").build(key);
         X509CertificateHolder certHolder = builder.build(signer);
         X509Certificate cert = new JcaX509CertificateConverter().
-                setProvider(PROVIDER).getCertificate(certHolder);
+                setProvider(BouncyCastleProvider.PROVIDER_NAME).getCertificate(certHolder);
         cert.verify(keypair.getPublic());
 
         return newSelfSignedCertificate(context, fqdn, key, cert);

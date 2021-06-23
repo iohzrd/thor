@@ -9,6 +9,10 @@ import androidx.annotation.Nullable;
 import com.google.common.primitives.Bytes;
 import com.google.protobuf.ByteString;
 
+import net.luminis.quic.QuicClientConnection;
+
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -24,6 +28,7 @@ import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.Security;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
@@ -60,7 +65,6 @@ import io.ipfs.dht.Routing;
 import io.ipfs.format.BlockStore;
 import io.ipfs.format.Node;
 import io.ipfs.host.AddrInfo;
-import io.ipfs.host.Connection;
 import io.ipfs.host.DnsResolver;
 import io.ipfs.host.LiteHost;
 import io.ipfs.host.LiteHostCertificate;
@@ -113,7 +117,7 @@ public class IPFS {
     public static final int PROTOCOL_READER_LIMIT = 1000;
     public static final int TIMEOUT_BOOTSTRAP = 10;
     public static final int MAX_STREAMS = 100;
-    public static final int GRACE_PERIOD = 60; // TODO
+    public static final int GRACE_PERIOD = 10;
     public static final int MIN_PEERS = 5;
     public static final int RESOLVE_TIMEOUT = 1000; // 1 sec
     public static final long WANTS_WAIT_TIMEOUT = 500; // 500 ms
@@ -198,7 +202,14 @@ public class IPFS {
     @Nullable
     private Connector connector;
 
+    static {
+        Security.removeProvider("BC");
+        // Confirm that positioning this provider at the end works for your needs!
+        Security.addProvider(new BouncyCastleProvider());
+    }
+
     private IPFS(@NonNull Context context) throws Exception {
+
 
         blocks = BLOCKS.getInstance(context);
 
@@ -229,7 +240,7 @@ public class IPFS {
         }
 
         if (IPFS.CONNECTION_SERVICE_ENABLED) {
-            host.addConnectionHandler(conn -> connected(conn.remoteId()));
+            host.addConnectionHandler(this::connected);
         }
     }
 
@@ -461,10 +472,10 @@ public class IPFS {
             AtomicInteger failed = new AtomicInteger(0);
             AtomicReference<String> result = new AtomicReference<>("");
 
-            List<Connection> connections = host.getConnections();
-            for (Connection conn : connections) {
+            Set<PeerId> peers = host.getConnectedPeers();
+            for (PeerId peerId : peers) {
                 try {
-                    PeerInfo peerInfo = host.getPeerInfo(new TimeoutCloseable(5), conn);
+                    PeerInfo peerInfo = host.getPeerInfo(new TimeoutCloseable(5), peerId);
                     Multiaddr observed = peerInfo.getObserved();
                     if (observed != null) {
 
@@ -705,16 +716,7 @@ public class IPFS {
 
     @NonNull
     public Set<PeerId> connectedPeers() {
-
-        Set<PeerId> peers = new HashSet<>();
-        try {
-            for (Connection connection : host.getConnections()) {
-                peers.add(connection.remoteId());
-            }
-        } catch (Throwable throwable) {
-            LogUtils.error(TAG, throwable);
-        }
-        return peers;
+        return host.getConnectedPeers();
     }
 
 
@@ -853,7 +855,8 @@ public class IPFS {
     @NonNull
     public Multiaddr remoteAddress(@NonNull PeerId peerId, @NonNull Closeable closeable)
             throws ClosedException, ConnectionIssue {
-        return host.connect(closeable, peerId, IPFS.CONNECT_TIMEOUT).remoteAddress();
+        return host.transform(host.connect(closeable, peerId, IPFS.CONNECT_TIMEOUT)
+                .getRemoteAddress());
     }
 
     @Nullable
@@ -1100,7 +1103,7 @@ public class IPFS {
     public boolean notify(@NonNull PeerId peerId, @NonNull String content) {
 
         try {
-            Connection conn = host.connect(new TimeoutCloseable(CONNECT_TIMEOUT), peerId,
+            QuicClientConnection conn = host.connect(new TimeoutCloseable(CONNECT_TIMEOUT), peerId,
                     CONNECT_TIMEOUT);
 
             PushService.notify(conn, content);

@@ -20,6 +20,8 @@ package net.luminis.quic;
 
 import net.luminis.quic.stream.QuicStream;
 
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
 
@@ -31,6 +33,8 @@ public interface QuicConnection {
 
     void setDefaultStreamReceiveBufferSize(long size);
 
+
+    QuicStream createStream(boolean bidirectional, long timeout, TimeUnit timeoutUnit) throws TimeoutException;
     QuicStream createStream(boolean bidirectional);
 
     void setPeerInitiatedStreamCallback(Consumer<QuicStream> streamConsumer);

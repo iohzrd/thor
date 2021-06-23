@@ -37,7 +37,8 @@ public class Ecdsa {
 
     private static Pair<EcdsaPrivateKey, EcdsaPublicKey> generateECDSAKeyPairWithCurve(SecureRandom random) {
         try {
-            KeyPairGenerator var3 = KeyPairGenerator.getInstance("ECDSA", new BouncyCastleProvider());
+            KeyPairGenerator var3 = KeyPairGenerator.getInstance("ECDSA",
+                    BouncyCastleProvider.PROVIDER_NAME);
 
             var3.initialize(Ecdsa.CURVE, random);
 
@@ -82,7 +83,7 @@ public class Ecdsa {
 
             EcdsaPrivateKey var10000;
             PrivateKey ecdsa = KeyFactory.getInstance("ECDSA",
-                    new BouncyCastleProvider()).generatePrivate(new PKCS8EncodedKeySpec(keyBytes));
+                    BouncyCastleProvider.PROVIDER_NAME).generatePrivate(new PKCS8EncodedKeySpec(keyBytes));
             if (ecdsa == null) {
                 throw new NullPointerException("null cannot be cast to non-null type java.security.interfaces.ECPrivateKey");
             } else {
@@ -96,7 +97,7 @@ public class Ecdsa {
 
     public static EcdsaPublicKey unmarshalEcdsaPublicKey(byte[] keyBytes) {
         try {
-            KeyFactory keyFactory = KeyFactory.getInstance("ECDSA", new BouncyCastleProvider());
+            KeyFactory keyFactory = KeyFactory.getInstance("ECDSA", BouncyCastleProvider.PROVIDER_NAME);
 
             PublicKey publicKey = keyFactory.generatePublic(new X509EncodedKeySpec(keyBytes));
             if (publicKey == null) {
@@ -147,7 +148,7 @@ public class Ecdsa {
         public boolean verify(byte[] data, byte[] signature) {
             try {
                 Signature sha256withECDSA = Signature.getInstance(
-                        "SHA256withECDSA", new BouncyCastleProvider());
+                        "SHA256withECDSA", BouncyCastleProvider.PROVIDER_NAME);
                 sha256withECDSA.initVerify(this.publicKey);
                 sha256withECDSA.update(data);
                 return sha256withECDSA.verify(signature);
@@ -189,7 +190,7 @@ public class Ecdsa {
         public byte[] sign(byte[] data) {
             try {
                 Signature signature = Signature.getInstance(
-                        "SHA256withECDSA", new BouncyCastleProvider());
+                        "SHA256withECDSA", BouncyCastleProvider.PROVIDER_NAME);
                 signature.initSign(this.priv);
                 signature.update(data);
                 return signature.sign();
@@ -212,7 +213,7 @@ public class Ecdsa {
                     org.bouncycastle.math.ec.ECPoint var10 = parameters.getG();
                     org.bouncycastle.math.ec.ECPoint q = var10.multiply(((org.bouncycastle.jce.interfaces.ECPrivateKey) bcecPrivateKey).getD());
                     ECPublicKeySpec pubSpec = new ECPublicKeySpec(q, bcecPrivateKey.getParameters());
-                    KeyFactory keyFactory = KeyFactory.getInstance("ECDSA", new BouncyCastleProvider());
+                    KeyFactory keyFactory = KeyFactory.getInstance("ECDSA", BouncyCastleProvider.PROVIDER_NAME);
 
                     PublicKey publicKey = keyFactory.generatePublic(pubSpec);
                     if (publicKey == null) {

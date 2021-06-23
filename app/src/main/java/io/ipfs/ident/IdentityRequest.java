@@ -11,10 +11,10 @@ import identify.pb.IdentifyOuterClass;
 import io.LogUtils;
 import io.ipfs.IPFS;
 import io.ipfs.core.ProtocolIssue;
-import io.ipfs.host.ConnectionChannelHandler;
+import io.ipfs.host.QuicStreamHandler;
 import io.ipfs.utils.DataHandler;
 
-public class IdentityRequest extends ConnectionChannelHandler {
+public class IdentityRequest extends QuicStreamHandler {
     private static final String TAG = IdentityRequest.class.getSimpleName();
     @NonNull
     private final CompletableFuture<IdentifyOuterClass.Identify> request;
