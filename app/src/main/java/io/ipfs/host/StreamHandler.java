@@ -20,10 +20,10 @@ public class StreamHandler extends QuicStreamHandler {
     private final QuicClientConnection connection;
     @NonNull
     private final DataHandler reader = new DataHandler(IPFS.MESSAGE_SIZE_MAX);
-    private volatile String protocol = null;
-    private long time = System.currentTimeMillis();
     @NonNull
     private final PeerId peerId;
+    private volatile String protocol = null;
+    private long time = System.currentTimeMillis();
 
 
     public StreamHandler(@NonNull QuicClientConnection connection,

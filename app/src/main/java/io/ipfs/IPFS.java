@@ -190,6 +190,12 @@ public class IPFS {
 
     private static IPFS INSTANCE = null;
 
+    static {
+        Security.removeProvider("BC");
+        // Confirm that positioning this provider at the end works for your needs!
+        Security.addProvider(new BouncyCastleProvider());
+    }
+
     @NonNull
     private final BLOCKS blocks;
     @NonNull
@@ -201,12 +207,6 @@ public class IPFS {
     private Reachable reachable = Reachable.UNKNOWN;
     @Nullable
     private Connector connector;
-
-    static {
-        Security.removeProvider("BC");
-        // Confirm that positioning this provider at the end works for your needs!
-        Security.addProvider(new BouncyCastleProvider());
-    }
 
     private IPFS(@NonNull Context context) throws Exception {
 

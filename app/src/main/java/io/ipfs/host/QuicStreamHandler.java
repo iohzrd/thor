@@ -15,10 +15,10 @@ import io.LogUtils;
 
 public abstract class QuicStreamHandler {
     private static final String TAG = QuicStreamHandler.class.getSimpleName();
+    protected final int streamId;
     private final InputStream inputStream;
     private final OutputStream outputStream;
     private final AtomicBoolean close = new AtomicBoolean(false);
-    protected final int streamId;
 
     public QuicStreamHandler(@NonNull QuicStream quicStream) {
         this.inputStream = quicStream.getInputStream();

@@ -73,9 +73,9 @@ import io.ipfs.relay.RelayService;
 
 public class LiteHost {
     @NonNull
-    private static final ExecutorService executors = Executors.newFixedThreadPool(2);
-    @NonNull
     public static final ConcurrentHashMap<PeerId, PubKey> remotes = new ConcurrentHashMap<>();
+    @NonNull
+    private static final ExecutorService executors = Executors.newFixedThreadPool(2);
     @NonNull
     private static final String TAG = LiteHost.class.getSimpleName();
     @NonNull
@@ -154,6 +154,7 @@ public class LiteHost {
     private final AtomicBoolean inet6 = new AtomicBoolean(false);
     @Nullable
     private Push push;
+    private Server server;
 
     public LiteHost(@NonNull LiteHostCertificate selfSignedCertificate,
                     @NonNull PrivKey privKey,
@@ -249,7 +250,6 @@ public class LiteHost {
         return cones;
     }
 
-
     @NonNull
     public Set<PeerId> getConnectedPeers() {
         Set<PeerId> cones = new HashSet<>();
@@ -262,8 +262,6 @@ public class LiteHost {
         }
         return cones;
     }
-
-    private Server server;
 
     public void start() {
         try {
