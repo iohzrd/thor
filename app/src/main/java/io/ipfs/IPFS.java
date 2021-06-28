@@ -61,6 +61,7 @@ import io.ipfs.core.Progress;
 import io.ipfs.core.TimeoutCloseable;
 import io.ipfs.crypto.PrivKey;
 import io.ipfs.crypto.Rsa;
+import io.ipfs.data.BLOCKS;
 import io.ipfs.dht.Routing;
 import io.ipfs.format.BlockStore;
 import io.ipfs.format.Node;
@@ -82,7 +83,6 @@ import io.ipfs.utils.ReaderStream;
 import io.ipfs.utils.Resolver;
 import io.ipfs.utils.Stream;
 import io.ipfs.utils.WriterStream;
-import threads.thor.core.blocks.BLOCKS;
 
 public class IPFS {
 

@@ -1,4 +1,4 @@
-package threads.thor.core.blocks;
+package io.ipfs.data;
 
 import androidx.room.Dao;
 import androidx.room.Insert;

@@ -1,4 +1,4 @@
-package threads.thor.core.blocks;
+package io.ipfs.data;
 
 import androidx.annotation.NonNull;
 import androidx.room.ColumnInfo;
