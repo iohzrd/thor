@@ -15,7 +15,7 @@ import com.google.android.material.switchmaterial.SwitchMaterial;
 
 import java.util.Objects;
 
-import io.ipfs.IPFS;
+import threads.lite.IPFS;
 import threads.thor.R;
 import threads.thor.Settings;
 import threads.thor.core.DOCS;

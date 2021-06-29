@@ -4,9 +4,9 @@ import android.content.Context;
 
 import androidx.annotation.NonNull;
 
-import io.LogUtils;
-import io.ipfs.IPFS;
-import io.ipfs.cid.PeerId;
+import threads.LogUtils;
+import threads.lite.IPFS;
+import threads.lite.cid.PeerId;
 
 public class LocalConnectService {
 

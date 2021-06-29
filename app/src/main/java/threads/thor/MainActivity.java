@@ -82,11 +82,11 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-import io.ipfs.IPFS;
-import io.ipfs.core.Closeable;
-import io.ipfs.core.TimeoutCloseable;
-import io.ipfs.format.Node;
-import io.ipfs.cid.PeerId;
+import threads.lite.IPFS;
+import threads.lite.core.Closeable;
+import threads.lite.core.TimeoutCloseable;
+import threads.lite.format.Node;
+import threads.lite.cid.PeerId;
 import threads.LogUtils;
 import threads.thor.core.Content;
 import threads.thor.core.DOCS;
@@ -1027,7 +1027,7 @@ public class MainActivity extends AppCompatActivity implements
                     eventViewModel.removeEvent(event);
                 }
             } catch (Throwable e) {
-                io.LogUtils.error(TAG, "" + e.getLocalizedMessage(), e);
+                LogUtils.error(TAG, "" + e.getLocalizedMessage(), e);
             }
         });
 
@@ -1927,7 +1927,7 @@ public class MainActivity extends AppCompatActivity implements
             }
 
         } catch (Throwable e) {
-            io.LogUtils.error(TAG, e);
+            LogUtils.error(TAG, e);
         }
     }
 
@@ -1967,13 +1967,13 @@ public class MainActivity extends AppCompatActivity implements
                         }
 
                     } catch (Throwable e) {
-                        io.LogUtils.error(TAG, e);
+                        LogUtils.error(TAG, e);
                     }
                 }
             }));
             mNsdManager.discoverServices(serviceType, NsdManager.PROTOCOL_DNS_SD, discovery);
         } catch (Throwable e) {
-            io.LogUtils.error(TAG, e);
+            LogUtils.error(TAG, e);
         }
     }
 

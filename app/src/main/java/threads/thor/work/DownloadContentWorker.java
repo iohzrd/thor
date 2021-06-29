@@ -27,11 +27,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-import io.ipfs.IPFS;
-import io.ipfs.cid.Cid;
-import io.ipfs.core.ClosedException;
-import io.ipfs.utils.Link;
-import io.ipfs.core.Progress;
+import threads.lite.IPFS;
+import threads.lite.cid.Cid;
+import threads.lite.core.ClosedException;
+import threads.lite.utils.Link;
+import threads.lite.core.Progress;
 import threads.LogUtils;
 import threads.thor.MainActivity;
 import threads.thor.R;

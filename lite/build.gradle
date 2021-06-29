@@ -1,0 +1,88 @@
+apply plugin: 'com.android.library'
+
+android {
+    compileSdkVersion 30
+    
+    defaultConfig {
+        minSdkVersion 26
+        targetSdkVersion 30
+        multiDexEnabled true
+        versionCode 1
+        versionName "0.0.1"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+
+        debug {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'),
+                    'proguard-rules.pro'
+        }
+
+        release {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android.txt'),
+                    'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    packagingOptions {
+        exclude 'META-INF/DEPENDENCIES'
+    }
+    buildToolsVersion = '30.0.3'
+
+
+}
+
+dependencies {
+
+    // API (LICENSE done)
+    implementation 'androidx.room:room-runtime:2.3.0'
+
+    // API (LICENSE done)
+    implementation 'org.minidns:minidns-client:1.0.0'
+
+    // API (LICENSE done)
+    implementation 'androidx.appcompat:appcompat:1.3.0'
+
+    // API (LICENSE done)
+    implementation 'com.google.protobuf:protobuf-java:3.15.6'
+
+    // API (LICENSE done)
+    implementation 'commons-io:commons-io:2.8.0'
+
+    // API (LICENSE done)
+    implementation 'com.google.guava:guava:30.1-android'
+
+    // API (LICENSE done)
+    implementation 'org.bouncycastle:bcprov-jdk15on:1.62'
+
+    // API (LICENSE done)
+    implementation 'org.bouncycastle:bcpkix-jdk15on:1.62'
+
+    // https://mvnrepository.com/artifact/at.favre.lib/hkdf
+    implementation group: 'at.favre.lib', name: 'hkdf', version: '1.0.1'
+
+    // https://mvnrepository.com/artifact/commons-cli/commons-cli
+    implementation group: 'commons-cli', name: 'commons-cli', version: '1.4'
+
+    // https://mvnrepository.com/artifact/org.apache.commons/commons-lang3
+    implementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.12.0'
+
+    implementation 'org.glassfish:javax.json:1.1.4'
+
+    // API (LICENSE done)
+    annotationProcessor 'androidx.room:room-compiler:2.3.0'
+
+    // Testing
+    androidTestImplementation 'androidx.test.ext:junit:1.1.2'
+    androidTestImplementation 'androidx.test:runner:1.3.0'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
+    androidTestImplementation 'org.apache.commons:commons-text:1.9'
+}

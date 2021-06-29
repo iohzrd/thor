@@ -29,12 +29,13 @@ import java.util.Hashtable;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import io.LogUtils;
-import io.ipfs.IPFS;
-import io.ipfs.cid.Cid;
-import io.ipfs.core.Closeable;
-import io.ipfs.format.Node;
-import io.ipfs.utils.Reader;
+
+import threads.LogUtils;
+import threads.lite.IPFS;
+import threads.lite.cid.Cid;
+import threads.lite.core.Closeable;
+import threads.lite.format.Node;
+import threads.lite.utils.Reader;
 import threads.thor.BuildConfig;
 import threads.thor.R;
 import threads.thor.utils.MimeType;

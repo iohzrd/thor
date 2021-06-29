@@ -27,8 +27,8 @@ import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-import io.ipfs.IPFS;
-import io.ipfs.utils.ReaderProgress;
+import threads.lite.IPFS;
+import threads.lite.utils.ReaderProgress;
 import threads.LogUtils;
 import threads.thor.MainActivity;
 import threads.thor.R;

@@ -3,7 +3,8 @@ package threads.thor.services;
 import android.net.nsd.NsdManager;
 import android.net.nsd.NsdServiceInfo;
 
-import io.LogUtils;
+import threads.LogUtils;
+
 
 public class RegistrationService implements NsdManager.RegistrationListener {
     private static final String TAG = RegistrationService.class.getSimpleName();

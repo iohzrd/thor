@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit;
 import threads.LogUtils;
 import threads.thor.MainActivity;
 import threads.thor.R;
-import io.ipfs.data.BLOCKS;
+import threads.lite.data.BLOCKS;
 import threads.thor.core.pages.PAGES;
 import threads.thor.provider.FileProvider;
 

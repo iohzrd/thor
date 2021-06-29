@@ -12,8 +12,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-import io.ipfs.IPFS;
-import io.ipfs.cid.PeerId;
+import threads.lite.IPFS;
+import threads.lite.cid.PeerId;
 import threads.LogUtils;
 import threads.thor.core.Content;
 import threads.thor.core.pages.PAGES;
@@ -41,7 +41,7 @@ public class InitApplication extends Application {
                 try {
                     onMessageReceived(peerId, content);
                 } catch (Throwable throwable) {
-                    io.LogUtils.error(TAG, throwable);
+                    LogUtils.error(TAG, throwable);
                 }
             });
         } catch (Throwable throwable) {
@@ -84,7 +84,7 @@ public class InitApplication extends Application {
 
 
         } catch (Throwable throwable) {
-            io.LogUtils.error(TAG, throwable);
+            LogUtils.error(TAG, throwable);
         }
     }
 }
